@@ -1,0 +1,32 @@
+# Xcode / SwiftPM
+.build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+Package.resolved
+
+# Build artifacts
+build/
+*.app
+*.dmg
+*.zip
+
+# macOS
+.DS_Store
+
+# Secrets / signing — NEVER commit
+*.p12
+*.cer
+*.p8
+*.mobileprovision
+*.provisionprofile
+Secrets.xcconfig
+.env
+*.key
+
+# Editor
+.idea/
+*.swp

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://skinterminal.app/theme.schema.json",
+  "manifestVersion": 1,
+
+  "name": "Default",
+  "author": "SkinTerminal",
+  "description": "Built-in theme. Copy this folder to make your own — delete any key to use the app's default.",
+
+  "colors": {
+    "windowBackground":  "#0e0e12",
+    "titleBarBackground":"#16161d",
+    "titleBarText":      "#e6e6ec",
+
+    "rowBackground":     "#14141c",
+    "rowBackgroundAlt":  "#181820",
+    "rowBackgroundHover":"#1f1f2b",
+
+    "sessionName":       "#e6e6ec",
+    "message":           "#b9b9c6",
+    "messageDim":        "#7a7a8a",
+
+    "needsAction":       "#ff2d55",
+    "working":           "#39c5ff",
+    "idle":              "#5a5a6a",
+
+    "footerBackground":  "#16161d",
+    "footerText":        "#8a8a99",
+    "accent":            "#39ff14",
+    "divider":           "#26263200"
+  },
+
+  "assets": {
+    "windowBackground":  null,
+    "titleBarBackground":null,
+    "footerBackground":  null,
+    "needsActionDot":    null
+  },
+
+  "avatar": {
+    "size":       48,
+    "position":   "right",
+    "cornerRadius": 8,
+    "states": {
+      "idle":       { "image": null },
+      "working":    { "video": null, "loop": true, "muted": true },
+      "needsInput": { "image": null },
+      "done":       { "image": null }
+    }
+  },
+
+  "layout": {
+    "rowMaxHeight":     100,
+    "rowPadding":       10,
+    "marqueeOnOverflow": true,
+    "marqueeSpeed":     40,
+    "density":          "comfortable"
+  },
+
+  "typography": {
+    "fontFamily":  null,
+    "nameSize":    13,
+    "messageSize": 11,
+    "nameWeight":  "semibold"
+  }
+}

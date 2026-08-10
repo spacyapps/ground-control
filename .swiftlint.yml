@@ -1,0 +1,98 @@
+# SkinTerminal — SwiftLint configuration
+# Run `swiftlint rules` to see every available rule and its status.
+
+included:
+  - Sources
+  - Tests
+
+excluded:
+  - .build
+  - DerivedData
+  - Sources/SkinTerminal/Resources
+
+# Rules on by default that we turn off (with reasons)
+disabled_rules:
+  - todo                      # allow TODO/FIXME during active development
+  - trailing_whitespace       # Xcode re-adds it on empty lines; noisy
+
+# Off by default — we opt in for higher quality
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - first_where
+  - contains_over_first_not_nil
+  - closure_spacing
+  - explicit_init
+  - force_unwrapping          # flag force-unwraps as warnings
+  - implicitly_unwrapped_optional
+  - redundant_nil_coalescing
+  - operator_usage_whitespace
+  - vertical_whitespace_closing_braces
+  - vertical_whitespace_opening_braces
+  - overridden_super_call
+  - prohibited_super_call
+  - fatal_error_message
+  - unneeded_parentheses_in_closure_argument
+  - toggle_bool
+  - sorted_first_last
+  - modifier_order
+  - multiline_arguments
+  - multiline_parameters
+  - convenience_type
+  - fallthrough
+  - literal_expression_end_indentation
+
+# Analyzer-only rules (run via `swiftlint analyze`)
+analyzer_rules:
+  - unused_declaration
+  - unused_import
+
+# Tunables
+line_length:
+  warning: 120
+  error: 160
+  ignores_urls: true
+  ignores_comments: true
+
+file_length:
+  warning: 400
+  error: 600
+
+type_body_length:
+  warning: 300
+  error: 400
+
+function_body_length:
+  warning: 60
+  error: 100
+
+cyclomatic_complexity:
+  warning: 12
+  error: 20
+
+identifier_name:
+  min_length:
+    warning: 2          # allow short names like `id`, `ui`
+  max_length:
+    warning: 50
+  excluded:
+    - id
+    - ok
+    - to
+    - x
+    - y
+
+type_name:
+  min_length: 3
+  max_length:
+    warning: 45
+    error: 60
+
+nesting:
+  type_level:
+    warning: 2
+
+force_unwrapping:
+  severity: warning
+
+reporter: "xcode"        # nice inline warnings in Xcode

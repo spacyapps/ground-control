@@ -1,0 +1,216 @@
+#!/usr/bin/python3
+"""
+cc-notify — Claude Code hook emitter for SkinTerminal.
+
+Reads a hook payload on stdin and appends one JSON line to that session's
+file. Field names below are not guesses: they were captured from live hook
+payloads on Claude Code 2.1.226. See docs/HOOK-PAYLOADS.md for the raw dumps.
+
+Install one line in ~/.claude/settings.json per event — no arguments needed,
+the payload carries `hook_event_name`:
+
+    { "type": "command", "command": "~/bin/cc-notify" }
+
+Output layout (${TMPDIR}/skinterminal/):
+
+    <session_id>.jsonl                  one per session   -> one row
+    agents/<session_id>__<agent_id>.jsonl  one per subagent -> one child row
+
+Contract with the app: the LAST line of a file is that row's current state.
+
+This script must never block Claude. Every failure path exits 0 silently.
+"""
+
+import json
+import os
+import subprocess
+import sys
+import time
+
+SCHEMA = 1
+MAX_MESSAGE = 240
+
+# Events that map to a row state. Anything else is ignored rather than written,
+# so a future or unrecognised event can never blank out a row's message.
+SESSION_EVENTS = ("UserPromptSubmit", "PreToolUse", "Notification", "Stop")
+
+
+def sessions_dir():
+    base = os.environ.get("TMPDIR") or "/tmp"
+    return os.path.join(base, "skinterminal")
+
+
+def resolve_tty():
+    """Walk up the process tree for a controlling tty.
+
+    A hook runs with stdin bound to the payload pipe, so `tty` always reports
+    "not a tty". The spawning `claude` process does hold one, a few levels up.
+    Returns e.g. "/dev/ttys008", or None when not run from a terminal.
+    """
+    pid = os.getpid()
+    for _ in range(8):
+        try:
+            out = subprocess.run(
+                ["ps", "-o", "ppid=,tty=", "-p", str(pid)],
+                capture_output=True, text=True, timeout=2,
+            ).stdout.split()
+        except Exception:
+            return None
+        if len(out) < 2:
+            return None
+        ppid, term = out[0], out[1]
+        if term and term != "??":
+            return term if term.startswith("/") else "/dev/" + term
+        try:
+            pid = int(ppid)
+        except ValueError:
+            return None
+        if pid <= 1:
+            return None
+    return None
+
+
+def condense(text, limit=MAX_MESSAGE):
+    """Collapse a possibly-multiline, possibly-markdown blob to one row line."""
+    if not text:
+        return ""
+    for raw in str(text).splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        # Skip fence/heading noise so the row shows real prose.
+        if line.startswith("```"):
+            continue
+        line = line.lstrip("#> ").strip()
+        line = line.replace("**", "").replace("`", "")
+        if not line:
+            continue
+        return line[:limit - 1] + "…" if len(line) > limit else line
+    return ""
+
+
+def last_line(path):
+    try:
+        with open(path, "r", errors="ignore") as handle:
+            lines = [ln for ln in handle if ln.strip()]
+        return json.loads(lines[-1]) if lines else None
+    except Exception:
+        return None
+
+
+def describe_tool(payload):
+    """Best available phrasing for what Claude is doing right now."""
+    tool = payload.get("tool_name") or "tool"
+    tool_input = payload.get("tool_input")
+    if isinstance(tool_input, dict):
+        for key in ("description", "file_path", "pattern", "command", "prompt"):
+            value = tool_input.get(key)
+            if isinstance(value, str) and value.strip():
+                return "%s: %s" % (tool, condense(value, 160))
+    return "Working… (%s)" % tool
+
+
+def interpret(payload):
+    """Map a hook event to (state, message, needs_action)."""
+    event = payload.get("hook_event_name") or ""
+
+    if event == "Notification":
+        # notification_type distinguishes "idle_prompt" (Claude finished and is
+        # waiting) from a permission request. Both need you; the app may style
+        # them differently via the state + notification_type fields.
+        return "needsInput", condense(payload.get("message")) or "Needs your input", True
+
+    if event == "Stop":
+        return "done", condense(payload.get("last_assistant_message")) or "Done", False
+
+    if event == "UserPromptSubmit":
+        return "working", condense(payload.get("prompt")) or "Working…", False
+
+    if event == "PreToolUse":
+        return "working", describe_tool(payload), False
+
+    return "idle", "", False
+
+
+def emit(path, record):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a") as handle:
+        handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def handle_subagent(payload, root, now):
+    """Subagents share the parent's tty and session_id, so they get their own
+    file under agents/ — keeping the file <-> row invariant intact one level
+    down. The app groups them by the session_id prefix."""
+    agent_id = payload.get("agent_id")
+    session_id = payload.get("session_id")
+    if not agent_id or not session_id:
+        return
+    path = os.path.join(root, "agents", "%s__%s.jsonl" % (session_id, agent_id))
+    emit(path, {
+        "schema": SCHEMA,
+        "session_id": session_id,
+        "agent_id": agent_id,
+        "agent_type": payload.get("agent_type") or "",
+        "state": "done",
+        "message": condense(payload.get("last_assistant_message")) or "Finished",
+        "needs_action": False,
+        "ts": now,
+    })
+
+
+def main():
+    raw = sys.stdin.read()
+    payload = json.loads(raw)
+    if not isinstance(payload, dict):
+        return
+
+    session_id = payload.get("session_id")
+    if not session_id:
+        return
+
+    root = sessions_dir()
+    now = int(time.time())
+    event = payload.get("hook_event_name")
+
+    if event == "SubagentStop":
+        handle_subagent(payload, root, now)
+        return
+
+    if event not in SESSION_EVENTS:
+        return
+
+    path = os.path.join(root, "%s.jsonl" % session_id)
+    previous = last_line(path) or {}
+    cwd = payload.get("cwd") or previous.get("cwd") or os.getcwd()
+
+    # session_title is the name you gave the session in Claude and is the better
+    # label when it differs from the folder ("spacyapps" vs "fluffy-carnival").
+    # It only ships on UserPromptSubmit, so latch it from the previous line.
+    name = payload.get("session_title") or previous.get("name") or os.path.basename(cwd)
+
+    state, message, needs_action = interpret(payload)
+    tty = resolve_tty() or previous.get("tty")
+
+    emit(path, {
+        "schema": SCHEMA,
+        "session_id": session_id,
+        "name": name,
+        "cwd": cwd,
+        "tty": tty,
+        "event": payload.get("hook_event_name") or "",
+        "state": state,
+        "message": message,
+        "needs_action": needs_action,
+        "notification_type": payload.get("notification_type") or "",
+        "transcript_path": payload.get("transcript_path") or "",
+        "ts": now,
+    })
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception:
+        pass
+    sys.exit(0)
