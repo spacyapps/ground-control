@@ -304,6 +304,10 @@ need a rename at all.
 1. ~~Hook payload field names~~ — measured; see `docs/HOOK-PAYLOADS.md`.
 2. ~~Per-subagent identifier exists?~~ — **yes**, `agent_id` on `SubagentStop`.
    Option B is possible; §4 explains why it is not yet on by default.
+3. ~~Terminal.app tab focus reliability~~ — **confirmed working**. Clicking a
+   row jumps to the right Terminal.app tab, matched on tty. Verified by hand on
+   macOS 26 with the tty resolved by `cc-notify`'s process-tree walk, which
+   also confirms that walk end to end. iTerm2's path is written but untested.
 
 **Open:**
 
@@ -319,5 +323,5 @@ need a rename at all.
    is worth it, or whether B waits for a start event.
 6. **Video avatar cost** in an always-on panel — measure; cap to GIF/APNG if
    needed. §6.
-7. **Terminal.app tab focus** reliability vs iTerm — confirm the AppleScript
-   path per app. §7. Note the primary target is **Terminal.app**.
+7. **iTerm2 tab focus** — the script is written but has never run against
+   iTerm2. §7.
