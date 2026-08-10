@@ -22,21 +22,43 @@ enum TerminalFocuser {
         return false
     }
 
+    /// Terminals we know how to drive, in preference order.
+    private struct SupportedTerminal {
+        let bundleID: String
+        let script: (String) -> String
+    }
+
+    private static let supported = [
+        SupportedTerminal(bundleID: "com.googlecode.iterm2", script: iTermScript(tty:)),
+        SupportedTerminal(bundleID: "com.apple.Terminal", script: terminalScript(tty:))
+    ]
+
     private static func jump(to tty: String) -> Bool {
-        for script in [iTermScript(tty: tty), terminalScript(tty: tty)] where run(script) {
-            return true
+        // Only script terminals that are actually running.
+        //
+        // AppleScript resolves `tell application …` at *compile* time, so
+        // merely mentioning an app that is not installed pops the "Choose
+        // Application" picker before a single line executes — a runtime guard
+        // inside the script is too late. Checking natively here is also why
+        // this no longer asks System Events anything, which would need
+        // Accessibility permission on top of Automation.
+        for terminal in supported where isRunning(terminal.bundleID) {
+            if run(terminal.script(tty)) { return true }
         }
         Log.integration.notice("No terminal tab matched \(tty, privacy: .public)")
         return false
     }
 
+    private static func isRunning(_ bundleID: String) -> Bool {
+        !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty
+    }
+
     /// iTerm2 exposes the tty per session directly, so the match is exact.
+    /// Addressed by bundle id rather than name so a missing app errors quietly
+    /// instead of prompting.
     private static func iTermScript(tty: String) -> String {
         """
-        tell application "System Events"
-            if not (exists process "iTerm2") then return "no"
-        end tell
-        tell application "iTerm2"
+        tell application id "com.googlecode.iterm2"
             repeat with w in windows
                 repeat with t in tabs of w
                     repeat with s in sessions of t
@@ -59,10 +81,7 @@ enum TerminalFocuser {
     /// separately — weaker than iTerm's path, but it does match exactly.
     private static func terminalScript(tty: String) -> String {
         """
-        tell application "System Events"
-            if not (exists process "Terminal") then return "no"
-        end tell
-        tell application "Terminal"
+        tell application id "com.apple.Terminal"
             repeat with w in windows
                 repeat with t in tabs of w
                     if tty of t is "\(tty)" then
