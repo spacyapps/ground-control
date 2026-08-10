@@ -1,0 +1,20 @@
+{
+  "$schema": "https://skinterminal.app/theme.schema.json",
+  "manifestVersion": 1,
+
+  "name": "Example Avatars",
+  "author": "SkinTerminal",
+  "description": "Shows the avatar system: three stills and one animated GIF. Copy this folder and swap the four files to make it yours.",
+
+  "avatar": {
+    "size": 44,
+    "position": "right",
+    "cornerRadius": 10,
+    "states": {
+      "idle":       { "image": "idle.png" },
+      "working":    { "image": "working.gif" },
+      "needsInput": { "image": "needs-input.png" },
+      "done":       { "image": "done.png" }
+    }
+  }
+}

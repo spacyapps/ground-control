@@ -9,8 +9,43 @@ struct Theme {
     var colors: Colors
     var layout: Layout
     var typography: Typography
+    var avatar: Avatar
     /// Folder the manifest was loaded from; asset paths resolve against it.
     var folder: URL?
+
+    /// The per-state face. A theme may set any subset of states; an omitted
+    /// state draws nothing at all, leaving the dot and colours to carry the
+    /// meaning (docs/THEMING.md).
+    struct Avatar {
+        var size: CGFloat
+        var position: Position
+        var cornerRadius: CGFloat
+        var states: [SessionState: Asset]
+
+        enum Position: String {
+            case left
+            case right
+        }
+
+        /// An author picks *either* an image or a video per state, by setting
+        /// whichever key they want — the manifest has no "kind" field.
+        enum Asset: Equatable {
+            /// Still or animated (`.gif` / `.apng`); AppKit animates both.
+            case image(URL)
+            case video(URL, loop: Bool, muted: Bool)
+
+            var url: URL {
+                switch self {
+                case .image(let url): return url
+                case .video(let url, _, _): return url
+                }
+            }
+        }
+
+        var isEmpty: Bool { states.isEmpty }
+
+        func asset(for state: SessionState) -> Asset? { states[state] }
+    }
 
     struct Colors {
         var windowBackground: NSColor

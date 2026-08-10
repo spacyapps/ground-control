@@ -14,6 +14,7 @@ final class SessionRowView: NSView {
     private let nameLabel = NSTextField(labelWithString: "")
     private let messageLabel = MarqueeLabel()
     private let disclosure = NSButton()
+    private let avatar = AvatarView()
 
     private var theme: Theme = DefaultTheme.theme
     private var isHovering = false
@@ -42,6 +43,7 @@ final class SessionRowView: NSView {
         addSubview(nameLabel)
         addSubview(messageLabel)
         addSubview(disclosure)
+        addSubview(avatar)
     }
 
     @available(*, unavailable)
@@ -74,6 +76,10 @@ final class SessionRowView: NSView {
         dot.color = theme.colors.color(for: session.state)
         dot.isProminent = session.needsAction
 
+        let face = theme.avatar.asset(for: session.state)
+        avatar.isHidden = face == nil
+        avatar.configure(asset: face, cornerRadius: theme.avatar.cornerRadius)
+
         disclosure.isHidden = !session.isGroup
         disclosure.attributedTitle = triangle(expanded: isExpanded, color: theme.colors.messageDim)
 
@@ -98,13 +104,16 @@ final class SessionRowView: NSView {
 
     // MARK: - Layout
 
-    /// Two-line rows read better, but compact themes get one line.
+    /// Two-line rows read better, but compact themes get one line. A theme with
+    /// avatars needs room for the face too — whichever is taller wins, still
+    /// capped by `rowMaxHeight`.
     static func height(for theme: Theme) -> CGFloat {
         let padding = theme.layout.rowPadding
         let lines = theme.layout.isCompact
             ? theme.typography.nameSize + 6
             : theme.typography.nameSize + theme.typography.messageSize + 10
-        return min(theme.layout.rowMaxHeight, lines + padding * 2)
+        let content = max(lines, theme.avatar.isEmpty ? 0 : theme.avatar.size)
+        return min(theme.layout.rowMaxHeight, content + padding * 2)
     }
 
     override func layout() {
@@ -113,13 +122,36 @@ final class SessionRowView: NSView {
         let dotSize: CGFloat = 10
         let disclosureWidth: CGFloat = isGroup ? 14 : 0
 
-        disclosure.frame = NSRect(x: padding, y: (bounds.height - 14) / 2, width: disclosureWidth, height: 14)
+        // Never let a large avatar spill out of a capped row.
+        let avatarSide = avatar.isHidden
+            ? 0
+            : min(theme.avatar.size, bounds.height - padding * 2)
+        let avatarSpan = avatarSide > 0 ? avatarSide + 8 : 0
+        let onLeft = theme.avatar.position == .left
 
-        let dotX = padding + disclosureWidth + (isGroup ? 4 : 0)
+        if avatarSide > 0 {
+            avatar.frame = NSRect(
+                x: onLeft ? padding : bounds.width - padding - avatarSide,
+                y: (bounds.height - avatarSide) / 2,
+                width: avatarSide,
+                height: avatarSide
+            )
+        }
+
+        let leadingInset = padding + (onLeft ? avatarSpan : 0)
+        disclosure.frame = NSRect(
+            x: leadingInset,
+            y: (bounds.height - 14) / 2,
+            width: disclosureWidth,
+            height: 14
+        )
+
+        let dotX = leadingInset + disclosureWidth + (isGroup ? 4 : 0)
         dot.frame = NSRect(x: dotX, y: (bounds.height - dotSize) / 2, width: dotSize, height: dotSize)
 
         let textX = dot.frame.maxX + 8
-        let textWidth = max(0, bounds.width - textX - padding)
+        let trailingInset = padding + (onLeft ? 0 : avatarSpan)
+        let textWidth = max(0, bounds.width - textX - trailingInset)
 
         let nameHeight = theme.typography.nameSize + 4
         let messageHeight = theme.typography.messageSize + 4

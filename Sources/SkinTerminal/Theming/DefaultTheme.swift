@@ -41,8 +41,25 @@ enum DefaultTheme {
         nameWeight: .semibold
     )
 
+    /// No states: the built-in theme ships no artwork, so rows are dot + text
+    /// until a theme supplies faces. That is the documented behaviour, not a
+    /// gap — "omit a state, draw no avatar" (docs/THEMING.md).
+    static let avatar = Theme.Avatar(
+        size: 48,
+        position: .right,
+        cornerRadius: 8,
+        states: [:]
+    )
+
     static var theme: Theme {
-        Theme(name: "Default", colors: colors, layout: layout, typography: typography, folder: nil)
+        Theme(
+            name: "Default",
+            colors: colors,
+            layout: layout,
+            typography: typography,
+            avatar: avatar,
+            folder: nil
+        )
     }
 
     /// Defaults are authored as literals we control, so a bad string here is a
