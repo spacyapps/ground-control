@@ -76,9 +76,15 @@ final class SessionRowView: NSView {
         dot.color = theme.colors.color(for: session.state)
         dot.isProminent = session.needsAction
 
-        let face = theme.avatar.asset(for: session.state)
-        avatar.isHidden = face == nil
-        avatar.configure(asset: face, cornerRadius: theme.avatar.cornerRadius)
+        avatar.isHidden = theme.avatar.isHidden
+        if !avatar.isHidden {
+            avatar.configure(
+                asset: theme.avatar.asset(for: session.state),
+                state: session.state,
+                tint: theme.colors.color(for: session.state),
+                cornerRadius: theme.avatar.cornerRadius
+            )
+        }
 
         disclosure.isHidden = !session.isGroup
         disclosure.attributedTitle = triangle(expanded: isExpanded, color: theme.colors.messageDim)
@@ -112,7 +118,7 @@ final class SessionRowView: NSView {
         let lines = theme.layout.isCompact
             ? theme.typography.nameSize + 6
             : theme.typography.nameSize + theme.typography.messageSize + 10
-        let content = max(lines, theme.avatar.isEmpty ? 0 : theme.avatar.size)
+        let content = max(lines, theme.avatar.isHidden ? 0 : theme.avatar.size)
         return min(theme.layout.rowMaxHeight, content + padding * 2)
     }
 

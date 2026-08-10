@@ -14,8 +14,9 @@ struct Theme {
     var folder: URL?
 
     /// The per-state face. A theme may set any subset of states; an omitted
-    /// state draws nothing at all, leaving the dot and colours to carry the
-    /// meaning (docs/THEMING.md).
+    /// state falls back to the drawn built-in, keeping with the rule that
+    /// every key has a code default (docs/THEMING.md). Set `size` to 0 to turn
+    /// avatars off entirely.
     struct Avatar {
         var size: CGFloat
         var position: Position
@@ -42,8 +43,11 @@ struct Theme {
             }
         }
 
-        var isEmpty: Bool { states.isEmpty }
+        /// The one way to opt out of avatars completely.
+        var isHidden: Bool { size <= 0 }
 
+        /// `nil` means "no theme artwork for this state" — the caller draws the
+        /// built-in instead.
         func asset(for state: SessionState) -> Asset? { states[state] }
     }
 

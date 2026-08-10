@@ -14,7 +14,9 @@ final class AvatarView: NSView {
     private var loopObserver: NSObjectProtocol?
 
     private var asset: Theme.Avatar.Asset?
+    private var drawnState: SessionState?
     private var cornerRadius: CGFloat = 8
+    private static let spinKey = "skinterminal.spin"
 
     /// Decoded images are reused across rows and state flips — the same few
     /// files are asked for constantly.
@@ -29,6 +31,7 @@ final class AvatarView: NSView {
         imageView.animates = true
         imageView.autoresizingMask = [.width, .height]
         imageView.frame = bounds
+        imageView.wantsLayer = true
         addSubview(imageView)
     }
 
@@ -55,16 +58,23 @@ final class AvatarView: NSView {
         if window == nil { player?.pause() } else { player?.play() }
     }
 
-    func configure(asset: Theme.Avatar.Asset?, cornerRadius: CGFloat) {
+    /// `asset` is the theme's artwork for this state, if it supplied any.
+    /// When it did not, the built-in symbol for `state` is drawn in `tint`.
+    func configure(asset: Theme.Avatar.Asset?,
+                   state: SessionState,
+                   tint: NSColor,
+                   cornerRadius: CGFloat) {
         self.cornerRadius = cornerRadius
         layer?.cornerRadius = cornerRadius
+        imageView.contentTintColor = tint
 
-        guard asset != self.asset else { return }
+        guard asset != self.asset || (asset == nil && state != drawnState) else { return }
         self.asset = asset
+        self.drawnState = asset == nil ? state : nil
 
         switch asset {
         case .none:
-            showNothing()
+            showDrawnDefault(for: state)
         case .image(let url):
             show(imageAt: url)
         case .video(let url, let loop, let muted):
@@ -74,14 +84,18 @@ final class AvatarView: NSView {
 
     // MARK: - Backends
 
-    private func showNothing() {
-        imageView.isHidden = true
-        imageView.image = nil
+    private func showDrawnDefault(for state: SessionState) {
         teardownPlayer()
+        imageView.isHidden = false
+        imageView.image = DrawnAvatar.symbol(for: state)
+        // Motion is what separates "thinking" from "stopped" at a glance, and
+        // a layer rotation costs nothing next to decoding video.
+        if DrawnAvatar.isAnimated(state) { startSpin() } else { stopSpin() }
     }
 
     private func show(imageAt url: URL) {
         teardownPlayer()
+        stopSpin()
         imageView.isHidden = false
 
         if let cached = Self.imageCache.object(forKey: url as NSURL) {
@@ -100,6 +114,7 @@ final class AvatarView: NSView {
     private func show(videoAt url: URL, loop: Bool, muted: Bool) {
         imageView.isHidden = true
         imageView.image = nil
+        stopSpin()
         teardownPlayer()
 
         let player = AVPlayer(url: url)
@@ -125,6 +140,24 @@ final class AvatarView: NSView {
         self.player = player
         self.playerLayer = playerLayer
         if window != nil { player.play() }
+    }
+
+    // MARK: - Spin
+
+    private func startSpin() {
+        guard let layer = imageView.layer, layer.animation(forKey: Self.spinKey) == nil else { return }
+        let spin = CABasicAnimation(keyPath: "transform.rotation.z")
+        spin.fromValue = 0
+        spin.toValue = -Double.pi * 2
+        spin.duration = 3.2
+        spin.repeatCount = .infinity
+        // Survives the panel being hidden and re-shown.
+        spin.isRemovedOnCompletion = false
+        layer.add(spin, forKey: Self.spinKey)
+    }
+
+    private func stopSpin() {
+        imageView.layer?.removeAnimation(forKey: Self.spinKey)
     }
 
     private func teardownPlayer() {

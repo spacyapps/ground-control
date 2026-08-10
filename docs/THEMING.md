@@ -63,7 +63,10 @@ The per-state face/mascot. Each state can be an **image** *or* a **video**
 - `states.needsInput` — shown when the session needs you (pairs with the red dot).
 - `states.done` — shown briefly on completion.
 - `size`, `position` (`left` | `right`), `cornerRadius` — layout of the avatar.
-- Omit a state → no avatar drawn for it (the dot/colours still convey state).
+- Omit a state → the **built-in drawn face** for that state is used, tinted
+  with your palette. You never get a blank row, and overriding one state does
+  not oblige you to draw the other three.
+- `"size": 0` → no avatars at all. That is the only way to switch them off.
 
 **Supported animation formats:** `.mov` / `.mp4` (H.264 or HEVC) and animated
 `.gif` / `.apng`. Avoid `.webm` — not natively supported. Prefer GIF/APNG for

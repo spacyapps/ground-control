@@ -77,7 +77,21 @@ final class AssetResolverTests: XCTestCase {
         let avatar = try resolve(#"{"states":{}}"#)
         XCTAssertEqual(avatar.size, DefaultTheme.avatar.size)
         XCTAssertEqual(avatar.position, DefaultTheme.avatar.position)
-        XCTAssertTrue(avatar.isEmpty)
+        XCTAssertFalse(avatar.isHidden, "no artwork still draws the built-in face")
+        XCTAssertNil(avatar.asset(for: .idle), "and it does so without theme artwork")
+    }
+
+    /// The single documented way to switch avatars off.
+    func testZeroSizeHidesAvatarsEntirely() throws {
+        XCTAssertTrue(try resolve(#"{"size":0,"states":{}}"#).isHidden)
+    }
+
+    func testDrawnDefaultExistsForEveryState() {
+        for state in SessionState.allCases {
+            XCTAssertNotNil(DrawnAvatar.symbol(for: state), "no built-in face for \(state.rawValue)")
+        }
+        XCTAssertTrue(DrawnAvatar.isAnimated(.working))
+        XCTAssertFalse(DrawnAvatar.isAnimated(.idle))
     }
 
     func testGeometryIsHonouredWhenSet() throws {
