@@ -50,6 +50,14 @@ final class PanelController {
         chrome.update(sessions: sessions, renames: preferences.renames)
     }
 
+    /// Recovers a panel dragged off-screen or onto a display that is gone.
+    func resetPosition() {
+        let frame = defaultFrame()
+        panel?.setFrame(frame, display: true)
+        preferences.panelFrame = NSStringFromRect(frame)
+        show()
+    }
+
     func applyWindowBehaviour() {
         panel?.apply(
             alwaysOnTop: preferences.alwaysOnTop,

@@ -11,6 +11,7 @@ final class StatusMenu: NSObject {
         var toggleAllSpaces: () -> Void
         var selectTheme: (String?) -> Void
         var openThemesFolder: () -> Void
+        var openSettings: () -> Void
         var quit: () -> Void
     }
 
@@ -44,6 +45,7 @@ final class StatusMenu: NSObject {
         menu.addItem(.separator())
 
         menu.addItem(themeMenu(activeTheme: activeTheme))
+        menu.addItem(item(title: "Settings…", action: #selector(openSettings), key: ","))
         menu.addItem(.separator())
 
         menu.addItem(item(title: "Quit SkinTerminal", action: #selector(quit), key: "q"))
@@ -92,6 +94,7 @@ final class StatusMenu: NSObject {
     @objc private func toggleAlwaysOnTop() { actions.toggleAlwaysOnTop() }
     @objc private func toggleAllSpaces() { actions.toggleAllSpaces() }
     @objc private func openThemesFolder() { actions.openThemesFolder() }
+    @objc private func openSettings() { actions.openSettings() }
     @objc private func quit() { actions.quit() }
     @objc private func selectDefaultTheme() { actions.selectTheme(nil) }
 

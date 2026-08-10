@@ -14,6 +14,7 @@ final class AppCoordinator {
     private let preferences: Preferences
 
     private var statusMenu: StatusMenu?
+    private var settings: SettingsWindowController?
 
     init(preferences: Preferences = .shared) {
         self.preferences = preferences
@@ -39,6 +40,7 @@ final class AppCoordinator {
 
         themeStore.onChange = { [weak self] theme in
             self?.panel.apply(theme: theme)
+            self?.settings?.themeDidChange()
         }
 
         store.onChange = { [weak self] sessions in
@@ -128,6 +130,24 @@ final class AppCoordinator {
         panel.apply(sessions: store.sessions)
     }
 
+    private func showSettings() {
+        if settings == nil {
+            settings = SettingsWindowController(actions: SettingsView.Actions(
+                selectTheme: { [weak self] name in self?.themeStore.select(name: name) },
+                applyWindowBehaviour: { [weak self] in self?.panel.applyWindowBehaviour() },
+                reloadSessions: { [weak self] in self?.store.reload() },
+                openThemesFolder: { [weak self] in self?.openThemesFolder() },
+                resetPanelPosition: { [weak self] in self?.panel.resetPosition() }
+            ))
+        }
+        settings?.present()
+    }
+
+    private func openThemesFolder() {
+        Paths.ensureFoldersExist()
+        NSWorkspace.shared.open(Paths.userThemes)
+    }
+
     private func wireMenu() {
         statusMenu = StatusMenu(actions: StatusMenu.Actions(
             togglePanel: { [weak self] in self?.panel.toggle() },
@@ -142,10 +162,8 @@ final class AppCoordinator {
                 self.panel.applyWindowBehaviour()
             },
             selectTheme: { [weak self] name in self?.themeStore.select(name: name) },
-            openThemesFolder: {
-                Paths.ensureFoldersExist()
-                NSWorkspace.shared.open(Paths.userThemes)
-            },
+            openThemesFolder: { [weak self] in self?.openThemesFolder() },
+            openSettings: { [weak self] in self?.showSettings() },
             quit: { NSApp.terminate(nil) }
         ))
     }
