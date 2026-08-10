@@ -5,6 +5,13 @@ videos it references. That's it.
 
 ## Quick start
 
+Two folders ship as starting points: `default/` (every colour key, no
+artwork) and `example-avatars/` (the avatar system working — three stills and
+one animated GIF). Copy whichever is closer to what you want.
+
+Themes live in `~/Library/Application Support/SkinTerminal/Themes/`. The
+menu-bar menu has **Theme → Open Themes Folder…** if you'd rather not type it.
+
 1. Copy the `default/` folder and rename it (e.g. `themes/neon/`).
 2. Open `theme.json`, change what you want.
 3. **Delete any key you don't want to change** — the app fills it in with its
