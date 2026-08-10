@@ -13,6 +13,7 @@ final class SettingsView: NSView {
         var reloadSessions: () -> Void
         var openThemesFolder: () -> Void
         var resetPanelPosition: () -> Void
+        var createTheme: () -> Void
     }
 
     private let preferences: Preferences
@@ -121,11 +122,14 @@ final class SettingsView: NSView {
         row.orientation = .horizontal
         row.spacing = 8
 
-        let open = NSButton(title: "Open Themes Folder…", target: self, action: #selector(openFolder))
+        let create = NSButton(title: "Create a Theme…", target: self, action: #selector(createTheme))
+        create.bezelStyle = .rounded
+        let open = NSButton(title: "Open Folder…", target: self, action: #selector(openFolder))
         open.bezelStyle = .rounded
         let refresh = NSButton(title: "Refresh", target: self, action: #selector(refreshThemes))
         refresh.bezelStyle = .rounded
 
+        row.addArrangedSubview(create)
         row.addArrangedSubview(open)
         row.addArrangedSubview(refresh)
         return row
@@ -218,6 +222,15 @@ final class SettingsView: NSView {
     }
 
     @objc private func refreshThemes() {
+        reloadThemes()
+    }
+
+    @objc private func createTheme() {
+        actions.createTheme()
+    }
+
+    /// The builder may have just written a new folder.
+    func themesDidChangeOnDisk() {
         reloadThemes()
     }
 

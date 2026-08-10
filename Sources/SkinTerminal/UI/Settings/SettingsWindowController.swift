@@ -40,4 +40,8 @@ final class SettingsWindowController: NSWindowController {
     func themeDidChange() {
         settingsView.themeDidChange()
     }
+
+    func themesDidChangeOnDisk() {
+        settingsView.themesDidChangeOnDisk()
+    }
 }

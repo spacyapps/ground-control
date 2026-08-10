@@ -15,6 +15,7 @@ final class AppCoordinator {
 
     private var statusMenu: StatusMenu?
     private var settings: SettingsWindowController?
+    private var themeBuilder: ThemeBuilderWindowController?
 
     init(preferences: Preferences = .shared) {
         self.preferences = preferences
@@ -137,10 +138,20 @@ final class AppCoordinator {
                 applyWindowBehaviour: { [weak self] in self?.panel.applyWindowBehaviour() },
                 reloadSessions: { [weak self] in self?.store.reload() },
                 openThemesFolder: { [weak self] in self?.openThemesFolder() },
-                resetPanelPosition: { [weak self] in self?.panel.resetPosition() }
+                resetPanelPosition: { [weak self] in self?.panel.resetPosition() },
+                createTheme: { [weak self] in self?.showThemeBuilder() }
             ))
         }
         settings?.present()
+    }
+
+    private func showThemeBuilder() {
+        if themeBuilder == nil {
+            themeBuilder = ThemeBuilderWindowController { [weak self] in
+                self?.settings?.themesDidChangeOnDisk()
+            }
+        }
+        themeBuilder?.present()
     }
 
     private func openThemesFolder() {
