@@ -98,9 +98,16 @@ final class VisualizerView: NSView {
             peaks[index] = max(peaks[index] - 0.012, levels[index])
         }
 
-        // Settle to a full stop rather than idling a timer forever.
-        if energy < 0.01 && levels.allSatisfy({ $0 < 0.01 }) { stop() }
+        // Peaks fall on their own slower schedule, so stopping when only the
+        // bars have settled freezes them mid-air as a row of stray dashes.
+        if isAtRest { stop() }
         needsDisplay = true
+    }
+
+    private var isAtRest: Bool {
+        energy < 0.01
+            && levels.allSatisfy { $0 < 0.01 }
+            && peaks.allSatisfy { $0 < 0.01 }
     }
 
     private func resizeBarsIfNeeded() {
@@ -124,11 +131,41 @@ final class VisualizerView: NSView {
         let usable = bounds.height - inset * 2
         guard usable > 0 else { return }
 
+        // Fully asleep with nothing waiting: an empty grid says "broken", a
+        // sleeping face says "quiet". Something waiting on you still gets the
+        // lit red floor below, so rest never hides an alarm.
+        if isAtRest && !isAlarmed {
+            drawSleeping()
+            return
+        }
+
         for (index, level) in levels.enumerated() {
             let originX = inset + CGFloat(index) * (barWidth + barGap)
             guard originX + barWidth <= bounds.width - inset else { break }
             drawColumn(x: originX, level: level, peak: peaks[index], usable: usable, inset: inset)
         }
+    }
+
+    private func drawSleeping() {
+        let face = "-  ‿  -"
+        let color = theme.colors.messageDim.withAlphaComponent(0.75)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: min(13, bounds.height * 0.5), weight: .medium),
+            .foregroundColor: color
+        ]
+        let size = (face as NSString).size(withAttributes: attributes)
+        let origin = NSPoint(x: (bounds.width - size.width) / 2 - 10, y: (bounds.height - size.height) / 2)
+        (face as NSString).draw(at: origin, withAttributes: attributes)
+
+        let zzz = "z z z"
+        let zAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: min(9, bounds.height * 0.35), weight: .semibold),
+            .foregroundColor: color.withAlphaComponent(0.5)
+        ]
+        (zzz as NSString).draw(
+            at: NSPoint(x: origin.x + size.width + 8, y: origin.y - 2),
+            withAttributes: zAttributes
+        )
     }
 
     private func drawColumn(x originX: CGFloat,
