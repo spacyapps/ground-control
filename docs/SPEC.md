@@ -102,9 +102,19 @@ existing hooks on the same events survive):
 |---|---|---|
 | `UserPromptSubmit` | working, dot **off** | `prompt` |
 | `PreToolUse` | working, dot off | `tool_input.description` / `.file_path`, else `tool_name` |
-| `Notification` | needsInput, dot **on** | `message` |
+| `Notification` (`idle_prompt`) | **skipped entirely** | — |
+| `Notification` (anything else) | needsInput, dot **on** | `message` |
 | `Stop` | done, dot **off** | `last_assistant_message` |
 | `SubagentStop` | (child row) | `last_assistant_message` |
+
+**Why `idle_prompt` is dropped.** It means "Claude finished and is waiting for
+your next message", not "Claude is blocked on you". Writing it turned every
+completed session red — which makes red mean nothing — and replaced the real
+`Stop` text with a generic phrase. `Stop` already says "your turn", better. The
+alarm is reserved for notifications that genuinely block.
+
+The app enforces the same rule when reading (`SessionEvent.isActionable`),
+because files written before this live on for up to 24h.
 
 **Line format** — last line wins:
 
@@ -135,10 +145,10 @@ and `Notification` carries real text, so rows show what Claude actually said
 without reading `transcript_path`. The path is recorded in each line anyway —
 it is the hook for a future "show more" without changing the contract.
 
-**The dot.** `needs_action` drives it: on at `Notification`, off at every other
-event, and cleared locally when the user clicks the row. `notification_type`
-is carried through so the UI *may* distinguish "waiting for you"
-(`idle_prompt`) from a permission request — see §10.
+**The dot.** `needs_action` drives it: on at a blocking `Notification`, off at
+every other event, and cleared locally when the user clicks the row.
+`notification_type` is carried through so the rule stays inspectable in the
+data rather than only in the script.
 
 ---
 
@@ -319,9 +329,12 @@ need a rename at all.
 **Open:**
 
 3. **Permission-request `Notification`.** Only `notification_type:
-   "idle_prompt"` has been observed, captured under `permission_mode: auto`
-   where permission prompts do not fire. Confirm the type string for a real
-   permission request, then decide whether it styles differently from idle.
+   "idle_prompt"` has ever been observed, captured under `permission_mode:
+   auto` where permission prompts do not fire. Since `idle_prompt` is now
+   skipped (§3), **the red alarm currently has no confirmed trigger** — it is
+   correct for the observed data but unproven. Switch a session to a stricter
+   permission mode, capture a real permission request, and confirm its type
+   string reaches the row.
 4. ~~Distinguishing real subagents from internal ones~~ — **handled
    heuristically.** Empty `agent_type` is treated as internal and hidden (§4).
    Still worth revisiting if a payload ever exposes something definitive; the
