@@ -1,13 +1,12 @@
 import AppKit
 
-/// The panel's themed content: title bar, session list, footer.
+/// The panel's themed content: title bar and session list.
 ///
 /// Owns the whole surface so the theme reaches the window's edges — macOS
 /// chrome is switched off in `FloatingPanel`, and this is what replaces it.
 final class PanelBackgroundView: NSView {
     let titleBar = TitleBarView()
     let list = SessionListView()
-    let footer = FooterView()
 
     private var theme: Theme = DefaultTheme.theme
 
@@ -21,7 +20,6 @@ final class PanelBackgroundView: NSView {
 
         addSubview(titleBar)
         addSubview(list)
-        addSubview(footer)
     }
 
     @available(*, unavailable)
@@ -34,30 +32,22 @@ final class PanelBackgroundView: NSView {
         layer?.backgroundColor = theme.colors.windowBackground.cgColor
         titleBar.apply(theme: theme)
         list.apply(theme: theme)
-        footer.apply(theme: theme)
         needsDisplay = true
     }
 
     func update(sessions: [Session], renames: [String: String]) {
         titleBar.update(sessions: sessions)
-        footer.update(sessions: sessions)
         list.apply(sessions: sessions, renames: renames)
     }
 
     override func layout() {
         super.layout()
         titleBar.frame = NSRect(x: 0, y: 0, width: bounds.width, height: TitleBarView.height)
-        footer.frame = NSRect(
-            x: 0,
-            y: bounds.height - FooterView.height,
-            width: bounds.width,
-            height: FooterView.height
-        )
         list.frame = NSRect(
             x: 0,
             y: titleBar.frame.maxY,
             width: bounds.width,
-            height: max(0, bounds.height - TitleBarView.height - FooterView.height)
+            height: max(0, bounds.height - TitleBarView.height)
         )
     }
 

@@ -5,13 +5,14 @@ import AppKit
 /// It is also the drag handle: the panel is borderless-by-appearance, so this
 /// is what you grab to move it.
 final class TitleBarView: NSView {
-    static let height: CGFloat = 28
+    static let height: CGFloat = 58
 
     var onClose: (() -> Void)?
 
     private let titleLabel = NSTextField(labelWithString: "SkinTerminal")
     private let countLabel = NSTextField(labelWithString: "")
     private let closeButton = NSButton()
+    private let visualizer = VisualizerView()
     private var theme: Theme = DefaultTheme.theme
 
     override var isFlipped: Bool { true }
@@ -31,6 +32,7 @@ final class TitleBarView: NSView {
         addSubview(closeButton)
         addSubview(titleLabel)
         addSubview(countLabel)
+        addSubview(visualizer)
     }
 
     @available(*, unavailable)
@@ -54,6 +56,7 @@ final class TitleBarView: NSView {
                 .font: NSFont.systemFont(ofSize: 10)
             ]
         )
+        visualizer.apply(theme: theme)
         needsDisplay = true
     }
 
@@ -66,19 +69,24 @@ final class TitleBarView: NSView {
         } else {
             countLabel.stringValue = "\(sessions.count)"
         }
+        visualizer.update(sessions: sessions)
     }
 
     override func layout() {
         super.layout()
         let inset: CGFloat = 10
-        closeButton.frame = NSRect(x: inset - 2, y: (bounds.height - 16) / 2, width: 16, height: 16)
-        let textY = (bounds.height - 14) / 2
+        let titleRow: CGFloat = 22
+
+        closeButton.frame = NSRect(x: inset - 2, y: (titleRow - 16) / 2 + 4, width: 16, height: 16)
+        let textY = (titleRow - 14) / 2 + 4
         titleLabel.frame = NSRect(x: closeButton.frame.maxX + 6, y: textY, width: 150, height: 14)
-        countLabel.frame = NSRect(
-            x: bounds.width - inset - 90,
-            y: textY,
-            width: 90,
-            height: 14
+        countLabel.frame = NSRect(x: bounds.width - inset - 90, y: textY, width: 90, height: 14)
+
+        visualizer.frame = NSRect(
+            x: inset,
+            y: titleRow + 6,
+            width: bounds.width - inset * 2,
+            height: max(0, bounds.height - titleRow - 12)
         )
     }
 
