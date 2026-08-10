@@ -1,0 +1,68 @@
+import AppKit
+
+/// The panel's themed content: title bar, session list, footer.
+///
+/// Owns the whole surface so the theme reaches the window's edges — macOS
+/// chrome is switched off in `FloatingPanel`, and this is what replaces it.
+final class PanelBackgroundView: NSView {
+    let titleBar = TitleBarView()
+    let list = SessionListView()
+    let footer = FooterView()
+
+    private var theme: Theme = DefaultTheme.theme
+
+    override var isFlipped: Bool { true }
+
+    init() {
+        super.init(frame: .zero)
+        wantsLayer = true
+        layer?.cornerRadius = 10
+        layer?.masksToBounds = true
+
+        addSubview(titleBar)
+        addSubview(list)
+        addSubview(footer)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("PanelBackgroundView is created in code only")
+    }
+
+    func apply(theme: Theme) {
+        self.theme = theme
+        layer?.backgroundColor = theme.colors.windowBackground.cgColor
+        titleBar.apply(theme: theme)
+        list.apply(theme: theme)
+        footer.apply(theme: theme)
+        needsDisplay = true
+    }
+
+    func update(sessions: [Session], renames: [String: String]) {
+        titleBar.update(sessions: sessions)
+        footer.update(sessions: sessions)
+        list.apply(sessions: sessions, renames: renames)
+    }
+
+    override func layout() {
+        super.layout()
+        titleBar.frame = NSRect(x: 0, y: 0, width: bounds.width, height: TitleBarView.height)
+        footer.frame = NSRect(
+            x: 0,
+            y: bounds.height - FooterView.height,
+            width: bounds.width,
+            height: FooterView.height
+        )
+        list.frame = NSRect(
+            x: 0,
+            y: titleBar.frame.maxY,
+            width: bounds.width,
+            height: max(0, bounds.height - TitleBarView.height - FooterView.height)
+        )
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        theme.colors.windowBackground.setFill()
+        bounds.fill()
+    }
+}

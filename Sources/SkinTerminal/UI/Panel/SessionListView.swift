@@ -1,5 +1,18 @@
 import AppKit
 
+/// Rows must fill from the top. An `NSScrollView`'s document view is
+/// bottom-origin by default, which pins a short list to the bottom of the
+/// panel and leaves a void above it.
+private final class TopAlignedStackView: NSStackView {
+    override var isFlipped: Bool { true }
+}
+
+/// The other half of the fix: a clip view shorter than its content still
+/// anchors at the bottom unless it, too, is flipped.
+private final class TopAlignedClipView: NSClipView {
+    override var isFlipped: Bool { true }
+}
+
 /// The scrolling stack of rows.
 ///
 /// Rebuilt wholesale on every change. With a handful of sessions this is
@@ -10,7 +23,7 @@ final class SessionListView: NSView {
     var onSecondaryClick: ((Session, NSEvent) -> Void)?
 
     private let scrollView = NSScrollView()
-    private let stack = NSStackView()
+    private let stack = TopAlignedStackView()
     private let emptyLabel = NSTextField(labelWithString: "")
 
     private var theme: Theme = DefaultTheme.theme
@@ -31,6 +44,7 @@ final class SessionListView: NSView {
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
+        scrollView.contentView = TopAlignedClipView()
         scrollView.documentView = stack
         scrollView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -45,6 +59,8 @@ final class SessionListView: NSView {
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            stack.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            stack.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
             stack.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             emptyLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
             emptyLabel.centerYAnchor.constraint(equalTo: centerYAnchor),

@@ -3,7 +3,7 @@ import AppKit
 /// Owns the panel: show/hide, window behaviour toggles, and frame persistence.
 final class PanelController {
     private(set) var panel: FloatingPanel?
-    private let listView = SessionListView()
+    private let chrome = PanelBackgroundView()
     private let preferences: Preferences
 
     var onActivate: ((Session) -> Void)?
@@ -14,10 +14,11 @@ final class PanelController {
 
     init(preferences: Preferences = .shared) {
         self.preferences = preferences
-        listView.onActivate = { [weak self] session in self?.onActivate?(session) }
-        listView.onSecondaryClick = { [weak self] session, event in
+        chrome.list.onActivate = { [weak self] session in self?.onActivate?(session) }
+        chrome.list.onSecondaryClick = { [weak self] session, event in
             self?.onSecondaryClick?(session, event)
         }
+        chrome.titleBar.onClose = { [weak self] in self?.hide() }
     }
 
     deinit {
@@ -42,12 +43,11 @@ final class PanelController {
 
     func apply(theme: Theme) {
         self.theme = theme
-        listView.apply(theme: theme)
-        panel?.backgroundColor = theme.colors.windowBackground
+        chrome.apply(theme: theme)
     }
 
     func apply(sessions: [Session]) {
-        listView.apply(sessions: sessions, renames: preferences.renames)
+        chrome.update(sessions: sessions, renames: preferences.renames)
     }
 
     func applyWindowBehaviour() {
@@ -63,8 +63,7 @@ final class PanelController {
         if let panel { return panel }
 
         let panel = FloatingPanel(contentRect: defaultFrame())
-        panel.backgroundColor = theme.colors.windowBackground
-        panel.contentView = listView
+        panel.contentView = chrome
         if let saved = preferences.panelFrame {
             panel.setFrame(NSRectFromString(saved), display: false)
         }
@@ -82,7 +81,7 @@ final class PanelController {
         ) { [weak self] _ in self?.saveFrame() }
 
         self.panel = panel
-        listView.apply(theme: theme)
+        chrome.apply(theme: theme)
         return panel
     }
 

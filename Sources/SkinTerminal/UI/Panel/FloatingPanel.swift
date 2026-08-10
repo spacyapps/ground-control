@@ -24,8 +24,15 @@ final class FloatingPanel: NSPanel {
         isReleasedWhenClosed = false
         minSize = NSSize(width: 260, height: 120)
 
-        standardWindowButton(.miniaturizeButton)?.isHidden = true
-        standardWindowButton(.zoomButton)?.isHidden = true
+        // The theme owns every pixel, so macOS chrome is switched off entirely
+        // and TitleBarView takes over the title and the drag handle. The
+        // window stays `.titled` purely to keep live resizing.
+        isOpaque = false
+        backgroundColor = .clear
+        hasShadow = true
+        for button in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+            standardWindowButton(button)?.isHidden = true
+        }
     }
 
     override var canBecomeKey: Bool { true }
