@@ -14,6 +14,7 @@ final class SessionStore {
 
     private let root: URL
     private let agentsRoot: URL
+    private let preferences: Preferences
     private var sessionWatcher: FolderWatcher?
     private var agentWatcher: FolderWatcher?
     private var pollTimer: Timer?
@@ -21,9 +22,12 @@ final class SessionStore {
     /// Set when the user clicks a row; the dot stays off until a newer event.
     private var acknowledged: [String: Date] = [:]
 
-    init(root: URL = Paths.sessionsRoot, agentsRoot: URL = Paths.agentsRoot) {
+    init(root: URL = Paths.sessionsRoot,
+         agentsRoot: URL = Paths.agentsRoot,
+         preferences: Preferences = .shared) {
         self.root = root
         self.agentsRoot = agentsRoot
+        self.preferences = preferences
     }
 
     deinit {
@@ -52,7 +56,10 @@ final class SessionStore {
     }
 
     func reload() {
-        let children = AgentGrouper.childrenBySession(in: agentsRoot)
+        let children = AgentGrouper.childrenBySession(
+            in: agentsRoot,
+            includingInternal: preferences.showsInternalAgents
+        )
         let files = (try? FileManager.default.contentsOfDirectory(
             at: root,
             includingPropertiesForKeys: nil,

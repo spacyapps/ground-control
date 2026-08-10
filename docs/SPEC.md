@@ -170,12 +170,19 @@ the red dot if any child needs action.
    — useless for a live monitor. A live count can be approximated by counting
    `PreToolUse` events with `tool_name` of `Task`/`Agent` and subtracting
    `SubagentStop`s, but the two cannot be correlated by id.
-2. **Internal agents fire it too.** Claude Code emits `SubagentStop` for its
-   own background agents, not only ones you spawned. Both observed captures had
-   `agent_type: ""`, and one carried text that never appeared in the visible
-   conversation. Rendering every `SubagentStop` yields phantom rows.
+2. ~~**Internal agents fire it too.**~~ **Filtered.** Claude Code emits
+   `SubagentStop` for its own background agents, not only ones you spawned, and
+   their text is not part of the visible conversation — observed live as child
+   rows reading like the user's own suggested prompts. Every internal agent
+   seen so far reports `agent_type: ""`, so `AgentGrouper` hides children with
+   an empty type.
 
-Resolve both before enabling B (§10).
+   It is a heuristic, not a guarantee: a genuine subagent reporting no type is
+   hidden too. The files stay on disk regardless, and
+   `defaults write SkinTerminal showsInternalAgents -bool YES` restores them
+   without a rebuild.
+
+Resolve the first before enabling B (§10).
 
 ---
 
@@ -315,9 +322,10 @@ need a rename at all.
    "idle_prompt"` has been observed, captured under `permission_mode: auto`
    where permission prompts do not fire. Confirm the type string for a real
    permission request, then decide whether it styles differently from idle.
-4. **Distinguishing real subagents from Claude Code's internal ones.**
-   `agent_type` was `""` for both observed captures, so it is not yet a usable
-   filter. Blocks Option B (§4).
+4. ~~Distinguishing real subagents from internal ones~~ — **handled
+   heuristically.** Empty `agent_type` is treated as internal and hidden (§4).
+   Still worth revisiting if a payload ever exposes something definitive; the
+   raw files are kept so the rule can be re-evaluated against real data.
 5. **Live subagent tracking.** No start-side event carries an `agent_id`, so
    children only appear on completion. Decide whether an approximate live count
    is worth it, or whether B waits for a start event.

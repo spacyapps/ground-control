@@ -19,6 +19,15 @@ final class Preferences {
         static let showOnAllSpaces = "showOnAllSpaces"
         static let themeName = "themeName"
         static let renames = "renames"
+        static let showsInternalAgents = "showsInternalAgents"
+    }
+
+    /// Escape hatch for the internal-agent filter in `AgentGrouper`, which is a
+    /// heuristic on an empty `agent_type`. No UI: `defaults write SkinTerminal
+    /// showsInternalAgents -bool YES` if you want to see everything.
+    var showsInternalAgents: Bool {
+        get { defaults.bool(forKey: Key.showsInternalAgents) }
+        set { defaults.set(newValue, forKey: Key.showsInternalAgents) }
     }
 
     var panelFrame: String? {
