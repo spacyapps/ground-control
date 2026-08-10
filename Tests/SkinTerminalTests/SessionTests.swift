@@ -45,6 +45,26 @@ final class SessionTests: XCTestCase {
         XCTAssertEqual(subject.displayName(renames: [:]), "abc")
     }
 
+    /// "Claude finished, your turn" is not an alarm. Treating it as one turned
+    /// every completed session red and made red meaningless.
+    func testIdlePromptNotificationDoesNotRaiseTheAlarm() throws {
+        let json = #"{"session_id":"abc","state":"needsInput","message":"Claude is waiting","#
+            + #""needs_action":true,"notification_type":"idle_prompt","ts":10}"#
+        let event = try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
+        XCTAssertFalse(event.isActionable)
+        XCTAssertFalse(session(event).needsAction)
+        XCTAssertEqual(session(event).state, .done, "a finished session should not wear a red face")
+    }
+
+    /// A notification that genuinely blocks still must.
+    func testOtherNotificationsStillRaiseTheAlarm() throws {
+        let json = #"{"session_id":"abc","state":"needsInput","message":"Allow npm install?","#
+            + #""needs_action":true,"notification_type":"permission_request","ts":10}"#
+        let event = try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
+        XCTAssertTrue(event.isActionable)
+        XCTAssertTrue(session(event).needsAction)
+    }
+
     func testAcknowledgingClearsTheDotUntilSomethingNewerArrives() throws {
         let stamp = Date(timeIntervalSince1970: 100)
         let acknowledged = session(try event(needsAction: true, ts: 100), acknowledgedAt: stamp)

@@ -111,13 +111,21 @@ def describe_tool(payload):
 
 
 def interpret(payload):
-    """Map a hook event to (state, message, needs_action)."""
+    """Map a hook event to (state, message, needs_action), or None to skip."""
     event = payload.get("hook_event_name") or ""
 
     if event == "Notification":
-        # notification_type distinguishes "idle_prompt" (Claude finished and is
-        # waiting) from a permission request. Both need you; the app may style
-        # them differently via the state + notification_type fields.
+        # "idle_prompt" means Claude finished and is waiting for your next
+        # message — not that it is blocked on you. Treating it as an alarm
+        # turned every finished session red, which makes red mean nothing, and
+        # it overwrote the Stop line's real text with a generic phrase.
+        #
+        # Stop already says "your turn", with a better message. So skip it, and
+        # keep the alarm for notifications that genuinely block — a permission
+        # request. (Unconfirmed: permission prompts do not fire under
+        # permission_mode "auto", so that type string is still unobserved.)
+        if (payload.get("notification_type") or "") == "idle_prompt":
+            return None
         return "needsInput", condense(payload.get("message")) or "Needs your input", True
 
     if event == "Stop":
@@ -189,7 +197,10 @@ def main():
     # It only ships on UserPromptSubmit, so latch it from the previous line.
     name = payload.get("session_title") or previous.get("name") or os.path.basename(cwd)
 
-    state, message, needs_action = interpret(payload)
+    interpreted = interpret(payload)
+    if interpreted is None:
+        return
+    state, message, needs_action = interpreted
     tty = resolve_tty() or previous.get("tty")
 
     emit(path, {

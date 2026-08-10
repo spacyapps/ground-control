@@ -25,7 +25,16 @@ struct Session: Identifiable, Equatable {
     }
 
     var message: String { latest.message }
-    var state: SessionState { latest.state }
+
+    /// A `needsInput` that is not actionable came from an `idle_prompt` line
+    /// written before that was filtered out. Claude had finished, so show it
+    /// as finished rather than leaving a red face on a session that wants
+    /// nothing. Such lines age out within the 24h purge window.
+    var state: SessionState {
+        if latest.state == .needsInput && !latest.isActionable { return .done }
+        return latest.state
+    }
+
     var tty: String? { latest.tty }
     var cwd: String? { latest.cwd }
     var lastActivity: Date { latest.timestamp }
@@ -33,7 +42,7 @@ struct Session: Identifiable, Equatable {
     /// True when this row wants attention. A collapsed group inherits the dot
     /// from any needy child.
     var needsAction: Bool {
-        let own = latest.needsAction && !isAcknowledged
+        let own = latest.isActionable && !isAcknowledged
         return own || children.contains { $0.needsAction }
     }
 

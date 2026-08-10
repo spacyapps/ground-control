@@ -34,6 +34,16 @@ struct SessionEvent: Decodable, Equatable {
         case timestamp = "ts"
     }
 
+    /// Whether this event should actually raise the alarm.
+    ///
+    /// `idle_prompt` means Claude finished and is waiting for your next
+    /// message, not that it is blocked on a decision. Older files on disk may
+    /// still carry one as their last line — they live for 24h — so the rule is
+    /// enforced here as well as in `cc-notify`.
+    var isActionable: Bool {
+        needsAction && notificationType != "idle_prompt"
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         sessionID = try container.decode(String.self, forKey: .sessionID)
