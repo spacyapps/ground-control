@@ -1,0 +1,133 @@
+import AppKit
+
+/// The scrolling stack of rows.
+///
+/// Rebuilt wholesale on every change. With a handful of sessions this is
+/// cheaper than diffing and keeps the file ⇔ row invariant obvious: what is on
+/// screen is exactly what the store last produced.
+final class SessionListView: NSView {
+    var onActivate: ((Session) -> Void)?
+    var onSecondaryClick: ((Session, NSEvent) -> Void)?
+
+    private let scrollView = NSScrollView()
+    private let stack = NSStackView()
+    private let emptyLabel = NSTextField(labelWithString: "")
+
+    private var theme: Theme = DefaultTheme.theme
+    private var sessions: [Session] = []
+    private var renames: [String: String] = [:]
+    private var expanded: Set<String> = []
+
+    init() {
+        super.init(frame: .zero)
+        wantsLayer = true
+
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 0
+        stack.distribution = .fill
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.drawsBackground = false
+        scrollView.documentView = stack
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+
+        emptyLabel.alignment = .center
+        emptyLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        addSubview(scrollView)
+        addSubview(emptyLabel)
+
+        NSLayoutConstraint.activate([
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            stack.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            emptyLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            emptyLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            emptyLabel.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, constant: -32)
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("SessionListView is created in code only")
+    }
+
+    func apply(theme: Theme) {
+        self.theme = theme
+        rebuild()
+    }
+
+    func apply(sessions: [Session], renames: [String: String]) {
+        self.sessions = sessions
+        self.renames = renames
+        // Drop expansion state for sessions that are gone.
+        expanded = expanded.filter { id in sessions.contains { $0.id == id } }
+        rebuild()
+    }
+
+    private func rebuild() {
+        layer?.backgroundColor = theme.colors.windowBackground.cgColor
+
+        emptyLabel.isHidden = !sessions.isEmpty
+        emptyLabel.stringValue = "No active sessions.\nStart Claude in a terminal and a row appears here."
+        emptyLabel.font = theme.typography.messageFont()
+        emptyLabel.textColor = theme.colors.messageDim
+        emptyLabel.maximumNumberOfLines = 2
+
+        stack.arrangedSubviews.forEach { view in
+            stack.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+
+        let rowHeight = SessionRowView.height(for: theme)
+        let childHeight = GroupRowView.height(for: theme)
+
+        for (index, session) in sessions.enumerated() {
+            let row = SessionRowView()
+            row.configure(
+                session: session,
+                theme: theme,
+                renames: renames,
+                isExpanded: expanded.contains(session.id),
+                isAlternate: index.isMultiple(of: 2)
+            )
+            row.onActivate = { [weak self] in self?.onActivate?(session) }
+            row.onSecondaryClick = { [weak self] event in self?.onSecondaryClick?(session, event) }
+            row.onToggleChildren = { [weak self] in self?.toggleExpansion(of: session.id) }
+            add(row, height: rowHeight)
+
+            guard expanded.contains(session.id) else { continue }
+            for child in session.children {
+                let childRow = GroupRowView()
+                childRow.configure(child: child, theme: theme)
+                // A child jumps to the orchestrator's terminal — same tty.
+                childRow.onActivate = { [weak self] in self?.onActivate?(session) }
+                add(childRow, height: childHeight)
+            }
+        }
+    }
+
+    private func add(_ view: NSView, height: CGFloat) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        stack.addArrangedSubview(view)
+        NSLayoutConstraint.activate([
+            view.heightAnchor.constraint(equalToConstant: height),
+            view.leadingAnchor.constraint(equalTo: stack.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: stack.trailingAnchor)
+        ])
+    }
+
+    private func toggleExpansion(of sessionID: String) {
+        if expanded.contains(sessionID) {
+            expanded.remove(sessionID)
+        } else {
+            expanded.insert(sessionID)
+        }
+        rebuild()
+    }
+}
