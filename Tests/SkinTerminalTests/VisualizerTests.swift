@@ -17,10 +17,30 @@ final class VisualizerTests: XCTestCase {
         XCTAssertEqual(VisualizerView.energy(for: []), 0)
     }
 
-    func testIdleSessionsBarelyMove() throws {
-        let energy = VisualizerView.energy(for: [try session(state: .idle)])
-        XCTAssertGreaterThan(energy, 0)
-        XCTAssertLessThan(energy, 0.2)
+    /// Silence is flat, not a low shimmer — motion must always mean work.
+    func testIdleAndFinishedSessionsAreCompletelyFlat() throws {
+        XCTAssertEqual(VisualizerView.energy(for: [try session(state: .idle)]), 0)
+        XCTAssertEqual(VisualizerView.energy(for: [try session(state: .done)]), 0)
+        XCTAssertEqual(
+            VisualizerView.energy(for: [try session(state: .idle), try session(state: .done)]),
+            0
+        )
+    }
+
+    /// Waiting on you is not work: it colours the bars rather than moving them.
+    func testNeedsInputAloneDoesNotDriveTheBars() throws {
+        let waiting = [try session(state: .needsInput, needsAction: true)]
+        XCTAssertEqual(VisualizerView.energy(for: waiting), 0)
+        XCTAssertTrue(VisualizerView.alarms(for: waiting))
+    }
+
+    func testWorkingWhileSomethingWaitsStillMoves() throws {
+        let mixed = [
+            try session(state: .working),
+            try session(state: .needsInput, needsAction: true)
+        ]
+        XCTAssertGreaterThan(VisualizerView.energy(for: mixed), 0.4)
+        XCTAssertTrue(VisualizerView.alarms(for: mixed))
     }
 
     func testWorkingRaisesEnergy() throws {
@@ -31,11 +51,6 @@ final class VisualizerTests: XCTestCase {
         ])
         XCTAssertGreaterThan(one, 0.4)
         XCTAssertGreaterThan(two, one, "busier panel, livelier bars")
-    }
-
-    func testNeedsActionPinsItToTheCeiling() throws {
-        let sessions = [try session(state: .idle), try session(state: .needsInput, needsAction: true)]
-        XCTAssertEqual(VisualizerView.energy(for: sessions), 1.0)
     }
 
     func testEnergyNeverExceedsOne() throws {

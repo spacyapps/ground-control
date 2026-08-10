@@ -33,22 +33,28 @@ final class VisualizerView: NSView {
         needsDisplay = true
     }
 
-    /// Energy model: working sessions drive the bars, a session waiting on you
-    /// pins them high, and an idle panel falls quiet.
+    /// Work is the only signal. Like a real analyser, silence is *flat* — not
+    /// a low idle shimmer — so movement in the corner of your eye always means
+    /// something is actually running. A session waiting on you is not working,
+    /// so it does not drive the bars; it colours them instead.
     static func energy(for sessions: [Session]) -> CGFloat {
-        guard !sessions.isEmpty else { return 0 }
-        if sessions.contains(where: \.needsAction) { return 1.0 }
-
         let working = sessions.filter { $0.state == .working }.count
-        guard working > 0 else { return 0.12 }
-        // Saturates at three: past that it is already obviously busy.
-        return min(0.95, 0.45 + CGFloat(working) * 0.2)
+        guard working > 0 else { return 0 }
+        // Saturates quickly: past a few it is already obviously busy.
+        return min(1.0, 0.45 + CGFloat(working) * 0.2)
+    }
+
+    static func alarms(for sessions: [Session]) -> Bool {
+        sessions.contains(where: \.needsAction)
     }
 
     func update(sessions: [Session]) {
         targetEnergy = Self.energy(for: sessions)
-        isAlarmed = sessions.contains(where: \.needsAction)
+        isAlarmed = Self.alarms(for: sessions)
         if targetEnergy > 0 { start() }
+        // The alarm colour can change while the bars are at rest and the timer
+        // is stopped, so repaint regardless.
+        needsDisplay = true
     }
 
     // MARK: - Animation
@@ -131,7 +137,10 @@ final class VisualizerView: NSView {
                             usable: CGFloat,
                             inset: CGFloat) {
         let steps = max(1, Int(usable / (segment + segmentGap)))
-        let lit = Int((level * CGFloat(steps)).rounded())
+        // At rest with something waiting on you, keep the floor row lit: signal
+        // present, no motion — a mixer sitting at zero with the input hot.
+        let floor = isAlarmed ? 1 : 0
+        let lit = max(floor, Int((level * CGFloat(steps)).rounded()))
 
         for step in 0..<steps {
             let fraction = CGFloat(step) / CGFloat(max(1, steps - 1))
