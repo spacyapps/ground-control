@@ -24,9 +24,11 @@ enum ElapsedFormatter {
         }
     }
 
-    /// True once a row has been quiet long enough to be worth noticing —
-    /// used to dim stale rows rather than to alarm.
+    /// How long a row may keep claiming its last state before age overrides it
+    /// and it reads as idle. See `Session.state`.
+    static let staleAfter: TimeInterval = 30 * 60
+
     static func isStale(since date: Date, now: Date = Date()) -> Bool {
-        now.timeIntervalSince(date) > 30 * 60
+        now.timeIntervalSince(date) > staleAfter
     }
 }

@@ -51,8 +51,9 @@ final class SessionTests: XCTestCase {
     /// "Claude finished, your turn" is not an alarm. Treating it as one turned
     /// every completed session red and made red meaningless.
     func testIdlePromptNotificationDoesNotRaiseTheAlarm() throws {
+        let now = Int(Date().timeIntervalSince1970)
         let json = #"{"session_id":"abc","state":"needsInput","message":"Claude is waiting","#
-            + #""needs_action":true,"notification_type":"idle_prompt","ts":10}"#
+            + #""needs_action":true,"notification_type":"idle_prompt","ts":"# + "\(now)}"
         let event = try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
         XCTAssertFalse(event.isActionable)
         XCTAssertFalse(session(event).needsAction)
@@ -61,8 +62,9 @@ final class SessionTests: XCTestCase {
 
     /// A notification that genuinely blocks still must.
     func testOtherNotificationsStillRaiseTheAlarm() throws {
+        let now = Int(Date().timeIntervalSince1970)
         let json = #"{"session_id":"abc","state":"needsInput","message":"Allow npm install?","#
-            + #""needs_action":true,"notification_type":"permission_request","ts":10}"#
+            + #""needs_action":true,"notification_type":"permission_request","ts":"# + "\(now)}"
         let event = try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
         XCTAssertTrue(event.isActionable)
         XCTAssertTrue(session(event).needsAction)
@@ -98,5 +100,37 @@ final class SessionTests: XCTestCase {
         )
         let sorted = SessionStore.sorted([quietRecent, needyOld])
         XCTAssertEqual(sorted.map(\.id), ["needy", "quiet"])
+    }
+}
+
+/// Nothing ever writes an `idle` line — hooks fire on activity and silence has
+/// no event — so age is the only thing that can produce the state.
+extension SessionTests {
+    private func aged(_ state: String, minutes: Int, needsAction: Bool = false) throws -> Session {
+        let stamp = Int(Date().timeIntervalSince1970) - minutes * 60
+        let json = """
+        {"session_id":"abc","name":"x","cwd":"/tmp/x","state":"\(state)",\
+        "message":"m","needs_action":\(needsAction),"ts":\(stamp)}
+        """
+        let event = try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
+        return Session(id: "abc", latest: event, children: [], acknowledgedAt: nil)
+    }
+
+    func testFinishedSessionsGoQuietWithAge() throws {
+        XCTAssertEqual(try aged("done", minutes: 5).state, .done)
+        XCTAssertEqual(try aged("done", minutes: 45).state, .idle)
+    }
+
+    /// A spinning face on a session that died mid-turn is the worse lie.
+    func testAbandonedWorkStopsClaimingToBeWorking() throws {
+        XCTAssertEqual(try aged("working", minutes: 5).state, .working)
+        XCTAssertEqual(try aged("working", minutes: 90).state, .idle)
+    }
+
+    /// An alarm must never decay: blocked stays blocked until you act on it.
+    func testAnAlarmNeverAgesAway() throws {
+        let old = try aged("needsInput", minutes: 600, needsAction: true)
+        XCTAssertEqual(old.state, .needsInput)
+        XCTAssertTrue(old.needsAction)
     }
 }

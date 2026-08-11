@@ -39,8 +39,16 @@ final class SessionListView: NSView {
     /// itself to its content instead of clipping the last row.
     private(set) var contentHeight: CGFloat = 0
 
-    /// Kept so elapsed times can tick without rebuilding the list.
-    private var rowViews: [(session: Session, view: SessionRowView)] = []
+    /// A row on screen, kept so elapsed times can tick without rebuilding the
+    /// list. `drawnState` is the state it was built with: state is derived from
+    /// the clock, so it can change with no event to announce it.
+    private struct DrawnRow {
+        let session: Session
+        let view: SessionRowView
+        let drawnState: SessionState
+    }
+
+    private var rowViews: [DrawnRow] = []
 
     init() {
         super.init(frame: .zero)
@@ -146,7 +154,7 @@ final class SessionListView: NSView {
             row.onSecondaryClick = { [weak self] event in self?.onSecondaryClick?(session, event) }
             row.onToggleChildren = { [weak self] in self?.toggleExpansion(of: session.id) }
             add(row, height: rowHeight)
-            rowViews.append((session, row))
+            rowViews.append(DrawnRow(session: session, view: row, drawnState: session.state))
             total += rowHeight
 
             guard expanded.contains(session.id) else { continue }
@@ -162,10 +170,21 @@ final class SessionListView: NSView {
         contentHeight = total
     }
 
-    /// Ticks the clocks. Nothing else about a row changes without an event.
+    /// Ticks the clocks — and catches the one thing that changes without an
+    /// event.
+    ///
+    /// A session goes quiet by *not* being written to, so nothing publishes a
+    /// change when `done` ages into `idle`. The store compares stored fields
+    /// and sees none, so without this the avatar would keep claiming the old
+    /// state until the next unrelated update.
     func refreshElapsed() {
-        for pair in rowViews {
-            pair.view.refreshElapsed(for: pair.session)
+        let ageChangedAState = rowViews.contains { $0.session.state != $0.drawnState }
+        guard !ageChangedAState else {
+            rebuild()
+            return
+        }
+        for row in rowViews {
+            row.view.refreshElapsed(for: row.session)
         }
     }
 

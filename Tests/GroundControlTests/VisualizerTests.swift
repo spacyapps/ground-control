@@ -8,9 +8,12 @@ import XCTest
 /// the mapping is worth pinning down.
 final class VisualizerTests: XCTestCase {
     private func session(state: SessionState, needsAction: Bool = false) throws -> Session {
+        // Timestamps must be recent: a session that has been quiet for half an
+        // hour reads as idle regardless of what its last line claimed.
+        let now = Int(Date().timeIntervalSince1970)
         let json = """
         {"session_id":"\(UUID().uuidString)","name":"x","cwd":"/tmp/x",\
-        "state":"\(state.rawValue)","message":"","needs_action":\(needsAction),"ts":1}
+        "state":"\(state.rawValue)","message":"","needs_action":\(needsAction),"ts":\(now)}
         """
         let event = try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
         return Session(id: event.sessionID, latest: event, children: [], acknowledgedAt: nil)

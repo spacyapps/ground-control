@@ -35,7 +35,6 @@ final class AvatarView: NSView {
 
         imageView.imageScaling = .scaleProportionallyUpOrDown
         imageView.animates = true
-        imageView.autoresizingMask = [.width, .height]
         imageView.frame = bounds
         imageView.wantsLayer = true
         addSubview(imageView)
@@ -55,6 +54,12 @@ final class AvatarView: NSView {
         super.layout()
         layer?.cornerRadius = cornerRadius
         playerLayer?.frame = bounds
+
+        // Drawn symbols are line art and need room inside the plate or they
+        // read as a heavy block. Theme artwork is composed to fill its tile,
+        // so it gets the whole area.
+        let padding: CGFloat = asset == nil ? bounds.width * 0.20 : 0
+        imageView.frame = bounds.insetBy(dx: padding, dy: padding)
     }
 
     /// The avatar is the row's most obvious hit target, so it is dressed as a
@@ -113,6 +118,7 @@ final class AvatarView: NSView {
         guard asset != self.asset || state != drawnState else { return }
         self.asset = asset
         self.drawnState = state
+        needsLayout = true
 
         switch asset {
         case .none:

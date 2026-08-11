@@ -58,7 +58,7 @@ enum DefaultTheme {
     /// until a theme supplies faces. That is the documented behaviour, not a
     /// gap — "omit a state, draw no avatar" (docs/THEMING.md).
     static let avatar = Theme.Avatar(
-        size: 48,
+        size: 36,
         position: .right,
         cornerRadius: 8,
         states: [:]

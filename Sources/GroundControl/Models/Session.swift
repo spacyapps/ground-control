@@ -29,13 +29,26 @@ struct Session: Identifiable, Equatable {
 
     var message: String { latest.message }
 
-    /// A `needsInput` that is not actionable came from an `idle_prompt` line
-    /// written before that was filtered out. Claude had finished, so show it
-    /// as finished rather than leaving a red face on a session that wants
-    /// nothing. Such lines age out within the 24h purge window.
+    /// The state as it should read *now*, which is not always the state that
+    /// was written.
+    ///
+    /// Nothing ever emits `idle`: hooks fire on activity, and silence has no
+    /// event. So a finished session would sit on `done` for the full 24h purge
+    /// window, and a session that died mid-turn would claim to be `working`
+    /// forever. Both are lies after a while, and the second is the worse one —
+    /// a spinning face implies something is running.
+    ///
+    /// Age settles it. An alarm never decays, though: a session blocked on you
+    /// stays blocked until you deal with it.
     var state: SessionState {
-        if latest.state == .needsInput && !latest.isActionable { return .done }
-        return latest.state
+        // A non-actionable needsInput came from an `idle_prompt` line written
+        // before those were filtered out; Claude had finished.
+        let written = latest.state == .needsInput && !latest.isActionable ? .done : latest.state
+
+        if written != .needsInput, ElapsedFormatter.isStale(since: latest.timestamp) {
+            return .idle
+        }
+        return written
     }
 
     var tty: String? { latest.tty }
