@@ -1,5 +1,5 @@
 // swift-tools-version:5.9
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 Walter Mak
 import PackageDescription
 
