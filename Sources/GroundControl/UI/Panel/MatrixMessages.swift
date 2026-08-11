@@ -49,6 +49,25 @@ enum MatrixMessages {
     /// Total canned phrases, brand included. Harvested words are unbounded.
     static var count: Int { jokes.count + 1 }
 
+    /// Filters a theme's phrases down to what the display can actually show.
+    ///
+    /// A theme author writes these by hand, or an image model invents them, so
+    /// they arrive in any case and any length with any punctuation. Anything
+    /// undrawable would render as gaps in the middle of a word, which looks
+    /// like a bug in the app rather than a typo in the theme — so it is dropped
+    /// here, once, at load.
+    static func usable(_ declared: [String]) -> [String] {
+        declared.compactMap { phrase in
+            let text = phrase.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty, text.count <= maxLength else { return nil }
+            guard text.allSatisfy(MatrixFont.supports) else {
+                Log.theming.notice("Theme message not drawable: \(phrase, privacy: .public)")
+                return nil
+            }
+            return text
+        }
+    }
+
     /// Words too ordinary to be worth spelling out. Everything here would make
     /// the display look like it was reading a dictionary rather than watching
     /// your sessions.
@@ -89,14 +108,26 @@ enum MatrixMessages {
     /// Picks the next message: the brand on every third turn, then — when the
     /// sessions have given us something — a word lifted from their own output,
     /// otherwise a canned line. Never repeats the previous message.
-    static func next(turn: Int, avoiding previous: String?, harvested: [String] = []) -> String {
+    /// Picks the next message: the brand on every third turn, then — when the
+    /// sessions have given us something — a word lifted from their own output,
+    /// otherwise a phrase. A theme's own phrases replace the built-in ones
+    /// entirely, so a theme with a voice is not diluted by stock jokes.
+    ///
+    /// Harvested words survive either way: they come from your work, not from
+    /// anyone's idea of what the panel should say.
+    static func next(turn: Int,
+                     avoiding previous: String?,
+                     harvested: [String] = [],
+                     themed: [String] = []) -> String {
         guard turn % brandEveryNth != 0 else { return brand }
 
         let fresh = harvested.filter { $0 != previous }
         if !fresh.isEmpty, Bool.random(), let word = fresh.randomElement() {
             return word
         }
-        return jokes.filter { $0 != previous }.randomElement() ?? brand
+
+        let pool = themed.isEmpty ? jokes : themed
+        return pool.filter { $0 != previous }.randomElement() ?? brand
     }
 
     /// Seconds of quiet before the next message. Randomised so it never feels

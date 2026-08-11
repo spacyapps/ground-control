@@ -160,9 +160,28 @@ back to the row palette, so a recolour restyles the meter for free.
   "alarm": "#ff2d55",   // replaces the ramp while something needs you
   "unlit": "#26263219", // the dim grid behind the bars — keep it subtle
   "text":  "#e6e6ec",   // letters of a sweeping message
-  "peak":  "#e6e6ec"    // the mark that hangs above a falling bar
+  "peak":  "#e6e6ec",   // the mark that hangs above a falling bar
+
+  "messages": [         // what the display spells — replaces the built-ins
+    "SYSTEM ONLINE", "NEURAL LINK", "STANDING BY"
+  ]
 }
 ```
+
+`messages` is how a theme gets a voice. Rules, all enforced at load:
+
+- **13 characters maximum** — longer fills the whole grid and reads as a sign
+  rather than a word passing through a meter.
+- **A–Z, 0–9, space and `. - !` only.** Anything else is dropped, because an
+  undrawable character renders as a gap mid-word and looks like a bug in the
+  app rather than a typo in your theme.
+- Lower case is fine; it renders in capitals either way, since five rows leave
+  no room for descenders.
+
+Two things a theme cannot silence: the app's own name, which still appears
+every third message, and words harvested from what your sessions actually
+said — those come from your work rather than from anyone's idea of what the
+panel should say.
 
 ### `layout`
 - `rowMaxHeight` — cap per row (default 100px).

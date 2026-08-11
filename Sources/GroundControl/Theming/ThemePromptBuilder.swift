@@ -224,6 +224,16 @@ enum ThemePromptBuilder {
     the whole ramp when something needs me; `unlit` is the dim grid behind them,
     so keep it subtle; `text` is the colour of a word sweeping through.
 
+    You can also give the theme a **voice** — short phrases the display spells
+    out now and then, in character with the mascot:
+
+    ```json
+    "matrix": { "messages": ["SYSTEM ONLINE", "NEURAL LINK", "STANDING BY"] }
+    ```
+
+    Six to ten of them. **Thirteen characters maximum each**, and only A–Z, 0–9,
+    space and `. - !` — anything else cannot be drawn and will be dropped.
+
     Contrast matters more than prettiness here: `needsAction` has to jump out of
     the panel from across the room, and `messageDim` has to stay readable.
     """

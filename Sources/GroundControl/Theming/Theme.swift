@@ -107,6 +107,8 @@ struct Theme {
         var text: NSColor
         /// The mark that hangs above a falling bar.
         var peak: NSColor
+        /// What the display spells. Empty means the built-in phrases.
+        var messages: [String]
     }
 
     struct Layout {

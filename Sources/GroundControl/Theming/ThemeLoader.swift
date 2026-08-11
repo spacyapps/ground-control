@@ -114,19 +114,19 @@ enum ThemeLoader {
 
     /// Matrix colours fall back to the row palette, so recolouring a theme
     /// restyles the meter too without naming a single matrix key.
-    private static func matrix(_ declared: [String: String]?, colors: Theme.Colors) -> Theme.Matrix {
-        let palette = declared ?? [:]
-        func color(_ key: String, _ fallback: NSColor) -> NSColor {
-            guard let hex = palette[key], let parsed = NSColor(hex: hex) else { return fallback }
+    private static func matrix(_ declared: ThemeManifest.Matrix?, colors: Theme.Colors) -> Theme.Matrix {
+        func color(_ hex: String?, _ fallback: NSColor) -> NSColor {
+            guard let hex, let parsed = NSColor(hex: hex) else { return fallback }
             return parsed
         }
         return Theme.Matrix(
-            low: color("low", colors.accent),
-            high: color("high", colors.working),
-            alarm: color("alarm", colors.needsAction),
-            unlit: color("unlit", colors.divider.withAlphaComponent(0.10)),
-            text: color("text", colors.titleBarText),
-            peak: color("peak", colors.titleBarText.withAlphaComponent(0.7))
+            low: color(declared?.low, colors.accent),
+            high: color(declared?.high, colors.working),
+            alarm: color(declared?.alarm, colors.needsAction),
+            unlit: color(declared?.unlit, colors.divider.withAlphaComponent(0.10)),
+            text: color(declared?.text, colors.titleBarText),
+            peak: color(declared?.peak, colors.titleBarText.withAlphaComponent(0.7)),
+            messages: MatrixMessages.usable(declared?.messages ?? [])
         )
     }
 

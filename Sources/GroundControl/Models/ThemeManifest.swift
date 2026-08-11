@@ -18,7 +18,7 @@ struct ThemeManifest: Decodable, Equatable {
     var colors: [String: String]?
     var assets: [String: Asset?]?
     var avatar: Avatar?
-    var matrix: [String: String]?
+    var matrix: Matrix?
     var layout: Layout?
     var typography: Typography?
 
@@ -62,6 +62,20 @@ struct ThemeManifest: Decodable, Equatable {
             self.mode = mode
             self.capInsets = capInsets
         }
+    }
+
+    /// The title-bar analyser: its palette, and what it says.
+    struct Matrix: Decodable, Equatable {
+        var low: String?
+        var high: String?
+        var alarm: String?
+        var unlit: String?
+        var text: String?
+        var peak: String?
+        /// Replaces the built-in phrases. A theme is a character; this is how
+        /// it speaks. Words the font cannot draw are dropped rather than
+        /// rendered as gaps.
+        var messages: [String]?
     }
 
     struct Avatar: Decodable, Equatable {

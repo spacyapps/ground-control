@@ -121,7 +121,8 @@ final class VisualizerView: NSView {
         messageText = MatrixMessages.next(
             turn: messageTurn,
             avoiding: messageText,
-            harvested: harvested
+            harvested: harvested,
+            themed: theme.matrix.messages
         )
         messageScroll = columnCount
         start()

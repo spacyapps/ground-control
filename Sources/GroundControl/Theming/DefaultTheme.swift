@@ -35,7 +35,8 @@ enum DefaultTheme {
         alarm: colors.needsAction,
         unlit: colors.divider.withAlphaComponent(0.10),
         text: colors.titleBarText,
-        peak: colors.titleBarText.withAlphaComponent(0.7)
+        peak: colors.titleBarText.withAlphaComponent(0.7),
+        messages: []
     )
 
     static let layout = Theme.Layout(

@@ -67,3 +67,56 @@ final class MatrixMessagesTests: XCTestCase {
         XCTAssertTrue(MatrixMessages.jokes.contains(onlyCanned) || onlyCanned == MatrixMessages.brand)
     }
 }
+
+extension MatrixMessagesTests {
+    // MARK: - Theme-supplied phrases
+
+    func testAThemesOwnPhrasesReplaceTheBuiltInOnes() {
+        let themed = ["SYSTEM ONLINE", "NEURAL LINK"]
+        for turn in [1, 2, 4, 5] {
+            let chosen = MatrixMessages.next(turn: turn, avoiding: nil, themed: themed)
+            XCTAssertTrue(themed.contains(chosen), "a stock joke leaked into a themed panel: \(chosen)")
+        }
+    }
+
+    /// Words from your own sessions are not decoration, so a theme does not
+    /// get to silence them.
+    func testHarvestedWordsSurviveAThemesVoice() {
+        var seen: Set<String> = []
+        for turn in 1...60 where turn % 3 != 0 {
+            seen.insert(MatrixMessages.next(
+                turn: turn, avoiding: nil, harvested: ["SWIFTLINT"], themed: ["SYSTEM ONLINE"]
+            ))
+        }
+        XCTAssertTrue(seen.contains("SWIFTLINT"))
+    }
+
+    func testTheBrandStillAppearsInAThemedPanel() {
+        XCTAssertEqual(
+            MatrixMessages.next(turn: 3, avoiding: nil, themed: ["SYSTEM ONLINE"]),
+            MatrixMessages.brand
+        )
+    }
+
+    // MARK: - Validation at load
+
+    func testPhrasesAreUppercasedAndTrimmed() {
+        XCTAssertEqual(MatrixMessages.usable([" System online "]), ["SYSTEM ONLINE"])
+    }
+
+    /// An undrawable character renders as a gap mid-word, which reads as a bug
+    /// in the app rather than a typo in the theme.
+    func testUndrawableOrOverlongPhrasesAreDropped() {
+        let kept = MatrixMessages.usable([
+            "GOOD ONE",
+            "CAFÉ CRASH",                 // accent has no glyph
+            "THIS PHRASE IS FAR TOO LONG" // past maxLength
+        ])
+        XCTAssertEqual(kept, ["GOOD ONE"])
+    }
+
+    func testEmptyThemeListFallsBackToTheBuiltInPhrases() {
+        let chosen = MatrixMessages.next(turn: 1, avoiding: nil, themed: [])
+        XCTAssertTrue(MatrixMessages.jokes.contains(chosen) || chosen == MatrixMessages.brand)
+    }
+}
