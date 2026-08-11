@@ -13,6 +13,49 @@ enum AssetResolver {
     /// no native decoder for it.
     static let videoExtensions: Set<String> = ["mov", "mp4", "m4v"]
 
+    /// Resolves the `assets` block. Anything missing, unreadable or of an
+    /// unsupported type resolves to nil, leaving the painted surface in place.
+    static func backgrounds(from assets: [String: ThemeManifest.Asset?]?,
+                            folder: URL?) -> Theme.Backgrounds {
+        guard let assets, let folder else { return .none }
+
+        func background(_ key: String) -> BackgroundImage? {
+            guard let entry = assets[key]?.flatMap({ $0 }),
+                  let name = entry.image,
+                  let url = existingFile(name, in: folder),
+                  imageExtensions.contains(url.pathExtension.lowercased()) else { return nil }
+
+            let insets = entry.capInsets
+            return BackgroundImage(
+                url: url,
+                // Tiling is the safe default for a bare filename: a texture
+                // tiles cleanly, whereas stretching one looks broken.
+                mode: BackgroundImage.Mode(rawValue: entry.mode ?? "") ?? .tile,
+                capInsets: NSEdgeInsets(
+                    top: CGFloat(insets?.top ?? 0),
+                    left: CGFloat(insets?.left ?? 0),
+                    bottom: CGFloat(insets?.bottom ?? 0),
+                    right: CGFloat(insets?.right ?? 0)
+                )
+            )
+        }
+
+        func plainImage(_ key: String) -> URL? {
+            guard let entry = assets[key]?.flatMap({ $0 }),
+                  let name = entry.image,
+                  let url = existingFile(name, in: folder),
+                  imageExtensions.contains(url.pathExtension.lowercased()) else { return nil }
+            return url
+        }
+
+        return Theme.Backgrounds(
+            window: background("windowBackground"),
+            titleBar: background("titleBarBackground"),
+            footer: background("footerBackground"),
+            needsActionDot: plainImage("needsActionDot")
+        )
+    }
+
     static func avatar(from manifest: ThemeManifest.Avatar?,
                        folder: URL?,
                        fallback: Theme.Avatar) -> Theme.Avatar {

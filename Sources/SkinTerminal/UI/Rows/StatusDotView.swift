@@ -13,6 +13,13 @@ final class StatusDotView: NSView {
         didSet { needsDisplay = true }
     }
 
+    /// A theme may replace the drawn dot with its own badge. Only used while
+    /// prominent — it is the *needsAction* dot, and a quiet row keeps the
+    /// understated painted version.
+    var badge: URL? {
+        didSet { needsDisplay = true }
+    }
+
     override var intrinsicContentSize: NSSize { NSSize(width: 10, height: 10) }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -23,6 +30,11 @@ final class StatusDotView: NSView {
             width: side,
             height: side
         )
+
+        if isProminent, let badge, let image = NSImage(contentsOf: badge) {
+            image.draw(in: rect)
+            return
+        }
         let path = NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1))
         color.withAlphaComponent(isProminent ? 1.0 : 0.55).setFill()
         path.fill()

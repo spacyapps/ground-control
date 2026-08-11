@@ -52,7 +52,13 @@ final class PanelBackgroundView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
+        // The colour is painted first regardless: a background image with
+        // transparency composites onto it rather than onto nothing.
         theme.colors.windowBackground.setFill()
         bounds.fill()
+
+        if let background = theme.backgrounds.window {
+            BackgroundRenderer.draw(background, in: bounds)
+        }
     }
 }

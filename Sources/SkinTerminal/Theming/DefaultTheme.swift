@@ -58,6 +58,7 @@ enum DefaultTheme {
             layout: layout,
             typography: typography,
             avatar: avatar,
+            backgrounds: .none,
             folder: nil
         )
     }

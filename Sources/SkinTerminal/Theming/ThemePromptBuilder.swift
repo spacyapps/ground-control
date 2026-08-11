@@ -12,6 +12,7 @@ enum ThemePromptBuilder {
             preamble,
             request(for: brief),
             artwork(for: brief),
+            backgroundSection,
             manifestSection(for: brief),
             paletteReference,
             installation(for: brief)
@@ -83,9 +84,58 @@ enum ThemePromptBuilder {
         """
     }
 
+    /// The single most misunderstood part of the format. An image generator
+    /// asked for "a panel background" will centre a composition and put detail
+    /// in the middle — exactly the region that gets stretched or tiled.
+    private static let backgroundSection = """
+    ## 2. Backgrounds (optional — skip if colours alone suit the design)
+
+    **Read this before drawing any background: the panel is resizable.** I drag
+    it wider and taller, so a background cannot be a fixed composition. The app
+    uses **nine-slice** scaling:
+
+    ```
+    ┌───┬─────────┬───┐   corners  — never scale, stay pixel-crisp
+    │ ▨ │    ↔    │ ▨ │   top/bottom edges — repeat or stretch HORIZONTALLY
+    ├───┼─────────┼───┤   left/right edges — repeat or stretch VERTICALLY
+    │ ↕ │   ↔ ↕   │ ↕ │   centre  — fills in BOTH directions
+    ├───┼─────────┼───┤
+    │ ▨ │    ↔    │ ▨ │
+    └───┴─────────┴───┘
+    ```
+
+    What that means for the art:
+
+    - Put **detail, ornament and logos in the CORNERS only.** Anything in the
+      middle gets repeated or smeared as the panel grows.
+    - The **centre must be a flat colour or a seamlessly tiling texture.** Give
+      it no gradient across the whole image, no single focal point, no framing
+      that only works at one size.
+    - The **edges must tile seamlessly along their axis** — the top edge repeats
+      left-to-right, so its left and right ends have to match up.
+    - Tell me the **`capInsets`** in pixels: how far in from each side the
+      corner artwork ends. That is the only extra number I need.
+    - One image, not nine tiles. The app slices it.
+
+    A background is only worth making if the theme wants texture — a metal
+    plate, worn paper, a CRT bezel, scanlines. If the design is flat colour,
+    skip it entirely and let the palette do the work.
+
+    Surfaces that accept one: `windowBackground` (the whole panel),
+    `titleBarBackground` (a fixed-height strip, so only the left/right caps
+    matter — set top/bottom insets to 0), `footerBackground` (the small well
+    behind the spectrum analyser). There is also `needsActionDot`, a tiny
+    square badge that replaces the drawn red dot; that one just scales, no
+    slicing.
+
+    If art must stay proportional instead — a mascot painted into the panel —
+    use `"mode": "aspectFill"` and ignore the slicing rules; it will be scaled
+    and cropped to fit rather than sliced.
+    """
+
     private static func manifestSection(for brief: ThemeBrief) -> String {
         """
-        ## 2. `theme.json`
+        ## 3. `theme.json`
 
         Produce it in exactly this shape, replacing the colour values to match the
         artwork. Keep the filenames consistent with the images above.
@@ -104,6 +154,22 @@ enum ThemePromptBuilder {
           only for `.mov` / `.mp4`. If both are set, video wins.
         - Omit any state you do not want to draw and the app's own drawn face is
           used for it, tinted from this palette.
+        - If you made backgrounds, add them like this (omit the block entirely
+          if you did not):
+
+        ```json
+        "assets": {
+          "windowBackground": {
+            "image": "panel.png",
+            "mode": "tile",
+            "capInsets": { "top": 28, "left": 12, "bottom": 12, "right": 12 }
+          }
+        }
+        ```
+
+          `mode` is `tile` (repeat the edges and centre — best for texture),
+          `stretch` (smear them — best for gradients), or `aspectFill`. A bare
+          `"windowBackground": "panel.png"` means tile with no corners held.
         """
     }
 
@@ -131,7 +197,7 @@ enum ThemePromptBuilder {
 
     private static func installation(for brief: ThemeBrief) -> String {
         """
-        ## 3. How to hand it back
+        ## 4. How to hand it back
 
         Give me the four image files and the `theme.json` contents. I will drop them
         all into a folder named `\(brief.slug)` inside SkinTerminal's Themes folder,

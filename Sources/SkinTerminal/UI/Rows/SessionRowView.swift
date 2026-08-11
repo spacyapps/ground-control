@@ -75,6 +75,7 @@ final class SessionRowView: NSView {
 
         dot.color = theme.colors.color(for: session.state)
         dot.isProminent = session.needsAction
+        dot.badge = theme.backgrounds.needsActionDot
 
         avatar.isHidden = theme.avatar.isHidden
         if !avatar.isHidden {

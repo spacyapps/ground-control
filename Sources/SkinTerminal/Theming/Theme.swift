@@ -10,6 +10,7 @@ struct Theme {
     var layout: Layout
     var typography: Typography
     var avatar: Avatar
+    var backgrounds: Backgrounds
     /// Folder the manifest was loaded from; asset paths resolve against it.
     var folder: URL?
 

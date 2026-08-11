@@ -124,6 +124,13 @@ final class VisualizerView: NSView {
         theme.colors.footerBackground.setFill()
         NSBezierPath(roundedRect: bounds, xRadius: 3, yRadius: 3).fill()
 
+        if let background = theme.backgrounds.footer {
+            NSGraphicsContext.current?.saveGraphicsState()
+            NSBezierPath(roundedRect: bounds, xRadius: 3, yRadius: 3).addClip()
+            BackgroundRenderer.draw(background, in: bounds)
+            NSGraphicsContext.current?.restoreGraphicsState()
+        }
+
         resizeBarsIfNeeded()
         guard !levels.isEmpty else { return }
 

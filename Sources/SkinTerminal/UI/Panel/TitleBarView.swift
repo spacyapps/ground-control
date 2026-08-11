@@ -94,6 +94,10 @@ final class TitleBarView: NSView {
         theme.colors.titleBarBackground.setFill()
         bounds.fill()
 
+        if let background = theme.backgrounds.titleBar {
+            BackgroundRenderer.draw(background, in: bounds)
+        }
+
         theme.colors.divider.setStroke()
         let line = NSBezierPath()
         line.move(to: NSPoint(x: 0, y: bounds.maxY - 0.5))

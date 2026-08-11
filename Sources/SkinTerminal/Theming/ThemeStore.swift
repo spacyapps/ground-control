@@ -33,6 +33,8 @@ final class ThemeStore {
     }
 
     private func apply(name: String?) {
+        // Editing a PNG must re-skin as readily as editing the manifest.
+        BackgroundRenderer.clearCache()
         theme = ThemeLoader.loadTheme(named: name)
         watchActiveFolder()
         onChange?(theme)
@@ -46,6 +48,7 @@ final class ThemeStore {
         }
         watcher = FolderWatcher(url: folder, debounce: 0.25) { [weak self] in
             guard let self else { return }
+            BackgroundRenderer.clearCache()
             self.theme = ThemeLoader.loadTheme(from: folder)
             self.onChange?(self.theme)
         }

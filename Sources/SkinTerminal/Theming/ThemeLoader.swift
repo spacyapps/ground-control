@@ -102,6 +102,7 @@ enum ThemeLoader {
                 folder: folder,
                 fallback: DefaultTheme.avatar
             ),
+            backgrounds: AssetResolver.backgrounds(from: manifest.assets, folder: folder),
             folder: folder
         )
     }

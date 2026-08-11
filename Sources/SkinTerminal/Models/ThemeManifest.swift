@@ -13,10 +13,52 @@ struct ThemeManifest: Decodable, Equatable {
     var author: String?
     var description: String?
     var colors: [String: String]?
-    var assets: [String: String?]?
+    var assets: [String: Asset?]?
     var avatar: Avatar?
     var layout: Layout?
     var typography: Typography?
+
+    /// A background image. Accepts either a bare filename — `"panel.png"`,
+    /// meaning "just tile it" — or an object carrying the resize behaviour.
+    ///
+    /// The panel resizes in both axes, so the interesting case is nine-slice:
+    /// `capInsets` marks corners that must never scale, leaving the edges and
+    /// centre to fill. Three-slice is the same thing with `left`/`right` at 0.
+    struct Asset: Decodable, Equatable {
+        var image: String?
+        var mode: String?
+        var capInsets: Insets?
+
+        struct Insets: Decodable, Equatable {
+            var top: Double?
+            var left: Double?
+            var bottom: Double?
+            var right: Double?
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case image
+            case mode
+            case capInsets
+        }
+
+        init(from decoder: Decoder) throws {
+            if let filename = try? decoder.singleValueContainer().decode(String.self) {
+                image = filename
+                return
+            }
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            image = try container.decodeIfPresent(String.self, forKey: .image)
+            mode = try container.decodeIfPresent(String.self, forKey: .mode)
+            capInsets = try container.decodeIfPresent(Insets.self, forKey: .capInsets)
+        }
+
+        init(image: String?, mode: String? = nil, capInsets: Insets? = nil) {
+            self.image = image
+            self.mode = mode
+            self.capInsets = capInsets
+        }
+    }
 
     struct Avatar: Decodable, Equatable {
         var size: Double?

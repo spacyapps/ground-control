@@ -49,10 +49,50 @@ Key ones:
 
 ### `assets`
 Optional images that *replace* drawn defaults. Set to a filename, or `null`/omit
-to use the built-in.
-- `needsActionDot` — your own dot/badge image instead of the drawn red dot.
+to use the built-in. The colour underneath is always painted first, so a
+background with transparency composites onto it.
+
+- `needsActionDot` — your own badge instead of the drawn red dot. Just scaled
+  to fit; no slicing.
 - `windowBackground`, `titleBarBackground`, `footerBackground` — background
-  images. If both a background **color** and **image** are set, the image wins.
+  images.
+
+**The panel resizes, so backgrounds are nine-sliced.** One image, four numbers:
+
+```json
+"assets": {
+  "windowBackground": {
+    "image": "panel.png",
+    "mode": "tile",
+    "capInsets": { "top": 28, "left": 12, "bottom": 12, "right": 12 }
+  }
+}
+```
+
+`capInsets` marks how far in from each side the corner artwork ends. Corners
+never scale; the edges grow along one axis; the centre grows along both. So:
+
+- **detail belongs in the corners** — anything in the middle repeats or smears;
+- **the centre should be flat or a seamless tile**;
+- **each edge must tile along its own axis** (the top edge repeats left to
+  right, so its ends have to meet).
+
+Three-slice is just this with `left` and `right` at 0. For a fixed-height strip
+like the title bar, set `top` and `bottom` to 0 instead.
+
+`mode` is:
+
+| mode | what it does |
+|---|---|
+| `tile` (default) | repeats the edges and centre — best for texture |
+| `stretch` | smears them — best for gradients |
+| `center` | draws at natural size, centred, no scaling |
+| `aspectFill` | scales proportionally and crops — for art that must not distort |
+
+A bare `"windowBackground": "panel.png"` means `tile` with no corners held,
+which is what a plain repeating texture wants.
+
+Editing an image hot-reloads exactly like editing the manifest.
 
 ### `avatar`
 The per-state face/mascot. Each state can be an **image** *or* a **video**
