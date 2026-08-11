@@ -35,6 +35,9 @@ final class SessionListView: NSView {
     /// itself to its content instead of clipping the last row.
     private(set) var contentHeight: CGFloat = 0
 
+    /// Kept so elapsed times can tick without rebuilding the list.
+    private var rowViews: [(session: Session, view: SessionRowView)] = []
+
     init() {
         super.init(frame: .zero)
         wantsLayer = true
@@ -110,6 +113,7 @@ final class SessionListView: NSView {
         let rowHeight = SessionRowView.height(for: theme)
         let childHeight = GroupRowView.height(for: theme)
         var total: CGFloat = 0
+        rowViews.removeAll()
 
         for (index, session) in sessions.enumerated() {
             let row = SessionRowView()
@@ -124,6 +128,7 @@ final class SessionListView: NSView {
             row.onSecondaryClick = { [weak self] event in self?.onSecondaryClick?(session, event) }
             row.onToggleChildren = { [weak self] in self?.toggleExpansion(of: session.id) }
             add(row, height: rowHeight)
+            rowViews.append((session, row))
             total += rowHeight
 
             guard expanded.contains(session.id) else { continue }
@@ -137,6 +142,13 @@ final class SessionListView: NSView {
             }
         }
         contentHeight = total
+    }
+
+    /// Ticks the clocks. Nothing else about a row changes without an event.
+    func refreshElapsed() {
+        for pair in rowViews {
+            pair.view.refreshElapsed(for: pair.session)
+        }
     }
 
     private func add(_ view: NSView, height: CGFloat) {

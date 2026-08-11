@@ -16,6 +16,7 @@ final class SessionRowView: NSView {
     private let disclosure = NSButton()
     private let avatar = AvatarView()
     private let sourceTag = NSTextField(labelWithString: "")
+    private let elapsedLabel = NSTextField(labelWithString: "")
 
     private var theme: Theme = DefaultTheme.theme
     private var isHovering = false
@@ -46,6 +47,7 @@ final class SessionRowView: NSView {
         addSubview(disclosure)
         addSubview(avatar)
         addSubview(sourceTag)
+        addSubview(elapsedLabel)
     }
 
     @available(*, unavailable)
@@ -75,6 +77,13 @@ final class SessionRowView: NSView {
         nameLabel.stringValue = session.displayName(renames: renames)
         nameLabel.font = theme.typography.nameFont()
         nameLabel.textColor = theme.colors.sessionName
+
+        elapsedLabel.stringValue = ElapsedFormatter.short(since: session.lastActivity)
+        elapsedLabel.font = .systemFont(ofSize: max(8, theme.typography.messageSize - 2))
+        elapsedLabel.alignment = .right
+        elapsedLabel.textColor = session.needsAction
+            ? theme.colors.needsAction
+            : theme.colors.messageDim.withAlphaComponent(0.8)
 
         // Only worth the pixels when more than one CLI is on screen.
         sourceTag.isHidden = !presentation.showsSource
@@ -110,6 +119,13 @@ final class SessionRowView: NSView {
 
         toolTip = session.cwd
         needsDisplay = true
+        needsLayout = true
+    }
+
+    /// Updates only the clock. Rebuilding the row instead would restart its
+    /// marquee and drop hover state every few seconds.
+    func refreshElapsed(for session: Session) {
+        elapsedLabel.stringValue = ElapsedFormatter.short(since: session.lastActivity)
         needsLayout = true
     }
 
@@ -201,18 +217,27 @@ final class SessionRowView: NSView {
             )
         } else {
             let top = (bounds.height - (nameHeight + messageHeight + 2)) / 2
-            let tagWidth = sourceTag.isHidden ? 0 : sourceTag.intrinsicContentSize.width + 6
+            let tagWidth = sourceTag.isHidden ? 0 : sourceTag.intrinsicContentSize.width + 8
+            let elapsedWidth = elapsedLabel.intrinsicContentSize.width + 8
             nameLabel.frame = NSRect(
                 x: textX,
                 y: top,
-                width: max(0, textWidth - tagWidth),
+                width: max(0, textWidth - tagWidth - elapsedWidth),
                 height: nameHeight
             )
             sourceTag.frame = NSRect(
-                x: bounds.width - trailingInset - tagWidth + 6,
+                x: bounds.width - trailingInset - tagWidth - elapsedWidth + 8,
                 y: top + 2,
-                width: max(0, tagWidth - 6),
+                width: max(0, tagWidth - 8),
                 height: nameHeight - 2
+            )
+            // Elapsed time sits furthest right on the name line, where the eye
+            // lands last: you read what, then who, then how long.
+            elapsedLabel.frame = NSRect(
+                x: bounds.width - trailingInset - elapsedWidth,
+                y: top + 1,
+                width: max(0, elapsedWidth - 4),
+                height: nameHeight - 1
             )
             messageLabel.frame = NSRect(
                 x: textX,

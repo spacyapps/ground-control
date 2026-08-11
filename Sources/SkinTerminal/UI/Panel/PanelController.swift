@@ -11,6 +11,7 @@ final class PanelController {
 
     private var theme: Theme = DefaultTheme.theme
     private var frameObserver: NSObjectProtocol?
+    private var elapsedTimer: Timer?
 
     init(preferences: Preferences = .shared) {
         self.preferences = preferences
@@ -22,7 +23,21 @@ final class PanelController {
     }
 
     deinit {
+        elapsedTimer?.invalidate()
         if let frameObserver { NotificationCenter.default.removeObserver(frameObserver) }
+    }
+
+    /// Elapsed times advance with the clock, not with events, so they need
+    /// their own tick. Five seconds keeps the sub-minute readout honest
+    /// without redrawing anything that has not changed.
+    private func startElapsedTicking() {
+        guard elapsedTimer == nil else { return }
+        let timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            guard let self, self.isVisible else { return }
+            self.chrome.refreshElapsed()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        elapsedTimer = timer
     }
 
     var isVisible: Bool { panel?.isVisible ?? false }
@@ -36,6 +51,7 @@ final class PanelController {
         applyWindowBehaviour()
         panel.orderFrontRegardless()
         fitHeightToContent()
+        startElapsedTicking()
     }
 
     func hide() {

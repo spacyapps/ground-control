@@ -1,0 +1,29 @@
+import Foundation
+
+/// How long a row has been in its current state.
+///
+/// "waiting" for four seconds and "waiting" for forty minutes read identically
+/// without this, and the second is the one that matters. Kept deliberately
+/// terse — this sits at the end of a row, not in a report.
+enum ElapsedFormatter {
+    static func short(since date: Date, now: Date = Date()) -> String {
+        let seconds = Int(now.timeIntervalSince(date))
+
+        // Clock skew, or a line written a moment in the future.
+        guard seconds > 0 else { return "now" }
+
+        switch seconds {
+        case ..<10: return "now"
+        case ..<60: return "\(seconds)s"
+        case ..<3600: return "\(seconds / 60)m"
+        case ..<86400: return "\(seconds / 3600)h"
+        default: return "\(seconds / 86400)d"
+        }
+    }
+
+    /// True once a row has been quiet long enough to be worth noticing —
+    /// used to dim stale rows rather than to alarm.
+    static func isStale(since date: Date, now: Date = Date()) -> Bool {
+        now.timeIntervalSince(date) > 30 * 60
+    }
+}

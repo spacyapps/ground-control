@@ -40,6 +40,10 @@ final class PanelBackgroundView: NSView {
         TitleBarView.height + list.contentHeight
     }
 
+    func refreshElapsed() {
+        list.refreshElapsed()
+    }
+
     func update(sessions: [Session], renames: [String: String]) {
         titleBar.update(sessions: sessions)
         list.apply(sessions: sessions, renames: renames)
