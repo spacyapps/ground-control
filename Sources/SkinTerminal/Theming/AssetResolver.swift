@@ -46,7 +46,8 @@ enum AssetResolver {
             window: background("windowBackground"),
             titleBar: background("titleBarBackground"),
             footer: background("footerBackground"),
-            needsActionDot: plainImage("needsActionDot")
+            needsActionDot: plainImage("needsActionDot"),
+            brandMark: plainImage("brandMark")
         )
     }
 

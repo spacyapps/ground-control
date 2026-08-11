@@ -13,6 +13,7 @@ final class TitleBarView: NSView {
     private let countLabel = NSTextField(labelWithString: "")
     private let closeButton = NSButton()
     private let visualizer = VisualizerView()
+    private let mark = NSImageView()
     private var theme: Theme = DefaultTheme.theme
 
     override var isFlipped: Bool { true }
@@ -29,6 +30,9 @@ final class TitleBarView: NSView {
         closeButton.target = self
         closeButton.action = #selector(close)
 
+        mark.imageScaling = .scaleProportionallyUpOrDown
+        mark.image = Brand.glyph
+        addSubview(mark)
         addSubview(closeButton)
         addSubview(titleLabel)
         addSubview(countLabel)
@@ -56,6 +60,12 @@ final class TitleBarView: NSView {
                 .font: NSFont.systemFont(ofSize: 10)
             ]
         )
+        // A theme may supply its own mark; otherwise ours.
+        if let custom = theme.backgrounds.brandMark, let image = NSImage(contentsOf: custom) {
+            mark.image = image
+        } else {
+            mark.image = Brand.glyph
+        }
         visualizer.apply(theme: theme)
         needsDisplay = true
     }
@@ -78,8 +88,15 @@ final class TitleBarView: NSView {
         let titleRow: CGFloat = 22
 
         closeButton.frame = NSRect(x: inset - 2, y: (titleRow - 16) / 2 + 4, width: 16, height: 16)
+        let markSide: CGFloat = 15
+        mark.frame = NSRect(
+            x: closeButton.frame.maxX + 7,
+            y: (titleRow - markSide) / 2 + 4,
+            width: markSide,
+            height: markSide
+        )
         let textY = (titleRow - 14) / 2 + 4
-        titleLabel.frame = NSRect(x: closeButton.frame.maxX + 6, y: textY, width: 150, height: 14)
+        titleLabel.frame = NSRect(x: mark.frame.maxX + 6, y: textY, width: 150, height: 14)
         countLabel.frame = NSRect(x: bounds.width - inset - 90, y: textY, width: 90, height: 14)
 
         visualizer.frame = NSRect(

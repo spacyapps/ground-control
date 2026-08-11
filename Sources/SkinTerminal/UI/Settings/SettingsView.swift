@@ -61,6 +61,7 @@ final class SettingsView: NSView {
             stack.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor)
         ])
 
+        stack.addArrangedSubview(brandRow())
         stack.addArrangedSubview(header("Theme"))
 
         themePicker.target = self
@@ -115,6 +116,20 @@ final class SettingsView: NSView {
         caveat.maximumNumberOfLines = 2
         caveat.preferredMaxLayoutWidth = 320
         stack.addArrangedSubview(caveat)
+    }
+
+    /// The app's own mark. Settings is a system surface, so unlike the panel
+    /// no theme ever replaces this one.
+    private func brandRow() -> NSView {
+        let mark = NSImageView()
+        mark.image = Brand.lockup
+        mark.imageScaling = .scaleProportionallyUpOrDown
+        mark.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            mark.widthAnchor.constraint(equalToConstant: 190),
+            mark.heightAnchor.constraint(equalToConstant: 52)
+        ])
+        return mark
     }
 
     private func buttonRow() -> NSView {

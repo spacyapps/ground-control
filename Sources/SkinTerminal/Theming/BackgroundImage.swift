@@ -51,6 +51,9 @@ extension Theme {
         /// Replaces the drawn attention dot. Not a nine-slice — it is a small
         /// fixed badge, so it is simply scaled to fit.
         var needsActionDot: URL?
+        /// Replaces the mark in the title bar. A theme that dresses the whole
+        /// panel should be able to put its own stamp there.
+        var brandMark: URL?
 
         static let none = Backgrounds()
     }

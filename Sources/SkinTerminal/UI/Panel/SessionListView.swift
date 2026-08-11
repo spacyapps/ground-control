@@ -25,6 +25,7 @@ final class SessionListView: NSView {
     private let scrollView = NSScrollView()
     private let stack = TopAlignedStackView()
     private let emptyLabel = NSTextField(labelWithString: "")
+    private let emptyMark = NSImageView()
 
     private var theme: Theme = DefaultTheme.theme
     private var sessions: [Session] = []
@@ -58,7 +59,13 @@ final class SessionListView: NSView {
         emptyLabel.alignment = .center
         emptyLabel.translatesAutoresizingMaskIntoConstraints = false
 
+        emptyMark.imageScaling = .scaleProportionallyUpOrDown
+        emptyMark.image = Brand.lockup
+        emptyMark.alphaValue = 0.5
+        emptyMark.translatesAutoresizingMaskIntoConstraints = false
+
         addSubview(scrollView)
+        addSubview(emptyMark)
         addSubview(emptyLabel)
 
         NSLayoutConstraint.activate([
@@ -69,8 +76,12 @@ final class SessionListView: NSView {
             stack.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
             stack.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
             stack.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            emptyMark.centerXAnchor.constraint(equalTo: centerXAnchor),
+            emptyMark.bottomAnchor.constraint(equalTo: centerYAnchor, constant: -6),
+            emptyMark.widthAnchor.constraint(equalToConstant: 168),
+            emptyMark.heightAnchor.constraint(equalToConstant: 46),
             emptyLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-            emptyLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            emptyLabel.topAnchor.constraint(equalTo: emptyMark.bottomAnchor, constant: 10),
             emptyLabel.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, constant: -32)
         ])
     }
@@ -97,6 +108,7 @@ final class SessionListView: NSView {
         layer?.backgroundColor = theme.colors.windowBackground.cgColor
 
         emptyLabel.isHidden = !sessions.isEmpty
+        emptyMark.isHidden = !sessions.isEmpty
         emptyLabel.stringValue = "No active sessions.\nStart an agent CLI in a terminal and a row appears here."
         emptyLabel.font = theme.typography.messageFont()
         emptyLabel.textColor = theme.colors.messageDim
