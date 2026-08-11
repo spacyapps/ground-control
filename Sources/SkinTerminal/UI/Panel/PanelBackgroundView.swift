@@ -35,6 +35,11 @@ final class PanelBackgroundView: NSView {
         needsDisplay = true
     }
 
+    /// Height at which nothing is clipped: title strip plus every row.
+    var desiredHeight: CGFloat {
+        TitleBarView.height + list.contentHeight
+    }
+
     func update(sessions: [Session], renames: [String: String]) {
         titleBar.update(sessions: sessions)
         list.apply(sessions: sessions, renames: renames)

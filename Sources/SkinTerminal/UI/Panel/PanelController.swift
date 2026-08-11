@@ -35,6 +35,7 @@ final class PanelController {
         let panel = existingOrNewPanel()
         applyWindowBehaviour()
         panel.orderFrontRegardless()
+        fitHeightToContent()
     }
 
     func hide() {
@@ -48,6 +49,30 @@ final class PanelController {
 
     func apply(sessions: [Session]) {
         chrome.update(sessions: sessions, renames: preferences.renames)
+        fitHeightToContent()
+    }
+
+    /// Grow and shrink to the rows rather than clipping the last one.
+    ///
+    /// A monitor with five sessions should show five sessions. The width and
+    /// position stay yours; only the height is derived — and it stops at a
+    /// fraction of the screen, after which the list scrolls instead of the
+    /// panel eating the display.
+    func fitHeightToContent() {
+        guard let panel, panel.isVisible else { return }
+        let screen = panel.screen ?? NSScreen.main
+        let ceiling = (screen?.visibleFrame.height ?? 900) * 0.75
+        let target = min(max(panel.minSize.height, chrome.desiredHeight), ceiling)
+
+        var frame = panel.frame
+        guard abs(frame.height - target) > 0.5 else { return }
+
+        // Keep the top edge pinned: AppKit measures from the bottom, so the
+        // origin has to move as the height changes or the panel grows upward.
+        let top = frame.maxY
+        frame.size.height = target
+        frame.origin.y = top - target
+        panel.setFrame(frame, display: true, animate: false)
     }
 
     /// Recovers a panel dragged off-screen or onto a display that is gone.
@@ -73,7 +98,11 @@ final class PanelController {
         let panel = FloatingPanel(contentRect: defaultFrame())
         panel.contentView = chrome
         if let saved = preferences.panelFrame {
-            panel.setFrame(NSRectFromString(saved), display: false)
+            // Height is recomputed from content, so a saved one would only
+            // fight fitHeightToContent on the first paint.
+            var frame = NSRectFromString(saved)
+            frame.size.height = panel.frame.height
+            panel.setFrame(frame, display: false)
         }
 
         frameObserver = NotificationCenter.default.addObserver(

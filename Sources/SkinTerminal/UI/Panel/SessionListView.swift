@@ -31,6 +31,10 @@ final class SessionListView: NSView {
     private var renames: [String: String] = [:]
     private var expanded: Set<String> = []
 
+    /// Total height of every row currently laid out, so the panel can size
+    /// itself to its content instead of clipping the last row.
+    private(set) var contentHeight: CGFloat = 0
+
     init() {
         super.init(frame: .zero)
         wantsLayer = true
@@ -105,6 +109,7 @@ final class SessionListView: NSView {
         let showsSource = Set(sessions.map(\.source)).count > 1
         let rowHeight = SessionRowView.height(for: theme)
         let childHeight = GroupRowView.height(for: theme)
+        var total: CGFloat = 0
 
         for (index, session) in sessions.enumerated() {
             let row = SessionRowView()
@@ -119,9 +124,11 @@ final class SessionListView: NSView {
             row.onSecondaryClick = { [weak self] event in self?.onSecondaryClick?(session, event) }
             row.onToggleChildren = { [weak self] in self?.toggleExpansion(of: session.id) }
             add(row, height: rowHeight)
+            total += rowHeight
 
             guard expanded.contains(session.id) else { continue }
             for child in session.children {
+                total += childHeight
                 let childRow = GroupRowView()
                 childRow.configure(child: child, theme: theme)
                 // A child jumps to the orchestrator's terminal — same tty.
@@ -129,6 +136,7 @@ final class SessionListView: NSView {
                 add(childRow, height: childHeight)
             }
         }
+        contentHeight = total
     }
 
     private func add(_ view: NSView, height: CGFloat) {
