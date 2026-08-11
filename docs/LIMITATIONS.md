@@ -18,6 +18,7 @@ Every claim here is dated. When something is verified, move it up and say how.
 | Grok hook payloads | probe in `~/.grok/hooks/`, 4 events captured | 2026-08-11 |
 | Grok reads `~/.claude/settings.json` | `/hooks` shows `Custom: ~/.claude (9 hooks)` | 2026-08-11 |
 | Grok `SessionEnd` removes a row | replayed the real payload; file deleted | 2026-08-11 |
+| Real subagents carry `agent_type` | spawned two Explore agents; both `type="Explore"` while every internal one was `""` | 2026-08-11 |
 
 ---
 
@@ -37,17 +38,17 @@ So the alarm path is correct-by-construction and **unproven end to end**.
 something, capture the payload, confirm its `notification_type` and that the row
 goes red. Grok's `PermissionDenied` event is a second candidate trigger.
 
-### 2. Internal-agent filtering is a heuristic
+### 2. Internal-agent filtering — **now verified** (2026-08-11)
 
-`AgentGrouper` hides children whose `agent_type` is empty, because Claude Code
-fires `SubagentStop` for its own background agents and their text reads like the
-user's own prompts. Every internal agent observed had an empty type — but **no
-payload from a deliberately spawned subagent has ever been seen**, so it is
-unproven that real ones carry a non-empty type.
+`AgentGrouper` hides children whose `agent_type` is empty. Two deliberately
+spawned subagents both reported `agent_type: "Explore"` and appeared as
+children, while every internal agent on disk reported `""` and was hidden —
+their messages being echoes of the user's own prompts ("commit", "rename it to
+avaterm"), which is exactly what made them misleading on screen.
 
-*Symptom if wrong:* a subagent you spawned on purpose never appears.
-*Escape hatch:* `defaults write SkinTerminal showsInternalAgents -bool YES`,
-or the checkbox in Settings → Advanced.
+Still a heuristic rather than a guarantee: a real subagent *could* report no
+type. `defaults write SkinTerminal showsInternalAgents -bool YES`, or the
+checkbox in Settings → Advanced, brings them back.
 
 ### 3. Background images have never been rendered
 
