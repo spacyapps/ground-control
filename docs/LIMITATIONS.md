@@ -19,6 +19,8 @@ Every claim here is dated. When something is verified, move it up and say how.
 | Grok reads `~/.claude/settings.json` | `/hooks` shows `Custom: ~/.claude (9 hooks)` | 2026-08-11 |
 | Grok `SessionEnd` removes a row | replayed the real payload; file deleted | 2026-08-11 |
 | Real subagents carry `agent_type` | spawned two Explore agents; both `type="Explore"` while every internal one was `""` | 2026-08-11 |
+| Background images render | a real theme with a starfield frame, on screen — and it was broken three ways until it was tried | 2026-08-11 |
+| Nine-slice cap insets | the frame holds its corners while the panel resizes | 2026-08-11 |
 
 ---
 
@@ -50,14 +52,30 @@ Still a heuristic rather than a guarantee: a real subagent *could* report no
 type. `defaults write GroundControl showsInternalAgents -bool YES`, or the
 checkbox in Settings → Advanced, brings them back.
 
-### 3. Background images have never been rendered
+### 3. Background images — **verified 2026-08-11, and this entry was earned**
 
-Nine-slice resolution, cap insets, modes and caching are unit-tested, but **no
-theme with real background art exists**, so nothing has drawn one on screen.
-The cap-inset orientation in particular (which edge is which) is asserted by
-tests against my own code, not against a picture.
+They render correctly now. Worth recording *how* this was found, because it is
+the clearest case in the project of tests proving nothing.
 
-*To verify:* generate a theme with a `windowBackground` and resize the panel.
+Nine-slice resolution, cap insets, modes and caching were all unit-tested and
+green. The first real theme with a background — a starfield frame — showed
+nothing at all, and three separate faults had to be fixed before a single pixel
+appeared:
+
+1. `SessionListView` painted an opaque `windowBackground` over the image.
+2. Rows filled with the default compositing operation, which replaces rather
+   than blends, so any alpha a theme set on `rowBackground` was silently
+   painted solid.
+3. A framed background was structurally impossible: rows span the full width,
+   so they sat exactly where the border art lives. That needed a new concept,
+   `layout.contentInset`.
+
+None of those were reachable by a unit test. Every one of them was a
+"the pixels never arrive" fault, and the only instrument that finds those is a
+person looking at the screen.
+
+*Lesson for the rest of this file:* an entry saying "tested but never seen"
+should be read as **not working until proven otherwise**.
 
 ### 4. iTerm2 jump-to-tab is written but untested
 
@@ -146,4 +164,8 @@ event mapping. Nothing in the Swift should need to change.
   release build. The app currently only runs via `swift run`.
 - Row background images (`rowBackground` as an asset) — only window, title bar
   and footer accept art.
+- Matrix personality beyond colour: cell shape (blocks / dots / pills),
+  cell density, theme-supplied marquee messages, per-theme pattern choice,
+  custom at-rest art, and an off switch. Colour is themeable today
+  (`matrix` block); none of the rest is.
 - `PostToolUse` / `PermissionDenied` handling, which Grok and Codex both offer.
