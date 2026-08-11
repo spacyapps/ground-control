@@ -113,11 +113,44 @@ enum AssetResolver {
     private static func existingFile(_ path: String, in folder: URL) -> URL? {
         let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
+
         let url = folder.appendingPathComponent(trimmed)
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            Log.theming.notice("Theme file not found: \(trimmed, privacy: .public)")
-            return nil
+        if FileManager.default.fileExists(atPath: url.path) { return url }
+
+        if let sibling = siblingWithAnotherExtension(of: url) {
+            Log.theming.notice(
+                "Theme asked for \(trimmed, privacy: .public), using \(sibling.lastPathComponent, privacy: .public)"
+            )
+            return sibling
         }
-        return url
+
+        Log.theming.notice("Theme file not found: \(trimmed, privacy: .public)")
+        return nil
+    }
+
+    /// Accepts `cat.gif` when the manifest asked for `cat.png`.
+    ///
+    /// Image models happily return an animated GIF for a state the manifest
+    /// declared as a PNG, and the mismatch is invisible: the asset resolves to
+    /// nothing and the built-in face draws instead, so the author sees a theme
+    /// that "did not work" with no clue why. The name is what the author meant;
+    /// the extension is a detail their tool chose.
+    private static func siblingWithAnotherExtension(of url: URL) -> URL? {
+        let stem = url.deletingPathExtension().lastPathComponent
+        let folder = url.deletingLastPathComponent()
+        let candidates = (try? FileManager.default.contentsOfDirectory(
+            at: folder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
+        )) ?? []
+
+        // Prefer image formats, so a still or animation wins over video when
+        // both happen to exist under the same name.
+        let matches = candidates.filter { $0.deletingPathExtension().lastPathComponent == stem }
+        let chosen = matches.first { imageExtensions.contains($0.pathExtension.lowercased()) }
+            ?? matches.first { videoExtensions.contains($0.pathExtension.lowercased()) }
+
+        // Rebuild from the folder we were given: directory enumeration returns
+        // symlink-resolved paths (/private/var), and handing back a differently
+        // shaped URL than every other lookup makes assets compare unequal.
+        return chosen.map { folder.appendingPathComponent($0.lastPathComponent) }
     }
 }

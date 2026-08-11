@@ -104,6 +104,28 @@ final class AssetResolverTests: XCTestCase {
         XCTAssertEqual(avatar.cornerRadius, 4)
     }
 
+    /// An image model will happily hand back an animated GIF for a state the
+    /// manifest declared as a PNG. Silently ignoring it means the author sees a
+    /// theme that "did not work" with no clue why.
+    func testWrongExtensionStillResolves() throws {
+        try touch("cat.gif")
+        let avatar = try resolve(#"{"states":{"idle":{"image":"cat.png"}}}"#)
+        XCTAssertEqual(avatar.asset(for: .idle), .image(folder.appendingPathComponent("cat.gif")))
+    }
+
+    func testExactMatchWinsOverASibling() throws {
+        try touch("cat.png")
+        try touch("cat.gif")
+        let avatar = try resolve(#"{"states":{"idle":{"image":"cat.png"}}}"#)
+        XCTAssertEqual(avatar.asset(for: .idle), .image(folder.appendingPathComponent("cat.png")))
+    }
+
+    func testATrulyMissingNameStillResolvesToNothing() throws {
+        try touch("dog.png")
+        let avatar = try resolve(#"{"states":{"idle":{"image":"cat.png"}}}"#)
+        XCTAssertNil(avatar.asset(for: .idle), "tolerance is about extensions, not names")
+    }
+
     /// The shipped example theme is the reference authors copy — if its paths
     /// rot, the docs lie.
     func testShippedExampleThemeResolvesEveryState() throws {
