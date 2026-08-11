@@ -19,6 +19,8 @@ final class VisualizerView: NSView {
     /// into sin() loses the per-bar phase entirely at that magnitude, which is
     /// what flattened the spectrum into a solid block.
     private var phaseClock: CGFloat = 0
+    private var pattern: VisualizerPattern = .wave
+    private var patternUntil = Date.distantPast
     private var isAlarmed = false
 
     /// Five rows: the fewest an LED matrix needs to spell anything, which is
@@ -135,21 +137,18 @@ final class VisualizerView: NSView {
         resizeBarsIfNeeded()
 
         phaseClock += 0.09
+        advancePattern()
 
         for index in levels.indices {
-            // Two waves at different speeds and wavelengths, so neighbouring
-            // bars move together but the row never settles into one shape.
-            let phase = CGFloat(index) / CGFloat(max(1, levels.count))
-            let slow = sin(phase * 7 + phaseClock)
-            let fast = sin(phase * 17 - phaseClock * 1.7)
-            let shape = 0.55 + 0.30 * slow + 0.15 * fast
+            let position = CGFloat(index) / CGFloat(max(1, levels.count - 1))
+            let shape = pattern.shape(position: position, phase: phaseClock)
 
             // A word sweeping past pushes the bars around it, so the letters
             // look like they are displacing the spectrum rather than sitting
             // on top of it.
             let wake = messageWake(at: index)
-            let wobble = CGFloat.random(in: 0.45...1.0)
-            let target = min(1, energy * wobble * abs(shape) + wake)
+            let wobble = CGFloat.random(in: pattern.jitter)
+            let target = min(1, energy * wobble * shape + wake)
 
             // Fast attack, slow release — the classic analyser feel.
             let rate: CGFloat = target > levels[index] ? 0.55 : 0.12
@@ -184,6 +183,18 @@ final class VisualizerView: NSView {
         } else {
             messageScroll = scroll
         }
+    }
+
+    /// Rotates the shape every so often, so the panel has a repertoire rather
+    /// than one look. Only while there is energy to see it with.
+    private func advancePattern() {
+        guard energy > 0.02 else { return }
+        let now = Date()
+        guard now >= patternUntil else { return }
+        pattern = patternUntil == .distantPast
+            ? VisualizerPattern.allCases.randomElement() ?? .wave
+            : VisualizerPattern.next(avoiding: pattern)
+        patternUntil = now.addingTimeInterval(VisualizerPattern.nextDuration())
     }
 
     /// Extra level for bars just outside the sweeping word.
@@ -336,7 +347,10 @@ final class VisualizerView: NSView {
     /// The word picks its own colour from the palette, so consecutive messages
     /// look different without ever borrowing the alarm red.
     private var letterColor: NSColor {
-        let palette = [theme.colors.titleBarText, theme.colors.working, theme.colors.accent]
+        // No white and never the alarm red: white reads as "not coloured", and
+        // red belongs to a row that needs you.
+        let blend = theme.colors.accent.blended(withFraction: 0.5, of: theme.colors.working)
+        let palette = [theme.colors.working, theme.colors.accent, blend ?? theme.colors.working]
         let hash = messageText.unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) & 0xFFFF }
         return palette[hash % palette.count]
     }

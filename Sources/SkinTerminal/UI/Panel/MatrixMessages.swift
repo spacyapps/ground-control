@@ -18,9 +18,9 @@ enum MatrixMessages {
         "SHIP IT",
         "IT COMPILES",
         "LGTM",
-        "WORKS ON MY MACHINE",
+        "WORKS FOR ME",
         "OFF BY ONE",
-        "RUBBER DUCK SAYS HI",
+        "RUBBER DUCK",
         "YAK SHAVING",
         "CACHE MISS",
         "HEISENBUG",
@@ -29,14 +29,19 @@ enum MatrixMessages {
         "REBASE AND PRAY",
         "TODO FIX THIS",
         "NULL POINTER",
-        "ERROR 418 TEAPOT",
+        "IM A TEAPOT",
         "RTFM",
-        "STACK OVERFLOW",
-        "99 BOTTLES OF BUGS",
+        "STACK TRACE",
+        "99 BUGS LEFT",
         "AWAITING HUMAN",
         "IDLE HANDS",
         "COMMIT EARLY"
     ]
+
+    /// Long enough to read, short enough that the spectrum stays visible on
+    /// both sides — a word that fills the grid reads as a sign, not as a word
+    /// passing through a meter.
+    static let maxLength = 13
 
     /// Total canned phrases, brand included. Harvested words are unbounded.
     static var count: Int { jokes.count + 1 }
@@ -67,7 +72,7 @@ enum MatrixMessages {
             let words = message.split { !$0.isLetter && !$0.isNumber }
             for raw in words {
                 let word = String(raw).uppercased()
-                guard word.count >= 5, word.count <= 14,
+                guard word.count >= 5, word.count <= maxLength,
                       !ordinary.contains(word),
                       word.contains(where: \.isLetter),
                       word.allSatisfy(MatrixFont.supports),
