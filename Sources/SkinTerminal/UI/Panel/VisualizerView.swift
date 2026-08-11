@@ -15,6 +15,10 @@ final class VisualizerView: NSView {
     /// 0…1, smoothed towards `targetEnergy` so state changes ease in.
     private var energy: CGFloat = 0
     private var targetEnergy: CGFloat = 0
+    /// Small monotonic clock for the wave. Feeding `timeIntervalSince1970`
+    /// into sin() loses the per-bar phase entirely at that magnitude, which is
+    /// what flattened the spectrum into a solid block.
+    private var phaseClock: CGFloat = 0
     private var isAlarmed = false
 
     /// Five rows: the fewest an LED matrix needs to spell anything, which is
@@ -93,6 +97,10 @@ final class VisualizerView: NSView {
     /// A one-shot rather than a heartbeat: the analyser stops dead at rest, and
     /// this wakes it just long enough to spell the name once.
     private func scheduleMessage() {
+        // Never restart a countdown that is already running. The bars settle
+        // between every burst of activity, and rescheduling on each settle
+        // meant the delay never actually elapsed.
+        guard messageTimer?.isValid != true else { return }
         messageTimer?.invalidate()
         guard window != nil, !isAlarmed else { return }
         messageTimer = Timer.scheduledTimer(
@@ -126,13 +134,22 @@ final class VisualizerView: NSView {
         energy += (targetEnergy - energy) * 0.12
         resizeBarsIfNeeded()
 
+        phaseClock += 0.09
+
         for index in levels.indices {
-            // Neighbouring bars share a wave so the row reads as one motion
-            // rather than independent flicker.
+            // Two waves at different speeds and wavelengths, so neighbouring
+            // bars move together but the row never settles into one shape.
             let phase = CGFloat(index) / CGFloat(max(1, levels.count))
-            let wobble = CGFloat.random(in: 0.55...1.0)
-            let shape = 0.45 + 0.55 * sin((phase + CGFloat(Date().timeIntervalSince1970)) * 3)
-            let target = energy * wobble * abs(shape)
+            let slow = sin(phase * 7 + phaseClock)
+            let fast = sin(phase * 17 - phaseClock * 1.7)
+            let shape = 0.55 + 0.30 * slow + 0.15 * fast
+
+            // A word sweeping past pushes the bars around it, so the letters
+            // look like they are displacing the spectrum rather than sitting
+            // on top of it.
+            let wake = messageWake(at: index)
+            let wobble = CGFloat.random(in: 0.45...1.0)
+            let target = min(1, energy * wobble * abs(shape) + wake)
 
             // Fast attack, slow release — the classic analyser feel.
             let rate: CGFloat = target > levels[index] ? 0.55 : 0.12
@@ -167,6 +184,16 @@ final class VisualizerView: NSView {
         } else {
             messageScroll = scroll
         }
+    }
+
+    /// Extra level for bars just outside the sweeping word.
+    private func messageWake(at index: Int) -> CGFloat {
+        guard let scroll = messageScroll else { return 0 }
+        let distance = abs(CGFloat(index) - scroll)
+        let span = CGFloat(MatrixFont.columns(for: messageText))
+        guard distance < span + 6 else { return 0 }
+        let edge = min(abs(CGFloat(index) - scroll), abs(CGFloat(index) - (scroll + span)))
+        return edge < 5 ? (5 - edge) / 5 * 0.35 : 0
     }
 
     private var columnCount: CGFloat {
@@ -243,7 +270,7 @@ final class VisualizerView: NSView {
             let lit = MatrixFont.isLit(text: messageText, column: column, row: row)
             let y = inset + CGFloat(row) * (cell + segmentGap)
             if lit {
-                theme.colors.titleBarText.setFill()
+                letterColor.setFill()
             } else {
                 theme.colors.divider.withAlphaComponent(0.10).setFill()
             }
@@ -304,6 +331,14 @@ final class VisualizerView: NSView {
         let peakY = bounds.height - inset - CGFloat(peakStep + 1) * (segment + segmentGap)
         theme.colors.titleBarText.withAlphaComponent(0.7).setFill()
         NSRect(x: originX, y: peakY, width: barWidth, height: 1).fill()
+    }
+
+    /// The word picks its own colour from the palette, so consecutive messages
+    /// look different without ever borrowing the alarm red.
+    private var letterColor: NSColor {
+        let palette = [theme.colors.titleBarText, theme.colors.working, theme.colors.accent]
+        let hash = messageText.unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) & 0xFFFF }
+        return palette[hash % palette.count]
     }
 
     /// Green at the floor through to the alarm colour at the ceiling — and the
