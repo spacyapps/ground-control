@@ -19,79 +19,97 @@ SkinTerminal/
 │   │   ├── AppDelegate.swift     # NSApplicationDelegate, boots the coordinator
 │   │   └── AppCoordinator.swift  # owns/connects the subsystems (composition root)
 │   │
-│   ├── Models/                   # plain value types, no UIKit/AppKit imports
-│   │   ├── SessionEvent.swift    # decoded line from a .jsonl file (see SPEC §3)
-│   │   ├── Session.swift         # a live session (latest event + children[])
+│   ├── Models/                   # plain value types, no AppKit imports
+│   │   ├── SessionEvent.swift    # decoded line from <session_id>.jsonl
 │   │   ├── AgentEvent.swift      # decoded line from agents/<id>.jsonl
+│   │   ├── Session.swift         # a live session (latest event + children[])
 │   │   ├── SessionState.swift    # enum: idle / working / needsInput / done
-│   │   └── Theme.swift           # decoded theme.json (colors, assets, avatar, layout)
+│   │   └── ThemeManifest.swift   # decoded theme.json — all-optional, pure data
 │   │
 │   ├── Monitoring/               # the file<->row engine
 │   │   ├── SessionStore.swift    # source of truth: [Session], publishes changes
-│   │   ├── FolderWatcher.swift   # DispatchSource/FSEvents on the sessions folder
-│   │   ├── SessionFileParser.swift # reads a .jsonl file -> SessionEvent(s)
-│   │   ├── AgentGrouper.swift    # agents/*.jsonl -> children, keyed by session_id
+│   │   ├── FolderWatcher.swift   # DispatchSource on a directory, debounced
+│   │   ├── SessionFileParser.swift # last decodable line of a .jsonl file
+│   │   ├── AgentGrouper.swift    # agents/*.jsonl -> children, keyed by session
 │   │   └── PurgeService.swift    # deletes files untouched > window (timer)
 │   │
-│   ├── Theming/                  # skin engine
+│   ├── Theming/                  # skin engine (may import AppKit; no UI)
+│   │   ├── Theme.swift           # resolved theme the UI reads — no optionals
+│   │   ├── DefaultTheme.swift    # code-side fallbacks for every key
 │   │   ├── ThemeLoader.swift     # find themes, decode manifest, apply fallbacks
 │   │   ├── ThemeStore.swift      # active theme + hot-reload watcher
-│   │   ├── AssetResolver.swift   # state -> image/video/drawn-default
-│   │   └── DefaultTheme.swift    # code-side fallbacks for every key
+│   │   ├── AssetResolver.swift   # manifest -> resolved avatar/background URLs
+│   │   ├── DrawnAvatar.swift     # built-in per-state faces (SF Symbols)
+│   │   ├── BackgroundImage.swift # resolved background + nine-slice cap insets
+│   │   ├── BackgroundRenderer.swift # draws a background into any size box
+│   │   ├── ThemeBrief.swift      # answers gathered by the theme builder
+│   │   ├── ThemePromptBuilder.swift # brief -> LLM prompt + starter manifest
+│   │   └── ThemeScaffold.swift   # creates a theme folder ready for artwork
 │   │
 │   ├── UI/
 │   │   ├── Panel/
 │   │   │   ├── FloatingPanel.swift        # NSPanel: nonactivating, levels, spaces
-│   │   │   ├── PanelController.swift       # show/hide, position persistence
-│   │   │   └── PanelBackgroundView.swift   # themed background (color or image)
+│   │   │   ├── PanelController.swift      # show/hide, position persistence
+│   │   │   ├── PanelBackgroundView.swift  # themed surface: title bar + list
+│   │   │   ├── TitleBarView.swift         # themed strip, drag handle, close
+│   │   │   ├── VisualizerView.swift       # WinAmp-style analyser, driven by state
+│   │   │   └── SessionListView.swift      # the scrolling stack of rows
 │   │   ├── Rows/
-│   │   │   ├── SessionRowView.swift        # one row: name + message + dot + avatar
-│   │   │   ├── GroupRowView.swift          # orchestrator + collapsible children
-│   │   │   ├── MarqueeLabel.swift          # auto-scroll on overflow
-│   │   │   ├── StatusDotView.swift         # red dot / themed image
-│   │   │   └── AvatarView.swift            # image or looping video per state
+│   │   │   ├── SessionRowView.swift       # one row: dot + name + message + avatar
+│   │   │   ├── GroupRowView.swift         # one subagent child row
+│   │   │   ├── MarqueeLabel.swift         # auto-scroll on overflow only
+│   │   │   ├── StatusDotView.swift        # drawn dot or themed badge
+│   │   │   └── AvatarView.swift           # image / animated GIF / looping video
 │   │   ├── MenuBar/
-│   │   │   ├── StatusItemController.swift  # NSStatusItem, badge on needs-action
-│   │   │   └── StatusMenu.swift            # right-click / dropdown menu
+│   │   │   ├── StatusItemController.swift # NSStatusItem, badge on needs-action
+│   │   │   └── StatusMenu.swift           # right-click menu
 │   │   └── Settings/
 │   │       ├── SettingsWindowController.swift
-│   │       └── SettingsView.swift          # theme picker, float toggles
+│   │       ├── SettingsView.swift             # theme picker, toggles, advanced
+│   │       ├── ThemePreviewView.swift         # live miniature of the selection
+│   │       └── ThemeBuilderWindowController.swift # questions -> LLM prompt
 │   │
 │   ├── Integration/              # talking to the outside world
-│   │   ├── TerminalFocuser.swift # AppleScript jump-to-tab (iTerm + Terminal)
-│   │   └── HookInstaller.swift   # optional: write cc-notify + settings.json
+│   │   └── TerminalFocuser.swift # AppleScript jump-to-tab (iTerm + Terminal)
 │   │
 │   ├── Services/                 # cross-cutting helpers
-│   │   ├── Preferences.swift     # UserDefaults wrapper (renames, panel frame, toggles)
-│   │   ├── Paths.swift           # canonical folder locations (sessions dir, themes)
-│   │   └── Logger.swift          # os.Logger wrapper
+│   │   ├── Preferences.swift     # UserDefaults wrapper
+│   │   ├── Paths.swift           # canonical folder locations
+│   │   └── Log.swift             # os.Logger wrapper
 │   │
-│   ├── Extensions/               # small, focused extensions (one type per file)
-│   │   ├── NSColor+Hex.swift
-│   │   └── URL+Sessions.swift
+│   ├── Extensions/               # small, focused extensions
+│   │   └── NSColor+Hex.swift
 │   │
-│   └── Resources/                # bundled assets (default avatar, icon)
-│       └── (built-in default avatar images, menu-bar icon)
+│   └── Resources/                # bundled assets (currently empty — the
+│                                 # built-in theme draws itself, see DrawnAvatar)
 │
 ├── Themes/
-│   └── default/theme.json        # reference theme (ships in-repo, copyable)
+│   ├── default/theme.json        # reference palette (ships in-repo, copyable)
+│   └── example-avatars/          # working avatar theme: 3 stills + a GIF
 │
 ├── Scripts/
-│   ├── cc-notify                 # the hook emitter (python3; reads payload on stdin)
+│   ├── cc-notify                 # hook emitter (python3, reads Claude + Grok)
 │   ├── install-hooks.sh          # MERGES hook entries into ~/.claude/settings.json
 │   └── build-dmg.sh              # create-dmg packaging  [not written yet]
 │
 ├── Tests/SkinTerminalTests/      # unit tests mirror the source tree
 │   ├── SessionFileParserTests.swift
+│   ├── SessionTests.swift
+│   ├── AgentGrouperTests.swift
+│   ├── PurgeServiceTests.swift
 │   ├── ThemeLoaderTests.swift
-│   └── PurgeServiceTests.swift
+│   ├── AssetResolverTests.swift
+│   ├── BackgroundAssetTests.swift
+│   ├── ThemePromptBuilderTests.swift
+│   ├── VisualizerTests.swift
+│   └── MultiCLITests.swift
 │
 ├── docs/
 │   ├── STRUCTURE.md              # this file
+│   ├── SPEC.md                   # the full build brief
 │   ├── THEMING.md                # theme authoring guide
 │   ├── HOOK-PAYLOADS.md          # measured hook payloads — the data SPEC rests on
-│   ├── LIMITATIONS.md            # what is verified vs assumed; other-CLI status
-│   └── SPEC.md                   # the full build brief
+│   └── LIMITATIONS.md            # what is verified vs assumed; other-CLI status
 │
 └── .github/workflows/
     └── ci.yml                    # build + swiftlint on push/PR

@@ -21,9 +21,7 @@ enum AssetResolver {
 
         func background(_ key: String) -> BackgroundImage? {
             guard let entry = assets[key]?.flatMap({ $0 }),
-                  let name = entry.image,
-                  let url = existingFile(name, in: folder),
-                  imageExtensions.contains(url.pathExtension.lowercased()) else { return nil }
+                  let url = imageFile(entry.image, in: folder) else { return nil }
 
             let insets = entry.capInsets
             return BackgroundImage(
@@ -41,11 +39,7 @@ enum AssetResolver {
         }
 
         func plainImage(_ key: String) -> URL? {
-            guard let entry = assets[key]?.flatMap({ $0 }),
-                  let name = entry.image,
-                  let url = existingFile(name, in: folder),
-                  imageExtensions.contains(url.pathExtension.lowercased()) else { return nil }
-            return url
+            imageFile(assets[key]?.flatMap({ $0 })?.image, in: folder)
         }
 
         return Theme.Backgrounds(
@@ -63,18 +57,11 @@ enum AssetResolver {
 
         let declaredPosition = Theme.Avatar.Position(rawValue: manifest.position?.lowercased() ?? "")
         return Theme.Avatar(
-            size: length(manifest.size, fallback.size),
+            size: Theme.length(manifest.size, fallback.size),
             position: declaredPosition ?? fallback.position,
-            cornerRadius: length(manifest.cornerRadius, fallback.cornerRadius),
+            cornerRadius: Theme.length(manifest.cornerRadius, fallback.cornerRadius),
             states: states(from: manifest.states, folder: folder)
         )
-    }
-
-    /// Spelled out rather than `.map(CGFloat.init)`, which the type checker
-    /// cannot resolve inside a multi-argument initialiser.
-    private static func length(_ value: Double?, _ fallback: CGFloat) -> CGFloat {
-        guard let value else { return fallback }
-        return CGFloat(value)
     }
 
     private static func states(from declared: [String: ThemeManifest.Avatar.State]?,
@@ -101,15 +88,22 @@ enum AssetResolver {
             return .video(url, loop: entry.loop ?? true, muted: entry.muted ?? true)
         }
 
-        if let image = entry.image, let url = existingFile(image, in: folder) {
-            guard imageExtensions.contains(url.pathExtension.lowercased()) else {
-                Log.theming.notice("Unsupported avatar image \(url.lastPathComponent, privacy: .public)")
-                return nil
-            }
+        if let url = imageFile(entry.image, in: folder) {
             return .image(url)
         }
 
         return nil
+    }
+
+    /// Resolve-and-validate, the shape every asset lookup needs: a name the
+    /// author wrote, a file that exists, and a format we can actually display.
+    private static func imageFile(_ name: String?, in folder: URL) -> URL? {
+        guard let name, let url = existingFile(name, in: folder) else { return nil }
+        guard imageExtensions.contains(url.pathExtension.lowercased()) else {
+            Log.theming.notice("Unsupported image \(url.lastPathComponent, privacy: .public)")
+            return nil
+        }
+        return url
     }
 
     private static func existingFile(_ path: String, in folder: URL) -> URL? {
@@ -117,7 +111,7 @@ enum AssetResolver {
         guard !trimmed.isEmpty else { return nil }
         let url = folder.appendingPathComponent(trimmed)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            Log.theming.notice("Avatar file not found: \(trimmed, privacy: .public)")
+            Log.theming.notice("Theme file not found: \(trimmed, privacy: .public)")
             return nil
         }
         return url

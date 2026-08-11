@@ -1,13 +1,21 @@
 #!/usr/bin/python3
 """
-cc-notify — Claude Code hook emitter for SkinTerminal.
+cc-notify — agent-CLI hook emitter for SkinTerminal.
 
 Reads a hook payload on stdin and appends one JSON line to that session's
 file. Field names below are not guesses: they were captured from live hook
-payloads on Claude Code 2.1.226. See docs/HOOK-PAYLOADS.md for the raw dumps.
+payloads on Claude Code 2.1.226 and Grok. See docs/HOOK-PAYLOADS.md for the
+raw dumps and docs/LIMITATIONS.md for which CLIs are proven.
 
-Install one line in ~/.claude/settings.json per event — no arguments needed,
-the payload carries `hook_event_name`:
+Serves several CLIs from one script. Claude Code uses snake_case and Grok
+camelCase, but the events and their meanings are identical, so `get()` reads
+either spelling rather than shipping an adapter per vendor.
+
+(The name is historical — it predates Grok support. Renaming it would break
+every installed settings.json that points at ~/bin/cc-notify.)
+
+Install one line per event — no arguments needed, the payload names its own
+event. Grok reads ~/.claude/settings.json too, so one install covers both:
 
     { "type": "command", "command": "~/bin/cc-notify" }
 

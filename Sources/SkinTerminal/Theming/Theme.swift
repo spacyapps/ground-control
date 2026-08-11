@@ -5,6 +5,14 @@ import AppKit
 /// Built by layering a `ThemeManifest` over `DefaultTheme`, so the UI never
 /// deals in optionals and a theme that sets one colour still works.
 struct Theme {
+    /// Manifests carry plain numbers; the UI wants CGFloat. Spelled out rather
+    /// than `.map(CGFloat.init)`, which the type checker cannot resolve inside
+    /// a multi-argument initialiser.
+    static func length(_ value: Double?, _ fallback: CGFloat) -> CGFloat {
+        guard let value else { return fallback }
+        return CGFloat(value)
+    }
+
     var name: String
     var colors: Colors
     var layout: Layout

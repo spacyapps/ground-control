@@ -90,7 +90,7 @@ final class SessionListView: NSView {
         layer?.backgroundColor = theme.colors.windowBackground.cgColor
 
         emptyLabel.isHidden = !sessions.isEmpty
-        emptyLabel.stringValue = "No active sessions.\nStart Claude in a terminal and a row appears here."
+        emptyLabel.stringValue = "No active sessions.\nStart an agent CLI in a terminal and a row appears here."
         emptyLabel.font = theme.typography.messageFont()
         emptyLabel.textColor = theme.colors.messageDim
         emptyLabel.maximumNumberOfLines = 2

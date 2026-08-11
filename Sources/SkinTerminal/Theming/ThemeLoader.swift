@@ -76,10 +76,10 @@ enum ThemeLoader {
         let defaultLayout = DefaultTheme.layout
         let manifestLayout = manifest.layout
         let layout = Theme.Layout(
-            rowMaxHeight: length(manifestLayout?.rowMaxHeight, defaultLayout.rowMaxHeight),
-            rowPadding: length(manifestLayout?.rowPadding, defaultLayout.rowPadding),
+            rowMaxHeight: Theme.length(manifestLayout?.rowMaxHeight, defaultLayout.rowMaxHeight),
+            rowPadding: Theme.length(manifestLayout?.rowPadding, defaultLayout.rowPadding),
             marqueeOnOverflow: manifestLayout?.marqueeOnOverflow ?? defaultLayout.marqueeOnOverflow,
-            marqueeSpeed: length(manifestLayout?.marqueeSpeed, defaultLayout.marqueeSpeed),
+            marqueeSpeed: Theme.length(manifestLayout?.marqueeSpeed, defaultLayout.marqueeSpeed),
             isCompact: (manifestLayout?.density ?? "").lowercased() == "compact"
         )
 
@@ -87,8 +87,8 @@ enum ThemeLoader {
         let manifestType = manifest.typography
         let typography = Theme.Typography(
             fontFamily: manifestType?.fontFamily ?? defaultType.fontFamily,
-            nameSize: length(manifestType?.nameSize, defaultType.nameSize),
-            messageSize: length(manifestType?.messageSize, defaultType.messageSize),
+            nameSize: Theme.length(manifestType?.nameSize, defaultType.nameSize),
+            messageSize: Theme.length(manifestType?.messageSize, defaultType.messageSize),
             nameWeight: weight(manifestType?.nameWeight) ?? defaultType.nameWeight
         )
 
@@ -105,13 +105,6 @@ enum ThemeLoader {
             backgrounds: AssetResolver.backgrounds(from: manifest.assets, folder: folder),
             folder: folder
         )
-    }
-
-    /// Manifests carry plain numbers; the UI wants CGFloat. Spelled out rather
-    /// than `.map(CGFloat.init)`, which the type checker cannot resolve here.
-    private static func length(_ value: Double?, _ fallback: CGFloat) -> CGFloat {
-        guard let value else { return fallback }
-        return CGFloat(value)
     }
 
     private static func weight(_ name: String?) -> NSFont.Weight? {
