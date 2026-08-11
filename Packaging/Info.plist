@@ -2,37 +2,29 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key>
-    <string>Ground Control</string>
-    <key>CFBundleDisplayName</key>
-    <string>Ground Control</string>
-    <key>CFBundleIdentifier</key>
-    <string>app.groundcontrol</string>
-    <key>CFBundleExecutable</key>
-    <string>GroundControl</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>0.1.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>13.0</string>
-
-    <!-- No Dock icon: this is a menu-bar app. main.swift also sets
-         .accessory at runtime so `swift run` behaves the same way. -->
-    <key>LSUIElement</key>
-    <true/>
-
-    <!-- Shown in the one-time "GroundControl wants to control Terminal"
-         prompt. macOS terminates the app on its first Apple Event if this
-         string is missing, so it is not optional. -->
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Ground Control needs permission to control your terminal so that clicking a session can bring its tab to the front.</string>
-
-    <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2026 Walter Mak. Licensed under GPL-3.0-or-later.</string>
+	<key>CFBundleDisplayName</key>
+	<string>Ground Control</string>
+	<key>CFBundleExecutable</key>
+	<string>GroundControl</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>app.groundcontrol</string>
+	<key>CFBundleName</key>
+	<string>Ground Control</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.2.0</string>
+	<key>CFBundleVersion</key>
+	<string>2</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Ground Control needs permission to control your terminal so that clicking a session can bring its tab to the front.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 Walter Mak. Licensed under GPL-3.0-or-later.</string>
 </dict>
 </plist>
