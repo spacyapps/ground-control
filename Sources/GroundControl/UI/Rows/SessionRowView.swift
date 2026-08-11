@@ -105,7 +105,7 @@ final class SessionRowView: NSView {
         // needsInput — the agent really is waiting — so the face stays, but
         // the row goes quiet: dimmed, and wearing the idle colour rather than
         // a red that no longer means "deal with me".
-        let seen = session.isAcknowledged
+        let seen = session.isDismissedAlarm
         dot.color = seen ? theme.colors.idle : theme.colors.color(for: session.state)
         dot.isProminent = session.needsAction
         dot.badge = theme.backgrounds.needsActionDot

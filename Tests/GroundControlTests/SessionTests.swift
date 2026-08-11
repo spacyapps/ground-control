@@ -150,3 +150,23 @@ extension SessionTests {
         XCTAssertEqual(dismissed.state, .needsInput, "but it is still waiting on you")
     }
 }
+
+extension SessionTests {
+    /// Tapping a quiet row to jump to its terminal acknowledges it, but that
+    /// is not "dismissing" anything and must not grey the row out.
+    func testJumpingToAQuietRowDoesNotGreyItOut() throws {
+        let quiet = session(try event(needsAction: false, ts: Int(Date().timeIntervalSince1970)),
+                            acknowledgedAt: Date())
+        XCTAssertTrue(quiet.isAcknowledged)
+        XCTAssertFalse(quiet.isDismissedAlarm, "nothing was dismissed — it was never alarming")
+    }
+
+    func testDismissingARealAlarmDoesGreyItOut() throws {
+        let stamp = Int(Date().timeIntervalSince1970)
+        let json = #"{"session_id":"abc","state":"needsInput","message":"Allow?","#
+            + #""needs_action":true,"notification_type":"permission_request","ts":"# + "\(stamp)}"
+        let event = try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
+        let dismissed = Session(id: "abc", latest: event, children: [], acknowledgedAt: Date())
+        XCTAssertTrue(dismissed.isDismissedAlarm)
+    }
+}

@@ -63,8 +63,13 @@ struct Session: Identifiable, Equatable {
         return own || children.contains { $0.needsAction }
     }
 
-    /// You have seen this alarm, but the session is still blocked. Worth
-    /// showing differently from both an unattended alarm and a quiet row.
+    /// An alarm you have seen but which is still outstanding — the only case
+    /// worth showing as "handled". Acknowledging a quiet row means nothing:
+    /// jumping to a terminal is not dismissing anything.
+    var isDismissedAlarm: Bool {
+        latest.isActionable && isAcknowledged
+    }
+
     var isAcknowledged: Bool {
         guard let acknowledgedAt else { return false }
         return latest.timestamp <= acknowledgedAt
