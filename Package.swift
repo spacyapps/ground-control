@@ -13,25 +13,25 @@ import PackageDescription
 // Linting now runs from the standalone binary (`swiftlint --strict`), locally
 // and in CI. Nothing third-party ends up in the shipped app.
 let package = Package(
-    name: "SkinTerminal",
+    name: "GroundControl",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "SkinTerminal", targets: ["SkinTerminal"])
+        .executable(name: "GroundControl", targets: ["GroundControl"])
     ],
     targets: [
         .executableTarget(
-            name: "SkinTerminal",
-            path: "Sources/SkinTerminal",
+            name: "GroundControl",
+            path: "Sources/GroundControl",
             resources: [
                 .process("Resources")
             ]
         ),
         .testTarget(
-            name: "SkinTerminalTests",
-            dependencies: ["SkinTerminal"],
-            path: "Tests/SkinTerminalTests"
+            name: "GroundControlTests",
+            dependencies: ["GroundControl"],
+            path: "Tests/GroundControlTests"
         )
     ]
 )

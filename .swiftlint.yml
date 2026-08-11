@@ -1,4 +1,4 @@
-# SkinTerminal — SwiftLint configuration
+# GroundControl — SwiftLint configuration
 # Run `swiftlint rules` to see every available rule and its status.
 
 included:
@@ -8,7 +8,7 @@ included:
 excluded:
   - .build
   - DerivedData
-  - Sources/SkinTerminal/Resources
+  - Sources/GroundControl/Resources
 
 # Rules on by default that we turn off (with reasons)
 disabled_rules:

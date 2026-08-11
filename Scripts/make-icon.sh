@@ -10,7 +10,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-SRC="Sources/SkinTerminal/Resources/logo-glyph.png"
+SRC="Sources/GroundControl/Resources/logo-glyph.png"
 OUT="Packaging/AppIcon.icns"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT

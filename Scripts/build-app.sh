@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Walter Mak
 #
-# Builds SkinTerminal.app.
+# Builds GroundControl.app.
 #
 # Signs with Developer ID when one exists, and says so plainly when it does
 # not — an unsigned build still runs locally, it just makes users right-click
@@ -10,7 +10,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-APP="build/SkinTerminal.app"
+APP="build/GroundControl.app"
 # `|| true`: grep exits 1 when there is no Developer ID, and pipefail would
 # otherwise abort the whole script before printing a single line.
 find_identity() {
@@ -37,7 +37,7 @@ echo "==> Assembling $APP"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-cp "$BIN/SkinTerminal" "$APP/Contents/MacOS/SkinTerminal"
+cp "$BIN/GroundControl" "$APP/Contents/MacOS/GroundControl"
 cp Packaging/Info.plist "$APP/Contents/Info.plist"
 [ -f Packaging/AppIcon.icns ] && cp Packaging/AppIcon.icns "$APP/Contents/Resources/"
 
@@ -52,7 +52,7 @@ if [ -n "$IDENTITY" ]; then
   # --options runtime is the hardened runtime, which notarisation requires and
   # which is why the apple-events entitlement has to be declared.
   codesign --force --deep --options runtime --timestamp \
-           --entitlements Packaging/SkinTerminal.entitlements \
+           --entitlements Packaging/GroundControl.entitlements \
            --sign "$IDENTITY" "$APP"
   codesign --verify --strict --verbose=2 "$APP"
 else
@@ -62,7 +62,7 @@ else
   # Ad-hoc signing still lets the hardened runtime and entitlements apply
   # locally, so behaviour matches a real build as closely as possible.
   codesign --force --deep --options runtime \
-           --entitlements Packaging/SkinTerminal.entitlements \
+           --entitlements Packaging/GroundControl.entitlements \
            --sign - "$APP"
 fi
 

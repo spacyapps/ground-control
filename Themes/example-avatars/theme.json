@@ -1,9 +1,9 @@
 {
-  "$schema": "https://skinterminal.app/theme.schema.json",
+  "$schema": "https://groundcontrol.app/theme.schema.json",
   "manifestVersion": 1,
 
   "name": "Example Avatars",
-  "author": "SkinTerminal",
+  "author": "GroundControl",
   "description": "Shows the avatar system: three stills and one animated GIF. Copy this folder and swap the four files to make it yours.",
 
   "avatar": {

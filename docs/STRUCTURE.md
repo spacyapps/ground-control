@@ -1,19 +1,19 @@
 # Project Structure
 
-SkinTerminal is a Swift Package Manager executable (AppKit, `LSUIElement`
+GroundControl is a Swift Package Manager executable (AppKit, `LSUIElement`
 menu-bar app). One responsibility per file; group by feature/layer, not by
 "all views here, all models there" mega-folders. When a file passes ~400
 lines, split it.
 
 ```
-SkinTerminal/
+GroundControl/
 ├── Package.swift                 # SPM manifest — no dependencies; target + resources
 ├── .swiftlint.yml                # lint rules (root; nested configs allowed later)
 ├── .gitignore                    # excludes build/, DerivedData/, secrets, xcuserdata
 ├── README.md                     # landing page: what it is, build, screenshots
 ├── LICENSE                       # MIT
 │
-├── Sources/SkinTerminal/
+├── Sources/GroundControl/
 │   ├── App/                      # lifecycle & wiring
 │   │   ├── main.swift            # entry point, sets .accessory activation policy
 │   │   ├── AppDelegate.swift     # NSApplicationDelegate, boots the coordinator
@@ -92,7 +92,7 @@ SkinTerminal/
 │   ├── install-hooks.sh          # MERGES hook entries into ~/.claude/settings.json
 │   └── build-dmg.sh              # create-dmg packaging  [not written yet]
 │
-├── Tests/SkinTerminalTests/      # unit tests mirror the source tree
+├── Tests/GroundControlTests/      # unit tests mirror the source tree
 │   ├── SessionFileParserTests.swift
 │   ├── SessionTests.swift
 │   ├── AgentGrouperTests.swift

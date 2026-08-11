@@ -47,7 +47,7 @@ their messages being echoes of the user's own prompts ("commit", "rename it to
 avaterm"), which is exactly what made them misleading on screen.
 
 Still a heuristic rather than a guarantee: a real subagent *could* report no
-type. `defaults write SkinTerminal showsInternalAgents -bool YES`, or the
+type. `defaults write GroundControl showsInternalAgents -bool YES`, or the
 checkbox in Settings → Advanced, brings them back.
 
 ### 3. Background images have never been rendered

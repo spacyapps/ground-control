@@ -1,4 +1,4 @@
-# Making a SkinTerminal Theme
+# Making a Ground Control Theme
 
 A theme is a **folder** containing one `theme.json` manifest plus any images or
 videos it references. That's it.
@@ -9,7 +9,7 @@ Two folders ship as starting points: `default/` (every colour key, no
 artwork) and `example-avatars/` (the avatar system working — three stills and
 one animated GIF). Copy whichever is closer to what you want.
 
-Themes live in `~/Library/Application Support/SkinTerminal/Themes/`. The
+Themes live in `~/Library/Application Support/GroundControl/Themes/`. The
 menu-bar menu has **Theme → Open Themes Folder…** if you'd rather not type it.
 
 1. Copy the `default/` folder and rename it (e.g. `themes/neon/`).

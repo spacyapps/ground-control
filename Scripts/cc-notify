@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Walter Mak
 """
-cc-notify — agent-CLI hook emitter for SkinTerminal.
+cc-notify — agent-CLI hook emitter for GroundControl.
 
 Reads a hook payload on stdin and appends one JSON line to that session's
 file. Field names below are not guesses: they were captured from live hook
@@ -21,7 +21,7 @@ event. Grok reads ~/.claude/settings.json too, so one install covers both:
 
     { "type": "command", "command": "~/bin/cc-notify" }
 
-Output layout (${TMPDIR}/skinterminal/):
+Output layout (${TMPDIR}/groundcontrol/):
 
     <session_id>.jsonl                  one per session   -> one row
     agents/<session_id>__<agent_id>.jsonl  one per subagent -> one child row
@@ -91,7 +91,7 @@ def timestamp_of(payload):
 
 def sessions_dir():
     base = os.environ.get("TMPDIR") or "/tmp"
-    return os.path.join(base, "skinterminal")
+    return os.path.join(base, "groundcontrol")
 
 
 def resolve_tty():

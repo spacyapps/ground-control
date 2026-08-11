@@ -72,4 +72,4 @@ PY
 
 echo
 echo "Done. Hooks take effect immediately — no restart needed."
-echo "Verify with a fresh session, then: ls \"\${TMPDIR:-/tmp}/skinterminal/\""
+echo "Verify with a fresh session, then: ls \"\${TMPDIR:-/tmp}/groundcontrol/\""

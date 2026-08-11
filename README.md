@@ -1,4 +1,4 @@
-# SkinTerminal
+# Ground Control
 
 A macOS menu-bar app that monitors your Claude CLI sessions and shows, at a
 glance, which ones need your attention — with a WinAmp-style skinnable UI

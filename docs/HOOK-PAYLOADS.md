@@ -137,7 +137,7 @@ Hooks remain the supported interface.
 ## Grok (`grok` CLI, 2026-08-11)
 
 **Grok reads `~/.claude/settings.json` on purpose** — documented Claude Code
-compatibility, alongside `~/.cursor/hooks.json`. So installing SkinTerminal's
+compatibility, alongside `~/.cursor/hooks.json`. So installing Ground Control's
 hooks wires up both CLIs at once, and `/hooks` inside Grok lists them under
 `Custom: ~/.claude`.
 

@@ -1,9 +1,9 @@
 {
-  "$schema": "https://skinterminal.app/theme.schema.json",
+  "$schema": "https://groundcontrol.app/theme.schema.json",
   "manifestVersion": 1,
 
   "name": "Default",
-  "author": "SkinTerminal",
+  "author": "GroundControl",
   "description": "Built-in theme. Copy this folder to make your own — delete any key to use the app's default.",
 
   "colors": {

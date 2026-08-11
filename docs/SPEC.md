@@ -1,4 +1,4 @@
-# SkinTerminal — Build Specification
+# Ground Control — Build Specification
 
 A macOS menu-bar app that monitors multiple Claude Code sessions and shows,
 at a glance, which ones need your attention — with a WinAmp-style skinnable
@@ -49,14 +49,14 @@ depends on.
 - **Latest state = the last line of the file.** The row reads the last JSON
   line for its name, message, and state.
 
-**Sessions folder:** `${TMPDIR}/skinterminal/` (ephemeral by design — we only
-care about latest activity). Fall back to `/tmp/skinterminal/` if `TMPDIR` is
+**Sessions folder:** `${TMPDIR}/groundcontrol/` (ephemeral by design — we only
+care about latest activity). Fall back to `/tmp/groundcontrol/` if `TMPDIR` is
 unset.
 
 **Layout:**
 
 ```
-${TMPDIR}/skinterminal/
+${TMPDIR}/groundcontrol/
 ├── <session_id>.jsonl                     one per session   -> one top-level row
 └── agents/
     └── <session_id>__<agent_id>.jsonl     one per subagent  -> one child row
@@ -189,7 +189,7 @@ the red dot if any child needs action.
 
    It is a heuristic, not a guarantee: a genuine subagent reporting no type is
    hidden too. The files stay on disk regardless, and
-   `defaults write SkinTerminal showsInternalAgents -bool YES` restores them
+   `defaults write GroundControl showsInternalAgents -bool YES` restores them
    without a rebuild.
 
 Resolve the first before enabling B (§10).
