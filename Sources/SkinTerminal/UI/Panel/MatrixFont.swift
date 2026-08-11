@@ -15,6 +15,12 @@ enum MatrixFont {
     /// decoration, and an unknown character should cost a space, not a crash.
     static let blank: [UInt8] = [0, 0, 0, 0, 0]
 
+    /// Whether a character has a glyph — used to reject harvested words that
+    /// would render as gaps.
+    static func supports(_ character: Character) -> Bool {
+        glyphs[Character(character.uppercased())] != nil
+    }
+
     static func glyph(for character: Character) -> [UInt8] {
         glyphs[Character(character.uppercased())] ?? blank
     }

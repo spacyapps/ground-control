@@ -25,10 +25,14 @@ final class VisualizerView: NSView {
     private let segmentGap: CGFloat = 1
 
     /// Every so often, and only while asleep, the grid spells something.
-    private static let marqueeText = "SPACYAPPS"
-    private static let restInterval: TimeInterval = 90
-    private var messageColumn: CGFloat = -1
+    private var messageText = MatrixMessages.brand
+    private var messageTurn = 0
+    /// Screen column the message's first character currently sits at. It
+    /// starts off the right edge and walks left. `nil` means no message.
+    private var messageScroll: CGFloat?
     private var messageTimer: Timer?
+    /// Words lifted from what the sessions last said.
+    private var harvested: [String] = []
 
     override var isFlipped: Bool { true }
 
@@ -60,7 +64,9 @@ final class VisualizerView: NSView {
     func update(sessions: [Session]) {
         targetEnergy = Self.energy(for: sessions)
         isAlarmed = Self.alarms(for: sessions)
+        harvested = MatrixMessages.harvest(from: sessions.map(\.message))
         if targetEnergy > 0 { start() }
+        if messageTimer == nil && !isShowingMessage { scheduleMessage() }
         // The alarm colour can change while the bars are at rest and the timer
         // is stopped, so repaint regardless.
         needsDisplay = true
@@ -88,21 +94,27 @@ final class VisualizerView: NSView {
     /// this wakes it just long enough to spell the name once.
     private func scheduleMessage() {
         messageTimer?.invalidate()
-        guard window != nil, targetEnergy == 0, !isAlarmed else { return }
+        guard window != nil, !isAlarmed else { return }
         messageTimer = Timer.scheduledTimer(
-            withTimeInterval: Self.restInterval, repeats: false
+            withTimeInterval: MatrixMessages.nextDelay(), repeats: false
         ) { [weak self] _ in
             self?.beginMessage()
         }
     }
 
     private func beginMessage() {
-        guard isAtRest, !isAlarmed, window != nil else { return }
-        messageColumn = -1
+        guard window != nil, !isAlarmed else { return }
+        messageTurn += 1
+        messageText = MatrixMessages.next(
+            turn: messageTurn,
+            avoiding: messageText,
+            harvested: harvested
+        )
+        messageScroll = columnCount
         start()
     }
 
-    private var isShowingMessage: Bool { messageColumn >= 0 }
+    private var isShowingMessage: Bool { messageScroll != nil }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
@@ -110,10 +122,7 @@ final class VisualizerView: NSView {
     }
 
     private func step() {
-        if isShowingMessage || (messageColumn == -1 && isAtRest && targetEnergy == 0 && !isAlarmed) {
-            advanceMessage()
-            return
-        }
+        advanceMessage()
         energy += (targetEnergy - energy) * 0.12
         resizeBarsIfNeeded()
 
@@ -134,24 +143,30 @@ final class VisualizerView: NSView {
 
         // Peaks fall on their own slower schedule, so stopping when only the
         // bars have settled freezes them mid-air as a row of stray dashes.
-        if isAtRest { stop() }
+        if isAtRest && !isShowingMessage { stop() }
         needsDisplay = true
     }
 
+    /// Walks the message leftwards across the grid. The bars keep running
+    /// underneath: the word is made of the same squares, so it reads as the
+    /// display forming letters rather than as text pasted over a meter.
     private func advanceMessage() {
-        // Real activity always wins: a message must never mask state.
-        if targetEnergy > 0 || isAlarmed {
-            messageColumn = -1
-            needsDisplay = true
+        guard var scroll = messageScroll else { return }
+
+        // An alarm is the one thing that clears it — nothing should sweep
+        // across a panel that needs you.
+        if isAlarmed {
+            messageScroll = nil
             return
         }
-        messageColumn = messageColumn < 0 ? 0 : messageColumn + 0.55
-        let span = CGFloat(MatrixFont.columns(for: Self.marqueeText)) + columnCount
-        if messageColumn > span {
-            messageColumn = -1
-            stop()
+
+        scroll -= 0.5
+        if scroll < -CGFloat(MatrixFont.columns(for: messageText)) {
+            messageScroll = nil
+            scheduleMessage()
+        } else {
+            messageScroll = scroll
         }
-        needsDisplay = true
     }
 
     private var columnCount: CGFloat {
@@ -195,12 +210,7 @@ final class VisualizerView: NSView {
         // Fully asleep with nothing waiting: an empty grid says "broken", a
         // sleeping face says "quiet". Something waiting on you still gets the
         // lit red floor below, so rest never hides an alarm.
-        if isShowingMessage {
-            drawMessage(usable: usable, inset: inset)
-            return
-        }
-
-        if isAtRest && !isAlarmed {
+        if isAtRest && !isAlarmed && !isShowingMessage {
             drawSleeping()
             return
         }
@@ -208,30 +218,36 @@ final class VisualizerView: NSView {
         for (index, level) in levels.enumerated() {
             let originX = inset + CGFloat(index) * (barWidth + barGap)
             guard originX + barWidth <= bounds.width - inset else { break }
-            drawColumn(x: originX, level: level, peak: peaks[index], usable: usable, inset: inset)
+
+            if let column = messageColumn(at: index) {
+                drawLetterColumn(x: originX, column: column, usable: usable, inset: inset)
+            } else {
+                drawColumn(x: originX, level: level, peak: peaks[index], usable: usable, inset: inset)
+            }
         }
     }
 
-    /// Draws the marquee into the same grid the bars use, so it reads as the
-    /// display spelling something rather than as text pasted over it.
-    private func drawMessage(usable: CGFloat, inset: CGFloat) {
-        let cell = (usable - CGFloat(Self.rows - 1) * segmentGap) / CGFloat(Self.rows)
-        for index in levels.indices {
-            let column = Int((messageColumn - CGFloat(index)).rounded())
-            let originX = inset + CGFloat(index) * (barWidth + barGap)
-            guard originX + barWidth <= bounds.width - inset else { break }
+    /// Which column of the message, if any, currently sits at this screen
+    /// position.
+    private func messageColumn(at index: Int) -> Int? {
+        guard let scroll = messageScroll else { return nil }
+        let column = index - Int(scroll.rounded())
+        guard column >= 0, column < MatrixFont.columns(for: messageText) else { return nil }
+        return column
+    }
 
-            for row in 0..<Self.rows {
-                let lit = MatrixFont.isLit(text: Self.marqueeText, column: column, row: row)
-                let y = inset + CGFloat(row) * (cell + segmentGap)
-                let rect = NSRect(x: originX, y: y, width: barWidth, height: cell)
-                if lit {
-                    theme.colors.accent.setFill()
-                } else {
-                    theme.colors.divider.withAlphaComponent(0.10).setFill()
-                }
-                rect.fill()
+    /// One column of the sweeping word, drawn in the same cells the bars use.
+    private func drawLetterColumn(x originX: CGFloat, column: Int, usable: CGFloat, inset: CGFloat) {
+        let cell = (usable - CGFloat(Self.rows - 1) * segmentGap) / CGFloat(Self.rows)
+        for row in 0..<Self.rows {
+            let lit = MatrixFont.isLit(text: messageText, column: column, row: row)
+            let y = inset + CGFloat(row) * (cell + segmentGap)
+            if lit {
+                theme.colors.titleBarText.setFill()
+            } else {
+                theme.colors.divider.withAlphaComponent(0.10).setFill()
             }
+            NSRect(x: originX, y: y, width: barWidth, height: cell).fill()
         }
     }
 
