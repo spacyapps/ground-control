@@ -22,6 +22,19 @@ menu-bar menu has **Theme → Open Themes Folder…** if you'd rather not type i
 Files can be named anything — the manifest points at them by path. Paths are
 relative to the theme folder.
 
+## Seeing your work
+
+```bash
+./Scripts/theme-preview.sh          # one fake row per state
+./Scripts/theme-preview.sh clear    # remove them again
+```
+
+This is the only reliable way to see all four avatars at once. `needsInput` in
+particular is hard to trigger on demand — it depends on an agent actually
+blocking on you — so without this you cannot check the face a theme draws for
+the state that matters most. The preview rows are prefixed `preview-` and never
+touch real sessions.
+
 ## The one rule
 
 **Everything is optional.** Every color, image, and video has a code default.
