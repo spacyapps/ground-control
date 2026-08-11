@@ -11,6 +11,7 @@ final class GroupRowView: NSView {
     private let nameLabel = NSTextField(labelWithString: "")
     private let messageLabel = MarqueeLabel()
     private var theme: Theme = DefaultTheme.theme
+    private var trackingArea: NSTrackingArea?
 
     override var isFlipped: Bool { true }
 
@@ -80,6 +81,23 @@ final class GroupRowView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         theme.colors.rowBackgroundAlt.setFill()
         bounds.fill()
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.cursorUpdate, .activeAlways, .inVisibleRect],
+            owner: self
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    /// A child jumps to its orchestrator's terminal, so it is clickable too.
+    override func cursorUpdate(with event: NSEvent) {
+        NSCursor.pointingHand.set()
     }
 
     override func mouseDown(with event: NSEvent) {

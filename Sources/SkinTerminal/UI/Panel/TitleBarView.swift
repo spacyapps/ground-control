@@ -15,6 +15,7 @@ final class TitleBarView: NSView {
     private let visualizer = VisualizerView()
     private let mark = NSImageView()
     private var theme: Theme = DefaultTheme.theme
+    private var trackingArea: NSTrackingArea?
 
     override var isFlipped: Bool { true }
 
@@ -120,6 +121,24 @@ final class TitleBarView: NSView {
         line.move(to: NSPoint(x: 0, y: bounds.maxY - 0.5))
         line.line(to: NSPoint(x: bounds.width, y: bounds.maxY - 0.5))
         line.stroke()
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.cursorUpdate, .activeAlways, .inVisibleRect],
+            owner: self
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    /// An open hand, because this strip is the only way to move a panel with
+    /// no system titlebar left to grab.
+    override func cursorUpdate(with event: NSEvent) {
+        NSCursor.openHand.set()
     }
 
     /// Dragging anywhere on the strip moves the window.

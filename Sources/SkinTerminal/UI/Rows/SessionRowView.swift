@@ -272,11 +272,17 @@ final class SessionRowView: NSView {
         if let trackingArea { removeTrackingArea(trackingArea) }
         let area = NSTrackingArea(
             rect: bounds,
-            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            options: [.mouseEnteredAndExited, .cursorUpdate, .activeAlways, .inVisibleRect],
             owner: self
         )
         addTrackingArea(area)
         trackingArea = area
+    }
+
+    /// Nothing else says a row is clickable — the panel has no buttons and no
+    /// underlines, so the cursor is the only affordance.
+    override func cursorUpdate(with event: NSEvent) {
+        NSCursor.pointingHand.set()
     }
 
     override func mouseEntered(with event: NSEvent) {
