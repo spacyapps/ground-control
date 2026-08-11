@@ -52,6 +52,28 @@ final class SessionStore {
         reload()
     }
 
+    /// Deletes a session's files, removing its row.
+    ///
+    /// The escape hatch for a row that should not be there: a session whose
+    /// terminal was killed, so `SessionEnd` never fired, or anything else that
+    /// outlived its usefulness. Deliberately manual — deciding a session is
+    /// dead by inspecting the system would risk removing a live one, and a
+    /// monitor that hides a working session is worse than one that shows a
+    /// stale row.
+    ///
+    /// A session that is still running simply reappears on its next event.
+    func remove(sessionID: String) {
+        try? FileManager.default.removeItem(at: root.appendingPathComponent("\(sessionID).jsonl"))
+
+        let children = (try? FileManager.default.contentsOfDirectory(
+            at: agentsRoot, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
+        )) ?? []
+        for child in children where child.lastPathComponent.hasPrefix("\(sessionID)\(AgentGrouper.separator)") {
+            try? FileManager.default.removeItem(at: child)
+        }
+        reload()
+    }
+
     /// Clears the dot for a row until something newer arrives.
     func acknowledge(sessionID: String) {
         acknowledged[sessionID] = Date()

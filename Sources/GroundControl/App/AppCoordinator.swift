@@ -104,6 +104,8 @@ final class AppCoordinator {
         menu.addItem(.separator())
         menu.addItem(menuItem(title: "Copy Path", action: #selector(contextCopyPath)))
         menu.addItem(menuItem(title: "Rename…", action: #selector(contextRename)))
+        menu.addItem(.separator())
+        menu.addItem(menuItem(title: "Remove Row", action: #selector(contextRemove)))
 
         guard let view = panel.panel?.contentView else { return }
         let location = view.convert(event.locationInWindow, from: nil)
@@ -120,6 +122,13 @@ final class AppCoordinator {
     @objc private func contextJump() {
         guard let session = contextSession else { return }
         activate(session)
+    }
+
+    /// Removes the row outright. A live session reappears on its next event,
+    /// so this is only permanent for one that has genuinely finished.
+    @objc private func contextRemove() {
+        guard let session = contextSession else { return }
+        store.remove(sessionID: session.id)
     }
 
     @objc private func contextDismiss() {
