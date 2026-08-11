@@ -88,16 +88,19 @@ final class GroupRowView: NSView {
         if let trackingArea { removeTrackingArea(trackingArea) }
         let area = NSTrackingArea(
             rect: bounds,
-            options: [.cursorUpdate, .activeAlways, .inVisibleRect],
+            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
             owner: self
         )
         addTrackingArea(area)
         trackingArea = area
     }
 
-    /// A child jumps to its orchestrator's terminal, so it is clickable too.
-    override func cursorUpdate(with event: NSEvent) {
-        NSCursor.pointingHand.set()
+    override func mouseEntered(with event: NSEvent) {
+        NSCursor.pointingHand.push()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        NSCursor.pop()
     }
 
     override func mouseDown(with event: NSEvent) {

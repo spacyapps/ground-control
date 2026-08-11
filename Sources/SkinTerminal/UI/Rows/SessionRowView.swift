@@ -106,8 +106,7 @@ final class SessionRowView: NSView {
             avatar.configure(
                 asset: theme.avatar.asset(for: session.state),
                 state: session.state,
-                tint: theme.colors.color(for: session.state),
-                cornerRadius: theme.avatar.cornerRadius
+                theme: theme
             )
         }
 
@@ -272,26 +271,24 @@ final class SessionRowView: NSView {
         if let trackingArea { removeTrackingArea(trackingArea) }
         let area = NSTrackingArea(
             rect: bounds,
-            options: [.mouseEnteredAndExited, .cursorUpdate, .activeAlways, .inVisibleRect],
+            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
             owner: self
         )
         addTrackingArea(area)
         trackingArea = area
     }
 
-    /// Nothing else says a row is clickable — the panel has no buttons and no
-    /// underlines, so the cursor is the only affordance.
-    override func cursorUpdate(with event: NSEvent) {
-        NSCursor.pointingHand.set()
-    }
-
+    // Pushed imperatively rather than via cursorUpdate: this panel never
+    // becomes key, and AppKit only runs cursor updates for the key window.
     override func mouseEntered(with event: NSEvent) {
         isHovering = true
+        NSCursor.pointingHand.push()
         needsDisplay = true
     }
 
     override func mouseExited(with event: NSEvent) {
         isHovering = false
+        NSCursor.pop()
         needsDisplay = true
     }
 

@@ -128,17 +128,19 @@ final class TitleBarView: NSView {
         if let trackingArea { removeTrackingArea(trackingArea) }
         let area = NSTrackingArea(
             rect: bounds,
-            options: [.cursorUpdate, .activeAlways, .inVisibleRect],
+            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
             owner: self
         )
         addTrackingArea(area)
         trackingArea = area
     }
 
-    /// An open hand, because this strip is the only way to move a panel with
-    /// no system titlebar left to grab.
-    override func cursorUpdate(with event: NSEvent) {
-        NSCursor.openHand.set()
+    override func mouseEntered(with event: NSEvent) {
+        NSCursor.openHand.push()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        NSCursor.pop()
     }
 
     /// Dragging anywhere on the strip moves the window.

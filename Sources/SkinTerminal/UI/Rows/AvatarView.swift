@@ -16,6 +16,9 @@ final class AvatarView: NSView {
     private var asset: Theme.Avatar.Asset?
     private var drawnState: SessionState?
     private var cornerRadius: CGFloat = 8
+    private var theme: Theme = DefaultTheme.theme
+    private var isHovering = false
+    private var trackingArea: NSTrackingArea?
     private static let spinKey = "skinterminal.spin"
 
     /// Decoded images are reused across rows and state flips — the same few
@@ -51,6 +54,43 @@ final class AvatarView: NSView {
         playerLayer?.frame = bounds
     }
 
+    /// The avatar is the row's most obvious hit target, so it is dressed as a
+    /// button: a plate, a hairline, and a lift on hover. Without this nothing
+    /// in the panel looks pressable at all.
+    private func applyButtonChrome() {
+        layer?.backgroundColor = isHovering
+            ? theme.colors.rowBackgroundHover.cgColor
+            : theme.colors.rowBackgroundAlt.withAlphaComponent(0.65).cgColor
+        layer?.borderWidth = 1
+        layer?.borderColor = isHovering
+            ? theme.colors.color(for: drawnState ?? .idle).withAlphaComponent(0.9).cgColor
+            : theme.colors.messageDim.withAlphaComponent(0.35).cgColor
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            owner: self
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovering = true
+        NSCursor.pointingHand.push()
+        applyButtonChrome()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovering = false
+        NSCursor.pop()
+        applyButtonChrome()
+    }
+
     /// Pausing on removal matters: rows are rebuilt on every store change, so
     /// orphaned players would otherwise keep decoding forever.
     override func viewDidMoveToWindow() {
@@ -59,18 +99,17 @@ final class AvatarView: NSView {
     }
 
     /// `asset` is the theme's artwork for this state, if it supplied any.
-    /// When it did not, the built-in symbol for `state` is drawn in `tint`.
-    func configure(asset: Theme.Avatar.Asset?,
-                   state: SessionState,
-                   tint: NSColor,
-                   cornerRadius: CGFloat) {
-        self.cornerRadius = cornerRadius
+    /// When it did not, the built-in symbol for `state` is drawn tinted.
+    func configure(asset: Theme.Avatar.Asset?, state: SessionState, theme: Theme) {
+        self.theme = theme
+        self.cornerRadius = theme.avatar.cornerRadius
         layer?.cornerRadius = cornerRadius
-        imageView.contentTintColor = tint
+        imageView.contentTintColor = theme.colors.color(for: state)
+        applyButtonChrome()
 
-        guard asset != self.asset || (asset == nil && state != drawnState) else { return }
+        guard asset != self.asset || state != drawnState else { return }
         self.asset = asset
-        self.drawnState = asset == nil ? state : nil
+        self.drawnState = state
 
         switch asset {
         case .none:
