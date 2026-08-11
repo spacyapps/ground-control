@@ -131,3 +131,52 @@ Prefer `session_title`, fall back to `basename(cwd)`.
 Useful as a cross-check or a recovery path for sessions that started before the
 hooks were installed — but it is internal CLI state with no stability promise.
 Hooks remain the supported interface.
+
+---
+
+## Grok (`grok` CLI, 2026-08-11)
+
+**Grok reads `~/.claude/settings.json` on purpose** — documented Claude Code
+compatibility, alongside `~/.cursor/hooks.json`. So installing SkinTerminal's
+hooks wires up both CLIs at once, and `/hooks` inside Grok lists them under
+`Custom: ~/.claude`.
+
+The events are the same; only the spelling differs.
+
+| Claude Code | Grok |
+|---|---|
+| `hook_event_name: "Stop"` | `hookEventName: "stop"` |
+| `session_id` | `sessionId` |
+| `last_assistant_message` | `lastAssistantMessage` |
+| `transcript_path` | `transcriptPath` |
+| `permission_mode` | `permissionMode` |
+| `cwd`, `prompt` | same |
+| *(none — we use the clock)* | `timestamp` (ISO 8601) |
+| `session_title` | *(absent — falls back to the folder)* |
+
+Grok also sends `workspaceRoot`, and wraps prompts in `<user_query>` tags,
+which `cc-notify` strips.
+
+That is why `cc-notify` reads both dialects rather than shipping one script per
+CLI: `get(payload, "session_id", "sessionId")`. A CLI following either
+convention works with no changes at all.
+
+### Two events Claude Code does not have
+
+```json
+{"hookEventName":"session_end","sessionId":"019fee7c-…","reason":"shutdown",
+ "cwd":"…","timestamp":"2026-08-11T01:42:26.433155+00:00"}
+```
+
+- **`SessionEnd`** — a session that says goodbye should not wait out the 24h
+  purge. `cc-notify` deletes the session file and its `agents/` children, and
+  the file ⇔ row invariant makes the row disappear.
+- **`SubagentStart`** — carries an `agent_id` *before* the work happens, so
+  Grok subagents can appear as children while running. Claude Code only
+  announces the stop, which is why SPEC §10 lists live tracking as unresolved
+  there.
+
+Grok additionally offers `PostToolUse`, `PostToolUseFailure`, `PermissionDenied`,
+`StopFailure`, `PreCompact` and `PostCompact`. `PermissionDenied` is the most
+interesting unused one: it would be a genuine blocking alarm, which the Claude
+side still lacks.

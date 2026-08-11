@@ -15,6 +15,7 @@ final class SessionRowView: NSView {
     private let messageLabel = MarqueeLabel()
     private let disclosure = NSButton()
     private let avatar = AvatarView()
+    private let sourceTag = NSTextField(labelWithString: "")
 
     private var theme: Theme = DefaultTheme.theme
     private var isHovering = false
@@ -44,6 +45,7 @@ final class SessionRowView: NSView {
         addSubview(messageLabel)
         addSubview(disclosure)
         addSubview(avatar)
+        addSubview(sourceTag)
     }
 
     @available(*, unavailable)
@@ -53,19 +55,32 @@ final class SessionRowView: NSView {
 
     // MARK: - Content
 
-    func configure(session: Session,
-                   theme: Theme,
-                   renames: [String: String],
-                   isExpanded: Bool,
-                   isAlternate: Bool) {
+    /// Everything about how a row is shown, as opposed to what it shows.
+    struct Presentation {
+        let theme: Theme
+        let renames: [String: String]
+        let isExpanded: Bool
+        let isAlternate: Bool
+        let showsSource: Bool
+    }
+
+    func configure(session: Session, presentation: Presentation) {
+        let theme = presentation.theme
+        let renames = presentation.renames
         self.theme = theme
         self.isGroup = session.isGroup
-        self.isExpanded = isExpanded
-        self.useAlternateBackground = isAlternate
+        self.isExpanded = presentation.isExpanded
+        self.useAlternateBackground = presentation.isAlternate
 
         nameLabel.stringValue = session.displayName(renames: renames)
         nameLabel.font = theme.typography.nameFont()
         nameLabel.textColor = theme.colors.sessionName
+
+        // Only worth the pixels when more than one CLI is on screen.
+        sourceTag.isHidden = !presentation.showsSource
+        sourceTag.stringValue = session.source.uppercased()
+        sourceTag.font = .systemFont(ofSize: max(7, theme.typography.messageSize - 3), weight: .bold)
+        sourceTag.textColor = theme.colors.messageDim.withAlphaComponent(0.75)
 
         messageLabel.font = theme.typography.messageFont()
         messageLabel.textColor = session.needsAction ? theme.colors.message : theme.colors.messageDim
@@ -88,7 +103,10 @@ final class SessionRowView: NSView {
         }
 
         disclosure.isHidden = !session.isGroup
-        disclosure.attributedTitle = triangle(expanded: isExpanded, color: theme.colors.messageDim)
+        disclosure.attributedTitle = triangle(
+            expanded: presentation.isExpanded,
+            color: theme.colors.messageDim
+        )
 
         toolTip = session.cwd
         needsDisplay = true
@@ -160,6 +178,10 @@ final class SessionRowView: NSView {
         let trailingInset = padding + (onLeft ? 0 : avatarSpan)
         let textWidth = max(0, bounds.width - textX - trailingInset)
 
+        layoutText(textX: textX, textWidth: textWidth, trailingInset: trailingInset)
+    }
+
+    private func layoutText(textX: CGFloat, textWidth: CGFloat, trailingInset: CGFloat) {
         let nameHeight = theme.typography.nameSize + 4
         let messageHeight = theme.typography.messageSize + 4
 
@@ -179,7 +201,19 @@ final class SessionRowView: NSView {
             )
         } else {
             let top = (bounds.height - (nameHeight + messageHeight + 2)) / 2
-            nameLabel.frame = NSRect(x: textX, y: top, width: textWidth, height: nameHeight)
+            let tagWidth = sourceTag.isHidden ? 0 : sourceTag.intrinsicContentSize.width + 6
+            nameLabel.frame = NSRect(
+                x: textX,
+                y: top,
+                width: max(0, textWidth - tagWidth),
+                height: nameHeight
+            )
+            sourceTag.frame = NSRect(
+                x: bounds.width - trailingInset - tagWidth + 6,
+                y: top + 2,
+                width: max(0, tagWidth - 6),
+                height: nameHeight - 2
+            )
             messageLabel.frame = NSRect(
                 x: textX,
                 y: top + nameHeight + 2,

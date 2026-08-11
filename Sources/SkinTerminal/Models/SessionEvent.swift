@@ -9,6 +9,9 @@ import Foundation
 /// round-trip it. The app reads these files, it never writes them.
 struct SessionEvent: Decodable, Equatable {
     let sessionID: String
+    /// Which CLI produced this row — "claude", "grok", … Session ids are only
+    /// unique per tool, so this is what keeps two CLIs apart.
+    let source: String
     let name: String?
     let cwd: String?
     let tty: String?
@@ -22,6 +25,7 @@ struct SessionEvent: Decodable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case sessionID = "session_id"
+        case source
         case name
         case cwd
         case tty
@@ -47,6 +51,7 @@ struct SessionEvent: Decodable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         sessionID = try container.decode(String.self, forKey: .sessionID)
+        source = try container.decodeIfPresent(String.self, forKey: .source) ?? "claude"
         name = try container.decodeIfPresent(String.self, forKey: .name)
         cwd = try container.decodeIfPresent(String.self, forKey: .cwd)
         tty = try container.decodeIfPresent(String.self, forKey: .tty)

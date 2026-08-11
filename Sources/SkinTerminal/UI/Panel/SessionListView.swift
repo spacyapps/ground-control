@@ -100,18 +100,21 @@ final class SessionListView: NSView {
             view.removeFromSuperview()
         }
 
+        // A single-CLI user never sees a source tag; two or more and every row
+        // gets one, so the comparison is obvious rather than implied.
+        let showsSource = Set(sessions.map(\.source)).count > 1
         let rowHeight = SessionRowView.height(for: theme)
         let childHeight = GroupRowView.height(for: theme)
 
         for (index, session) in sessions.enumerated() {
             let row = SessionRowView()
-            row.configure(
-                session: session,
+            row.configure(session: session, presentation: SessionRowView.Presentation(
                 theme: theme,
                 renames: renames,
                 isExpanded: expanded.contains(session.id),
-                isAlternate: index.isMultiple(of: 2)
-            )
+                isAlternate: index.isMultiple(of: 2),
+                showsSource: showsSource
+            ))
             row.onActivate = { [weak self] in self?.onActivate?(session) }
             row.onSecondaryClick = { [weak self] event in self?.onSecondaryClick?(session, event) }
             row.onToggleChildren = { [weak self] in self?.toggleExpansion(of: session.id) }

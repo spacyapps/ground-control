@@ -36,6 +36,7 @@ struct Session: Identifiable, Equatable {
     }
 
     var tty: String? { latest.tty }
+    var source: String { latest.source }
     var cwd: String? { latest.cwd }
     var lastActivity: Date { latest.timestamp }
 

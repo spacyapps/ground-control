@@ -1,6 +1,9 @@
 #!/bin/bash
 # install-hooks.sh — install cc-notify and register it in Claude Code settings.
 #
+# Grok reads ~/.claude/settings.json too (documented Claude-compat), so this
+# wires up both CLIs at once. cc-notify speaks both dialects.
+#
 # Merges into ~/.claude/settings.json rather than overwriting: existing hooks on
 # the same events are preserved (Claude Code runs every registered hook). Safe
 # to re-run — an existing cc-notify registration is not duplicated.
@@ -35,7 +38,12 @@ with open(settings_path) as handle:
     settings = json.load(handle)
 
 hooks = settings.setdefault("hooks", {})
-events = ["UserPromptSubmit", "PreToolUse", "Notification", "Stop", "SubagentStop"]
+# SessionStart/SessionEnd/SubagentStart are Grok's; harmless where unsupported,
+# and SessionEnd is what lets a row vanish on quit instead of ageing out.
+events = [
+    "SessionStart", "UserPromptSubmit", "PreToolUse", "Notification",
+    "Stop", "SubagentStart", "SubagentStop", "SessionEnd",
+]
 added = []
 
 for event in events:

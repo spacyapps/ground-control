@@ -21,8 +21,10 @@ Contract with the app: the LAST line of a file is that row's current state.
 This script must never block Claude. Every failure path exits 0 silently.
 """
 
+import datetime
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -32,7 +34,49 @@ MAX_MESSAGE = 240
 
 # Events that map to a row state. Anything else is ignored rather than written,
 # so a future or unrecognised event can never blank out a row's message.
-SESSION_EVENTS = ("UserPromptSubmit", "PreToolUse", "Notification", "Stop")
+SESSION_EVENTS = ("userpromptsubmit", "pretooluse", "notification", "stop", "sessionstart")
+
+
+def get(payload, *names):
+    """Reads a field under any of its spellings.
+
+    Claude Code uses snake_case, Grok camelCase — but the events and their
+    meanings are identical, so one emitter serves both rather than shipping a
+    script per CLI. Unknown CLIs that follow either convention work for free.
+    """
+    for name in names:
+        value = payload.get(name)
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def source_of(payload):
+    """Which CLI produced this. Session ids are only unique per tool, and rows
+    from different tools are worth telling apart."""
+    if "hookEventName" in payload:
+        return "grok"
+    if "hook_event_name" in payload:
+        return "claude"
+    return "unknown"
+
+
+def canonical_event(payload):
+    """Normalises `session_start` / `SessionStart` to one spelling."""
+    raw = get(payload, "hook_event_name", "hookEventName") or ""
+    return raw.replace("_", "").lower()
+
+
+def timestamp_of(payload):
+    """Grok sends an ISO string; Claude sends nothing and we use the clock."""
+    raw = get(payload, "timestamp")
+    if isinstance(raw, str):
+        try:
+            text = raw.replace("Z", "+00:00")
+            return int(datetime.datetime.fromisoformat(text).timestamp())
+        except Exception:
+            pass
+    return int(time.time())
 
 
 def sessions_dir():
@@ -99,9 +143,9 @@ def last_line(path):
 
 
 def describe_tool(payload):
-    """Best available phrasing for what Claude is doing right now."""
-    tool = payload.get("tool_name") or "tool"
-    tool_input = payload.get("tool_input")
+    """Best available phrasing for what the agent is doing right now."""
+    tool = get(payload, "tool_name", "toolName") or "tool"
+    tool_input = get(payload, "tool_input", "toolInput")
     if isinstance(tool_input, dict):
         for key in ("description", "file_path", "pattern", "command", "prompt"):
             value = tool_input.get(key)
@@ -110,11 +154,20 @@ def describe_tool(payload):
     return "Working… (%s)" % tool
 
 
+def strip_wrapper(text):
+    """Grok wraps prompts in <user_query> tags; the row wants the words."""
+    if not isinstance(text, str):
+        return text
+    for tag in ("user_query", "user-query"):
+        text = text.replace("<%s>" % tag, "").replace("</%s>" % tag, "")
+    return text.strip()
+
+
 def interpret(payload):
     """Map a hook event to (state, message, needs_action), or None to skip."""
-    event = payload.get("hook_event_name") or ""
+    event = canonical_event(payload)
 
-    if event == "Notification":
+    if event == "notification":
         # "idle_prompt" means Claude finished and is waiting for your next
         # message — not that it is blocked on you. Treating it as an alarm
         # turned every finished session red, which makes red mean nothing, and
@@ -124,18 +177,24 @@ def interpret(payload):
         # keep the alarm for notifications that genuinely block — a permission
         # request. (Unconfirmed: permission prompts do not fire under
         # permission_mode "auto", so that type string is still unobserved.)
-        if (payload.get("notification_type") or "") == "idle_prompt":
+        if (get(payload, "notification_type", "notificationType") or "") == "idle_prompt":
             return None
-        return "needsInput", condense(payload.get("message")) or "Needs your input", True
+        return "needsInput", condense(get(payload, "message")) or "Needs your input", True
 
-    if event == "Stop":
-        return "done", condense(payload.get("last_assistant_message")) or "Done", False
+    if event == "stop":
+        message = get(payload, "last_assistant_message", "lastAssistantMessage")
+        return "done", condense(message) or "Done", False
 
-    if event == "UserPromptSubmit":
-        return "working", condense(payload.get("prompt")) or "Working…", False
+    if event == "userpromptsubmit":
+        return "working", condense(strip_wrapper(get(payload, "prompt"))) or "Working…", False
 
-    if event == "PreToolUse":
+    if event == "pretooluse":
         return "working", describe_tool(payload), False
+
+    if event == "sessionstart":
+        # Grok announces sessions before any work happens, so the row can exist
+        # from the moment you open the CLI rather than at the first prompt.
+        return "idle", "Session started", False
 
     return "idle", "", False
 
@@ -146,25 +205,49 @@ def emit(path, record):
         handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def handle_subagent(payload, root, now):
-    """Subagents share the parent's tty and session_id, so they get their own
+def handle_subagent(payload, root, now, finished):
+    """Subagents share the parent's tty and session id, so they get their own
     file under agents/ — keeping the file <-> row invariant intact one level
-    down. The app groups them by the session_id prefix."""
-    agent_id = payload.get("agent_id")
-    session_id = payload.get("session_id")
+    down. The app groups them by the session id prefix.
+
+    Grok fires SubagentStart as well as SubagentStop, so its children can show
+    up while they are still running; Claude Code only announces the stop."""
+    agent_id = get(payload, "agent_id", "agentId")
+    session_id = get(payload, "session_id", "sessionId")
     if not agent_id or not session_id:
         return
+    message = get(payload, "last_assistant_message", "lastAssistantMessage")
     path = os.path.join(root, "agents", "%s__%s.jsonl" % (session_id, agent_id))
     emit(path, {
         "schema": SCHEMA,
         "session_id": session_id,
         "agent_id": agent_id,
-        "agent_type": payload.get("agent_type") or "",
-        "state": "done",
-        "message": condense(payload.get("last_assistant_message")) or "Finished",
+        "agent_type": get(payload, "agent_type", "agentType") or "",
+        "state": "done" if finished else "working",
+        "message": condense(message) or ("Finished" if finished else "Working…"),
         "needs_action": False,
         "ts": now,
     })
+
+
+def handle_session_end(session_id, root):
+    """A CLI that says goodbye should not wait 24h to disappear.
+
+    Claude Code leaves sessions to age out on mtime; Grok fires SessionEnd. The
+    file <-> row invariant does the rest — remove the files and the rows go."""
+    path = os.path.join(root, "%s.jsonl" % session_id)
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+    agents = os.path.join(root, "agents")
+    try:
+        for name in os.listdir(agents):
+            if name.startswith(session_id + "__"):
+                os.remove(os.path.join(agents, name))
+    except OSError:
+        pass
 
 
 def main():
@@ -173,16 +256,24 @@ def main():
     if not isinstance(payload, dict):
         return
 
-    session_id = payload.get("session_id")
+    session_id = get(payload, "session_id", "sessionId")
     if not session_id:
         return
 
     root = sessions_dir()
-    now = int(time.time())
-    event = payload.get("hook_event_name")
+    now = timestamp_of(payload)
+    event = canonical_event(payload)
 
-    if event == "SubagentStop":
-        handle_subagent(payload, root, now)
+    if event in ("subagentstop", "subagentend"):
+        handle_subagent(payload, root, now, finished=True)
+        return
+
+    if event == "subagentstart":
+        handle_subagent(payload, root, now, finished=False)
+        return
+
+    if event == "sessionend":
+        handle_session_end(session_id, root)
         return
 
     if event not in SESSION_EVENTS:
@@ -190,12 +281,13 @@ def main():
 
     path = os.path.join(root, "%s.jsonl" % session_id)
     previous = last_line(path) or {}
-    cwd = payload.get("cwd") or previous.get("cwd") or os.getcwd()
+    cwd = get(payload, "cwd", "workspaceRoot") or previous.get("cwd") or os.getcwd()
 
     # session_title is the name you gave the session in Claude and is the better
     # label when it differs from the folder ("spacyapps" vs "fluffy-carnival").
     # It only ships on UserPromptSubmit, so latch it from the previous line.
-    name = payload.get("session_title") or previous.get("name") or os.path.basename(cwd)
+    title = get(payload, "session_title", "sessionTitle")
+    name = title or previous.get("name") or os.path.basename(cwd.rstrip("/"))
 
     interpreted = interpret(payload)
     if interpreted is None:
@@ -205,16 +297,17 @@ def main():
 
     emit(path, {
         "schema": SCHEMA,
+        "source": source_of(payload),
         "session_id": session_id,
         "name": name,
         "cwd": cwd,
         "tty": tty,
-        "event": payload.get("hook_event_name") or "",
+        "event": get(payload, "hook_event_name", "hookEventName") or "",
         "state": state,
         "message": message,
         "needs_action": needs_action,
-        "notification_type": payload.get("notification_type") or "",
-        "transcript_path": payload.get("transcript_path") or "",
+        "notification_type": get(payload, "notification_type", "notificationType") or "",
+        "transcript_path": get(payload, "transcript_path", "transcriptPath") or "",
         "ts": now,
     })
 
