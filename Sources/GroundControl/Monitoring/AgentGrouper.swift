@@ -24,8 +24,15 @@ enum AgentGrouper {
         event.agentType.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    /// A finished subagent is interesting for a few minutes, then it is
+    /// history. Sessions age into `idle` and stay; children have no equivalent
+    /// resting state, so they simply stop being listed — otherwise a parent
+    /// accumulates every helper it ever ran until the 24h purge.
+    static let showFinishedFor: TimeInterval = 30 * 60
+
     static func childrenBySession(in directory: URL,
-                                  includingInternal: Bool = false) -> [String: [AgentRow]] {
+                                  includingInternal: Bool = false,
+                                  now: Date = Date()) -> [String: [AgentRow]] {
         let files = (try? FileManager.default.contentsOfDirectory(
             at: directory,
             includingPropertiesForKeys: nil,
@@ -36,6 +43,9 @@ enum AgentGrouper {
         for file in files where file.pathExtension == "jsonl" {
             guard let event = SessionFileParser.latestAgentEvent(at: file) else { continue }
             guard includingInternal || !isInternal(event) else { continue }
+            // Still running? Always show. Finished? Only while it is news.
+            if event.state == .done,
+               now.timeIntervalSince(event.timestamp) > showFinishedFor { continue }
             grouped[event.sessionID, default: []].append(
                 AgentRow(id: event.agentID, latest: event)
             )

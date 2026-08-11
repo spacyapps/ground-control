@@ -17,9 +17,13 @@ final class AgentGrouperTests: XCTestCase {
         try? FileManager.default.removeItem(at: directory)
     }
 
+    /// `ts` is an offset from now, not an absolute time: finished children
+    /// older than half an hour are no longer listed, so a fixture stamped 1970
+    /// would simply disappear.
     private func writeAgent(session: String, agent: String, type: String, ts: Int = 1) throws {
+        let stamp = Int(Date().timeIntervalSince1970) + ts
         let json = #"{"session_id":"\#(session)","agent_id":"\#(agent)","agent_type":"\#(type)","#
-            + #""state":"done","message":"m","needs_action":false,"ts":\#(ts)}"#
+            + #""state":"done","message":"m","needs_action":false,"ts":\#(stamp)}"#
         try json.write(
             to: directory.appendingPathComponent("\(session)__\(agent).jsonl"),
             atomically: true,
@@ -63,5 +67,34 @@ final class AgentGrouperTests: XCTestCase {
     func testMissingDirectoryYieldsNoChildren() {
         let absent = directory.appendingPathComponent("nope")
         XCTAssertTrue(AgentGrouper.childrenBySession(in: absent).isEmpty)
+    }
+}
+
+extension AgentGrouperTests {
+    private func writeAged(agent: String, state: String, minutesAgo: Int) throws {
+        let stamp = Int(Date().timeIntervalSince1970) - minutesAgo * 60
+        let json = #"{"session_id":"s1","agent_id":"\#(agent)","agent_type":"Explore","#
+            + #""state":"\#(state)","message":"m","needs_action":false,"ts":\#(stamp)}"#
+        try json.write(
+            to: directory.appendingPathComponent("s1__\(agent).jsonl"),
+            atomically: true,
+            encoding: .utf8
+        )
+    }
+
+    /// A parent would otherwise accumulate every helper it ever ran until the
+    /// 24h purge — Walter watched two five-hour-old subagents sit there.
+    func testFinishedChildrenStopBeingListed() throws {
+        try writeAged(agent: "fresh", state: "done", minutesAgo: 5)
+        try writeAged(agent: "ancient", state: "done", minutesAgo: 300)
+
+        let children = AgentGrouper.childrenBySession(in: directory)
+        XCTAssertEqual(children["s1"]?.map(\.id), ["fresh"])
+    }
+
+    /// A long-running subagent must never vanish just for taking a while.
+    func testRunningChildrenAreNeverAgedOut() throws {
+        try writeAged(agent: "grinding", state: "working", minutesAgo: 300)
+        XCTAssertEqual(AgentGrouper.childrenBySession(in: directory)["s1"]?.map(\.id), ["grinding"])
     }
 }
