@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Walter Mak
+
 import Foundation
 
 /// A live session: the latest event from its file, plus any subagent children.

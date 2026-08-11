@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Walter Mak
+
 import AppKit
 
 /// Finds themes on disk and resolves a manifest into a complete `Theme`.

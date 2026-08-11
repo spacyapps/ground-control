@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Walter Mak
+
 import AppKit
 
 /// The state indicator: a filled dot in the state's colour.

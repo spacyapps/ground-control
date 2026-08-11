@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Walter Mak
+
 import AppKit
 
 /// Composition root: owns the subsystems and is the only place that wires

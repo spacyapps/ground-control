@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Walter Mak
+
 import Foundation
 
 /// Deletes session files untouched for longer than the window.

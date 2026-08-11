@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Walter Mak
+
 import AppKit
 
 /// Boots the coordinator and keeps the app alive with no windows open.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Walter Mak
+
 import AppKit
 
 // Entry point. `.accessory` is what makes this a menu-bar app with no Dock

@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Walter Mak
 # install-hooks.sh — install cc-notify and register it in Claude Code settings.
 #
 # Grok reads ~/.claude/settings.json too (documented Claude-compat), so this

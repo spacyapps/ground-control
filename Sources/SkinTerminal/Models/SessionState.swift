@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Walter Mak
+
 import Foundation
 
 /// What a row is currently doing. Written by `cc-notify` as a plain string;

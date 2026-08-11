@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Walter Mak
+
 import Foundation
 
 /// What the matrix spells while the panel is asleep.
