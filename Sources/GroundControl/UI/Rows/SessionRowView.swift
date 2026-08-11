@@ -101,9 +101,16 @@ final class SessionRowView: NSView {
         messageLabel.isEnabled = theme.layout.marqueeOnOverflow
         messageLabel.text = summary(for: session)
 
-        dot.color = theme.colors.color(for: session.state)
+        // A dismissed alarm has to look dismissed. The state is still
+        // needsInput — the agent really is waiting — so the face stays, but
+        // the row goes quiet: dimmed, and wearing the idle colour rather than
+        // a red that no longer means "deal with me".
+        let seen = session.isAcknowledged
+        dot.color = seen ? theme.colors.idle : theme.colors.color(for: session.state)
         dot.isProminent = session.needsAction
         dot.badge = theme.backgrounds.needsActionDot
+        avatar.alphaValue = seen ? 0.4 : 1
+        nameLabel.alphaValue = seen ? 0.55 : 1
 
         avatar.isHidden = theme.avatar.isHidden
         if !avatar.isHidden {

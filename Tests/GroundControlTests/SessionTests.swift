@@ -134,3 +134,19 @@ extension SessionTests {
         XCTAssertTrue(old.needsAction)
     }
 }
+
+extension SessionTests {
+    /// Dismissing says "I have seen it", not "it is resolved" — the agent is
+    /// still blocked, so the state must not change, only the urgency.
+    func testDismissingQuietsARowWithoutPretendingItIsFinished() throws {
+        let stamp = Int(Date().timeIntervalSince1970)
+        let json = #"{"session_id":"abc","state":"needsInput","message":"Allow?","#
+            + #""needs_action":true,"notification_type":"permission_request","ts":"# + "\(stamp)}"
+        let event = try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
+        let dismissed = Session(id: "abc", latest: event, children: [], acknowledgedAt: Date())
+
+        XCTAssertTrue(dismissed.isAcknowledged)
+        XCTAssertFalse(dismissed.needsAction, "no longer demands attention")
+        XCTAssertEqual(dismissed.state, .needsInput, "but it is still waiting on you")
+    }
+}

@@ -63,7 +63,9 @@ struct Session: Identifiable, Equatable {
         return own || children.contains { $0.needsAction }
     }
 
-    private var isAcknowledged: Bool {
+    /// You have seen this alarm, but the session is still blocked. Worth
+    /// showing differently from both an unattended alarm and a quiet row.
+    var isAcknowledged: Bool {
         guard let acknowledgedAt else { return false }
         return latest.timestamp <= acknowledgedAt
     }
