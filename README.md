@@ -44,8 +44,13 @@ hands over the full assistant message, and `Notification` carries the real
 It **merges** — existing hooks on the same events keep working — and backs up
 your settings first. Hooks take effect immediately; no restart.
 
-See `docs/SPEC.md` §3 for the event contract and `docs/HOOK-PAYLOADS.md` for
-the measured payloads it is built on.
+Works with **Claude Code** and **Grok** today — Grok reads `~/.claude/settings.json`
+by design, so one install covers both. The app itself is CLI-agnostic; only the
+emitter script knows anything about a vendor.
+
+See `docs/SPEC.md` §3 for the event contract, `docs/HOOK-PAYLOADS.md` for the
+measured payloads it is built on, and `docs/LIMITATIONS.md` for what is proven
+versus merely believed.
 
 ## Themes
 

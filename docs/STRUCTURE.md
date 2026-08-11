@@ -90,6 +90,7 @@ SkinTerminal/
 │   ├── STRUCTURE.md              # this file
 │   ├── THEMING.md                # theme authoring guide
 │   ├── HOOK-PAYLOADS.md          # measured hook payloads — the data SPEC rests on
+│   ├── LIMITATIONS.md            # what is verified vs assumed; other-CLI status
 │   └── SPEC.md                   # the full build brief
 │
 └── .github/workflows/
