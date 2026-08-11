@@ -5,7 +5,7 @@ import AppKit
 /// It is also the drag handle: the panel is borderless-by-appearance, so this
 /// is what you grab to move it.
 final class TitleBarView: NSView {
-    static let height: CGFloat = 58
+    static let height: CGFloat = 64
 
     var onClose: (() -> Void)?
 

@@ -17,15 +17,24 @@ final class VisualizerView: NSView {
     private var targetEnergy: CGFloat = 0
     private var isAlarmed = false
 
+    /// Five rows: the fewest an LED matrix needs to spell anything, which is
+    /// what lets the same grid show a message as well as a level.
+    private static let rows = 5
     private let barWidth: CGFloat = 3
     private let barGap: CGFloat = 2
-    private let segment: CGFloat = 3
     private let segmentGap: CGFloat = 1
+
+    /// Every so often, and only while asleep, the grid spells something.
+    private static let marqueeText = "SPACYAPPS"
+    private static let restInterval: TimeInterval = 90
+    private var messageColumn: CGFloat = -1
+    private var messageTimer: Timer?
 
     override var isFlipped: Bool { true }
 
     deinit {
         timer?.invalidate()
+        messageTimer?.invalidate()
     }
 
     func apply(theme: Theme) {
@@ -72,7 +81,28 @@ final class VisualizerView: NSView {
     private func stop() {
         timer?.invalidate()
         timer = nil
+        scheduleMessage()
     }
+
+    /// A one-shot rather than a heartbeat: the analyser stops dead at rest, and
+    /// this wakes it just long enough to spell the name once.
+    private func scheduleMessage() {
+        messageTimer?.invalidate()
+        guard window != nil, targetEnergy == 0, !isAlarmed else { return }
+        messageTimer = Timer.scheduledTimer(
+            withTimeInterval: Self.restInterval, repeats: false
+        ) { [weak self] _ in
+            self?.beginMessage()
+        }
+    }
+
+    private func beginMessage() {
+        guard isAtRest, !isAlarmed, window != nil else { return }
+        messageColumn = -1
+        start()
+    }
+
+    private var isShowingMessage: Bool { messageColumn >= 0 }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
@@ -80,6 +110,10 @@ final class VisualizerView: NSView {
     }
 
     private func step() {
+        if isShowingMessage || (messageColumn == -1 && isAtRest && targetEnergy == 0 && !isAlarmed) {
+            advanceMessage()
+            return
+        }
         energy += (targetEnergy - energy) * 0.12
         resizeBarsIfNeeded()
 
@@ -102,6 +136,26 @@ final class VisualizerView: NSView {
         // bars have settled freezes them mid-air as a row of stray dashes.
         if isAtRest { stop() }
         needsDisplay = true
+    }
+
+    private func advanceMessage() {
+        // Real activity always wins: a message must never mask state.
+        if targetEnergy > 0 || isAlarmed {
+            messageColumn = -1
+            needsDisplay = true
+            return
+        }
+        messageColumn = messageColumn < 0 ? 0 : messageColumn + 0.55
+        let span = CGFloat(MatrixFont.columns(for: Self.marqueeText)) + columnCount
+        if messageColumn > span {
+            messageColumn = -1
+            stop()
+        }
+        needsDisplay = true
+    }
+
+    private var columnCount: CGFloat {
+        CGFloat(max(1, levels.count))
     }
 
     private var isAtRest: Bool {
@@ -141,6 +195,11 @@ final class VisualizerView: NSView {
         // Fully asleep with nothing waiting: an empty grid says "broken", a
         // sleeping face says "quiet". Something waiting on you still gets the
         // lit red floor below, so rest never hides an alarm.
+        if isShowingMessage {
+            drawMessage(usable: usable, inset: inset)
+            return
+        }
+
         if isAtRest && !isAlarmed {
             drawSleeping()
             return
@@ -150,6 +209,29 @@ final class VisualizerView: NSView {
             let originX = inset + CGFloat(index) * (barWidth + barGap)
             guard originX + barWidth <= bounds.width - inset else { break }
             drawColumn(x: originX, level: level, peak: peaks[index], usable: usable, inset: inset)
+        }
+    }
+
+    /// Draws the marquee into the same grid the bars use, so it reads as the
+    /// display spelling something rather than as text pasted over it.
+    private func drawMessage(usable: CGFloat, inset: CGFloat) {
+        let cell = (usable - CGFloat(Self.rows - 1) * segmentGap) / CGFloat(Self.rows)
+        for index in levels.indices {
+            let column = Int((messageColumn - CGFloat(index)).rounded())
+            let originX = inset + CGFloat(index) * (barWidth + barGap)
+            guard originX + barWidth <= bounds.width - inset else { break }
+
+            for row in 0..<Self.rows {
+                let lit = MatrixFont.isLit(text: Self.marqueeText, column: column, row: row)
+                let y = inset + CGFloat(row) * (cell + segmentGap)
+                let rect = NSRect(x: originX, y: y, width: barWidth, height: cell)
+                if lit {
+                    theme.colors.accent.setFill()
+                } else {
+                    theme.colors.divider.withAlphaComponent(0.10).setFill()
+                }
+                rect.fill()
+            }
         }
     }
 
@@ -180,7 +262,8 @@ final class VisualizerView: NSView {
                             peak: CGFloat,
                             usable: CGFloat,
                             inset: CGFloat) {
-        let steps = max(1, Int(usable / (segment + segmentGap)))
+        let steps = Self.rows
+        let segment = (usable - CGFloat(steps - 1) * segmentGap) / CGFloat(steps)
         // At rest with something waiting on you, keep the floor row lit: signal
         // present, no motion — a mixer sitting at zero with the input hot.
         let floor = isAlarmed ? 1 : 0
