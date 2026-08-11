@@ -79,6 +79,7 @@ struct ThemeManifest: Decodable, Equatable {
     }
 
     struct Layout: Decodable, Equatable {
+        var contentInset: Double?
         var rowMaxHeight: Double?
         var rowPadding: Double?
         var marqueeOnOverflow: Bool?

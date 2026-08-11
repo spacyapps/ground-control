@@ -108,7 +108,10 @@ final class SessionListView: NSView {
     }
 
     private func rebuild() {
-        layer?.backgroundColor = theme.colors.windowBackground.cgColor
+        // Deliberately transparent: PanelBackgroundView has already painted the
+        // window colour and any background image, and an opaque layer here
+        // would hide the artwork entirely.
+        layer?.backgroundColor = NSColor.clear.cgColor
 
         emptyLabel.isHidden = !sessions.isEmpty
         emptyMark.isHidden = !sessions.isEmpty

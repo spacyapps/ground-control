@@ -33,6 +33,7 @@ final class SessionRowView: NSView {
     init() {
         super.init(frame: .zero)
         wantsLayer = true
+        layer?.isOpaque = false
 
         nameLabel.lineBreakMode = .byTruncatingTail
         nameLabel.isSelectable = false
@@ -259,8 +260,10 @@ final class SessionRowView: NSView {
         } else {
             background = useAlternateBackground ? theme.colors.rowBackgroundAlt : theme.colors.rowBackground
         }
+        // sourceOver, not the default: a row colour carrying alpha has to
+        // blend over the panel's background image rather than replace it.
         background.setFill()
-        bounds.fill()
+        bounds.fill(using: .sourceOver)
 
         theme.colors.divider.setStroke()
         let line = NSBezierPath()

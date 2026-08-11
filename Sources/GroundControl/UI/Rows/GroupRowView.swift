@@ -83,7 +83,7 @@ final class GroupRowView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         theme.colors.rowBackgroundAlt.setFill()
-        bounds.fill()
+        bounds.fill(using: .sourceOver)
     }
 
     override func updateTrackingAreas() {

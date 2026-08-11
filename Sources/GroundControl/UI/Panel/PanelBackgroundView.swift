@@ -32,15 +32,17 @@ final class PanelBackgroundView: NSView {
 
     func apply(theme: Theme) {
         self.theme = theme
+        needsLayout = true
         layer?.backgroundColor = theme.colors.windowBackground.cgColor
         titleBar.apply(theme: theme)
         list.apply(theme: theme)
         needsDisplay = true
     }
 
-    /// Height at which nothing is clipped: title strip plus every row.
+    /// Height at which nothing is clipped: title strip, every row, and the
+    /// frame the theme asked to keep clear.
     var desiredHeight: CGFloat {
-        TitleBarView.height + list.contentHeight
+        TitleBarView.height + list.contentHeight + theme.layout.contentInset * 2
     }
 
     func refreshElapsed() {
@@ -54,12 +56,17 @@ final class PanelBackgroundView: NSView {
 
     override func layout() {
         super.layout()
-        titleBar.frame = NSRect(x: 0, y: 0, width: bounds.width, height: TitleBarView.height)
+        // Everything sits inside the inset, so a framed background shows all
+        // the way round rather than only above the first row.
+        let inset = theme.layout.contentInset
+        let width = max(0, bounds.width - inset * 2)
+
+        titleBar.frame = NSRect(x: inset, y: inset, width: width, height: TitleBarView.height)
         list.frame = NSRect(
-            x: 0,
+            x: inset,
             y: titleBar.frame.maxY,
-            width: bounds.width,
-            height: max(0, bounds.height - TitleBarView.height)
+            width: width,
+            height: max(0, bounds.height - TitleBarView.height - inset * 2)
         )
     }
 

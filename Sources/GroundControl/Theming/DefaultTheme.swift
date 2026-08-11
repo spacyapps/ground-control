@@ -39,6 +39,7 @@ enum DefaultTheme {
     )
 
     static let layout = Theme.Layout(
+        contentInset: 0,
         rowMaxHeight: 100,
         rowPadding: 10,
         marqueeOnOverflow: true,

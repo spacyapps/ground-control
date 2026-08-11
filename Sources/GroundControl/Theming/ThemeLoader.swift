@@ -79,6 +79,7 @@ enum ThemeLoader {
         let defaultLayout = DefaultTheme.layout
         let manifestLayout = manifest.layout
         let layout = Theme.Layout(
+            contentInset: Theme.length(manifestLayout?.contentInset, defaultLayout.contentInset),
             rowMaxHeight: Theme.length(manifestLayout?.rowMaxHeight, defaultLayout.rowMaxHeight),
             rowPadding: Theme.length(manifestLayout?.rowPadding, defaultLayout.rowPadding),
             marqueeOnOverflow: manifestLayout?.marqueeOnOverflow ?? defaultLayout.marqueeOnOverflow,

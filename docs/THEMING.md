@@ -60,6 +60,30 @@ Key ones:
 - `working` / `idle` — state accents.
 - `windowBackground`, `rowBackground`, `sessionName`, `message` — the basics.
 
+### Showing a background through the rows
+
+Row colours accept alpha, and that is how a background image is meant to be
+seen: rows span the full width, so an opaque `rowBackground` hides the artwork
+completely.
+
+```json
+"rowBackground":      "#120c1cbb",   // ~73% — stars show through
+"rowBackgroundAlt":   "#160f22bb",
+"titleBarBackground": "#160f22cc"
+```
+
+`99` ≈ 60%, `bb` ≈ 73%, `dd` ≈ 87%, `ff` = solid.
+
+A **framed** background — a bezel or border, with detail round the edge — also
+needs `layout.contentInset`, or the rows sit exactly on top of the frame:
+
+```json
+"layout": { "contentInset": 14 }
+```
+
+That holds every row and the title bar away from the panel edge. Match it
+roughly to how thick the border is in your artwork.
+
 ### `assets`
 Optional images that *replace* drawn defaults. Set to a filename, or `null`/omit
 to use the built-in. The colour underneath is always painted first, so a

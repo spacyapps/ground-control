@@ -113,7 +113,7 @@ final class TitleBarView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         theme.colors.titleBarBackground.setFill()
-        bounds.fill()
+        bounds.fill(using: .sourceOver)
 
         if let background = theme.backgrounds.titleBar {
             BackgroundRenderer.draw(background, in: bounds)

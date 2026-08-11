@@ -120,6 +120,13 @@ enum ThemePromptBuilder {
     - Tell me the **`capInsets`** in pixels: how far in from each side the
       corner artwork ends. That is the only extra number I need.
     - One image, not nine tiles. The app slices it.
+    - If you draw a **frame or border**, tell me a `layout.contentInset` in
+      points (roughly how thick the border is at display size, usually 10–20).
+      Rows span the full width, so without it they sit on top of your border and
+      it is never seen.
+    - Also give the row colours some alpha — `"rowBackground": "#120c1cbb"` —
+      or the rows cover the artwork completely. Around `bb` (73%) keeps text
+      readable while the background still reads through.
 
     A background is only worth making if the theme wants texture — a metal
     plate, worn paper, a CRT bezel, scanlines. If the design is flat colour,

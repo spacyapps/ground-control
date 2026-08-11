@@ -110,6 +110,10 @@ struct Theme {
     }
 
     struct Layout {
+        /// Holds the rows away from the panel edge. A background that draws a
+        /// frame is invisible without this: rows span the full width, so they
+        /// cover exactly the border the artwork lives in.
+        var contentInset: CGFloat
         var rowMaxHeight: CGFloat
         var rowPadding: CGFloat
         var marqueeOnOverflow: Bool
