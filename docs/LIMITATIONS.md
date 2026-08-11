@@ -158,6 +158,19 @@ event mapping. Nothing in the Swift should need to change.
 
 ---
 
+## Operational risks
+
+- **The Developer ID private key exists in one place**: the login keychain on
+  Walter's MacBook Air. It is not backed up yet. Lose it and Ground Control can
+  never be signed as the same developer again — every existing user gets a
+  security warning on the next update, because the identity changed. Export a
+  `.p12` (Xcode → Settings → Accounts → Manage Certificates → right-click →
+  Export) and keep it off the repo; `.gitignore` blocks `*.p12`.
+  Certificate: `Walter Mak (XHRF4FQMBA)`, G2, expires 12 Aug 2031.
+- **Bump `CFBundleShortVersionString`** in `Packaging/Info.plist` before each
+  release; it names the dmg, so shipping twice at the same version silently
+  overwrites the previous file.
+
 ## Not yet built
 
 - Packaging: `build-dmg.sh`, `Info.plist` with `LSUIElement`, menu-bar icon,
