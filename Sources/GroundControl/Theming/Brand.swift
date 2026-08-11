@@ -10,6 +10,14 @@ import AppKit
 /// `brandMark` asset key; the Settings window always shows the real one, since
 /// that surface belongs to the app rather than to a theme.
 enum Brand {
+    static let name = "SpacyApps"
+    static let website = URL(string: "https://www.spacyapps.com")
+
+    static func openWebsite() {
+        guard let website else { return }
+        NSWorkspace.shared.open(website)
+    }
+
     /// Full lockup — mark plus wordmark. Illegible below ~120pt wide.
     static var lockup: NSImage? { image(named: "logo-lockup") }
 

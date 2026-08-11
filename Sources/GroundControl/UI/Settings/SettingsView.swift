@@ -121,9 +121,14 @@ final class SettingsView: NSView {
         stack.addArrangedSubview(caveat)
     }
 
-    /// The app's own mark. Settings is a system surface, so unlike the panel
-    /// no theme ever replaces this one.
+    /// The app's own mark and a way back to whoever made it. Settings is a
+    /// system surface, so unlike the panel no theme ever replaces this.
     private func brandRow() -> NSView {
+        let column = NSStackView()
+        column.orientation = .vertical
+        column.alignment = .leading
+        column.spacing = 2
+
         let mark = NSImageView()
         mark.image = Brand.lockup
         mark.imageScaling = .scaleProportionallyUpOrDown
@@ -132,7 +137,26 @@ final class SettingsView: NSView {
             mark.widthAnchor.constraint(equalToConstant: 190),
             mark.heightAnchor.constraint(equalToConstant: 52)
         ])
-        return mark
+
+        column.addArrangedSubview(mark)
+        column.addArrangedSubview(websiteLink())
+        return column
+    }
+
+    private func websiteLink() -> NSButton {
+        let link = NSButton(title: "www.spacyapps.com", target: self, action: #selector(openWebsite))
+        link.isBordered = false
+        link.contentTintColor = .linkColor
+        link.font = .systemFont(ofSize: 11)
+        link.attributedTitle = NSAttributedString(
+            string: "www.spacyapps.com",
+            attributes: [
+                .foregroundColor: NSColor.linkColor,
+                .font: NSFont.systemFont(ofSize: 11),
+                .underlineStyle: NSUnderlineStyle.single.rawValue
+            ]
+        )
+        return link
     }
 
     private func buttonRow() -> NSView {
@@ -241,6 +265,10 @@ final class SettingsView: NSView {
 
     @objc private func refreshThemes() {
         reloadThemes()
+    }
+
+    @objc private func openWebsite() {
+        Brand.openWebsite()
     }
 
     @objc private func createTheme() {
