@@ -63,10 +63,21 @@ final class AppCoordinator {
 
     // MARK: - Actions
 
-    /// Clicking a row jumps to its terminal and clears the dot.
+    /// Clicking a row jumps to its terminal and clears the dot — but only if
+    /// the jump actually landed somewhere.
+    ///
+    /// Acknowledging is a claim that you have gone and dealt with it. When the
+    /// terminal has since closed, or the session never had a tty, the click
+    /// takes you nowhere, and quietly dropping the alarm would leave a blocked
+    /// session looking handled. Silencing an alarm nobody attended to is the
+    /// one thing a monitor must not do.
     private func activate(_ session: Session) {
-        store.acknowledge(sessionID: session.id)
-        TerminalFocuser.focus(tty: session.tty, fallbackPath: session.cwd)
+        let arrived = TerminalFocuser.focus(tty: session.tty, fallbackPath: session.cwd)
+        if arrived {
+            store.acknowledge(sessionID: session.id)
+        } else {
+            Log.integration.notice("Could not reach the session; leaving its alarm up")
+        }
     }
 
     /// The row the context menu was opened on. Menu items act on this rather
@@ -83,6 +94,13 @@ final class AppCoordinator {
             isEnabled: session.tty != nil
         ))
         menu.addItem(menuItem(title: "Reveal in Finder", action: #selector(contextReveal)))
+        // The deliberate way to silence an alarm you cannot reach — now that
+        // clicking the row will not do it unless the jump lands.
+        menu.addItem(menuItem(
+            title: "Dismiss Alert",
+            action: #selector(contextDismiss),
+            isEnabled: session.needsAction
+        ))
         menu.addItem(.separator())
         menu.addItem(menuItem(title: "Copy Path", action: #selector(contextCopyPath)))
         menu.addItem(menuItem(title: "Rename…", action: #selector(contextRename)))
@@ -102,6 +120,11 @@ final class AppCoordinator {
     @objc private func contextJump() {
         guard let session = contextSession else { return }
         activate(session)
+    }
+
+    @objc private func contextDismiss() {
+        guard let session = contextSession else { return }
+        store.acknowledge(sessionID: session.id)
     }
 
     @objc private func contextReveal() {
