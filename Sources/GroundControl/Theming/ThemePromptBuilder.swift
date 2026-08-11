@@ -15,11 +15,11 @@ enum ThemePromptBuilder {
             preamble,
             request(for: brief),
             artwork(for: brief),
-            backgroundSection,
+            brief.wantsBackgroundArt ? backgroundSection : "",
             manifestSection(for: brief),
             paletteReference,
             installation(for: brief)
-        ].joined(separator: "\n\n")
+        ].filter { !$0.isEmpty }.joined(separator: "\n\n")
     }
 
     // MARK: - Sections
@@ -45,6 +45,7 @@ enum ThemePromptBuilder {
         - **Visual style:** \(brief.style)
         - **Mood and colours:** \(brief.mood)
         - **Animation:** \(brief.wantsAnimation ? "yes, animate the working state" : "no, stills are fine")
+        - **Background:** \(brief.wantsBackgroundArt ? brief.background : "none — colours only, skip section 2")
         """
     }
 
@@ -193,6 +194,28 @@ enum ThemePromptBuilder {
     | `idle` | accent for a quiet session |
     | `accent` | accent for a finished session; also the analyser's floor |
     | `divider` | hairlines between rows |
+
+    ### The analyser
+
+    The title bar holds a five-row LED matrix that shows how busy the agents are
+    and occasionally spells a word. It inherits the row colours, but you can set
+    it separately with a `matrix` block — worth doing, since it is the most
+    eye-catching part of the panel:
+
+    ```json
+    "matrix": {
+      "low":   "#39ff14",
+      "high":  "#39c5ff",
+      "alarm": "#ff2d55",
+      "unlit": "#26263219",
+      "text":  "#e6e6ec",
+      "peak":  "#e6e6ec"
+    }
+    ```
+
+    Bars ramp from `low` at the floor to `high` at the ceiling; `alarm` replaces
+    the whole ramp when something needs me; `unlit` is the dim grid behind them,
+    so keep it subtle; `text` is the colour of a word sweeping through.
 
     Contrast matters more than prettiness here: `needsAction` has to jump out of
     the panel from across the room, and `messageDim` has to stay readable.

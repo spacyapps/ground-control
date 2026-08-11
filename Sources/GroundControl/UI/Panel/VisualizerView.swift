@@ -286,7 +286,7 @@ final class VisualizerView: NSView {
             if lit {
                 letterColor.setFill()
             } else {
-                theme.colors.divider.withAlphaComponent(0.10).setFill()
+                theme.matrix.unlit.setFill()
             }
             NSRect(x: originX, y: y, width: barWidth, height: cell).fill()
         }
@@ -334,7 +334,7 @@ final class VisualizerView: NSView {
             if step < lit {
                 color(at: fraction).setFill()
             } else {
-                theme.colors.divider.withAlphaComponent(0.10).setFill()
+                theme.matrix.unlit.setFill()
             }
             rect.fill()
         }
@@ -343,16 +343,15 @@ final class VisualizerView: NSView {
         guard peak > 0.02 else { return }
         let peakStep = min(steps - 1, Int((peak * CGFloat(steps)).rounded()))
         let peakY = bounds.height - inset - CGFloat(peakStep + 1) * (segment + segmentGap)
-        theme.colors.titleBarText.withAlphaComponent(0.7).setFill()
+        theme.matrix.peak.setFill()
         NSRect(x: originX, y: peakY, width: barWidth, height: 1).fill()
     }
 
     /// The word picks its own colour from the palette, so consecutive messages
     /// look different without ever borrowing the alarm red.
     private var letterColor: NSColor {
-        // No white and never the alarm red: white reads as "not coloured", and
-        // red belongs to a row that needs you.
-        let blend = theme.colors.accent.blended(withFraction: 0.5, of: theme.colors.working)
+        // Never the alarm colour: red belongs to a row that needs you.
+        let blend = theme.matrix.low.blended(withFraction: 0.5, of: theme.matrix.high)
         let palette = [theme.colors.working, theme.colors.accent, blend ?? theme.colors.working]
         let hash = messageText.unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) & 0xFFFF }
         return palette[hash % palette.count]
@@ -361,8 +360,8 @@ final class VisualizerView: NSView {
     /// Green at the floor through to the alarm colour at the ceiling — and the
     /// whole ramp shifts hot when something is waiting on you.
     private func color(at fraction: CGFloat) -> NSColor {
-        let low = isAlarmed ? theme.colors.needsAction : theme.colors.accent
-        let high = isAlarmed ? theme.colors.needsAction : theme.colors.working
+        let low = isAlarmed ? theme.matrix.alarm : theme.matrix.low
+        let high = isAlarmed ? theme.matrix.alarm : theme.matrix.high
         return low.blended(withFraction: fraction, of: high) ?? low
     }
 }

@@ -21,6 +21,7 @@ struct Theme {
     var layout: Layout
     var typography: Typography
     var avatar: Avatar
+    var matrix: Matrix
     var backgrounds: Backgrounds
     /// Folder the manifest was loaded from; asset paths resolve against it.
     var folder: URL?
@@ -90,6 +91,22 @@ struct Theme {
             case .idle: return idle
             }
         }
+    }
+
+    /// The title-bar analyser. Its colours were derived from the row palette,
+    /// which meant a theme could restyle every row and still get a stock meter.
+    struct Matrix {
+        /// Bars ramp from `low` at the floor to `high` at the ceiling.
+        var low: NSColor
+        var high: NSColor
+        /// Replaces the whole ramp while something needs you.
+        var alarm: NSColor
+        /// Cells below the current level — the visible grid.
+        var unlit: NSColor
+        /// Letters of a sweeping message.
+        var text: NSColor
+        /// The mark that hangs above a falling bar.
+        var peak: NSColor
     }
 
     struct Layout {

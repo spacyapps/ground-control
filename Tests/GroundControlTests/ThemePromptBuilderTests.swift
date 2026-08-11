@@ -26,6 +26,7 @@ final class ThemePromptBuilderTests: XCTestCase {
             style: "vaporwave",
             mood: "magenta on black",
             wantsAnimation: true,
+            background: "worn brass panel",
             avatarSize: 56,
             position: "left"
         )
@@ -65,6 +66,28 @@ final class ThemePromptBuilderTests: XCTestCase {
 
     /// macOS cannot decode webm, so the prompt has to say so — otherwise an LLM
     /// will happily produce one.
+    /// A background is optional, and asking a model for one you did not want
+    /// is how themes end up with a dark rectangle behind everything.
+    func testBackgroundSectionOnlyAppearsWhenRequested() {
+        var plain = brief
+        plain.background = "   "
+        let without = ThemePromptBuilder.prompt(for: plain)
+        XCTAssertFalse(without.contains("nine-slice"))
+        XCTAssertTrue(without.contains("colours only"))
+
+        let with = ThemePromptBuilder.prompt(for: brief)
+        XCTAssertTrue(with.contains("nine-slice"))
+        XCTAssertTrue(with.contains("worn brass panel"))
+    }
+
+    /// The analyser is the most eye-catching part of the panel, so the model
+    /// should be told it can colour it.
+    func testPromptExplainsTheMatrixPalette() {
+        let prompt = ThemePromptBuilder.prompt(for: brief)
+        XCTAssertTrue(prompt.contains("\"matrix\""))
+        XCTAssertTrue(prompt.contains("alarm"))
+    }
+
     func testPromptWarnsAgainstWebm() {
         XCTAssertTrue(ThemePromptBuilder.prompt(for: brief).contains(".webm"))
     }

@@ -125,6 +125,21 @@ The per-state face/mascot. Each state can be an **image** *or* a **video**
 `.gif` / `.apng`. Avoid `.webm` — not natively supported. Prefer GIF/APNG for
 lightweight looping; reserve real video for richer motion.
 
+### `matrix`
+The five-row LED analyser in the title bar. Every key is optional and falls
+back to the row palette, so a recolour restyles the meter for free.
+
+```json
+"matrix": {
+  "low":   "#39ff14",   // bar colour at the floor
+  "high":  "#39c5ff",   // bar colour at the ceiling
+  "alarm": "#ff2d55",   // replaces the ramp while something needs you
+  "unlit": "#26263219", // the dim grid behind the bars — keep it subtle
+  "text":  "#e6e6ec",   // letters of a sweeping message
+  "peak":  "#e6e6ec"    // the mark that hangs above a falling bar
+}
+```
+
 ### `layout`
 - `rowMaxHeight` — cap per row (default 100px).
 - `marqueeOnOverflow` — auto-scroll long messages (default true).

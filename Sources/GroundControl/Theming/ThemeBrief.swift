@@ -11,6 +11,8 @@ struct ThemeBrief: Equatable {
     var style: String
     var mood: String
     var wantsAnimation: Bool
+    /// Empty means "colours only" — no background artwork requested.
+    var background: String
     var avatarSize: Int
     var position: String
 
@@ -20,6 +22,7 @@ struct ThemeBrief: Equatable {
         style: "16-bit pixel art, chunky outlines",
         mood: "warm amber on near-black",
         wantsAnimation: true,
+        background: "brushed dark metal with a faint scanline texture",
         avatarSize: 48,
         position: "right"
     )
@@ -41,6 +44,10 @@ struct ThemeBrief: Equatable {
             .joined(separator: "-")
 
         return cleaned.isEmpty ? "my-theme" : cleaned
+    }
+
+    var wantsBackgroundArt: Bool {
+        !background.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// Rendered at `avatarSize` points on a Retina display, so art wants to be

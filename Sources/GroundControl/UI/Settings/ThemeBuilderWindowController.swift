@@ -10,6 +10,7 @@ final class ThemeBuilderWindowController: NSWindowController {
     private let subjectField = NSTextField(string: "")
     private let styleField = NSTextField(string: "")
     private let moodField = NSTextField(string: "")
+    private let backgroundField = NSTextField(string: "")
     private let animateBox = NSButton()
     private let sizeField = NSTextField(string: "48")
     private let positionPicker = NSPopUpButton()
@@ -64,6 +65,11 @@ final class ThemeBuilderWindowController: NSWindowController {
         form.addArrangedSubview(field(subjectField, label: "Character or mascot"))
         form.addArrangedSubview(field(styleField, label: "Visual style"))
         form.addArrangedSubview(field(moodField, label: "Mood and colours"))
+        form.addArrangedSubview(field(backgroundField, label: "Panel background"))
+        form.addArrangedSubview(caption(
+            "Leave the background blank for colours only. The panel resizes, so anything here "
+            + "is described to the model as nine-slice art: detail in the corners, tiling centre."
+        ))
 
         animateBox.setButtonType(.switch)
         animateBox.title = "Animate the working state (GIF)"
@@ -193,6 +199,7 @@ final class ThemeBuilderWindowController: NSWindowController {
         subjectField.placeholderString = example.subject
         styleField.placeholderString = example.style
         moodField.placeholderString = example.mood
+        backgroundField.placeholderString = example.background
     }
 
     // MARK: - Brief
@@ -209,6 +216,9 @@ final class ThemeBuilderWindowController: NSWindowController {
             style: value(styleField, fallback: example.style),
             mood: value(moodField, fallback: example.mood),
             wantsAnimation: animateBox.state == .on,
+            // Blank is meaningful here: it means "no background", so this one
+            // does not fall back to the placeholder like the others.
+            background: backgroundField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines),
             avatarSize: max(16, min(160, Int(sizeField.stringValue) ?? example.avatarSize)),
             position: positionPicker.titleOfSelectedItem ?? "right"
         )

@@ -105,8 +105,27 @@ enum ThemeLoader {
                 folder: folder,
                 fallback: DefaultTheme.avatar
             ),
+            matrix: Self.matrix(manifest.matrix, colors: colors),
             backgrounds: AssetResolver.backgrounds(from: manifest.assets, folder: folder),
             folder: folder
+        )
+    }
+
+    /// Matrix colours fall back to the row palette, so recolouring a theme
+    /// restyles the meter too without naming a single matrix key.
+    private static func matrix(_ declared: [String: String]?, colors: Theme.Colors) -> Theme.Matrix {
+        let palette = declared ?? [:]
+        func color(_ key: String, _ fallback: NSColor) -> NSColor {
+            guard let hex = palette[key], let parsed = NSColor(hex: hex) else { return fallback }
+            return parsed
+        }
+        return Theme.Matrix(
+            low: color("low", colors.accent),
+            high: color("high", colors.working),
+            alarm: color("alarm", colors.needsAction),
+            unlit: color("unlit", colors.divider.withAlphaComponent(0.10)),
+            text: color("text", colors.titleBarText),
+            peak: color("peak", colors.titleBarText.withAlphaComponent(0.7))
         )
     }
 

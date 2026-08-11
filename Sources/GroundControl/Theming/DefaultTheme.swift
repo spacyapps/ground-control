@@ -29,6 +29,15 @@ enum DefaultTheme {
         divider: color("#26263200")
     )
 
+    static let matrix = Theme.Matrix(
+        low: colors.accent,
+        high: colors.working,
+        alarm: colors.needsAction,
+        unlit: colors.divider.withAlphaComponent(0.10),
+        text: colors.titleBarText,
+        peak: colors.titleBarText.withAlphaComponent(0.7)
+    )
+
     static let layout = Theme.Layout(
         rowMaxHeight: 100,
         rowPadding: 10,
@@ -61,6 +70,7 @@ enum DefaultTheme {
             layout: layout,
             typography: typography,
             avatar: avatar,
+            matrix: matrix,
             backgrounds: .none,
             folder: nil
         )

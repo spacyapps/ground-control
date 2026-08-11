@@ -18,6 +18,7 @@ struct ThemeManifest: Decodable, Equatable {
     var colors: [String: String]?
     var assets: [String: Asset?]?
     var avatar: Avatar?
+    var matrix: [String: String]?
     var layout: Layout?
     var typography: Typography?
 
