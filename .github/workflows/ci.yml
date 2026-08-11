@@ -14,16 +14,16 @@ jobs:
       - name: Show Swift version
         run: swift --version
 
+      # No third-party dependencies, so there is nothing to resolve or cache.
       - name: Build
         run: swift build -v
 
       - name: Test
         run: swift test -v
 
-      # SwiftLint runs as an SPM build-tool plugin during `swift build`,
-      # but we also run it standalone for a clean report.
       - name: Install SwiftLint
         run: brew install swiftlint
 
+      # Walter's rule: the Swift must be lint-clean, so warnings fail the build.
       - name: Lint
         run: swiftlint lint --strict --reporter github-actions-logging

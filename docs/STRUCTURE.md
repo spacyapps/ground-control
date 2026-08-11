@@ -7,7 +7,7 @@ lines, split it.
 
 ```
 SkinTerminal/
-├── Package.swift                 # SPM manifest — deps, executable target, resources
+├── Package.swift                 # SPM manifest — no dependencies; target + resources
 ├── .swiftlint.yml                # lint rules (root; nested configs allowed later)
 ├── .gitignore                    # excludes build/, DerivedData/, secrets, xcuserdata
 ├── README.md                     # landing page: what it is, build, screenshots

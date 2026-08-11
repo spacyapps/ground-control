@@ -1,6 +1,15 @@
 // swift-tools-version:5.9
 import PackageDescription
 
+// No third-party dependencies, by design.
+//
+// SwiftLint used to be declared here as a build-tool plugin. That pulled in
+// nine transitive packages — swift-syntax among them — so a clean clone spent
+// minutes building a linter before compiling a line of the app, and CI paid
+// for it twice by also installing swiftlint from Homebrew to run standalone.
+//
+// Linting now runs from the standalone binary (`swiftlint --strict`), locally
+// and in CI. Nothing third-party ends up in the shipped app.
 let package = Package(
     name: "SkinTerminal",
     platforms: [
@@ -9,19 +18,12 @@ let package = Package(
     products: [
         .executable(name: "SkinTerminal", targets: ["SkinTerminal"])
     ],
-    dependencies: [
-        // Lint runs as a build-tool plugin so violations show inline in Xcode.
-        .package(url: "https://github.com/realm/SwiftLint.git", from: "0.55.0")
-    ],
     targets: [
         .executableTarget(
             name: "SkinTerminal",
             path: "Sources/SkinTerminal",
             resources: [
                 .process("Resources")
-            ],
-            plugins: [
-                .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLint")
             ]
         ),
         .testTarget(

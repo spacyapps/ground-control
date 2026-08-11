@@ -23,7 +23,9 @@ swift build
 swift run
 ```
 
-Requires macOS 13+ and Swift 5.9+. SwiftLint runs as a build plugin.
+Requires macOS 13+ and Swift 5.9+. **No third-party dependencies** — the app
+imports only AppKit, AVFoundation, Foundation and os. Linting uses the
+standalone `swiftlint` binary (`brew install swiftlint`).
 
 ## How it works
 
