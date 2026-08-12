@@ -53,7 +53,10 @@ struct ThemeBrief: Equatable {
     /// Rendered at `avatarSize` points on a Retina display, so art wants to be
     /// at least 2x that. 192 is a comfortable round number that stays crisp if
     /// the author later scales the avatar up.
+    ///
+    /// Capped: an avatar size of 9999 would otherwise ask a model for a
+    /// 39996px square, which no generator will produce and no panel can use.
     var recommendedPixels: Int {
-        max(192, avatarSize * 4)
+        min(512, max(192, avatarSize * 4))
     }
 }

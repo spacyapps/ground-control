@@ -97,8 +97,11 @@ enum AssetResolver {
         guard let manifest else { return fallback }
 
         let declaredPosition = Theme.Avatar.Position(rawValue: manifest.position?.lowercased() ?? "")
+        // Clamped rather than trusted: a negative size is meaningless and a
+        // huge one only wastes memory decoding artwork no row can show.
+        let declaredSize = Theme.length(manifest.size, fallback.size)
         return Theme.Avatar(
-            size: Theme.length(manifest.size, fallback.size),
+            size: declaredSize <= 0 ? 0 : min(declaredSize, 256),
             position: declaredPosition ?? fallback.position,
             cornerRadius: Theme.length(manifest.cornerRadius, fallback.cornerRadius),
             states: states(from: manifest.states, folder: folder)

@@ -204,10 +204,30 @@ enum ThemePromptBuilder {
         """
     }
 
+    /// JSON-safe, including control characters.
+    ///
+    /// Escaping only quotes and backslashes left a newline in a theme name
+    /// producing a manifest that does not parse — and that file is written
+    /// straight into the scaffolded folder, so the author starts from something
+    /// broken.
     private static func escaped(_ text: String) -> String {
-        text
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "\"", with: "\\\"")
+        var result = ""
+        for character in text {
+            switch character {
+            case "\\": result += "\\\\"
+            case "\"": result += "\\\""
+            case "\n", "\r": result += " "
+            case "\t": result += " "
+            default:
+                // Anything else below space would also be illegal unescaped.
+                if let scalar = character.unicodeScalars.first, scalar.value < 0x20 {
+                    result += " "
+                } else {
+                    result.append(character)
+                }
+            }
+        }
+        return result
     }
 
     /// Emits `#rrggbbaa` when the colour is not fully opaque. Dropping alpha
