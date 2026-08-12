@@ -58,16 +58,15 @@ final class ThemePreviewView: NSView {
         // the theme's cap insets — often 100pt a side — would exceed the box
         // and collapse the artwork into corners, showing something the panel
         // never looks like.
-        var artScale: CGFloat = 1
         if let art = theme.window.shape ?? theme.backgrounds.window,
            let image = Self.still(art) {
             // Anchored to the top, not centred: a framed skin keeps its
             // recognisable edge — hull, antennae, title bezel — up there, and a
             // centre crop of a tall frame shows nothing but its side pillars.
-            artScale = draw(image, fillingAspectOf: rect, anchor: .top)
+            draw(image, fillingAspectOf: rect, anchor: .top)
         }
 
-        let content = contentRect(in: rect, artScale: artScale)
+        let content = contentRect(in: rect)
 
         let titleHeight: CGFloat = 22
         theme.colors.titleBarBackground.setFill()
@@ -116,18 +115,27 @@ final class ThemePreviewView: NSView {
         clip.stroke()
     }
 
+    /// A panel of this reference width is what `contentInset` is written
+    /// against; the preview is that panel, smaller.
+    private static let referencePanelWidth: CGFloat = 400
+
     /// Where the rows go once the skin's frame is accounted for.
     ///
     /// `contentInset` is what holds rows off the artwork in the real panel, and
-    /// ignoring it here put them straight over the hull's pillars. The panel
-    /// draws its frame 1:1 while the preview scales the whole image down, so
-    /// the inset scales by the same factor to land in the same place.
+    /// ignoring it here put them straight over the hull's pillars.
+    ///
+    /// It scales by how much smaller the preview is than a panel — *not* by how
+    /// much the artwork was scaled, which was the first attempt and looked
+    /// right only by luck. The inset is in panel points and says nothing about
+    /// the image's resolution, so tying it to the artwork's scale meant a
+    /// 1408px skin got a third of the inset a 450px one did, and its rows sat
+    /// straight over the frame again.
     ///
     /// No inset at the bottom: the art is anchored to the top and cropped, so
     /// there is no bottom frame on screen to stay clear of.
-    func contentRect(in rect: NSRect, artScale: CGFloat) -> NSRect {
-        let ceiling = min(rect.width * 0.3, rect.height * 0.3)
-        let inset = min(theme.layout.contentInset * artScale, ceiling)
+    func contentRect(in rect: NSRect) -> NSRect {
+        let ceiling = min(rect.width, rect.height) * 0.4
+        let inset = min(theme.layout.contentInset * (rect.width / Self.referencePanelWidth), ceiling)
         return NSRect(
             x: rect.minX + inset,
             y: rect.minY + inset,
@@ -287,14 +295,9 @@ final class ThemePreviewView: NSView {
     /// `respectFlipped` is the whole ballgame here: this view is flipped so text
     /// reads downward, and an image drawn into a flipped context arrives upside
     /// down unless it is told to honour the flip.
-    /// Returns the scale the artwork was drawn at, which is what the frame
-    /// inset has to be measured against.
-    @discardableResult
-    private func draw(_ image: NSImage,
-                      fillingAspectOf rect: NSRect,
-                      anchor: Anchor = .centre) -> CGFloat {
+    private func draw(_ image: NSImage, fillingAspectOf rect: NSRect, anchor: Anchor = .centre) {
         let size = image.size
-        guard size.width > 0, size.height > 0 else { return 1 }
+        guard size.width > 0, size.height > 0 else { return }
 
         let scale = max(rect.width / size.width, rect.height / size.height)
         let drawn = NSSize(width: size.width * scale, height: size.height * scale)
@@ -311,7 +314,6 @@ final class ThemePreviewView: NSView {
             respectFlipped: true,
             hints: nil
         )
-        return scale
     }
 
     private func draw(_ text: String,

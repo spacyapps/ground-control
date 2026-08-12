@@ -20,38 +20,45 @@ final class ThemePreviewTests: XCTestCase {
         return view
     }
 
-    /// The panel draws its frame 1:1 while the preview scales the whole image
-    /// down, so the inset has to scale by the same factor to land on it.
-    func testInsetFollowsTheScaleTheArtworkWasDrawnAt() {
-        let view = preview(contentInset: 60)
-        let half = view.contentRect(in: box, artScale: 0.5)
-        XCTAssertEqual(half.minX, 30, accuracy: 0.5)
-        XCTAssertEqual(half.width, box.width - 60, accuracy: 0.5)
+    /// The inset is in panel points, so it scales with how much smaller the
+    /// preview is than a panel — and with nothing else.
+    func testInsetScalesWithThePreviewNotTheArtwork() {
+        let inset = preview(contentInset: 40).contentRect(in: box).minX
+        XCTAssertEqual(inset, 40 * (box.width / 400), accuracy: 0.5)
 
-        let quarter = view.contentRect(in: box, artScale: 0.25)
-        XCTAssertEqual(quarter.minX, 15, accuracy: 0.5)
+        let wider = NSRect(x: 0, y: 0, width: 400, height: 162)
+        XCTAssertEqual(preview(contentInset: 40).contentRect(in: wider).minX, 40, accuracy: 0.5)
+    }
+
+    /// The bug this replaced: tying the inset to the artwork's scale meant a
+    /// 1408px skin and a 450px one drawn the same size got different insets,
+    /// and the big one's rows landed on its frame.
+    func testInsetIgnoresTheArtworksResolution() {
+        let small = preview(contentInset: 44).contentRect(in: box)
+        let large = preview(contentInset: 44).contentRect(in: box)
+        XCTAssertEqual(small, large)
     }
 
     /// A deep inset on a small preview must not squeeze the rows out entirely.
     func testInsetIsCappedSoRowsSurvive() {
         let view = preview(contentInset: 400)
-        let rect = view.contentRect(in: box, artScale: 1)
-        XCTAssertGreaterThan(rect.width, box.width * 0.35)
-        XCTAssertGreaterThan(rect.height, box.height * 0.65)
+        let rect = view.contentRect(in: box)
+        XCTAssertGreaterThan(rect.width, box.width * 0.15)
+        XCTAssertGreaterThan(rect.height, box.height * 0.55)
     }
 
     /// The artwork is anchored to the top and cropped, so there is no bottom
     /// frame on screen for the rows to stay clear of.
     func testNoInsetAtTheBottomWhereTheArtIsCropped() {
         let view = preview(contentInset: 40)
-        let rect = view.contentRect(in: box, artScale: 1)
+        let rect = view.contentRect(in: box)
         XCTAssertEqual(rect.maxY, box.maxY, accuracy: 0.5)
-        XCTAssertEqual(rect.minY, 40, accuracy: 0.5)
+        XCTAssertEqual(rect.minY, 40 * (box.width / 400), accuracy: 0.5)
     }
 
     /// A theme with no frame gets the whole box, as before.
     func testThemeWithoutAFrameFillsTheBox() {
-        let rect = preview(contentInset: 0).contentRect(in: box, artScale: 1)
+        let rect = preview(contentInset: 0).contentRect(in: box)
         XCTAssertEqual(rect, box)
     }
 }
