@@ -10,6 +10,7 @@ import AppKit
 final class PanelBackgroundView: NSView {
     let titleBar = TitleBarView()
     let list = SessionListView()
+    let resizeGrip = ResizeGripView()
 
     private var theme: Theme = DefaultTheme.theme
 
@@ -41,6 +42,8 @@ final class PanelBackgroundView: NSView {
 
         addSubview(titleBar)
         addSubview(list)
+        // Above the list, so it stays grabbable over a scrolled row.
+        addSubview(resizeGrip)
     }
 
     @available(*, unavailable)
@@ -57,6 +60,7 @@ final class PanelBackgroundView: NSView {
         layer?.backgroundColor = theme.colors.windowBackground.cgColor
         titleBar.apply(theme: theme)
         list.apply(theme: theme)
+        resizeGrip.apply(theme: theme)
         needsDisplay = true
     }
 
@@ -92,6 +96,16 @@ final class PanelBackgroundView: NSView {
             y: titleBar.frame.maxY,
             width: width,
             height: max(0, bounds.height - TitleBarView.height - inset * 2)
+        )
+
+        // Inside the inset, on the artwork rather than on the window edge —
+        // for a framed skin those are not the same place.
+        let grip = ResizeGripView.size
+        resizeGrip.frame = NSRect(
+            x: max(inset, bounds.width - inset - grip.width - 2),
+            y: (bounds.height - grip.height) / 2,
+            width: grip.width,
+            height: grip.height
         )
     }
 

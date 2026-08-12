@@ -13,6 +13,7 @@ final class PanelController {
     var onSecondaryClick: ((Session, NSEvent) -> Void)?
 
     private var theme: Theme = DefaultTheme.theme
+    private var resizeStartWidth: CGFloat = 0
     private var frameObserver: NSObjectProtocol?
     private var elapsedTimer: Timer?
 
@@ -23,6 +24,10 @@ final class PanelController {
             self?.onSecondaryClick?(session, event)
         }
         chrome.titleBar.onClose = { [weak self] in self?.hide() }
+        chrome.resizeGrip.onResizeBegan = { [weak self] in
+            self?.resizeStartWidth = self?.panel?.frame.width ?? 0
+        }
+        chrome.resizeGrip.onResize = { [weak self] delta in self?.resizeWidth(by: delta) }
     }
 
     deinit {
@@ -110,6 +115,25 @@ final class PanelController {
         frame.size.height = target
         frame.origin.y = top - target
         panel.setFrame(frame, display: true, animate: false)
+    }
+
+    /// Drags the panel wider or narrower from its own grip.
+    ///
+    /// The left edge and the top stay put, so the panel grows into empty space
+    /// rather than walking across the screen. Height is left to
+    /// `fitHeightToContent`, which knows whether it follows the rows or the
+    /// artwork.
+    private func resizeWidth(by delta: CGFloat) {
+        guard let panel else { return }
+
+        let ceiling = (panel.screen ?? NSScreen.main)?.visibleFrame.width ?? 1600
+        let width = min(max(panel.minSize.width, resizeStartWidth + delta), ceiling)
+
+        var frame = panel.frame
+        guard abs(frame.width - width) > 0.5 else { return }
+        frame.size.width = width
+        panel.setFrame(frame, display: true, animate: false)
+        fitHeightToContent()
     }
 
     /// Recovers a panel dragged off-screen or onto a display that is gone.
