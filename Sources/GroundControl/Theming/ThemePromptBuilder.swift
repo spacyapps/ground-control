@@ -11,16 +11,25 @@ import AppKit
 /// drop straight into the folder and work.
 enum ThemePromptBuilder {
     static func prompt(for brief: ThemeBrief) -> String {
-        [
-            ThemePromptText.preamble,
-            request(for: brief),
+        let numbered = [
             artwork(for: brief),
             brief.wantsBackgroundArt ? ThemePromptText.backgroundSection : "",
             brief.wantsBackgroundArt ? ThemePromptText.shapeSection : "",
             manifestSection(for: brief),
-            ThemePromptText.paletteReference,
             installation(for: brief)
-        ].filter { !$0.isEmpty }.joined(separator: "\n\n")
+        ].filter { !$0.isEmpty }
+
+        // Numbered here rather than written into each section: sections are
+        // optional, and hand-numbered headings drift the moment one is skipped.
+        let body = numbered.enumerated().map { index, section in
+            section.replacingOccurrences(of: "## ", with: "## \(index + 1). ", options: [], range:
+                section.range(of: "## "))
+        }
+
+        return ([ThemePromptText.preamble, request(for: brief)]
+                + body
+                + [ThemePromptText.paletteReference])
+            .joined(separator: "\n\n")
     }
 
     // MARK: - Sections
@@ -54,7 +63,7 @@ enum ThemePromptBuilder {
             : ""
 
         return """
-        ## 1. Four avatar images
+        ## Four avatar images
 
         One per session state. Use exactly these filenames:
 
@@ -79,7 +88,7 @@ enum ThemePromptBuilder {
 
     private static func manifestSection(for brief: ThemeBrief) -> String {
         """
-        ## 3. `theme.json`
+        ## `theme.json`
 
         Produce it in exactly this shape, replacing the colour values to match the
         artwork. Keep the filenames consistent with the images above.
@@ -98,28 +107,41 @@ enum ThemePromptBuilder {
           only for `.mov` / `.mp4`. If both are set, video wins.
         - Omit any state you do not want to draw and the app's own drawn face is
           used for it, tinted from this palette.
-        - If you made backgrounds, add them like this (omit the block entirely
-          if you did not):
-
-        ```json
-        "assets": {
-          "windowBackground": {
-            "image": "panel.png",
-            "mode": "tile",
-            "capInsets": { "top": 28, "left": 12, "bottom": 12, "right": 12 }
-          }
-        }
-        ```
-
-          `mode` is `tile` (repeat the edges and centre — best for texture),
-          `stretch` (smear them — best for gradients), or `aspectFill`. A bare
-          `"windowBackground": "panel.png"` means tile with no corners held.
+        \(brief.wantsBackgroundArt ? backgroundKeys : "")
         """
     }
 
+    /// Only shown when a background was asked for, and shows the *same* API the
+    /// background sections describe — a JSON example that disagrees with the
+    /// prose wins, because it is the concrete thing.
+    private static let backgroundKeys = """
+        Add this block for the background, with the numbers you chose:
+
+        ```json
+        "window": {
+          "image": "panel.png",
+          "lockAspect": false,
+          "removeBackground": "#00FF00",
+          "mode": "tile",
+          "capInsets": { "top": 100, "left": 100, "bottom": 100, "right": 100 }
+        },
+        "layout": { "contentInset": 75 }
+        ```
+
+        - `lockAspect: false` lets the panel grow with my sessions and slices the
+          art to follow, so `mode` and `capInsets` apply. Use `true` instead to
+          keep your proportions exactly, with the rows scrolling inside.
+        - `removeBackground` must match the flat colour you filled around the
+          artwork.
+        - Cap insets are drawn 1:1, so **draw at roughly 450px**, not larger. A
+          200px corner on a 400px-wide panel leaves no middle.
+        - Give `rowBackground` and `rowBackgroundAlt` alpha, or the rows cover
+          your artwork completely.
+    """
+
     private static func installation(for brief: ThemeBrief) -> String {
         """
-        ## 4. How to hand it back
+        ## How to hand it back
 
         Give me the four image files and the `theme.json` contents. I will drop them
         all into a folder named `\(brief.slug)` inside Ground Control's Themes folder,

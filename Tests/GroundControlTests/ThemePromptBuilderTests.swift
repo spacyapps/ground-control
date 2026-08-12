@@ -172,3 +172,40 @@ final class ThemePromptBuilderTests: XCTestCase {
         XCTAssertEqual(found, ["neon-cat"])
     }
 }
+
+extension ThemePromptBuilderTests {
+    private func headings(_ brief: ThemeBrief) -> [String] {
+        ThemePromptBuilder.prompt(for: brief)
+            .split(separator: "\n")
+            .filter { $0.hasPrefix("## ") && $0.contains(". ") }
+            .map(String.init)
+    }
+
+    /// Sections are optional, so hand-numbered headings drift the moment one is
+    /// skipped — which is exactly what happened: 1, (unnumbered), (unnumbered),
+    /// 3, 4.
+    func testSectionsAreNumberedInSequence() {
+        var withoutBackground = brief
+        withoutBackground.background = ""
+
+        for candidate in [brief, withoutBackground] {
+            let numbers = headings(candidate).compactMap { line -> Int? in
+                Int(line.dropFirst(3).prefix(while: \.isNumber))
+            }
+            XCTAssertEqual(numbers, Array(1...numbers.count), "headings out of sequence")
+            XCTAssertGreaterThan(numbers.count, 2)
+        }
+    }
+
+    /// A JSON example that disagrees with the prose wins, because it is the
+    /// concrete thing. The example must show the API the prompt describes.
+    func testTheExampleUsesTheCurrentWindowAPI() {
+        let prompt = ThemePromptBuilder.prompt(for: brief)
+        XCTAssertTrue(prompt.contains("\"lockAspect\""))
+        XCTAssertTrue(prompt.contains("\"removeBackground\""))
+        XCTAssertFalse(
+            prompt.contains("\"windowBackground\": {"),
+            "the superseded assets API must not appear in the example"
+        )
+    }
+}
