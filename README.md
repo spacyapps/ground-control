@@ -63,6 +63,13 @@ fills in defaults.
 shaped window whose antennae extend past the panel edge, and its own matrix
 messages. Full guide: `docs/THEMING.md`.
 
+A skin can go **behind** the rows or **in front of** them (`window.overlay`),
+which is how a picture frame overlaps its own contents. Artwork arrives from
+image models without usable alpha, so `removeBackground` chroma-keys it at load
+and suppresses the rim the key leaves behind. The ✕ and ↔ marks always draw
+above the skin, so no theme can hide the only ways to close and resize the
+panel.
+
 ## Install (non-developers)
 
 **1. Install the app.** Download the `.dmg` from Releases, open it, drag Ground

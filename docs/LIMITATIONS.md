@@ -77,6 +77,23 @@ person looking at the screen.
 *Lesson for the rest of this file:* an entry saying "tested but never seen"
 should be read as **not working until proven otherwise**.
 
+### 3a. Rendering offscreen — most of the instrument the lesson above asked for
+
+`bitmapImageRepForCachingDisplay` + `cacheDisplay` renders a view without a
+window, and reading the pixels back turns "look at it" into an assertion. It
+found, in one session: every image in the theme preview drawn upside down (a
+flipped view; `NSImage.draw` ignores that unless passed `respectFlipped`), rows
+printed across a skin's frame because the inset was scaled by the artwork
+instead of the panel, and how much of a keyed image the de-spill actually
+touches — 0.46%, which settled an argument that would otherwise have been taste.
+
+**What it does not capture: anything the layer draws.** Corner radius, masked
+corners, layer background colours. A probe drawing a red square with a corner
+radius came back fully transparent, and a panel rendered byte-identical with
+`maskedCorners` set either way. So `layout.contentCornerRadius` is the one piece
+of this work verified only on screen, by Walter, and it is marked as such in the
+code.
+
 ### 4. iTerm2 jump-to-tab is written but untested
 
 iTerm2 is not installed here. The script addresses it by bundle id and is only
@@ -173,12 +190,34 @@ event mapping. Nothing in the Swift should need to change.
 
 ## Not yet built
 
-- Packaging: `build-dmg.sh`, `Info.plist` with `LSUIElement`, menu-bar icon,
-  release build. The app currently only runs via `swift run`.
+- **Avatar keying.** `removeBackground` exists only on window and background
+  art. `Theme.Avatar.Asset` is a bare URL, so an avatar arriving with a flat
+  green backdrop stays green — it needs real alpha. Backgrounds get keyed per
+  frame, avatars not at all.
 - Row background images (`rowBackground` as an asset) — only window, title bar
   and footer accept art.
-- Matrix personality beyond colour: cell shape (blocks / dots / pills),
-  cell density, theme-supplied marquee messages, per-theme pattern choice,
-  custom at-rest art, and an off switch. Colour is themeable today
-  (`matrix` block); none of the rest is.
+- Matrix personality beyond colour and words: cell shape (blocks / dots /
+  pills), cell density, per-theme pattern choice, custom at-rest art, and an
+  off switch. Colour and `matrix.messages` are themeable today; none of the
+  rest is.
 - `PostToolUse` / `PermissionDenied` handling, which Grok and Codex both offer.
+- A despeckle pass for keyed GIFs. Colour quantisation dithers an outline into
+  stray opaque pixels — 2,189 of them in the unicorn frame, ~1% of its opaque
+  area — which read as a speckled fringe. A PNG avoids it at the source.
+
+## Silence is the failure mode here
+
+Three of this project's worst bugs were invisible rather than broken, which is
+why the newer parts report rather than cope:
+
+- Hooks must never interrupt an agent, so `cc-notify` exits 0 on everything.
+  "Wrong field name" and "nothing happened" look identical. This is why Grok
+  support was silently dead until someone went looking.
+- A manifest that would not parse fell back to the built-in theme without a
+  word, so Settings named the chosen theme in the picker while describing the
+  built-in one beside it. A stale build reading a newer manifest looked exactly
+  like a typo. Both now surface through `Theme.warnings`.
+- An overlay skin whose middle is solid covers the whole panel: no error, no
+  partial render, an app that is simply not on screen. `SkinCheck` measures the
+  middle and demotes such a skin to a background rather than letting it hide
+  everything.

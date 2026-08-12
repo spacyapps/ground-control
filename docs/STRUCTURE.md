@@ -11,7 +11,7 @@ GroundControl/
 ├── .swiftlint.yml                # lint rules (root; nested configs allowed later)
 ├── .gitignore                    # excludes build/, DerivedData/, secrets, xcuserdata
 ├── README.md                     # landing page: what it is, build, screenshots
-├── LICENSE                       # MIT
+├── LICENSE                       # GPL-3.0-or-later
 │
 ├── Sources/GroundControl/
 │   ├── App/                      # lifecycle & wiring
@@ -24,6 +24,7 @@ GroundControl/
 │   │   ├── AgentEvent.swift      # decoded line from agents/<id>.jsonl
 │   │   ├── Session.swift         # a live session (latest event + children[])
 │   │   ├── SessionState.swift    # enum: idle / working / needsInput / done
+│   │   ├── ElapsedFormatter.swift # "3m" / "2h"; also decides when idle is stale
 │   │   └── ThemeManifest.swift   # decoded theme.json — all-optional, pure data
 │   │
 │   ├── Monitoring/               # the file<->row engine
@@ -43,7 +44,9 @@ GroundControl/
 │   │   ├── BackgroundImage.swift # resolved background + nine-slice cap insets
 │   │   ├── BackgroundRenderer.swift # draws a background into any size box
 │   │   ├── AnimatedImage.swift   # multi-frame GIF/APNG decoding
-│   │   ├── ImageKeyer.swift      # chroma key / checkerboard -> real alpha
+│   │   ├── ImageKeyer.swift      # chroma key / checkerboard -> real alpha, de-spilled
+│   │   ├── SkinCheck.swift       # would this overlay skin hide the panel?
+│   │   ├── Brand.swift           # the app's own mark and website link
 │   │   ├── ThemeBrief.swift      # answers gathered by the theme builder
 │   │   ├── ThemePromptBuilder.swift # brief -> LLM prompt + starter manifest
 │   │   ├── ThemePromptText.swift # the prompt's fixed prose
@@ -54,8 +57,15 @@ GroundControl/
 │   │   │   ├── FloatingPanel.swift        # NSPanel: nonactivating, levels, spaces
 │   │   │   ├── PanelController.swift      # show/hide, position persistence
 │   │   │   ├── PanelBackgroundView.swift  # themed surface: title bar + list
-│   │   │   ├── TitleBarView.swift         # themed strip, drag handle, close
+│   │   │   ├── TitleBarView.swift         # themed strip, drag handle, analyser
+│   │   │   ├── CloseMarkView.swift        # the ✕ — above any skin (see below)
+│   │   │   ├── ResizeGripView.swift       # the ↔ — the only resize on a shaped panel
+│   │   │   ├── SkinOverlayView.swift      # window.overlay: the skin drawn in front
+│   │   │   ├── SkinInterior.swift         # what a frame encloses vs what is outside it
 │   │   │   ├── VisualizerView.swift       # WinAmp-style analyser, driven by state
+│   │   │   ├── VisualizerPattern.swift    # the shapes it sweeps through
+│   │   │   ├── MatrixFont.swift           # 5-row letterforms for the analyser
+│   │   │   ├── MatrixMessages.swift       # what it spells, theme words included
 │   │   │   └── SessionListView.swift      # the scrolling stack of rows
 │   │   ├── Rows/
 │   │   │   ├── SessionRowView.swift       # one row: dot + name + message + avatar
@@ -69,7 +79,8 @@ GroundControl/
 │   │   └── Settings/
 │   │       ├── SettingsWindowController.swift
 │   │       ├── SettingsView.swift             # theme picker, toggles, advanced
-│   │       ├── ThemePreviewView.swift         # live miniature of the selection
+│   │       ├── StarfieldView.swift            # the settings chrome, drawn not shipped
+│   │       ├── ThemePreviewView.swift         # live sample: artwork + all four faces
 │   │       └── ThemeBuilderWindowController.swift # questions -> LLM prompt
 │   │
 │   ├── Integration/              # talking to the outside world
@@ -83,32 +94,29 @@ GroundControl/
 │   ├── Extensions/               # small, focused extensions
 │   │   └── NSColor+Hex.swift
 │   │
-│   └── Resources/                # bundled assets (currently empty — the
-│                                 # built-in theme draws itself, see DrawnAvatar)
+│   └── Resources/                # the app's own mark (themes draw their own —
+│       ├── logo-glyph.png        # see DrawnAvatar for the built-in faces)
+│       └── logo-lockup.png
 │
 ├── Themes/
 │   ├── default/theme.json        # reference palette (ships in-repo, copyable)
 │   ├── example-avatars/          # working avatar theme: 3 stills + a GIF
 │   └── spacyAppsLunarAvatar/     # the full set: avatars + shaped skin
-│   └── shaped-demo/              # non-rectangular window: notch + antenna
 │
-├── Scripts/
+├── Scripts/                     # cc-notify and install-hooks.sh are also copied
+│   │                             # into the .app, so a dmg needs no checkout
 │   ├── cc-notify                 # hook emitter (python3, reads Claude + Grok)
-│   ├── theme-preview.sh          # one fake row per state, for theming
+│   ├── cc-notify.zip             # the emitter alone, for a machine without the repo
 │   ├── install-hooks.sh          # MERGES hook entries into ~/.claude/settings.json
-│   └── build-dmg.sh              # create-dmg packaging  [not written yet]
+│   ├── theme-preview.sh          # one fake row per state, for theming
+│   ├── make-icon.sh              # logo -> AppIcon.icns
+│   ├── build-app.sh              # assembles + signs GroundControl.app
+│   └── build-dmg.sh              # dmg: signed, notarised, stapled
 │
-├── Tests/GroundControlTests/      # unit tests mirror the source tree
-│   ├── SessionFileParserTests.swift
-│   ├── SessionTests.swift
-│   ├── AgentGrouperTests.swift
-│   ├── PurgeServiceTests.swift
-│   ├── ThemeLoaderTests.swift
-│   ├── AssetResolverTests.swift
-│   ├── BackgroundAssetTests.swift
-│   ├── ThemePromptBuilderTests.swift
-│   ├── VisualizerTests.swift
-│   └── MultiCLITests.swift
+├── Tests/GroundControlTests/     # unit tests mirror the source tree; the
+│                                 # theming ones render offscreen and inspect
+│                                 # pixels, because "tested but never seen" has
+│                                 # been wrong here more than once
 │
 ├── docs/
 │   ├── STRUCTURE.md              # this file
@@ -116,6 +124,11 @@ GroundControl/
 │   ├── THEMING.md                # theme authoring guide
 │   ├── HOOK-PAYLOADS.md          # measured hook payloads — the data SPEC rests on
 │   └── LIMITATIONS.md            # what is verified vs assumed; other-CLI status
+│
+├── Packaging/
+│   ├── Info.plist                # bundle id, version, LSUIElement
+│   ├── GroundControl.entitlements # hardened runtime + apple-events
+│   └── AppIcon.icns
 │
 └── .github/workflows/
     └── ci.yml                    # build + swiftlint on push/PR
@@ -150,3 +163,16 @@ never reads `~/.claude/`. Its whole input is one folder of JSON lines.
 That boundary is what keeps `Monitoring` unit-testable from fixture files, and
 it means a Claude Code update can only ever break the *script* — one file, no
 Swift changes. See `docs/HOOK-PAYLOADS.md` for what the script relies on.
+
+## What a theme may not paint over
+
+Panel views stack in one deliberate order: **marks, then skin, then panel.**
+`CloseMarkView` and `ResizeGripView` are added after `SkinOverlayView`, so a
+theme can cover its own rows — that is what `window.overlay` is for — but never
+the only ways to close and resize the window. A theme that tucked its content
+behind its frame used to take both controls with it.
+
+The same instinct runs through `SkinCheck` and `Theme.warnings`: an overlay skin
+whose middle would hide the panel is demoted to a background and *says so* in
+Settings, and a manifest that will not parse says that too rather than quietly
+showing the built-in theme.

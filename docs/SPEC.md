@@ -30,10 +30,12 @@ depends on.
 - **No embedded terminals.** The app is a pure monitor + launcher. It watches
   external session files and jumps to real Terminal/iTerm tabs. (SwiftTerm was
   considered and dropped.)
-- **Distribution:** open-source (MIT) on GitHub; unsigned `.dmg` via
-  `create-dmg` for non-devs (first launch needs right-click → Open). No App
-  Store (sandbox would fight AppleScript + process launch). No notarization in
-  v1.
+- **Distribution:** open-source (**GPL-3.0-or-later**) on GitHub; a `.dmg`
+  signed with a Developer ID, **notarised and stapled** (`Scripts/build-dmg.sh`),
+  so it opens on a double-click with no warning. The app bundle carries
+  `cc-notify` and `install-hooks.sh` in `Resources/`, so a download needs no
+  checkout to wire up the hooks. No App Store (the sandbox would fight
+  AppleScript + process launch).
 
 ---
 
@@ -248,7 +250,30 @@ descending). Define a 0-session empty state.
   v1's "always global" is just the bottom of a future chain — no rewrite.
 
 **Video-in-panel caveat:** looping video in an always-on panel costs GPU.
-Consider capping to GIF/APNG in v1 or make it a setting; decide at build time.
+Animated backgrounds therefore run **only while a session is working** and
+freeze at rest — motion means work, the same rule the analyser follows.
+
+### What shipped beyond this section
+
+The manifest grew while the panel was being skinned in earnest. Full reference
+in `docs/THEMING.md`; the shape of it:
+
+- **`window.image`** — the artwork becomes the window. Transparent areas are
+  see-through *and* click-through, so a skin can escape the rectangle.
+  `lockAspect` chooses between "scaled whole, rows scroll inside" and "grows
+  with the sessions, art nine-sliced".
+- **`window.overlay`** — draws the skin *in front of* the rows, so a frame
+  covers what it overlaps and needs no pixel-accurate fit to its opening.
+  Requires a transparent middle; `SkinCheck` refuses a skin that would hide the
+  panel and reports it rather than showing an empty frame.
+- **`window.removeBackground`** — chroma key or checkerboard flood fill at load,
+  because image models cannot produce reliable alpha but will fill a flat
+  colour perfectly. The rim the key leaves is suppressed by distance from the
+  cut, so artwork keeps its own colours further in.
+- **`layout.contentInset`** — one number or four (`top`/`left`/`bottom`/`right`),
+  measured in the artwork's own pixels and scaled wherever the artwork is.
+- **Insets never hide the controls.** The ✕ and ↔ draw above any skin.
+- **`matrix.messages`** — the analyser's words, so a theme has a voice.
 
 ---
 
