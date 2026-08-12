@@ -5,9 +5,15 @@ videos it references. That's it.
 
 ## Quick start
 
-Two folders ship as starting points: `default/` (every colour key, no
-artwork) and `example-avatars/` (the avatar system working — three stills and
-one animated GIF). Copy whichever is closer to what you want.
+Three folders ship as starting points:
+
+| Theme | Shows |
+|---|---|
+| `default/` | every colour key, no artwork |
+| `example-avatars/` | the avatar system — three stills and an animated GIF |
+| `spacyAppsLunarAvatar/` | the lot: avatars, a shaped window, chroma keying, matrix messages |
+
+Copy whichever is closest to what you want.
 
 Themes live in `~/Library/Application Support/GroundControl/Themes/`. The
 menu-bar menu has **Theme → Open Themes Folder…** if you'd rather not type it.
@@ -182,7 +188,7 @@ the window per side. Draw at roughly panel size, or scale the file down first �
 this is the single most common way a skin goes wrong.
 
 `layout.contentInset` holds the rows inside the frame; without it they cover
-your border. `Themes/space-station` is a working example of all of this.
+your border. `Themes/spacyAppsLunarAvatar` is a working example of all of this — a station hull whose antennae extend past the panel edge.
 
 ### `avatar`
 The per-state face/mascot. Each state can be an **image** *or* a **video**

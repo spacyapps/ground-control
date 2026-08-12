@@ -89,7 +89,7 @@ GroundControl/
 ├── Themes/
 │   ├── default/theme.json        # reference palette (ships in-repo, copyable)
 │   ├── example-avatars/          # working avatar theme: 3 stills + a GIF
-│   ├── space-station/            # shaped skin: antennae past the frame
+│   ├── spacyAppsLunarAvatar/     # the full set: avatars + shaped skin
 │   └── shaped-demo/              # non-rectangular window: notch + antenna
 │
 ├── Scripts/

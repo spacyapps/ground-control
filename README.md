@@ -57,7 +57,11 @@ versus merely believed.
 ## Themes
 
 Copy `Themes/default/` and edit `theme.json`. Everything is optional — the app
-fills in defaults. Full guide: `docs/THEMING.md`.
+fills in defaults.
+
+`Themes/spacyAppsLunarAvatar/` is a complete example: per-state avatars, a
+shaped window whose antennae extend past the panel edge, and its own matrix
+messages. Full guide: `docs/THEMING.md`.
 
 ## Install (non-developers)
 

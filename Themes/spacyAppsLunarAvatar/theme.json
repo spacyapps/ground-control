@@ -1,7 +1,7 @@
 {
   "manifestVersion": 1,
-  "name": "DemoAvatar",
-  "description": "Mission Control Operator \u2014 Realistic space-age headset character, purple theme + dark space background",
+  "name": "SpacyApps Lunar Avatar",
+  "description": "Mission-control operator avatars and a space-station hull frame whose antennae extend past the panel edge. Generated with the prompt in PROMPT.md.",
   "colors": {
     "windowBackground": "#0a0a12",
     "titleBarBackground": "#160f22cc",
@@ -67,5 +67,6 @@
       "bottom": 100,
       "right": 100
     }
-  }
+  },
+  "author": "SpacyApps"
 }
