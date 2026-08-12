@@ -36,7 +36,7 @@ enum ThemeLoader {
         let manifestURL = folder.appendingPathComponent("theme.json")
         guard let data = try? Data(contentsOf: manifestURL) else {
             Log.theming.notice("No theme.json in \(folder.lastPathComponent, privacy: .public); using defaults")
-            return DefaultTheme.theme
+            return failed(folder, because: "There is no theme.json in this folder.")
         }
         do {
             let manifest = try JSONDecoder().decode(ThemeManifest.self, from: forgiving(data))
@@ -45,8 +45,23 @@ enum ThemeLoader {
             let name = folder.lastPathComponent
             let reason = error.localizedDescription
             Log.theming.error("Bad theme.json in \(name, privacy: .public): \(reason, privacy: .public)")
-            return DefaultTheme.theme
+            return failed(folder, because: """
+                This theme's theme.json could not be read, so the built-in \
+                default is being shown instead. \(reason)
+                """)
         }
+    }
+
+    /// The default theme, but saying so.
+    ///
+    /// Falling back silently is what makes a broken manifest so hard to place:
+    /// Settings names the theme you picked in the picker while showing the
+    /// built-in one beside it, and nothing anywhere connects the two. A stale
+    /// build reading a newer manifest looks exactly the same as a typo.
+    private static func failed(_ folder: URL, because reason: String) -> Theme {
+        var theme = DefaultTheme.theme
+        theme.warnings = [reason.replacingOccurrences(of: "\n", with: " ")]
+        return theme
     }
 
     private static func layout(from manifestLayout: ThemeManifest.Layout?) -> Theme.Layout {

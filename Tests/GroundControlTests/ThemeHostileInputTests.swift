@@ -138,3 +138,54 @@ final class ThemeBriefRoundTripTests: XCTestCase {
         XCTAssertEqual(makeBrief(name: "n", subject: "s", avatarSize: 9999).recommendedPixels, 512)
     }
 }
+
+/// Falling back to the default silently is what makes a broken manifest hard to
+/// place: the picker names the theme you chose while the panel shows the
+/// built-in one, and nothing connects the two. A stale build reading a newer
+/// manifest looks identical to a typo.
+final class ThemeFailureReportingTests: XCTestCase {
+    private var dir = FileManager.default.temporaryDirectory
+
+    override func setUpWithError() throws {
+        dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("failure-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    func testUnreadableManifestSaysSo() throws {
+        let manifest = dir.appendingPathComponent("theme.json")
+        try "{ \"colors\": { not json at all".write(to: manifest, atomically: true, encoding: .utf8)
+
+        let theme = ThemeLoader.loadTheme(from: dir)
+        XCTAssertEqual(theme.warnings.count, 1, "a theme that failed to load must say so")
+        XCTAssertTrue(theme.warnings[0].contains("theme.json"))
+    }
+
+    func testMissingManifestSaysSo() {
+        let theme = ThemeLoader.loadTheme(from: dir)
+        XCTAssertEqual(theme.warnings.count, 1)
+    }
+
+    /// A key the running build does not understand — the case that prompted
+    /// this: a newer manifest read by an older app.
+    func testUnknownShapeForAKnownKeySaysSo() throws {
+        try ##"{ "layout": { "contentInset": "medium" } }"##
+            .write(to: dir.appendingPathComponent("theme.json"), atomically: true, encoding: .utf8)
+
+        let theme = ThemeLoader.loadTheme(from: dir)
+        XCTAssertFalse(theme.warnings.isEmpty, "an unreadable value must not fail silently")
+    }
+
+    func testAGoodThemeCarriesNoWarnings() throws {
+        try ##"{ "name": "Fine", "layout": { "contentInset": 12 } }"##
+            .write(to: dir.appendingPathComponent("theme.json"), atomically: true, encoding: .utf8)
+
+        let theme = ThemeLoader.loadTheme(from: dir)
+        XCTAssertEqual(theme.name, "Fine")
+        XCTAssertTrue(theme.warnings.isEmpty)
+    }
+}
