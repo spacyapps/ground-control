@@ -73,6 +73,7 @@ enum DefaultTheme {
             typography: typography,
             avatar: avatar,
             matrix: matrix,
+            window: .standard,
             backgrounds: .none,
             folder: nil
         )

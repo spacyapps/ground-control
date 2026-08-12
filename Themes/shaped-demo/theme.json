@@ -1,0 +1,21 @@
+{
+  "manifestVersion": 1,
+  "name": "Shaped Demo",
+  "description": "A non-rectangular panel: notched edge, antenna past the corner.",
+
+  "window": {
+    "shape": "skin.png",
+    "capInsets": { "top": 90, "left": 90, "bottom": 90, "right": 90 },
+    "resizable": true
+  },
+
+  "layout": { "contentInset": 34 },
+
+  "colors": {
+    "rowBackground":      "#12101c88",
+    "rowBackgroundAlt":   "#16142288",
+    "titleBarBackground": "#16142200"
+  },
+
+  "matrix": { "messages": ["SHAPED", "NO RECTANGLE", "SKIN ON"] }
+}

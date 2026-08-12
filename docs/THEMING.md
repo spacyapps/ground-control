@@ -131,6 +131,38 @@ which is what a plain repeating texture wants.
 
 Editing an image hot-reloads exactly like editing the manifest.
 
+### `window` — breaking the rectangle
+
+A theme can replace the panel's shape entirely. The image's **alpha channel
+becomes the window**: transparent pixels are not part of it, so they are
+see-through *and* click-through.
+
+```json
+"window": {
+  "shape": "skin.png",
+  "capInsets": { "top": 90, "left": 90, "bottom": 90, "right": 90 },
+  "resizable": true
+},
+"layout": { "contentInset": 34 }
+```
+
+Draw the canvas **larger than the panel body** and leave the surplus
+transparent — that margin is where art can escape the edge: an antenna past a
+corner, a mascot leaning out, a torn border, a glow bleeding past the body.
+`contentInset` holds the rows inside the body so they do not sit on your
+artwork, and `capInsets` nine-slices the silhouette so corners keep their shape
+as the panel resizes.
+
+**A shaped theme must draw its own chrome.** macOS renders no title bar, no
+close button and no resize control in this mode, so the skin has to provide
+somewhere to grab and somewhere to click to close. A panel nobody can move or
+dismiss is worse than a plain one.
+
+Give the row colours alpha too, or rows will cover the body art.
+
+`Themes/shaped-demo` is a working example — a notched edge and an antenna over
+the corner.
+
 ### `avatar`
 The per-state face/mascot. Each state can be an **image** *or* a **video**
 (author's choice — set whichever key).

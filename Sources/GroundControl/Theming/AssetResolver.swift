@@ -54,6 +54,28 @@ enum AssetResolver {
         )
     }
 
+    /// The window silhouette. Nine-sliced like any other background, so a
+    /// shaped panel can still resize without distorting its corners.
+    static func window(from manifest: ThemeManifest.Window?, folder: URL?) -> Theme.Window {
+        guard let manifest, let folder, let url = imageFile(manifest.shape, in: folder) else {
+            return .standard
+        }
+        let insets = manifest.capInsets
+        return Theme.Window(
+            shape: BackgroundImage(
+                url: url,
+                mode: .stretch,
+                capInsets: NSEdgeInsets(
+                    top: Theme.length(insets?.top, 0),
+                    left: Theme.length(insets?.left, 0),
+                    bottom: Theme.length(insets?.bottom, 0),
+                    right: Theme.length(insets?.right, 0)
+                )
+            ),
+            isResizable: manifest.resizable ?? true
+        )
+    }
+
     static func avatar(from manifest: ThemeManifest.Avatar?,
                        folder: URL?,
                        fallback: Theme.Avatar) -> Theme.Avatar {

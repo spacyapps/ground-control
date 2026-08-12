@@ -44,6 +44,7 @@ GroundControl/
 │   │   ├── BackgroundRenderer.swift # draws a background into any size box
 │   │   ├── ThemeBrief.swift      # answers gathered by the theme builder
 │   │   ├── ThemePromptBuilder.swift # brief -> LLM prompt + starter manifest
+│   │   ├── ThemePromptText.swift # the prompt's fixed prose
 │   │   └── ThemeScaffold.swift   # creates a theme folder ready for artwork
 │   │
 │   ├── UI/
@@ -85,7 +86,8 @@ GroundControl/
 │
 ├── Themes/
 │   ├── default/theme.json        # reference palette (ships in-repo, copyable)
-│   └── example-avatars/          # working avatar theme: 3 stills + a GIF
+│   ├── example-avatars/          # working avatar theme: 3 stills + a GIF
+│   └── shaped-demo/              # non-rectangular window: notch + antenna
 │
 ├── Scripts/
 │   ├── cc-notify                 # hook emitter (python3, reads Claude + Grok)

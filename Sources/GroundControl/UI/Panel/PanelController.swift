@@ -63,7 +63,9 @@ final class PanelController {
 
     func apply(theme: Theme) {
         self.theme = theme
+        panel?.apply(shaped: theme.window.isShaped)
         chrome.apply(theme: theme)
+        panel?.invalidateShadow()
     }
 
     func apply(sessions: [Session]) {

@@ -41,6 +41,29 @@ final class FloatingPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
+    /// A shaped theme needs the system to stop drawing a window at all.
+    ///
+    /// `.titled` is what forces a rectangle with system corners, so a skin can
+    /// never exceed it. Borderless gives a window with no shape of its own —
+    /// whatever the content draws *is* the window. The cost is the resize
+    /// control and the title bar, which is why a shaped theme has to supply its
+    /// own way to move and close the panel.
+    func apply(shaped: Bool) {
+        let wanted: NSWindow.StyleMask = shaped
+            ? [.nonactivatingPanel, .borderless]
+            : [.nonactivatingPanel, .titled, .closable, .resizable, .fullSizeContentView]
+        guard styleMask != wanted else { return }
+
+        styleMask = wanted
+        isMovableByWindowBackground = true
+        for button in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+            standardWindowButton(button)?.isHidden = true
+        }
+        // The shadow is derived from opaque content, so it has to be recomputed
+        // whenever the silhouette changes or a rectangular ghost remains.
+        invalidateShadow()
+    }
+
     /// Applies the two user-facing window behaviours (docs/SPEC.md §5).
     func apply(alwaysOnTop: Bool, showOnAllSpaces: Bool) {
         level = alwaysOnTop ? .floating : .normal

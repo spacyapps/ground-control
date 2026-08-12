@@ -22,6 +22,7 @@ struct Theme {
     var typography: Typography
     var avatar: Avatar
     var matrix: Matrix
+    var window: Window
     var backgrounds: Backgrounds
     /// Folder the manifest was loaded from; asset paths resolve against it.
     var folder: URL?
@@ -91,6 +92,18 @@ struct Theme {
             case .idle: return idle
             }
         }
+    }
+
+    /// A shaped panel: the silhouette comes from an image rather than from a
+    /// rectangle. Nothing is shaped unless a theme asks — `shape` nil keeps the
+    /// ordinary window, which is what every existing theme gets.
+    struct Window: Equatable {
+        var shape: BackgroundImage?
+        var isResizable: Bool
+
+        var isShaped: Bool { shape != nil }
+
+        static let standard = Window(shape: nil, isResizable: true)
     }
 
     /// The title-bar analyser. Its colours were derived from the row palette,

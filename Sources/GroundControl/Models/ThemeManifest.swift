@@ -18,6 +18,7 @@ struct ThemeManifest: Decodable, Equatable {
     var colors: [String: String]?
     var assets: [String: Asset?]?
     var avatar: Avatar?
+    var window: Window?
     var matrix: Matrix?
     var layout: Layout?
     var typography: Typography?
@@ -62,6 +63,15 @@ struct ThemeManifest: Decodable, Equatable {
             self.mode = mode
             self.capInsets = capInsets
         }
+    }
+
+    /// Turns the panel into a shaped window: the image's alpha becomes the
+    /// window's silhouette, so art can spill past what would have been the
+    /// rectangle and transparent areas are see-through *and* click-through.
+    struct Window: Decodable, Equatable {
+        var shape: String?
+        var capInsets: Asset.Insets?
+        var resizable: Bool?
     }
 
     /// The title-bar analyser: its palette, and what it says.

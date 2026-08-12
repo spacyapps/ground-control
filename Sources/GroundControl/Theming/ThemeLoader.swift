@@ -107,6 +107,7 @@ enum ThemeLoader {
                 fallback: DefaultTheme.avatar
             ),
             matrix: Self.matrix(manifest.matrix, colors: colors),
+            window: AssetResolver.window(from: manifest.window, folder: folder),
             backgrounds: AssetResolver.backgrounds(from: manifest.assets, folder: folder),
             folder: folder
         )
