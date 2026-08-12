@@ -41,6 +41,13 @@ cp "$BIN/GroundControl" "$APP/Contents/MacOS/GroundControl"
 cp Packaging/Info.plist "$APP/Contents/Info.plist"
 [ -f Packaging/AppIcon.icns ] && cp Packaging/AppIcon.icns "$APP/Contents/Resources/"
 
+# The hook emitter and its installer ride along, so a dmg is self-sufficient:
+# without cc-notify registered the panel is empty forever, and a downloaded app
+# has no repo to run the installer from. install-hooks.sh resolves cc-notify
+# beside itself, so keeping the pair together is all it needs.
+install -m 0755 Scripts/cc-notify "$APP/Contents/Resources/cc-notify"
+install -m 0755 Scripts/install-hooks.sh "$APP/Contents/Resources/install-hooks.sh"
+
 # SwiftPM emits resources as a bundle beside the binary; it has to travel too
 # or Brand.lockup and every themed asset comes back nil at runtime.
 for bundle in "$BIN"/*.bundle; do

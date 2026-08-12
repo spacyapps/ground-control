@@ -65,9 +65,45 @@ messages. Full guide: `docs/THEMING.md`.
 
 ## Install (non-developers)
 
-Download the `.dmg` from Releases, drag to Applications, then **right-click →
-Open** the first time (the build is unsigned/open-source).
+**1. Install the app.** Download the `.dmg` from Releases, open it, drag Ground
+Control to Applications. It is signed with a Developer ID and notarised by
+Apple, so it opens on a double-click — no right-click, no warning.
+
+**2. Wire up your agent CLI.** The panel stays empty until an agent tells it
+something, which is what the hooks are for. One command:
+
+```bash
+/Applications/GroundControl.app/Contents/Resources/install-hooks.sh
+```
+
+That installs `cc-notify` to `~/bin` and registers it in
+`~/.claude/settings.json`, backing up the file first. It merges rather than
+overwrites, so hooks you already have are kept, and it is safe to re-run.
+Claude Code and Grok both read that file and both are covered.
+
+**3. Start a session.** Open a *new* terminal — a CLI already running has not
+loaded the hooks — and start Claude Code or Grok. A row appears as soon as it
+does anything.
+
+Click a row to jump to the terminal it belongs to. The menu-bar icon toggles the
+panel and opens Settings, where you can pick a theme, and **Theme → Open Themes
+Folder…** is where your own themes go.
+
+### If no rows appear
+
+- Was the terminal opened *after* running the installer? Hooks load at start.
+- `ls ~/.groundcontrol/sessions/` — files here mean the hooks are firing and the
+  problem is the app; an empty folder means the CLI is not calling them.
+- Hooks are never allowed to interrupt your agent, so `cc-notify` fails
+  silently by design. `docs/LIMITATIONS.md` covers what that hides.
+
+## Uninstall
+
+Delete the app, remove `~/bin/cc-notify`, and take the `cc-notify` entries out
+of `~/.claude/settings.json` (a dated backup sits beside it). Session files live
+in `~/.groundcontrol/`, themes in
+`~/Library/Application Support/GroundControl/Themes/`.
 
 ## License
 
-MIT — see `LICENSE`.
+GPL-3.0-or-later — see `LICENSE`.
