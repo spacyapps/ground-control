@@ -12,6 +12,7 @@ final class PanelBackgroundView: NSView {
     let list = SessionListView()
     let resizeGrip = ResizeGripView()
     let skinOverlay = SkinOverlayView()
+    let closeMark = CloseMarkView()
 
     private var theme: Theme = DefaultTheme.theme
 
@@ -51,10 +52,11 @@ final class PanelBackgroundView: NSView {
 
         addSubview(titleBar)
         addSubview(list)
-        // Above the list, so it stays grabbable over a scrolled row.
-        addSubview(resizeGrip)
-        // Last, so an overlay skin covers everything it is meant to.
+        // A skin covers the panel it decorates...
         addSubview(skinOverlay)
+        // ...but never the two controls: marks, then frame, then panel.
+        addSubview(resizeGrip)
+        addSubview(closeMark)
         skinOverlay.elapsed = { [weak self] in self?.currentElapsed }
     }
 
@@ -80,6 +82,7 @@ final class PanelBackgroundView: NSView {
         titleBar.apply(theme: theme)
         list.apply(theme: theme)
         resizeGrip.apply(theme: theme)
+        closeMark.apply(theme: theme)
         skinOverlay.apply(theme: theme)
         needsDisplay = true
     }
@@ -174,6 +177,13 @@ final class PanelBackgroundView: NSView {
         list.layer?.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
 
         skinOverlay.frame = bounds
+
+        closeMark.frame = NSRect(
+            x: titleBar.frame.minX + TitleBarView.markInset,
+            y: titleBar.frame.minY + TitleBarView.markTop,
+            width: CloseMarkView.size.width,
+            height: CloseMarkView.size.height
+        )
 
         let grip = ResizeGripView.size
         resizeGrip.frame = NSRect(

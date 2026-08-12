@@ -192,6 +192,11 @@ rarely as thick at the top as at the sides, so one number usually means clearing
 the thickest side everywhere. The ✕ and ↔ marks sit at the ends of the title
 strip, so the `top`, `left` and `right` values decide whether you can see them.
 
+**The ✕ and ↔ marks are never covered.** They draw above the skin — marks, then
+frame, then panel — so tucking the content behind the artwork can hide the rows'
+edges but never the only ways to close and resize the window. They still take
+their position from `contentInset`, so that is what moves them.
+
 The app checks this rather than trusting it. If an overlay skin's middle is
 solid, it is drawn *behind* the rows instead — imperfect, but visible — and
 Settings says why. The frame never takes a click, however opaque it is; clicks

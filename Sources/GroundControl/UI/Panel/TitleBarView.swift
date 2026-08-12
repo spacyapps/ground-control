@@ -14,10 +14,7 @@ final class TitleBarView: NSView {
     static let markInset: CGFloat = 8
     static let markTop: CGFloat = 7
 
-    var onClose: (() -> Void)?
-
     private let titleLabel = NSTextField(labelWithString: "Ground Control")
-    private let closeButton = NSButton()
     private let visualizer = VisualizerView()
     private let mark = NSImageView()
     private var theme: Theme = DefaultTheme.theme
@@ -31,15 +28,9 @@ final class TitleBarView: NSView {
 
         titleLabel.lineBreakMode = .byTruncatingTail
 
-        closeButton.isBordered = false
-        closeButton.bezelStyle = .inline
-        closeButton.target = self
-        closeButton.action = #selector(close)
-
         mark.imageScaling = .scaleProportionallyUpOrDown
         mark.image = Brand.glyph
         addSubview(mark)
-        addSubview(closeButton)
         addSubview(titleLabel)
         addSubview(visualizer)
     }
@@ -56,13 +47,6 @@ final class TitleBarView: NSView {
         titleLabel.font = .systemFont(ofSize: 11, weight: .semibold)
         titleLabel.textColor = theme.colors.titleBarText
 
-        closeButton.attributedTitle = NSAttributedString(
-            string: "✕",
-            attributes: [
-                .foregroundColor: theme.colors.titleBarText.withAlphaComponent(0.5),
-                .font: NSFont.systemFont(ofSize: 10)
-            ]
-        )
         // A theme may supply its own mark; otherwise ours.
         if let custom = theme.backgrounds.brandMark, let image = NSImage(contentsOf: custom) {
             mark.image = image
@@ -86,15 +70,11 @@ final class TitleBarView: NSView {
         let inset: CGFloat = 10
         let titleRow: CGFloat = 22
 
-        closeButton.frame = NSRect(
-            x: Self.markInset,
-            y: Self.markTop,
-            width: 16,
-            height: 16
-        )
+        // The close mark is drawn by the panel, above any skin, but its place
+        // in the row is still reserved here so the two agree.
         let markSide: CGFloat = 15
         mark.frame = NSRect(
-            x: closeButton.frame.maxX + 7,
+            x: Self.markInset + CloseMarkView.size.width + 7,
             y: (titleRow - markSide) / 2 + 4,
             width: markSide,
             height: markSide
@@ -154,9 +134,5 @@ final class TitleBarView: NSView {
     /// Dragging anywhere on the strip moves the window.
     override func mouseDragged(with event: NSEvent) {
         window?.performDrag(with: event)
-    }
-
-    @objc private func close() {
-        onClose?()
     }
 }

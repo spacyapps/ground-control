@@ -23,7 +23,7 @@ final class PanelController {
         chrome.list.onSecondaryClick = { [weak self] session, event in
             self?.onSecondaryClick?(session, event)
         }
-        chrome.titleBar.onClose = { [weak self] in self?.hide() }
+        chrome.closeMark.onClose = { [weak self] in self?.hide() }
         chrome.resizeGrip.onResizeBegan = { [weak self] in
             self?.resizeStartWidth = self?.panel?.frame.width ?? 0
         }

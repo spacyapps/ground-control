@@ -121,7 +121,24 @@ final class OverlaySkinTests: XCTestCase {
 
         XCTAssertNil(view.skinOverlay.hitTest(NSPoint(x: 10, y: 100)))
         XCTAssertNil(view.skinOverlay.hitTest(NSPoint(x: 100, y: 100)))
-        XCTAssertIdentical(view.subviews.last, view.skinOverlay, "the overlay must be topmost")
+    }
+
+    /// Marks, then frame, then panel. A skin may cover the panel it decorates,
+    /// but never the only ways to close and resize it — a theme that tucks its
+    /// content behind the frame used to take those two with it.
+    func testControlsSitAboveTheSkin() throws {
+        let view = PanelBackgroundView()
+        view.apply(theme: try theme(overlay: true))
+        view.frame = NSRect(x: 0, y: 0, width: 200, height: 200)
+        view.layoutSubtreeIfNeeded()
+
+        func depth(_ subview: NSView) -> Int {
+            view.subviews.firstIndex(of: subview) ?? -1
+        }
+        XCTAssertGreaterThan(depth(view.closeMark), depth(view.skinOverlay))
+        XCTAssertGreaterThan(depth(view.resizeGrip), depth(view.skinOverlay))
+        XCTAssertGreaterThan(depth(view.skinOverlay), depth(view.list))
+        XCTAssertGreaterThan(depth(view.skinOverlay), depth(view.titleBar))
     }
 
     func testOrdinaryThemesAreUnaffected() throws {

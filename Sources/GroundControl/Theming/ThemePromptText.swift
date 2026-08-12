@@ -94,9 +94,10 @@ enum ThemePromptText {
     "layout": { "contentInset": { "top": 140, "left": 152, "bottom": 80, "right": 152 } }
     ```
 
-    Give the sides carrying the ✕ and ↔ marks — top, left, right — a little
-    **more than the frame is thick** there, so they are not buried under your
-    artwork. Anywhere you want the frame to visibly overlap the rows, go
+    The ✕ and ↔ marks always draw on top of your artwork, so they cannot be
+    lost — but they sit at the ends of the title strip, so `top`, `left` and
+    `right` still decide whether they land on the frame or inside the opening.
+    Anywhere you want the frame to visibly overlap the rows, go
     **under** it: the rows tuck behind and the artwork trims their edges. A
     frame is rarely as thick at the top as at the sides, which is why one
     number for all four rarely fits.

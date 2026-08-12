@@ -90,31 +90,6 @@ final class ResizeGripView: NSView {
         onResize?(NSEvent.mouseLocation.x - startX)
     }
 
-    /// The close button's ink, so the two corner marks read as a pair.
-    ///
-    /// Falls back to plain contrast when a theme picks a title colour that
-    /// vanishes against its own window — the handle is the only way to resize a
-    /// shaped panel, so it cannot be allowed to disappear.
-    private var ink: NSColor {
-        let themed = theme.colors.titleBarText
-        return Self.contrast(themed, against: theme.colors.windowBackground) > 0.25
-            ? themed
-            : Self.opposite(of: theme.colors.windowBackground)
-    }
-
-    private static func luminance(of color: NSColor) -> CGFloat {
-        let rgb = color.usingColorSpace(.sRGB) ?? .black
-        return 0.2126 * rgb.redComponent + 0.7152 * rgb.greenComponent + 0.0722 * rgb.blueComponent
-    }
-
-    private static func contrast(_ one: NSColor, against other: NSColor) -> CGFloat {
-        abs(luminance(of: one) - luminance(of: other))
-    }
-
-    private static func opposite(of color: NSColor) -> NSColor {
-        luminance(of: color) < 0.5 ? .white : .black
-    }
-
     override func draw(_ dirtyRect: NSRect) {
         // A double-headed arrow rather than a diagonal one: height is not
         // draggable, and a corner arrow pointing both ways would promise a
@@ -123,7 +98,7 @@ final class ResizeGripView: NSView {
             string: "\u{2194}",
             attributes: [
                 .font: NSFont.systemFont(ofSize: 11),
-                .foregroundColor: ink.withAlphaComponent(isHighlighted ? 1 : 0.5)
+                .foregroundColor: MarkInk.colour(for: theme).withAlphaComponent(isHighlighted ? 1 : 0.5)
             ]
         )
         let size = glyph.size()
