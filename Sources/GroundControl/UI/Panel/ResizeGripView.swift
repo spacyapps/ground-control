@@ -88,19 +88,35 @@ final class ResizeGripView: NSView {
         onResize?(NSEvent.mouseLocation.x - startX)
     }
 
+    /// White on a dark theme, black on a light one.
+    ///
+    /// Drawing the handle in palette colours made it invisible: on a dark skin
+    /// a `titleBarBackground` capsule is near-black on near-black, and a theme
+    /// cannot be relied on to have picked anything that contrasts with itself.
+    /// The one colour guaranteed to read against a background is its opposite.
+    private var ink: NSColor {
+        let background = theme.colors.windowBackground.usingColorSpace(.sRGB)
+            ?? .black
+        let luminance = 0.2126 * background.redComponent
+            + 0.7152 * background.greenComponent
+            + 0.0722 * background.blueComponent
+        return luminance < 0.5 ? .white : .black
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         let capsule = NSBezierPath(
             roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5),
             xRadius: bounds.width / 2,
             yRadius: bounds.width / 2
         )
-        theme.colors.titleBarBackground
-            .withAlphaComponent(isHighlighted ? 0.95 : 0.6)
-            .setFill()
+        let ink = self.ink
+        ink.withAlphaComponent(isHighlighted ? 0.3 : 0.18).setFill()
         capsule.fill()
+        ink.withAlphaComponent(isHighlighted ? 0.75 : 0.4).setStroke()
+        capsule.lineWidth = 1
+        capsule.stroke()
 
-        let ink = isHighlighted ? theme.colors.accent : theme.colors.messageDim
-        ink.setStroke()
+        (isHighlighted ? theme.colors.accent : ink.withAlphaComponent(0.85)).setStroke()
 
         // Two grip lines, the convention for a handle that moves sideways.
         let inset = bounds.height * 0.3
