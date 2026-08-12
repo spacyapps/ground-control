@@ -60,7 +60,10 @@ final class ThemePreviewView: NSView {
         // never looks like.
         if let art = theme.window.shape ?? theme.backgrounds.window,
            let image = Self.still(art) {
-            draw(image, fillingAspectOf: rect)
+            // Anchored to the top, not centred: a framed skin keeps its
+            // recognisable edge — hull, antennae, title bezel — up there, and a
+            // centre crop of a tall frame shows nothing but its side pillars.
+            draw(image, fillingAspectOf: rect, anchor: .top)
         }
 
         let titleHeight: CGFloat = 22
@@ -233,16 +236,32 @@ final class ThemePreviewView: NSView {
         let tint = theme.colors.color(for: state)
         if let symbol = DrawnAvatar.symbol(for: state) {
             let inset = rect.insetBy(dx: rect.width * 0.18, dy: rect.height * 0.18)
-            Self.tinted(symbol, tint).draw(in: inset)
+            Self.tinted(symbol, tint).draw(
+                in: inset,
+                from: .zero,
+                operation: .sourceOver,
+                fraction: 1,
+                respectFlipped: true,
+                hints: nil
+            )
         } else {
             tint.withAlphaComponent(0.85).setFill()
             clip.fill()
         }
     }
 
-    /// Scales to cover, centred — the artwork keeps its proportions and the box
-    /// is filled, which is what a thumbnail of a skin should do.
-    private func draw(_ image: NSImage, fillingAspectOf rect: NSRect) {
+    private enum Anchor {
+        case centre
+        case top
+    }
+
+    /// Scales to cover — the artwork keeps its proportions and the box is
+    /// filled, which is what a thumbnail of a skin should do.
+    ///
+    /// `respectFlipped` is the whole ballgame here: this view is flipped so text
+    /// reads downward, and an image drawn into a flipped context arrives upside
+    /// down unless it is told to honour the flip.
+    private func draw(_ image: NSImage, fillingAspectOf rect: NSRect, anchor: Anchor = .centre) {
         let size = image.size
         guard size.width > 0, size.height > 0 else { return }
 
@@ -251,13 +270,15 @@ final class ThemePreviewView: NSView {
         image.draw(
             in: NSRect(
                 x: rect.midX - drawn.width / 2,
-                y: rect.midY - drawn.height / 2,
+                y: anchor == .top ? rect.minY : rect.midY - drawn.height / 2,
                 width: drawn.width,
                 height: drawn.height
             ),
             from: .zero,
             operation: .sourceOver,
-            fraction: 1
+            fraction: 1,
+            respectFlipped: true,
+            hints: nil
         )
     }
 

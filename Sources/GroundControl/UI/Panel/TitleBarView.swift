@@ -9,11 +9,14 @@ import AppKit
 /// is what you grab to move it.
 final class TitleBarView: NSView {
     static let height: CGFloat = 64
+    /// Where a corner mark sits, so the resize handle can mirror the close
+    /// mark exactly rather than approximating it.
+    static let markInset: CGFloat = 8
+    static let markTop: CGFloat = 7
 
     var onClose: (() -> Void)?
 
     private let titleLabel = NSTextField(labelWithString: "Ground Control")
-    private let countLabel = NSTextField(labelWithString: "")
     private let closeButton = NSButton()
     private let visualizer = VisualizerView()
     private let mark = NSImageView()
@@ -27,7 +30,6 @@ final class TitleBarView: NSView {
         wantsLayer = true
 
         titleLabel.lineBreakMode = .byTruncatingTail
-        countLabel.alignment = .right
 
         closeButton.isBordered = false
         closeButton.bezelStyle = .inline
@@ -39,7 +41,6 @@ final class TitleBarView: NSView {
         addSubview(mark)
         addSubview(closeButton)
         addSubview(titleLabel)
-        addSubview(countLabel)
         addSubview(visualizer)
     }
 
@@ -54,8 +55,6 @@ final class TitleBarView: NSView {
 
         titleLabel.font = .systemFont(ofSize: 11, weight: .semibold)
         titleLabel.textColor = theme.colors.titleBarText
-        countLabel.font = .systemFont(ofSize: 10, weight: .regular)
-        countLabel.textColor = theme.colors.titleBarText.withAlphaComponent(0.55)
 
         closeButton.attributedTitle = NSAttributedString(
             string: "✕",
@@ -74,15 +73,11 @@ final class TitleBarView: NSView {
         needsDisplay = true
     }
 
+    /// The session count used to live at the right end; the resize mark has it
+    /// now. Nothing was lost that the panel does not already say: the rows are
+    /// the count, each carries its own dot, and the analyser goes to its alarm
+    /// colour the moment anything needs you.
     func update(sessions: [Session]) {
-        let needy = sessions.filter(\.needsAction).count
-        if sessions.isEmpty {
-            countLabel.stringValue = ""
-        } else if needy > 0 {
-            countLabel.stringValue = "\(needy) waiting · \(sessions.count)"
-        } else {
-            countLabel.stringValue = "\(sessions.count)"
-        }
         visualizer.update(sessions: sessions)
     }
 
@@ -91,7 +86,12 @@ final class TitleBarView: NSView {
         let inset: CGFloat = 10
         let titleRow: CGFloat = 22
 
-        closeButton.frame = NSRect(x: inset - 2, y: (titleRow - 16) / 2 + 4, width: 16, height: 16)
+        closeButton.frame = NSRect(
+            x: Self.markInset,
+            y: Self.markTop,
+            width: 16,
+            height: 16
+        )
         let markSide: CGFloat = 15
         mark.frame = NSRect(
             x: closeButton.frame.maxX + 7,
@@ -100,8 +100,13 @@ final class TitleBarView: NSView {
             height: markSide
         )
         let textY = (titleRow - 14) / 2 + 4
-        titleLabel.frame = NSRect(x: mark.frame.maxX + 6, y: textY, width: 150, height: 14)
-        countLabel.frame = NSRect(x: bounds.width - inset - 90, y: textY, width: 90, height: 14)
+        // Stops short of the resize mark at the far end.
+        titleLabel.frame = NSRect(
+            x: mark.frame.maxX + 6,
+            y: textY,
+            width: max(0, bounds.width - mark.frame.maxX - 6 - Self.markInset - 24),
+            height: 14
+        )
 
         visualizer.frame = NSRect(
             x: inset,

@@ -21,12 +21,23 @@ final class ResizeGripTests: XCTestCase {
         return view
     }
 
-    func testGripSitsInTheBottomRightCornerOppositeTheCloseButton() {
-        let view = laidOut(contentInset: 14)
+    /// The two marks are a matched pair at either end of the title strip, so
+    /// the resize handle is placed off the same constants the close mark uses
+    /// rather than by eye.
+    func testGripMirrorsTheCloseMarkAcrossTheTitleBar() {
+        let inset: CGFloat = 14
+        let view = laidOut(contentInset: inset)
         let grip = view.resizeGrip.frame
-        XCTAssertGreaterThan(grip.midX, view.bounds.midX, "grip should be on the right")
-        XCTAssertGreaterThan(grip.midY, view.bounds.midY, "grip should be at the bottom")
-        XCTAssertEqual(grip.width, grip.height, "corner marks are square, like the close button")
+        let titleBar = view.titleBar.frame
+
+        XCTAssertEqual(grip.width, grip.height, "corner marks are square")
+        XCTAssertEqual(grip.minY, titleBar.minY + TitleBarView.markTop, accuracy: 0.5)
+        XCTAssertEqual(
+            titleBar.maxX - grip.maxX,
+            TitleBarView.markInset,
+            accuracy: 0.5,
+            "grip should sit as far from its end as the close mark does from its own"
+        )
     }
 
     func testGripStaysInsideTheFramedArtwork() {
