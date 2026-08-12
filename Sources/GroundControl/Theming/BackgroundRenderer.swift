@@ -96,5 +96,8 @@ enum BackgroundRenderer {
     static func clearCache() {
         cache.removeAllObjects()
         AnimatedImage.clearCache()
+        // The preview holds its own decoded copies, so editing an avatar file
+        // has to invalidate both or Settings keeps showing the old artwork.
+        ThemePreviewView.clearCache()
     }
 }

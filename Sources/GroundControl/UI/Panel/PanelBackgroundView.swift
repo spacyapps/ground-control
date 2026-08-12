@@ -98,12 +98,13 @@ final class PanelBackgroundView: NSView {
             height: max(0, bounds.height - TitleBarView.height - inset * 2)
         )
 
-        // Inside the inset, on the artwork rather than on the window edge —
-        // for a framed skin those are not the same place.
+        // Bottom-right corner, mirroring the close button top-left — and
+        // inside the inset, so a framed skin keeps it on the artwork rather
+        // than out on the invisible window edge.
         let grip = ResizeGripView.size
         resizeGrip.frame = NSRect(
-            x: max(inset, bounds.width - inset - grip.width - 2),
-            y: (bounds.height - grip.height) / 2,
+            x: max(inset, bounds.width - inset - grip.width - 8),
+            y: max(inset, bounds.height - inset - grip.height - 8),
             width: grip.width,
             height: grip.height
         )

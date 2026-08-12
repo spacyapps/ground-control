@@ -98,6 +98,8 @@ enum ThemeLoader {
 
         return Theme(
             name: manifest.name ?? folder?.lastPathComponent ?? "Default",
+            author: manifest.author,
+            summary: manifest.description,
             colors: colors,
             layout: layout,
             typography: typography,

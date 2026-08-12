@@ -164,10 +164,11 @@ a pure `#00FF00` or `#FF00FF` background and name it here; `"auto"` reads the
 corner and picks between a colour key and a checkerboard flood fill.
 
 **Resizing a shaped panel.** A skin replaces the system window frame, so the
-panel carries its own width handle — a small grip on the right-hand side of the
-content, inside `contentInset` so it sits on your artwork rather than out on the
-invisible window edge. Drag it to set the width. Height is never dragged: it
-follows the rows, or the artwork when `lockAspect` is true.
+panel carries its own handle: a ↔ mark in the bottom-right corner, mirroring the
+✕ in the top-left. It sits inside `contentInset`, on your artwork rather than out
+on the invisible window edge, and takes its colour from `titleBarText` like the
+close mark does. Drag it to set the width. Height is never dragged: it follows
+the rows, or the artwork when `lockAspect` is true.
 
 **You can keep the artwork's shape or fit the content, never both.** Locked, the
 panel is scaled as one piece and the list scrolls. Unlocked, it grows with your

@@ -21,6 +21,14 @@ final class ResizeGripTests: XCTestCase {
         return view
     }
 
+    func testGripSitsInTheBottomRightCornerOppositeTheCloseButton() {
+        let view = laidOut(contentInset: 14)
+        let grip = view.resizeGrip.frame
+        XCTAssertGreaterThan(grip.midX, view.bounds.midX, "grip should be on the right")
+        XCTAssertGreaterThan(grip.midY, view.bounds.midY, "grip should be at the bottom")
+        XCTAssertEqual(grip.width, grip.height, "corner marks are square, like the close button")
+    }
+
     func testGripStaysInsideTheFramedArtwork() {
         for inset in [0.0, 14.0, 75.0] {
             let view = laidOut(contentInset: inset)
@@ -31,6 +39,7 @@ final class ResizeGripTests: XCTestCase {
                 "grip escaped the \(inset)pt frame onto the window edge"
             )
             XCTAssertGreaterThanOrEqual(grip.minX, inset)
+            XCTAssertLessThanOrEqual(grip.maxY, view.bounds.height - inset)
             XCTAssertTrue(view.bounds.contains(grip))
         }
     }

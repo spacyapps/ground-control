@@ -16,12 +16,18 @@ final class SettingsWindowController: NSWindowController {
         settingsView = SettingsView(actions: actions)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 470),
-            styleMask: [.titled, .closable],
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 610),
+            styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = "Ground Control Settings"
+        // The star field runs under the title bar rather than stopping at a
+        // grey strip, and the fixed dark palette needs the dark appearance so
+        // the system controls sitting on it are legible.
+        window.titlebarAppearsTransparent = true
+        window.appearance = NSAppearance(named: .darkAqua)
+        window.backgroundColor = SettingsChrome.deepSpace
         window.contentView = settingsView
         window.isReleasedWhenClosed = false
         window.center()

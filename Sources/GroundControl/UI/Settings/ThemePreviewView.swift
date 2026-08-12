@@ -2,13 +2,28 @@
 // Copyright (c) 2026 Walter Mak
 
 import AppKit
+import ImageIO
 
-/// A miniature of one row, drawn in the selected theme.
+/// What the selected theme actually looks like.
 ///
-/// Picking a theme from a list of folder names is a guess; showing what it
-/// actually looks like is not. Small enough to sit under the picker and update
-/// live as the selection changes.
+/// It used to draw the palette only, standing the avatars in as coloured
+/// squares — which meant the one thing a theme author most needs to check, that
+/// four generated images landed and read correctly, was the one thing the
+/// preview would not show. Now it draws the real artwork: the window skin
+/// behind the rows, and every state's own face.
 final class ThemePreviewView: NSView {
+    static let preferredSize = NSSize(width: 360, height: 218)
+
+    /// The order a theme author thinks in: quiet, busy, blocked, finished.
+    private static let states: [(SessionState, String)] = [
+        (.idle, "IDLE"),
+        (.working, "WORKING"),
+        (.needsInput, "NEEDS YOU"),
+        (.done, "DONE")
+    ]
+
+    private static let imageCache = NSCache<NSURL, NSImage>()
+
     private var theme: Theme = DefaultTheme.theme
 
     override var isFlipped: Bool { true }
@@ -19,84 +34,231 @@ final class ThemePreviewView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        let corner: CGFloat = 6
-        let panel = NSBezierPath(roundedRect: bounds, xRadius: corner, yRadius: corner)
-        theme.colors.windowBackground.setFill()
-        panel.fill()
+        let panelHeight: CGFloat = 148
+        drawPanel(in: NSRect(x: 0, y: 0, width: bounds.width, height: panelHeight))
+        drawStates(in: NSRect(
+            x: 0,
+            y: panelHeight + 10,
+            width: bounds.width,
+            height: max(0, bounds.height - panelHeight - 10)
+        ))
+    }
 
+    // MARK: - The panel miniature
+
+    private func drawPanel(in rect: NSRect) {
+        let clip = NSBezierPath(roundedRect: rect, xRadius: 8, yRadius: 8)
         NSGraphicsContext.current?.saveGraphicsState()
-        panel.addClip()
+        clip.addClip()
 
-        let titleHeight: CGFloat = 18
+        theme.colors.windowBackground.setFill()
+        rect.fill()
+
+        // The skin, filled to the box rather than nine-sliced. At preview size
+        // the theme's cap insets — often 100pt a side — would exceed the box
+        // and collapse the artwork into corners, showing something the panel
+        // never looks like.
+        if let art = theme.window.shape ?? theme.backgrounds.window,
+           let image = Self.still(art) {
+            draw(image, fillingAspectOf: rect)
+        }
+
+        let titleHeight: CGFloat = 22
+        let titleRect = NSRect(x: rect.minX, y: rect.minY, width: rect.width, height: titleHeight)
         theme.colors.titleBarBackground.setFill()
-        NSRect(x: 0, y: 0, width: bounds.width, height: titleHeight).fill()
+        titleRect.fill()
         draw(
-            "Ground Control",
-            at: NSPoint(x: 8, y: 4),
+            theme.name,
+            at: NSPoint(x: rect.minX + 9, y: rect.minY + 6),
             size: 9,
             weight: .semibold,
             color: theme.colors.titleBarText
         )
 
-        // Two sample rows, one quiet and one wanting attention.
-        let rowHeight = (bounds.height - titleHeight) / 2
+        // Rows are translucent in most themes, which is exactly how the skin is
+        // meant to show through — so they go on top of the artwork, not instead.
         let samples = [
-            Sample(state: .working, name: "avaterm", message: "Bash: swift build"),
-            Sample(state: .needsInput, name: "spacyapps", message: "Allow npm install?")
+            (SessionState.working, "avaterm", "Bash: swift build"),
+            (SessionState.needsInput, "spacyapps", "Allow npm install?")
         ]
+        let inset = min(theme.layout.contentInset, 8)
+        let rowsTop = rect.minY + titleHeight
+        let rowHeight = (rect.height - titleHeight - inset) / CGFloat(samples.count)
+
         for (index, sample) in samples.enumerated() {
-            sampleRow(
-                sample,
-                index: index,
-                top: titleHeight + CGFloat(index) * rowHeight,
-                height: rowHeight
+            drawRow(
+                state: sample.0,
+                name: sample.1,
+                message: sample.2,
+                alternate: !index.isMultiple(of: 2),
+                in: NSRect(
+                    x: rect.minX + inset,
+                    y: rowsTop + CGFloat(index) * rowHeight,
+                    width: rect.width - inset * 2,
+                    height: rowHeight
+                )
             )
         }
 
         NSGraphicsContext.current?.restoreGraphicsState()
 
-        theme.colors.divider.setStroke()
-        panel.stroke()
+        SettingsChrome.viewportEdge.setStroke()
+        clip.lineWidth = 1
+        clip.stroke()
     }
 
-    private struct Sample {
-        let state: SessionState
-        let name: String
-        let message: String
-    }
-
-    private func sampleRow(_ sample: Sample, index: Int, top: CGFloat, height: CGFloat) {
-        let rect = NSRect(x: 0, y: top, width: bounds.width, height: height)
-        (index.isMultiple(of: 2) ? theme.colors.rowBackground : theme.colors.rowBackgroundAlt).setFill()
+    private func drawRow(state: SessionState,
+                         name: String,
+                         message: String,
+                         alternate: Bool,
+                         in rect: NSRect) {
+        (alternate ? theme.colors.rowBackgroundAlt : theme.colors.rowBackground).setFill()
         rect.fill()
 
-        let accent = theme.colors.color(for: sample.state)
+        let accent = theme.colors.color(for: state)
         accent.setFill()
-        NSBezierPath(ovalIn: NSRect(x: 10, y: top + height / 2 - 3, width: 6, height: 6)).fill()
+        NSBezierPath(ovalIn: NSRect(
+            x: rect.minX + 9,
+            y: rect.midY - 3,
+            width: 6,
+            height: 6
+        )).fill()
 
-        let textX: CGFloat = 24
         draw(
-            sample.name,
-            at: NSPoint(x: textX, y: top + height / 2 - 12),
+            name,
+            at: NSPoint(x: rect.minX + 23, y: rect.midY - 13),
             size: 9,
             weight: .semibold,
             color: theme.colors.sessionName
         )
         draw(
-            sample.message,
-            at: NSPoint(x: textX, y: top + height / 2 + 1),
+            message,
+            at: NSPoint(x: rect.minX + 23, y: rect.midY),
             size: 8,
             weight: .regular,
             color: theme.colors.message
         )
 
-        // Stand-in for the avatar: themes may replace it, but the geometry is
-        // what the preview is showing.
-        let side = min(height - 10, theme.avatar.isHidden ? 0 : 20)
-        guard side > 0 else { return }
-        let box = NSRect(x: bounds.width - side - 8, y: top + (height - side) / 2, width: side, height: side)
-        accent.withAlphaComponent(0.85).setFill()
-        NSBezierPath(roundedRect: box, xRadius: 4, yRadius: 4).fill()
+        guard !theme.avatar.isHidden else { return }
+        let side = min(rect.height - 8, 30)
+        drawAvatar(
+            for: state,
+            in: NSRect(
+                x: rect.maxX - side - 8,
+                y: rect.midY - side / 2,
+                width: side,
+                height: side
+            )
+        )
+    }
+
+    // MARK: - Every state at once
+
+    /// The four faces side by side, which is how you check a generated set:
+    /// four files, four states, and whether any of them came back wrong.
+    private func drawStates(in rect: NSRect) {
+        guard rect.height > 20 else { return }
+
+        let cellWidth = rect.width / CGFloat(Self.states.count)
+        let side = min(rect.height - 16, 34)
+
+        for (index, entry) in Self.states.enumerated() {
+            let cell = NSRect(
+                x: rect.minX + CGFloat(index) * cellWidth,
+                y: rect.minY,
+                width: cellWidth,
+                height: rect.height
+            )
+
+            if theme.avatar.isHidden {
+                draw(
+                    "off",
+                    at: NSPoint(x: cell.midX - 8, y: cell.minY + 4),
+                    size: 9,
+                    weight: .regular,
+                    color: SettingsChrome.dim
+                )
+            } else {
+                drawAvatar(
+                    for: entry.0,
+                    in: NSRect(
+                        x: cell.midX - side / 2,
+                        y: cell.minY,
+                        width: side,
+                        height: side
+                    )
+                )
+            }
+
+            let label = NSAttributedString(
+                string: entry.1,
+                attributes: [
+                    .font: NSFont.systemFont(ofSize: 8, weight: .medium),
+                    .foregroundColor: SettingsChrome.dim,
+                    .kern: 0.6
+                ]
+            )
+            label.draw(at: NSPoint(
+                x: cell.midX - label.size().width / 2,
+                y: cell.minY + side + 4
+            ))
+        }
+    }
+
+    // MARK: - Artwork
+
+    /// The theme's own image for a state, or the built-in face tinted to match —
+    /// the same fallback the panel makes, so the preview cannot promise a face
+    /// the rows will not draw.
+    private func drawAvatar(for state: SessionState, in rect: NSRect) {
+        let radius = min(theme.avatar.cornerRadius, rect.width / 2)
+        let clip = NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+
+        switch theme.avatar.asset(for: state) {
+        case .image(let url):
+            guard let image = Self.image(at: url) else { break }
+            NSGraphicsContext.current?.saveGraphicsState()
+            clip.addClip()
+            draw(image, fillingAspectOf: rect)
+            NSGraphicsContext.current?.restoreGraphicsState()
+            return
+        case .video:
+            // A frame grab means spinning up AVFoundation for a thumbnail; the
+            // drawn face says "this state is covered" without the machinery.
+            break
+        case .none:
+            break
+        }
+
+        let tint = theme.colors.color(for: state)
+        if let symbol = DrawnAvatar.symbol(for: state) {
+            let inset = rect.insetBy(dx: rect.width * 0.18, dy: rect.height * 0.18)
+            Self.tinted(symbol, tint).draw(in: inset)
+        } else {
+            tint.withAlphaComponent(0.85).setFill()
+            clip.fill()
+        }
+    }
+
+    /// Scales to cover, centred — the artwork keeps its proportions and the box
+    /// is filled, which is what a thumbnail of a skin should do.
+    private func draw(_ image: NSImage, fillingAspectOf rect: NSRect) {
+        let size = image.size
+        guard size.width > 0, size.height > 0 else { return }
+
+        let scale = max(rect.width / size.width, rect.height / size.height)
+        let drawn = NSSize(width: size.width * scale, height: size.height * scale)
+        image.draw(
+            in: NSRect(
+                x: rect.midX - drawn.width / 2,
+                y: rect.midY - drawn.height / 2,
+                width: drawn.width,
+                height: drawn.height
+            ),
+            from: .zero,
+            operation: .sourceOver,
+            fraction: 1
+        )
     }
 
     private func draw(_ text: String,
@@ -111,5 +273,44 @@ final class ThemePreviewView: NSView {
                 .foregroundColor: color
             ]
         )
+    }
+
+    // MARK: - Loading
+
+    private static func image(at url: URL) -> NSImage? {
+        if let cached = imageCache.object(forKey: url as NSURL) { return cached }
+        guard let image = NSImage(contentsOf: url) else { return nil }
+        imageCache.setObject(image, forKey: url as NSURL)
+        return image
+    }
+
+    /// First frame of a background, keyed if the theme asked for it.
+    ///
+    /// Loaded through `AnimatedImage` so the preview gets the same keyed pixels
+    /// the panel does — a skin whose green screen is removed at runtime must not
+    /// show up green here. The cap insets those frames carry would nine-slice on
+    /// draw, so the frame is re-wrapped as a plain image first.
+    private static func still(_ background: BackgroundImage) -> NSImage? {
+        guard let frame = AnimatedImage.load(background)?.frames.first else { return nil }
+        var rect = NSRect(origin: .zero, size: frame.size)
+        guard let cgImage = frame.cgImage(forProposedRect: &rect, context: nil, hints: nil) else {
+            return nil
+        }
+        return NSImage(cgImage: cgImage, size: frame.size)
+    }
+
+    private static func tinted(_ image: NSImage, _ color: NSColor) -> NSImage {
+        let output = NSImage(size: image.size)
+        output.lockFocus()
+        let rect = NSRect(origin: .zero, size: image.size)
+        image.draw(in: rect)
+        color.set()
+        rect.fill(using: .sourceAtop)
+        output.unlockFocus()
+        return output
+    }
+
+    static func clearCache() {
+        imageCache.removeAllObjects()
     }
 }

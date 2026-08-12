@@ -17,6 +17,10 @@ struct Theme {
     }
 
     var name: String
+    /// Manifest metadata, surfaced in Settings so a picked theme can say who
+    /// made it and what it is — the folder name alone is a poor label.
+    var author: String?
+    var summary: String?
     var colors: Colors
     var layout: Layout
     var typography: Typography

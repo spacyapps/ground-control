@@ -6,9 +6,11 @@ import AppKit
 /// Settings content: theme picker with live preview, panel behaviour, and the
 /// one advanced escape hatch.
 ///
-/// Deliberately native-looking rather than skinned — the panel is the themed
-/// surface; this is a system surface, and skinning it would make the preview
-/// meaningless.
+/// The chrome is the app's own — a star field and a fixed palette — not the
+/// selected theme's. Settings is where you judge a theme, and a window that
+/// restyles itself to match whatever is selected leaves nothing to judge it
+/// against. Only the preview wears the theme, framed as a viewport so it reads
+/// as a sample rather than as decoration.
 final class SettingsView: NSView {
     struct Actions {
         var selectTheme: (String?) -> Void
@@ -21,6 +23,9 @@ final class SettingsView: NSView {
 
     private let preferences: Preferences
     private let actions: Actions
+
+    /// Everything lines up to one gutter; the rules run to the same edge.
+    private static let contentWidth: CGFloat = 360
 
     private let themePicker = NSPopUpButton()
     private let themeDetail = NSTextField(labelWithString: "")
@@ -35,7 +40,7 @@ final class SettingsView: NSView {
     init(preferences: Preferences = .shared, actions: Actions) {
         self.preferences = preferences
         self.actions = actions
-        super.init(frame: NSRect(x: 0, y: 0, width: 380, height: 470))
+        super.init(frame: NSRect(x: 0, y: 0, width: 420, height: 610))
         build()
         reloadThemes()
         syncFromPreferences()
@@ -49,11 +54,21 @@ final class SettingsView: NSView {
     // MARK: - Construction
 
     private func build() {
+        let sky = StarfieldView()
+        sky.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(sky)
+        NSLayoutConstraint.activate([
+            sky.leadingAnchor.constraint(equalTo: leadingAnchor),
+            sky.trailingAnchor.constraint(equalTo: trailingAnchor),
+            sky.topAnchor.constraint(equalTo: topAnchor),
+            sky.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+
         let stack = NSStackView()
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 10
-        stack.edgeInsets = NSEdgeInsets(top: 18, left: 20, bottom: 18, right: 20)
+        stack.spacing = 9
+        stack.edgeInsets = NSEdgeInsets(top: 14, left: 30, bottom: 22, right: 30)
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
 
@@ -65,6 +80,12 @@ final class SettingsView: NSView {
         ])
 
         stack.addArrangedSubview(brandRow())
+        themeSection(in: stack)
+        panelSection(in: stack)
+        advancedSection(in: stack)
+    }
+
+    private func themeSection(in stack: NSStackView) {
         stack.addArrangedSubview(header("Theme"))
 
         themePicker.target = self
@@ -72,20 +93,20 @@ final class SettingsView: NSView {
         stack.addArrangedSubview(themePicker)
 
         themeDetail.font = .systemFont(ofSize: 11)
-        themeDetail.textColor = .secondaryLabelColor
+        themeDetail.textColor = SettingsChrome.dim
         themeDetail.lineBreakMode = .byWordWrapping
         themeDetail.maximumNumberOfLines = 2
+        themeDetail.preferredMaxLayoutWidth = Self.contentWidth
         stack.addArrangedSubview(themeDetail)
 
-        preview.translatesAutoresizingMaskIntoConstraints = false
-        stack.addArrangedSubview(preview)
-        NSLayoutConstraint.activate([
-            preview.widthAnchor.constraint(equalToConstant: 300),
-            preview.heightAnchor.constraint(equalToConstant: 96)
-        ])
+        stack.addArrangedSubview(viewport())
 
-        stack.addArrangedSubview(buttonRow())
-        stack.addArrangedSubview(separator())
+        let buttons = buttonRow()
+        stack.addArrangedSubview(buttons)
+        stack.setCustomSpacing(20, after: buttons)
+    }
+
+    private func panelSection(in stack: NSStackView) {
         stack.addArrangedSubview(header("Panel"))
 
         configure(onTopBox, title: "Always on top", action: #selector(togglesChanged))
@@ -100,8 +121,10 @@ final class SettingsView: NSView {
         )
         reset.bezelStyle = .rounded
         stack.addArrangedSubview(reset)
+        stack.setCustomSpacing(20, after: reset)
+    }
 
-        stack.addArrangedSubview(separator())
+    private func advancedSection(in stack: NSStackView) {
         stack.addArrangedSubview(header("Advanced"))
 
         configure(
@@ -114,10 +137,10 @@ final class SettingsView: NSView {
         let caveat = NSTextField(labelWithString:
             "Internal agents are hidden because their messages read like your own prompts.")
         caveat.font = .systemFont(ofSize: 10)
-        caveat.textColor = .tertiaryLabelColor
+        caveat.textColor = SettingsChrome.dim
         caveat.lineBreakMode = .byWordWrapping
         caveat.maximumNumberOfLines = 2
-        caveat.preferredMaxLayoutWidth = 320
+        caveat.preferredMaxLayoutWidth = Self.contentWidth
         stack.addArrangedSubview(caveat)
     }
 
@@ -177,18 +200,66 @@ final class SettingsView: NSView {
         return row
     }
 
-    private func header(_ title: String) -> NSTextField {
-        let label = NSTextField(labelWithString: title)
-        label.font = .systemFont(ofSize: 12, weight: .semibold)
-        return label
+    /// Section headers double as the dividers, so the old separator boxes are
+    /// gone: one line per section instead of a label and a rule competing.
+    private func header(_ title: String) -> NSView {
+        let container = NSView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let label = NSTextField(labelWithAttributedString: NSAttributedString(
+            string: title.uppercased(),
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 10, weight: .semibold),
+                .foregroundColor: SettingsChrome.heading,
+                .kern: 1.8
+            ]
+        ))
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        let rule = NSView()
+        rule.wantsLayer = true
+        rule.layer?.backgroundColor = SettingsChrome.rule.cgColor
+        rule.translatesAutoresizingMaskIntoConstraints = false
+
+        container.addSubview(label)
+        container.addSubview(rule)
+        NSLayoutConstraint.activate([
+            container.widthAnchor.constraint(equalToConstant: Self.contentWidth),
+            container.heightAnchor.constraint(equalToConstant: 15),
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            label.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            rule.leadingAnchor.constraint(equalTo: label.trailingAnchor, constant: 10),
+            rule.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            rule.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            rule.heightAnchor.constraint(equalToConstant: 1)
+        ])
+        return container
     }
 
-    private func separator() -> NSView {
-        let line = NSBox()
-        line.boxType = .separator
-        line.translatesAutoresizingMaskIntoConstraints = false
-        line.widthAnchor.constraint(equalToConstant: 320).isActive = true
-        return line
+    /// The preview sits behind a hairline frame so it reads as a screen showing
+    /// the theme, rather than as part of the window's own styling.
+    private func viewport() -> NSView {
+        let frame = NSView()
+        frame.wantsLayer = true
+        frame.layer?.cornerRadius = 10
+        frame.layer?.borderWidth = 1
+        frame.layer?.borderColor = SettingsChrome.viewportEdge.cgColor
+        frame.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.25).cgColor
+        frame.translatesAutoresizingMaskIntoConstraints = false
+
+        preview.translatesAutoresizingMaskIntoConstraints = false
+        frame.addSubview(preview)
+
+        let size = ThemePreviewView.preferredSize
+        NSLayoutConstraint.activate([
+            frame.widthAnchor.constraint(equalToConstant: Self.contentWidth),
+            frame.heightAnchor.constraint(equalToConstant: size.height + 20),
+            preview.centerXAnchor.constraint(equalTo: frame.centerXAnchor),
+            preview.centerYAnchor.constraint(equalTo: frame.centerYAnchor),
+            preview.widthAnchor.constraint(equalToConstant: size.width - 20),
+            preview.heightAnchor.constraint(equalToConstant: size.height)
+        ])
+        return frame
     }
 
     private func configure(_ box: NSButton, title: String, action: Selector) {
@@ -225,13 +296,20 @@ final class SettingsView: NSView {
         let theme = ThemeLoader.loadTheme(named: preferences.themeName)
         preview.apply(theme: theme)
 
-        var details: [String] = []
-        if let folder = theme.folder {
-            details.append(folder.lastPathComponent)
-        } else {
-            details.append("Drawn faces, no image files")
+        // The picker already shows the folder name, so repeating it told you
+        // nothing. The manifest's own metadata does.
+        var details: [String] = [theme.name]
+        if let author = theme.author, !author.isEmpty {
+            details.append("by \(author)")
         }
-        themeDetail.stringValue = details.joined(separator: " · ")
+        if theme.folder == nil {
+            details.append("drawn faces, no image files")
+        }
+        var line = details.joined(separator: " · ")
+        if let summary = theme.summary, !summary.isEmpty {
+            line += "\n" + summary
+        }
+        themeDetail.stringValue = line
     }
 
     /// Called when the theme hot-reloads underneath us.
