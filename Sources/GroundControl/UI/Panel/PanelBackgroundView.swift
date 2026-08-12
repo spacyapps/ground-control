@@ -11,6 +11,7 @@ final class PanelBackgroundView: NSView {
     let titleBar = TitleBarView()
     let list = SessionListView()
     let resizeGrip = ResizeGripView()
+    let skinOverlay = SkinOverlayView()
 
     private var theme: Theme = DefaultTheme.theme
 
@@ -46,6 +47,9 @@ final class PanelBackgroundView: NSView {
         addSubview(list)
         // Above the list, so it stays grabbable over a scrolled row.
         addSubview(resizeGrip)
+        // Last, so an overlay skin covers everything it is meant to.
+        addSubview(skinOverlay)
+        skinOverlay.elapsed = { [weak self] in self?.currentElapsed }
     }
 
     @available(*, unavailable)
@@ -69,6 +73,7 @@ final class PanelBackgroundView: NSView {
         titleBar.apply(theme: theme)
         list.apply(theme: theme)
         resizeGrip.apply(theme: theme)
+        skinOverlay.apply(theme: theme)
         needsDisplay = true
     }
 
@@ -148,6 +153,8 @@ final class PanelBackgroundView: NSView {
         titleBar.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         list.layer?.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
 
+        skinOverlay.frame = bounds
+
         let grip = ResizeGripView.size
         resizeGrip.frame = NSRect(
             x: max(inset, titleBar.frame.maxX - TitleBarView.markInset - grip.width),
@@ -157,14 +164,24 @@ final class PanelBackgroundView: NSView {
         )
     }
 
+    /// Nil unless something is working — animation is the signal for that, so
+    /// a still panel draws frame one and stops.
+    private var currentElapsed: TimeInterval? {
+        animationTimer == nil ? nil : Date().timeIntervalSince(animationStart)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         // A shaped panel has no rectangle to fill: the silhouette is the whole
         // window, and painting a background colour first would square it off
         // again.
-        let elapsed = animationTimer == nil ? nil : Date().timeIntervalSince(animationStart)
+        let elapsed = currentElapsed
 
         if let shape = theme.window.shape {
-            BackgroundRenderer.draw(shape, in: bounds, elapsed: elapsed)
+            // An overlay skin is drawn by SkinOverlayView after the rows; here
+            // it would only end up underneath them.
+            if !theme.window.drawsOverContent {
+                BackgroundRenderer.draw(shape, in: bounds, elapsed: elapsed)
+            }
             return
         }
 
@@ -191,6 +208,7 @@ final class PanelBackgroundView: NSView {
             animationTimer?.invalidate()
             animationTimer = nil
             needsDisplay = true
+            skinOverlay.needsDisplay = true
             return
         }
         guard animationTimer == nil else { return }
@@ -201,6 +219,7 @@ final class PanelBackgroundView: NSView {
         animationStart = Date()
         let timer = Timer.scheduledTimer(withTimeInterval: max(0.05, interval), repeats: true) { [weak self] _ in
             self?.needsDisplay = true
+            self?.skinOverlay.needsDisplay = true
         }
         RunLoop.main.add(timer, forMode: .common)
         animationTimer = timer

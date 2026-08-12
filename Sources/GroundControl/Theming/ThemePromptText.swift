@@ -73,7 +73,24 @@ enum ThemePromptText {
     - Canvas **larger than the panel body**; surplus is where art escapes
     - Body **opaque** — rows are drawn on it
     - **Centre must never be keyed out**; a hole there erases the rows
+      (unless you use `overlay` below, where the opposite is true)
     - Protruding parts fully opaque, surrounded by pure background colour
+
+    ### `overlay` — the frame in front (recommended for picture frames)
+
+    ```json
+    "window": { "image": "frame.png", "overlay": true, "removeBackground": "#00FF00" }
+    ```
+
+    Normally the skin is painted behind the rows, so its opening and the rows
+    have to be fitted to each other by hand. With `overlay` it is painted **in
+    front**, and the frame simply covers whatever it overlaps — no fitting, and
+    the artwork alone decides where the content appears to stop. Bevels, glows
+    and vignettes over the content all become possible.
+
+    One requirement, and it reverses the rule above: **the centre must be the
+    flat background colour**, so it keys out and the rows show through the hole.
+    A solid middle painted on top hides the whole panel.
 
     **Transparency — do not attempt real alpha.** Fill everything outside the
     artwork with one flat colour, `#00FF00` or `#FF00FF`. I key it out on load.

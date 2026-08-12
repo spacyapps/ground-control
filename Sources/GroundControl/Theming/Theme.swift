@@ -113,6 +113,10 @@ struct Theme {
         var locksAspect: Bool
         /// Width ÷ height of the artwork.
         var aspectRatio: CGFloat
+        /// Drawn over the rows rather than behind them. The frame then hides
+        /// whatever it overlaps, so the content needs no pixel-accurate fit to
+        /// the opening — at the cost of requiring a transparent centre.
+        var drawsOverContent: Bool = false
         /// The artwork's own width in pixels.
         ///
         /// A locked skin is scaled bodily to the panel, so the frame painted

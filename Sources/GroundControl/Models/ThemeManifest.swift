@@ -76,6 +76,10 @@ struct ThemeManifest: Decodable, Equatable {
     /// window's silhouette, so art can spill past what would have been the
     /// rectangle and transparent areas are see-through *and* click-through.
     struct Window: Decodable, Equatable {
+        /// Draws the skin over the rows instead of behind them, so the frame
+        /// covers what it overlaps and the artwork decides where the content
+        /// appears to stop. Needs a transparent centre.
+        var overlay: Bool?
         /// The skin. `shape` is accepted as an older spelling.
         var image: String?
         var shape: String?

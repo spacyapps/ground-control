@@ -154,8 +154,30 @@ the edge.
 | Key | Does |
 |---|---|
 | `image` | the skin — drop a generated file straight in |
+| `overlay` | `true` draws the skin **in front of** the rows instead of behind |
 | `lockAspect` | `true`: keeps the artwork's proportions, rows scroll inside. `false`: panel grows with sessions, art is nine-sliced |
 | `removeBackground` | `"auto"`, `"checkerboard"`, or a hex colour to key out. Omit if the file already has real alpha |
+
+### `overlay` — the frame in front
+
+Behind the rows, a frame and its contents have to be fitted to each other:
+`contentInset` has to match where the opening starts, `contentCornerRadius` has
+to match its curve, and any mismatch reads as a screen pasted onto a picture.
+
+```json
+"window": { "image": "frame.png", "overlay": true, "removeBackground": "#00FF00" }
+```
+
+With `overlay`, the skin is painted after the rows. The frame covers whatever it
+overlaps, so the rows can run right past its opening — `contentInset: 0` is
+fine — and the artwork decides where they appear to stop. It also allows art
+*over* the content: bevels, inner shadows, a vignette, a mascot leaning across a
+corner.
+
+The catch reverses the usual rule: **the artwork's centre must be transparent**,
+which means filling it with the key colour like the outside. An opaque middle
+drawn on top hides the panel completely. The frame never takes a click, however
+opaque it is — clicks fall through to the rows beneath.
 
 **On `removeBackground`.** Image models cannot produce reliable transparency —
 they paint the checkerboard an editor *shows*, or drop alpha entirely. But they
