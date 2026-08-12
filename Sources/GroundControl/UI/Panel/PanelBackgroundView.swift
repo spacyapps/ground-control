@@ -21,6 +21,16 @@ final class PanelBackgroundView: NSView {
     /// resize and sampling that is both simpler and exact.
     private var shapeMask: NSBitmapImageRep?
 
+    /// Animated backgrounds play only while something is working.
+    ///
+    /// A full-panel redraw is a different order of cost from a 44pt avatar, and
+    /// an always-on window animating forever is a battery drain you did not ask
+    /// for. Freezing at rest also keeps the panel honest: motion means work,
+    /// the same rule the analyser follows.
+    private var animationTimer: Timer?
+    private var animationStart = Date()
+    private var isWorking = false
+
     override var isFlipped: Bool { true }
 
     init() {
@@ -41,6 +51,7 @@ final class PanelBackgroundView: NSView {
     func apply(theme: Theme) {
         self.theme = theme
         shapeMask = nil
+        updateAnimation()
         layer?.cornerRadius = theme.window.isShaped ? 0 : 10
         needsLayout = true
         layer?.backgroundColor = theme.colors.windowBackground.cgColor
@@ -62,6 +73,9 @@ final class PanelBackgroundView: NSView {
     func update(sessions: [Session], renames: [String: String]) {
         titleBar.update(sessions: sessions)
         list.apply(sessions: sessions, renames: renames)
+
+        isWorking = sessions.contains { $0.state == .working }
+        updateAnimation()
     }
 
     override func layout() {
@@ -85,8 +99,10 @@ final class PanelBackgroundView: NSView {
         // A shaped panel has no rectangle to fill: the silhouette is the whole
         // window, and painting a background colour first would square it off
         // again.
+        let elapsed = animationTimer == nil ? nil : Date().timeIntervalSince(animationStart)
+
         if let shape = theme.window.shape {
-            BackgroundRenderer.draw(shape, in: bounds)
+            BackgroundRenderer.draw(shape, in: bounds, elapsed: elapsed)
             return
         }
 
@@ -96,8 +112,41 @@ final class PanelBackgroundView: NSView {
         bounds.fill()
 
         if let background = theme.backgrounds.window {
-            BackgroundRenderer.draw(background, in: bounds)
+            BackgroundRenderer.draw(background, in: bounds, elapsed: elapsed)
         }
+    }
+
+    // MARK: - Animation
+
+    private var animatedBackground: BackgroundImage? {
+        let candidate = theme.window.shape ?? theme.backgrounds.window
+        guard let candidate, BackgroundRenderer.isAnimated(candidate) else { return nil }
+        return candidate
+    }
+
+    private func updateAnimation() {
+        guard isWorking, window != nil, let background = animatedBackground else {
+            animationTimer?.invalidate()
+            animationTimer = nil
+            needsDisplay = true
+            return
+        }
+        guard animationTimer == nil else { return }
+
+        // Follow the file's own frame rate rather than a fixed tick: a slow
+        // ambient loop should not be redrawn sixty times a second.
+        let interval = AnimatedImage.load(background)?.duration ?? 1.0 / 12
+        animationStart = Date()
+        let timer = Timer.scheduledTimer(withTimeInterval: max(0.05, interval), repeats: true) { [weak self] _ in
+            self?.needsDisplay = true
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        animationTimer = timer
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        updateAnimation()
     }
 
     // MARK: - Shape

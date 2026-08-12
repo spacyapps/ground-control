@@ -37,7 +37,8 @@ enum AssetResolver {
                     left: CGFloat(insets?.left ?? 0),
                     bottom: CGFloat(insets?.bottom ?? 0),
                     right: CGFloat(insets?.right ?? 0)
-                )
+                ),
+                removeBackground: nil
             )
         }
 
@@ -54,26 +55,40 @@ enum AssetResolver {
         )
     }
 
-    /// The window silhouette. Nine-sliced like any other background, so a
-    /// shaped panel can still resize without distorting its corners.
+    /// The window silhouette.
+    ///
+    /// Three decisions and no more: which image, whether to keep its
+    /// proportions, and how to get transparency out of it.
     static func window(from manifest: ThemeManifest.Window?, folder: URL?) -> Theme.Window {
-        guard let manifest, let folder, let url = imageFile(manifest.shape, in: folder) else {
+        guard let manifest, let folder, let url = imageFile(manifest.file, in: folder) else {
             return .standard
         }
+
+        let locked = manifest.lockAspect ?? true
         let insets = manifest.capInsets
         return Theme.Window(
             shape: BackgroundImage(
                 url: url,
-                mode: .stretch,
-                capInsets: NSEdgeInsets(
+                // A locked skin is scaled whole, so slicing never applies and
+                // stretch is simply "draw it at this size".
+                mode: locked ? .stretch : (BackgroundImage.Mode(rawValue: manifest.mode ?? "") ?? .tile),
+                capInsets: locked ? NSEdgeInsets() : NSEdgeInsets(
                     top: Theme.length(insets?.top, 0),
                     left: Theme.length(insets?.left, 0),
                     bottom: Theme.length(insets?.bottom, 0),
                     right: Theme.length(insets?.right, 0)
-                )
+                ),
+                removeBackground: ImageKeyer.Key(manifest.removeBackground)
             ),
-            isResizable: manifest.resizable ?? true
+            locksAspect: locked,
+            aspectRatio: aspectRatio(of: url)
         )
+    }
+
+    /// Width divided by height, so the panel can derive one from the other.
+    private static func aspectRatio(of url: URL) -> CGFloat {
+        guard let image = NSImage(contentsOf: url), image.size.height > 0 else { return 1 }
+        return image.size.width / image.size.height
     }
 
     static func avatar(from manifest: ThemeManifest.Avatar?,

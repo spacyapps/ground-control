@@ -42,6 +42,8 @@ GroundControl/
 │   │   ├── DrawnAvatar.swift     # built-in per-state faces (SF Symbols)
 │   │   ├── BackgroundImage.swift # resolved background + nine-slice cap insets
 │   │   ├── BackgroundRenderer.swift # draws a background into any size box
+│   │   ├── AnimatedImage.swift   # multi-frame GIF/APNG decoding
+│   │   ├── ImageKeyer.swift      # chroma key / checkerboard -> real alpha
 │   │   ├── ThemeBrief.swift      # answers gathered by the theme builder
 │   │   ├── ThemePromptBuilder.swift # brief -> LLM prompt + starter manifest
 │   │   ├── ThemePromptText.swift # the prompt's fixed prose
@@ -87,10 +89,12 @@ GroundControl/
 ├── Themes/
 │   ├── default/theme.json        # reference palette (ships in-repo, copyable)
 │   ├── example-avatars/          # working avatar theme: 3 stills + a GIF
+│   ├── space-station/            # shaped skin: antennae past the frame
 │   └── shaped-demo/              # non-rectangular window: notch + antenna
 │
 ├── Scripts/
 │   ├── cc-notify                 # hook emitter (python3, reads Claude + Grok)
+│   ├── theme-preview.sh          # one fake row per state, for theming
 │   ├── install-hooks.sh          # MERGES hook entries into ~/.claude/settings.json
 │   └── build-dmg.sh              # create-dmg packaging  [not written yet]
 │

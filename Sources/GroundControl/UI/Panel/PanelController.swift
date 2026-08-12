@@ -81,6 +81,22 @@ final class PanelController {
     /// panel eating the display.
     func fitHeightToContent() {
         guard let panel, panel.isVisible else { return }
+
+        // A skin with its aspect locked is a designed object, not a container:
+        // width is yours to drag, height follows the artwork, and the rows
+        // scroll inside rather than stretching it out of shape.
+        if theme.window.locksAspect, theme.window.isShaped {
+            let ratio = max(0.05, theme.window.aspectRatio)
+            let target = (panel.frame.width / ratio).rounded()
+            guard abs(panel.frame.height - target) > 0.5 else { return }
+
+            var frame = panel.frame
+            let top = frame.maxY
+            frame.size.height = target
+            frame.origin.y = top - target
+            panel.setFrame(frame, display: true, animate: false)
+            return
+        }
         let screen = panel.screen ?? NSScreen.main
         let ceiling = (screen?.visibleFrame.height ?? 900) * 0.75
         let target = min(max(panel.minSize.height, chrome.desiredHeight), ceiling)

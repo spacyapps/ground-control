@@ -69,9 +69,28 @@ struct ThemeManifest: Decodable, Equatable {
     /// window's silhouette, so art can spill past what would have been the
     /// rectangle and transparent areas are see-through *and* click-through.
     struct Window: Decodable, Equatable {
+        /// The skin. `shape` is accepted as an older spelling.
+        var image: String?
         var shape: String?
+
+        /// Keep the artwork's proportions.
+        ///
+        /// Locked, the panel is scaled as one piece and rows scroll inside it —
+        /// nothing is ever sliced, which is where every distortion came from.
+        /// Unlocked, the panel grows with the session count and the artwork is
+        /// nine-sliced to follow.
+        var lockAspect: Bool?
+
+        /// How to get transparency out of what an image model produced:
+        /// "auto", "checkerboard", or a hex colour to key out.
+        var removeBackground: String?
+
+        /// Only meaningful when the aspect is unlocked, since a locked skin is
+        /// never sliced.
+        var mode: String?
         var capInsets: Asset.Insets?
-        var resizable: Bool?
+
+        var file: String? { image ?? shape }
     }
 
     /// The title-bar analyser: its palette, and what it says.

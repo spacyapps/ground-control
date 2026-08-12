@@ -133,35 +133,56 @@ Editing an image hot-reloads exactly like editing the manifest.
 
 ### `window` — breaking the rectangle
 
-A theme can replace the panel's shape entirely. The image's **alpha channel
-becomes the window**: transparent pixels are not part of it, so they are
-see-through *and* click-through.
+Three keys. The image's alpha becomes the window itself, so transparent areas
+are see-through **and** click-through, and art can escape what would have been
+the edge.
 
 ```json
 "window": {
-  "shape": "skin.png",
-  "capInsets": { "top": 90, "left": 90, "bottom": 90, "right": 90 },
-  "resizable": true
-},
-"layout": { "contentInset": 34 }
+  "image": "panel.png",
+  "lockAspect": false,
+  "removeBackground": "#00FF00"
+}
 ```
 
-Draw the canvas **larger than the panel body** and leave the surplus
-transparent — that margin is where art can escape the edge: an antenna past a
-corner, a mascot leaning out, a torn border, a glow bleeding past the body.
-`contentInset` holds the rows inside the body so they do not sit on your
-artwork, and `capInsets` nine-slices the silhouette so corners keep their shape
-as the panel resizes.
+| Key | Does |
+|---|---|
+| `image` | the skin — drop a generated file straight in |
+| `lockAspect` | `true`: keeps the artwork's proportions, rows scroll inside. `false`: panel grows with sessions, art is nine-sliced |
+| `removeBackground` | `"auto"`, `"checkerboard"`, or a hex colour to key out. Omit if the file already has real alpha |
 
-**A shaped theme must draw its own chrome.** macOS renders no title bar, no
-close button and no resize control in this mode, so the skin has to provide
-somewhere to grab and somewhere to click to close. A panel nobody can move or
-dismiss is worse than a plain one.
+**On `removeBackground`.** Image models cannot produce reliable transparency —
+they paint the checkerboard an editor *shows*, or drop alpha entirely. But they
+will fill a flat colour perfectly, which is what chroma keying is for. Ask for
+a pure `#00FF00` or `#FF00FF` background and name it here; `"auto"` reads the
+corner and picks between a colour key and a checkerboard flood fill.
 
-Give the row colours alpha too, or rows will cover the body art.
+**You can keep the artwork's shape or fit the content, never both.** Locked, the
+panel is scaled as one piece and the list scrolls. Unlocked, it grows with your
+sessions and the art must slice to follow.
 
-`Themes/shaped-demo` is a working example — a notched edge and an antenna over
-the corner.
+#### When the aspect is unlocked
+
+Nine-slice applies, so two more keys matter:
+
+```json
+"mode": "tile",
+"capInsets": { "top": 100, "left": 100, "bottom": 100, "right": 100 }
+```
+
+- **Corners never scale.** Put every distinctive object — antennae, dishes,
+  logos — inside the cap region.
+- **Edges stretch or tile.** Keep them plain and repeating, or a feature there
+  will smear (`stretch`) or repeat (`tile`).
+- `tile` keeps texture at its drawn size, which reads as the pattern sliding
+  past as the panel grows. `stretch` suits gradients.
+
+**Cap insets are points, drawn 1:1.** A 200px cap on a 400pt-wide panel is half
+the window per side. Draw at roughly panel size, or scale the file down first —
+this is the single most common way a skin goes wrong.
+
+`layout.contentInset` holds the rows inside the frame; without it they cover
+your border. `Themes/space-station` is a working example of all of this.
 
 ### `avatar`
 The per-state face/mascot. Each state can be an **image** *or* a **video**

@@ -1,0 +1,71 @@
+{
+  "manifestVersion": 1,
+  "name": "DemoAvatar",
+  "description": "Mission Control Operator \u2014 Realistic space-age headset character, purple theme + dark space background",
+  "colors": {
+    "windowBackground": "#0a0a12",
+    "titleBarBackground": "#160f22cc",
+    "titleBarText": "#e8d4ff",
+    "footerBackground": "#160f22",
+    "rowBackground": "#120c1cbb",
+    "rowBackgroundAlt": "#160f22bb",
+    "rowBackgroundHover": "#1f1630dd",
+    "sessionName": "#e8d4ff",
+    "message": "#c4a8e8",
+    "messageDim": "#8a6fa8",
+    "needsAction": "#ff2d55",
+    "working": "#39c5ff",
+    "idle": "#4a90e2",
+    "accent": "#39ff14",
+    "divider": "#2a1f3a00"
+  },
+  "avatar": {
+    "size": 48,
+    "position": "right",
+    "cornerRadius": 8,
+    "states": {
+      "idle": {
+        "image": "idle.png"
+      },
+      "working": {
+        "image": "working.gif"
+      },
+      "needsInput": {
+        "image": "needs-input.gif"
+      },
+      "done": {
+        "image": "done.png"
+      }
+    }
+  },
+  "layout": {
+    "rowMaxHeight": 100,
+    "marqueeOnOverflow": true,
+    "density": "comfortable",
+    "contentInset": 75
+  },
+  "matrix": {
+    "messages": [
+      "SYSTEM ONLINE",
+      "NEURAL LINK",
+      "STANDING BY",
+      "UPLINK OPEN",
+      "ALL NOMINAL",
+      "DEEP SPACE",
+      "COMMS CLEAR",
+      "ORBIT STABLE"
+    ]
+  },
+  "window": {
+    "image": "panel-450.png",
+    "lockAspect": false,
+    "removeBackground": "#00FF00",
+    "mode": "tile",
+    "capInsets": {
+      "top": 100,
+      "left": 100,
+      "bottom": 100,
+      "right": 100
+    }
+  }
+}

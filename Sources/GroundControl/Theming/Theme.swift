@@ -99,11 +99,20 @@ struct Theme {
     /// ordinary window, which is what every existing theme gets.
     struct Window: Equatable {
         var shape: BackgroundImage?
-        var isResizable: Bool
+        /// Keeps the artwork's proportions: the panel is scaled as one piece
+        /// and rows scroll inside it.
+        ///
+        /// You can preserve the artwork's shape or fit the content, never
+        /// both — eight rows of square art would be as wide as it is tall.
+        /// Locked, width drives and the list scrolls; unlocked, the panel
+        /// grows with sessions and the art is sliced to follow.
+        var locksAspect: Bool
+        /// Width ÷ height of the artwork.
+        var aspectRatio: CGFloat
 
         var isShaped: Bool { shape != nil }
 
-        static let standard = Window(shape: nil, isResizable: true)
+        static let standard = Window(shape: nil, locksAspect: false, aspectRatio: 1)
     }
 
     /// The title-bar analyser. Its colours were derived from the row palette,

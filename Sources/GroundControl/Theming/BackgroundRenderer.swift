@@ -12,8 +12,26 @@ import AppKit
 enum BackgroundRenderer {
     private static let cache = NSCache<NSString, NSImage>()
 
-    static func draw(_ background: BackgroundImage, in rect: NSRect) {
+    /// Draws a background, optionally at a moment in an animation.
+    ///
+    /// `elapsed` nil means the still path — one decode, cached, no frames.
+    static func draw(_ background: BackgroundImage, in rect: NSRect, elapsed: TimeInterval? = nil) {
+        if let elapsed, let animated = AnimatedImage.load(background), animated.isAnimated {
+            draw(animated.frame(at: elapsed), background: background, in: rect)
+            return
+        }
         guard let image = configuredImage(for: background) else { return }
+        draw(image, background: background, in: rect)
+    }
+
+    /// True when this background has more than one frame, so callers know
+    /// whether a timer is worth running at all.
+    static func isAnimated(_ background: BackgroundImage) -> Bool {
+        AnimatedImage.load(background)?.isAnimated ?? false
+    }
+
+    private static func draw(_ image: NSImage?, background: BackgroundImage, in rect: NSRect) {
+        guard let image else { return }
 
         switch background.mode {
         case .tile, .stretch:
@@ -32,9 +50,15 @@ enum BackgroundRenderer {
         let key = background.cacheKey as NSString
         if let cached = cache.object(forKey: key) { return cached }
 
-        guard let image = NSImage(contentsOf: background.url) else {
+        guard var image = NSImage(contentsOf: background.url) else {
             Log.theming.notice("Could not load background \(background.url.lastPathComponent, privacy: .public)")
             return nil
+        }
+
+        if let key = background.removeBackground,
+           let raw = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+            let keyed = ImageKeyer.apply(key, to: raw)
+            image = NSImage(cgImage: keyed, size: NSSize(width: keyed.width, height: keyed.height))
         }
 
         if background.mode == .tile || background.mode == .stretch {
@@ -71,5 +95,6 @@ enum BackgroundRenderer {
     /// Themes hot-reload, so a re-saved file must not keep serving the old art.
     static func clearCache() {
         cache.removeAllObjects()
+        AnimatedImage.clearCache()
     }
 }

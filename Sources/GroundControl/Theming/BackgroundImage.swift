@@ -8,6 +8,20 @@ struct BackgroundImage: Equatable {
     let url: URL
     let mode: Mode
     let capInsets: NSEdgeInsets
+    /// Applied once when the image is decoded, so a generated file works
+    /// without any separate tool.
+    let removeBackground: ImageKeyer.Key?
+
+    /// Most backgrounds carry their own alpha, so keying defaults to off.
+    init(url: URL,
+         mode: Mode,
+         capInsets: NSEdgeInsets,
+         removeBackground: ImageKeyer.Key? = nil) {
+        self.url = url
+        self.mode = mode
+        self.capInsets = capInsets
+        self.removeBackground = removeBackground
+    }
 
     /// How the art fills a box larger than itself.
     ///
@@ -25,6 +39,7 @@ struct BackgroundImage: Equatable {
     static func == (lhs: BackgroundImage, rhs: BackgroundImage) -> Bool {
         lhs.url == rhs.url
             && lhs.mode == rhs.mode
+            && lhs.removeBackground == rhs.removeBackground
             && lhs.capInsets.top == rhs.capInsets.top
             && lhs.capInsets.left == rhs.capInsets.left
             && lhs.capInsets.bottom == rhs.capInsets.bottom
@@ -40,7 +55,7 @@ struct BackgroundImage: Equatable {
     /// the same file with different settings must not share one instance.
     var cacheKey: String {
         let insets = "\(capInsets.top),\(capInsets.left),\(capInsets.bottom),\(capInsets.right)"
-        return "\(url.path)|\(mode.rawValue)|\(insets)"
+        return "\(url.path)|\(mode.rawValue)|\(insets)|\(String(describing: removeBackground))"
     }
 }
 
