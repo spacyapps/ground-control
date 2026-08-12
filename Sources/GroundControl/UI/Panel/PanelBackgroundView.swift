@@ -70,18 +70,22 @@ final class PanelBackgroundView: NSView {
         TitleBarView.height + list.contentHeight + effectiveInset * 2
     }
 
-    /// `contentInset` is in points, and a theme author reading pixels off their
-    /// own 1408px artwork will happily ask for 160 — which on a 320pt panel is
-    /// the entire width twice over, leaving the rows nothing to occupy and the
-    /// panel apparently empty.
+    /// `contentInset` measures where the frame ends in the artwork, so it is
+    /// scaled wherever the artwork is.
     ///
-    /// Capped rather than rejected: the intent ("hold the rows well inside the
-    /// frame") is right even when the number is not, so it is honoured as far
-    /// as it can be.
+    /// A locked skin is scaled bodily to the panel: its painted frame is 12% of
+    /// the image whatever the panel's width, so a fixed number of points is
+    /// correct at exactly one size and wrong everywhere else. Nine-slice draws
+    /// its corners at natural size, so there the number needs no scaling.
+    ///
+    /// Capped either way: the intent ("hold the rows inside the frame") is
+    /// right even when the number is not, so it is honoured as far as it fits
+    /// rather than leaving the rows no room at all.
     private var effectiveInset: CGFloat {
+        let scaled = theme.layout.contentInset * theme.window.artworkScale(atPanelWidth: bounds.width)
         let room = min(bounds.width, bounds.height)
-        guard room > 0 else { return theme.layout.contentInset }
-        return min(theme.layout.contentInset, room * 0.32)
+        guard room > 0 else { return scaled }
+        return min(scaled, room * 0.32)
     }
 
     func refreshElapsed() {

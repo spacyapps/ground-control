@@ -81,14 +81,16 @@ enum AssetResolver {
                 removeBackground: ImageKeyer.Key(manifest.removeBackground)
             ),
             locksAspect: locked,
-            aspectRatio: aspectRatio(of: url)
+            aspectRatio: measure(url).ratio,
+            naturalWidth: measure(url).width
         )
     }
 
-    /// Width divided by height, so the panel can derive one from the other.
-    private static func aspectRatio(of url: URL) -> CGFloat {
-        guard let image = NSImage(contentsOf: url), image.size.height > 0 else { return 1 }
-        return image.size.width / image.size.height
+    /// The artwork's proportions and its own width, so the panel can derive its
+    /// height from one and scale the theme's insets by the other.
+    private static func measure(_ url: URL) -> (ratio: CGFloat, width: CGFloat) {
+        guard let image = NSImage(contentsOf: url), image.size.height > 0 else { return (1, 0) }
+        return (image.size.width / image.size.height, image.size.width)
     }
 
     static func avatar(from manifest: ThemeManifest.Avatar?,

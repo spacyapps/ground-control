@@ -201,13 +201,20 @@ Nine-slice applies, so two more keys matter:
 - `tile` keeps texture at its drawn size, which reads as the pattern sliding
   past as the panel grows. `stretch` suits gradients.
 
-**Cap insets are panel points, not image pixels.** This is the single most
-common way a skin goes wrong, and a generated theme walked straight into it: a
-frame 180px thick in a 1408px image is not `180`, it is
-`180 / 1408 × 400 ≈ 51`. The panel is roughly 320–500 points wide whatever the
-artwork's resolution. The same applies to `layout.contentInset`, which is capped
-at a third of the panel so an over-large value cannot squeeze the rows out of
-existence entirely.
+**Insets are measured in the artwork's own pixels** — read them straight off
+your image. A 900px picture whose frame is 180px thick uses `180`.
+
+What differs is whether they get scaled, and that follows how the art is drawn:
+
+| `lockAspect` | Art is | So insets are |
+|---|---|---|
+| `true` (default) | scaled bodily to the panel | scaled with it — any resolution works |
+| `false` | nine-sliced, corners at natural size | used as-is, so **draw the art near panel size (400–500px)** |
+
+That is the single most common way a skin goes wrong: a 1408px artwork with
+160px caps and `lockAspect: false` puts 160 *points* of corner on each side of a
+400pt panel. `contentInset` is additionally capped at a third of the panel, so an
+over-large value cannot squeeze the rows out of existence entirely.
 
 `layout.contentInset` holds the rows inside the frame; without it they cover
 your border. `Themes/spacyAppsLunarAvatar` is a working example of all of this — a station hull whose antennae extend past the panel edge.

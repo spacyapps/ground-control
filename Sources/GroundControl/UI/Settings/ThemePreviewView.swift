@@ -58,15 +58,16 @@ final class ThemePreviewView: NSView {
         // the theme's cap insets — often 100pt a side — would exceed the box
         // and collapse the artwork into corners, showing something the panel
         // never looks like.
+        var artScale: CGFloat = 1
         if let art = theme.window.shape ?? theme.backgrounds.window,
            let image = Self.still(art) {
             // Anchored to the top, not centred: a framed skin keeps its
             // recognisable edge — hull, antennae, title bezel — up there, and a
             // centre crop of a tall frame shows nothing but its side pillars.
-            draw(image, fillingAspectOf: rect, anchor: .top)
+            artScale = draw(image, fillingAspectOf: rect, anchor: .top)
         }
 
-        let content = contentRect(in: rect)
+        let content = contentRect(in: rect, artScale: artScale)
 
         let titleHeight: CGFloat = 22
         theme.colors.titleBarBackground.setFill()
@@ -133,9 +134,15 @@ final class ThemePreviewView: NSView {
     ///
     /// No inset at the bottom: the art is anchored to the top and cropped, so
     /// there is no bottom frame on screen to stay clear of.
-    func contentRect(in rect: NSRect) -> NSRect {
+    func contentRect(in rect: NSRect, artScale: CGFloat = 1) -> NSRect {
+        // A locked skin is scaled bodily, here as in the panel, so the inset
+        // follows the artwork. Nine-slice keeps its corners at natural size, so
+        // there the inset is in panel points and follows the miniature instead.
+        let scale = theme.window.locksAspect && theme.window.isShaped
+            ? artScale
+            : rect.width / Self.referencePanelWidth
         let ceiling = min(rect.width, rect.height) * 0.4
-        let inset = min(theme.layout.contentInset * (rect.width / Self.referencePanelWidth), ceiling)
+        let inset = min(theme.layout.contentInset * scale, ceiling)
         return NSRect(
             x: rect.minX + inset,
             y: rect.minY + inset,
@@ -295,9 +302,14 @@ final class ThemePreviewView: NSView {
     /// `respectFlipped` is the whole ballgame here: this view is flipped so text
     /// reads downward, and an image drawn into a flipped context arrives upside
     /// down unless it is told to honour the flip.
-    private func draw(_ image: NSImage, fillingAspectOf rect: NSRect, anchor: Anchor = .centre) {
+    /// Returns the scale the artwork was drawn at, which a locked skin's inset
+    /// is measured against.
+    @discardableResult
+    private func draw(_ image: NSImage,
+                      fillingAspectOf rect: NSRect,
+                      anchor: Anchor = .centre) -> CGFloat {
         let size = image.size
-        guard size.width > 0, size.height > 0 else { return }
+        guard size.width > 0, size.height > 0 else { return 1 }
 
         let scale = max(rect.width / size.width, rect.height / size.height)
         let drawn = NSSize(width: size.width * scale, height: size.height * scale)
@@ -314,6 +326,7 @@ final class ThemePreviewView: NSView {
             respectFlipped: true,
             hints: nil
         )
+        return scale
     }
 
     private func draw(_ text: String,

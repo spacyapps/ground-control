@@ -113,10 +113,25 @@ struct Theme {
         var locksAspect: Bool
         /// Width ÷ height of the artwork.
         var aspectRatio: CGFloat
+        /// The artwork's own width in pixels.
+        ///
+        /// A locked skin is scaled bodily to the panel, so the frame painted
+        /// into it is thick in proportion to the image, not in points. Insets
+        /// have to be scaled by the same amount or they mean something
+        /// different on every panel width.
+        var naturalWidth: CGFloat = 0
 
         var isShaped: Bool { shape != nil }
 
         static let standard = Window(shape: nil, locksAspect: false, aspectRatio: 1)
+
+        /// How much the artwork is scaled when drawn `width` points wide.
+        /// 1 when the art is not scaled bodily — nine-slice draws its corners
+        /// at natural size, so there points and artwork pixels agree.
+        func artworkScale(atPanelWidth width: CGFloat) -> CGFloat {
+            guard locksAspect, isShaped, naturalWidth > 0 else { return 1 }
+            return width / naturalWidth
+        }
     }
 
     /// The title-bar analyser. Its colours were derived from the row palette,

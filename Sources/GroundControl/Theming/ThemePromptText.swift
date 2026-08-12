@@ -48,17 +48,17 @@ enum ThemePromptText {
     - Centre → flat or a tiling texture, dark enough for text
     - No single large object anywhere but a corner
 
-    ### Sizes are in panel points, not image pixels
+    ### Insets are measured in your artwork's own pixels
 
-    This is the one number themes get wrong. The panel is about **320–500
-    points wide** on screen, whatever your artwork's pixel size. A 1408px image
-    with a frame 180px thick does **not** mean `180` — that would be the whole
-    panel, twice over.
+    `layout.contentInset` is where your painted frame ends and the calm centre
+    begins — read it straight off your image. A 900px picture with a frame
+    180px thick is `180`.
 
-    Convert: `value = thickness_in_px / image_width_in_px × 400`.
-
-    - `layout.contentInset` — holds rows inside your border. Sensible: **8–48**
-    - `window.capInsets` — where the corner art ends. Sensible: **12–60**
+    - With `lockAspect: true` (the default, and what you want) the art is scaled
+      to the panel and the inset scales with it. Any resolution works
+    - With `lockAspect: false` the corners are drawn at their natural size, so
+      **draw the whole thing about 400–500px wide** or the frame will swamp the
+      panel. `window.capInsets` is likewise in artwork pixels
     """
 
     static let shapeSection = """
