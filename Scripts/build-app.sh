@@ -48,6 +48,12 @@ cp Packaging/Info.plist "$APP/Contents/Info.plist"
 install -m 0755 Scripts/cc-notify "$APP/Contents/Resources/cc-notify"
 install -m 0755 Scripts/install-hooks.sh "$APP/Contents/Resources/install-hooks.sh"
 
+# The example themes ship inside the app and are copied to Application Support
+# on first launch — a theme has to be editable and hot-reloadable, which one
+# living in the bundle could never be.
+mkdir -p "$APP/Contents/Resources/Themes"
+cp -R Themes/* "$APP/Contents/Resources/Themes/"
+
 # SwiftPM emits resources as a bundle beside the binary; it has to travel too
 # or Brand.lockup and every themed asset comes back nil at runtime.
 for bundle in "$BIN"/*.bundle; do

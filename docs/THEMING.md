@@ -5,13 +5,17 @@ videos it references. That's it.
 
 ## Quick start
 
-Three folders ship as starting points:
+Four themes ship with the app and are copied into your themes folder the first
+time it runs, so they are in the picker straight away — and editable, because
+they are now yours. An existing folder is never overwritten, so anything you
+change stays changed.
 
 | Theme | Shows |
 |---|---|
 | `default/` | every colour key, no artwork |
 | `example-avatars/` | the avatar system — three stills and an animated GIF |
-| `spacyAppsLunarAvatar/` | the lot: avatars, a shaped window, chroma keying, matrix messages |
+| `spacyAppsLunarAvatar/` | a shaped window: avatars, chroma keying, matrix messages, art past the panel edge |
+| `spacyAppsUnicornOverlord/` | a frame drawn *in front* of the rows — `window.overlay`, four-sided insets, an animated loop |
 
 Copy whichever is closest to what you want.
 

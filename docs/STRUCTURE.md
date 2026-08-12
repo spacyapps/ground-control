@@ -96,12 +96,13 @@ GroundControl/
 │   │
 │   └── Resources/                # the app's own mark (themes draw their own —
 │       ├── logo-glyph.png        # see DrawnAvatar for the built-in faces)
-│       └── logo-lockup.png
+│       └── logo-lockup.png       # Themes/ is copied in by build-app.sh too
 │
 ├── Themes/
 │   ├── default/theme.json        # reference palette (ships in-repo, copyable)
 │   ├── example-avatars/          # working avatar theme: 3 stills + a GIF
-│   └── spacyAppsLunarAvatar/     # the full set: avatars + shaped skin
+│   ├── spacyAppsLunarAvatar/     # the full set: avatars + shaped skin
+│   └── spacyAppsUnicornOverlord/ # a frame drawn in front of the rows
 │
 ├── Scripts/                     # cc-notify and install-hooks.sh are also copied
 │   │                             # into the .app, so a dmg needs no checkout

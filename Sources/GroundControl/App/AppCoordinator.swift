@@ -26,6 +26,9 @@ final class AppCoordinator {
 
     func start() {
         Paths.ensureFoldersExist()
+        // The themes that ship with the app are copied out before anything
+        // reads the folder, so they are in the picker on a first launch.
+        ThemeSeeder.seed()
         wireMenu()
 
         statusItem.onTogglePanel = { [weak self] in self?.panel.toggle() }
