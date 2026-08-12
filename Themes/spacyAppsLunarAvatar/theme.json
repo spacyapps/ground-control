@@ -1,7 +1,7 @@
 {
   "manifestVersion": 1,
   "name": "SpacyApps Lunar Avatar",
-  "description": "Mission-control operator avatars and a space-station hull frame whose antennae extend past the panel edge. Generated with the prompt in PROMPT.md.",
+  "description": "A space station drawn in front of the rows: window.overlay with a green-keyed middle, so the hull and its dishes overlap the panel edges.",
   "colors": {
     "windowBackground": "#0a0a12",
     "titleBarBackground": "#160f22cc",
@@ -42,7 +42,13 @@
     "rowMaxHeight": 100,
     "marqueeOnOverflow": true,
     "density": "comfortable",
-    "contentInset": 75
+    "contentInset": {
+      "top": 132,
+      "left": 112,
+      "bottom": 100,
+      "right": 112
+    },
+    "contentCornerRadius": 0
   },
   "matrix": {
     "messages": [
@@ -57,16 +63,10 @@
     ]
   },
   "window": {
-    "image": "panel-450.png",
-    "lockAspect": false,
-    "removeBackground": "#00FF00",
-    "mode": "tile",
-    "capInsets": {
-      "top": 100,
-      "left": 100,
-      "bottom": 100,
-      "right": 100
-    }
+    "image": "frame.png",
+    "lockAspect": true,
+    "overlay": true,
+    "removeBackground": "#00FF00"
   },
   "author": "SpacyApps"
 }
