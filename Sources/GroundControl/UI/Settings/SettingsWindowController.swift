@@ -16,7 +16,7 @@ final class SettingsWindowController: NSWindowController {
         settingsView = SettingsView(actions: actions)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 610),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 626),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false

@@ -40,7 +40,7 @@ final class SettingsView: NSView {
     init(preferences: Preferences = .shared, actions: Actions) {
         self.preferences = preferences
         self.actions = actions
-        super.init(frame: NSRect(x: 0, y: 0, width: 420, height: 610))
+        super.init(frame: NSRect(x: 0, y: 0, width: 420, height: 626))
         build()
         reloadThemes()
         syncFromPreferences()

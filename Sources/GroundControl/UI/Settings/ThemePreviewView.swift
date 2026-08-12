@@ -12,7 +12,7 @@ import ImageIO
 /// preview would not show. Now it draws the real artwork: the window skin
 /// behind the rows, and every state's own face.
 final class ThemePreviewView: NSView {
-    static let preferredSize = NSSize(width: 360, height: 218)
+    static let preferredSize = NSSize(width: 360, height: 232)
 
     /// The order a theme author thinks in: quiet, busy, blocked, finished.
     private static let states: [(SessionState, String)] = [
@@ -34,7 +34,7 @@ final class ThemePreviewView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        let panelHeight: CGFloat = 148
+        let panelHeight: CGFloat = 162
         drawPanel(in: NSRect(x: 0, y: 0, width: bounds.width, height: panelHeight))
         drawStates(in: NSRect(
             x: 0,
@@ -58,21 +58,28 @@ final class ThemePreviewView: NSView {
         // the theme's cap insets — often 100pt a side — would exceed the box
         // and collapse the artwork into corners, showing something the panel
         // never looks like.
+        var artScale: CGFloat = 1
         if let art = theme.window.shape ?? theme.backgrounds.window,
            let image = Self.still(art) {
             // Anchored to the top, not centred: a framed skin keeps its
             // recognisable edge — hull, antennae, title bezel — up there, and a
             // centre crop of a tall frame shows nothing but its side pillars.
-            draw(image, fillingAspectOf: rect, anchor: .top)
+            artScale = draw(image, fillingAspectOf: rect, anchor: .top)
         }
 
+        let content = contentRect(in: rect, artScale: artScale)
+
         let titleHeight: CGFloat = 22
-        let titleRect = NSRect(x: rect.minX, y: rect.minY, width: rect.width, height: titleHeight)
         theme.colors.titleBarBackground.setFill()
-        titleRect.fill()
+        NSRect(
+            x: content.minX,
+            y: content.minY,
+            width: content.width,
+            height: titleHeight
+        ).fill()
         draw(
             theme.name,
-            at: NSPoint(x: rect.minX + 9, y: rect.minY + 6),
+            at: NSPoint(x: content.minX + 9, y: content.minY + 6),
             size: 9,
             weight: .semibold,
             color: theme.colors.titleBarText
@@ -84,9 +91,8 @@ final class ThemePreviewView: NSView {
             (SessionState.working, "avaterm", "Bash: swift build"),
             (SessionState.needsInput, "spacyapps", "Allow npm install?")
         ]
-        let inset = min(theme.layout.contentInset, 8)
-        let rowsTop = rect.minY + titleHeight
-        let rowHeight = (rect.height - titleHeight - inset) / CGFloat(samples.count)
+        let rowsTop = content.minY + titleHeight
+        let rowHeight = (content.maxY - rowsTop) / CGFloat(samples.count)
 
         for (index, sample) in samples.enumerated() {
             drawRow(
@@ -95,9 +101,9 @@ final class ThemePreviewView: NSView {
                 message: sample.2,
                 alternate: !index.isMultiple(of: 2),
                 in: NSRect(
-                    x: rect.minX + inset,
+                    x: content.minX,
                     y: rowsTop + CGFloat(index) * rowHeight,
-                    width: rect.width - inset * 2,
+                    width: content.width,
                     height: rowHeight
                 )
             )
@@ -108,6 +114,26 @@ final class ThemePreviewView: NSView {
         SettingsChrome.viewportEdge.setStroke()
         clip.lineWidth = 1
         clip.stroke()
+    }
+
+    /// Where the rows go once the skin's frame is accounted for.
+    ///
+    /// `contentInset` is what holds rows off the artwork in the real panel, and
+    /// ignoring it here put them straight over the hull's pillars. The panel
+    /// draws its frame 1:1 while the preview scales the whole image down, so
+    /// the inset scales by the same factor to land in the same place.
+    ///
+    /// No inset at the bottom: the art is anchored to the top and cropped, so
+    /// there is no bottom frame on screen to stay clear of.
+    func contentRect(in rect: NSRect, artScale: CGFloat) -> NSRect {
+        let ceiling = min(rect.width * 0.3, rect.height * 0.3)
+        let inset = min(theme.layout.contentInset * artScale, ceiling)
+        return NSRect(
+            x: rect.minX + inset,
+            y: rect.minY + inset,
+            width: rect.width - inset * 2,
+            height: rect.height - inset
+        )
     }
 
     private func drawRow(state: SessionState,
@@ -261,9 +287,14 @@ final class ThemePreviewView: NSView {
     /// `respectFlipped` is the whole ballgame here: this view is flipped so text
     /// reads downward, and an image drawn into a flipped context arrives upside
     /// down unless it is told to honour the flip.
-    private func draw(_ image: NSImage, fillingAspectOf rect: NSRect, anchor: Anchor = .centre) {
+    /// Returns the scale the artwork was drawn at, which is what the frame
+    /// inset has to be measured against.
+    @discardableResult
+    private func draw(_ image: NSImage,
+                      fillingAspectOf rect: NSRect,
+                      anchor: Anchor = .centre) -> CGFloat {
         let size = image.size
-        guard size.width > 0, size.height > 0 else { return }
+        guard size.width > 0, size.height > 0 else { return 1 }
 
         let scale = max(rect.width / size.width, rect.height / size.height)
         let drawn = NSSize(width: size.width * scale, height: size.height * scale)
@@ -280,6 +311,7 @@ final class ThemePreviewView: NSView {
             respectFlipped: true,
             hints: nil
         )
+        return scale
     }
 
     private func draw(_ text: String,
