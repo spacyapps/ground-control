@@ -52,7 +52,18 @@ enum ThemeLoader {
     private static func layout(from manifestLayout: ThemeManifest.Layout?) -> Theme.Layout {
         let defaultLayout = DefaultTheme.layout
         return Theme.Layout(
-            contentInset: Theme.length(manifestLayout?.contentInset, defaultLayout.contentInset),
+            contentInset: NSEdgeInsets(
+                top: Theme.length(manifestLayout?.contentInset?.top, defaultLayout.contentInset.top),
+                left: Theme.length(manifestLayout?.contentInset?.left, defaultLayout.contentInset.left),
+                bottom: Theme.length(
+                    manifestLayout?.contentInset?.bottom,
+                    defaultLayout.contentInset.bottom
+                ),
+                right: Theme.length(
+                    manifestLayout?.contentInset?.right,
+                    defaultLayout.contentInset.right
+                )
+            ),
             contentCornerRadius: Theme.length(
                 manifestLayout?.contentCornerRadius,
                 defaultLayout.contentCornerRadius

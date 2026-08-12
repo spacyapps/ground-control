@@ -132,8 +132,39 @@ struct ThemeManifest: Decodable, Equatable {
         }
     }
 
+    /// Accepts `12` or `{ "top": 40, "left": 12 }` — anything unnamed falls
+    /// back to the built-in default rather than to zero.
+    struct Sides: Decodable, Equatable {
+        var top: Double?
+        var left: Double?
+        var bottom: Double?
+        var right: Double?
+
+        init(from decoder: Decoder) throws {
+            if let all = try? decoder.singleValueContainer().decode(Double.self) {
+                top = all
+                left = all
+                bottom = all
+                right = all
+                return
+            }
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            top = try container.decodeIfPresent(Double.self, forKey: .top)
+            left = try container.decodeIfPresent(Double.self, forKey: .left)
+            bottom = try container.decodeIfPresent(Double.self, forKey: .bottom)
+            right = try container.decodeIfPresent(Double.self, forKey: .right)
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case top, left, bottom, right
+        }
+    }
+
     struct Layout: Decodable, Equatable {
-        var contentInset: Double?
+        /// One number for all four sides, or an object naming the ones you
+        /// want. A frame is rarely as thick at the top as at the sides, and a
+        /// single number forces the whole content block to clear the thickest.
+        var contentInset: Sides?
         /// Rounds the block the rows sit in, so a skin with a rounded opening
         /// does not frame a square-cornered screen.
         var contentCornerRadius: Double?

@@ -179,11 +179,18 @@ colour as the outside** — one flat key colour everywhere that is not frame, so
 both the surround and the opening key out together. A near miss is a miss: a
 slightly different green stays solid and the frame hides the panel.
 
-`contentInset` still matters, but only for looks now rather than for fit. Set it
-a little **wider than the frame is thick** and the app's ✕ and ↔ marks stay
-inside the opening; set it narrower and the rows tuck behind the frame, which
-trims their edges for you. Either way a few points out is invisible — which is
-the whole point of the mode.
+`contentInset` still matters, but only for looks now rather than for fit — and
+it takes four numbers when one will not do:
+
+```json
+"layout": { "contentInset": { "top": 140, "left": 152, "bottom": 80, "right": 152 } }
+```
+
+Wider than the frame is thick on a given side, and the content clears it there.
+Narrower, and the rows tuck behind and the artwork trims their edges. A frame is
+rarely as thick at the top as at the sides, so one number usually means clearing
+the thickest side everywhere. The ✕ and ↔ marks sit at the ends of the title
+strip, so the `top`, `left` and `right` values decide whether you can see them.
 
 The app checks this rather than trusting it. If an overlay skin's middle is
 solid, it is drawn *behind* the rows instead — imperfect, but visible — and
@@ -305,7 +312,9 @@ said — those come from your work rather than from anyone's idea of what the
 panel should say.
 
 ### `layout`
-- `contentInset` — holds the rows inside your frame, in artwork pixels.
+- `contentInset` — holds the rows inside your frame, in artwork pixels. One
+  number for all four sides, or `{ "top": …, "left": …, "bottom": …, "right": … }`
+  for the common case where a frame is not equally thick all round.
 - `contentCornerRadius` — rounds the block the rows sit in, so a frame with a
   rounded opening does not enclose a square-cornered screen. Same artwork
   pixels, scaled the same way.

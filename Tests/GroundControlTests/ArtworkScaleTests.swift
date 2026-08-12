@@ -48,7 +48,7 @@ final class ArtworkScaleTests: XCTestCase {
     func testPanelRowsTrackTheFrameAsItResizes() {
         var theme = DefaultTheme.theme
         theme.window = window(locked: true, naturalWidth: 900)
-        theme.layout.contentInset = 180      // 20% into a 900px artwork
+        theme.layout.contentInset = NSEdgeInsets(top: 180, left: 180, bottom: 180, right: 180)
 
         for width in [CGFloat(600), 800] {
             let view = PanelBackgroundView()

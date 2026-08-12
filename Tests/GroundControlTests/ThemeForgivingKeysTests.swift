@@ -47,7 +47,7 @@ final class ThemeForgivingKeysTests: XCTestCase {
     /// looks empty. The intent is honoured as far as it fits.
     func testAbsurdContentInsetStillLeavesRoomForRows() {
         var theme = DefaultTheme.theme
-        theme.layout.contentInset = 160
+        theme.layout.contentInset = NSEdgeInsets(top: 160, left: 160, bottom: 160, right: 160)
 
         let view = PanelBackgroundView()
         view.apply(theme: theme)
@@ -61,7 +61,7 @@ final class ThemeForgivingKeysTests: XCTestCase {
     /// A sane inset is still passed through untouched.
     func testReasonableContentInsetIsUnchanged() {
         var theme = DefaultTheme.theme
-        theme.layout.contentInset = 24
+        theme.layout.contentInset = NSEdgeInsets(top: 24, left: 24, bottom: 24, right: 24)
 
         let view = PanelBackgroundView()
         view.apply(theme: theme)
@@ -69,5 +69,73 @@ final class ThemeForgivingKeysTests: XCTestCase {
         view.layoutSubtreeIfNeeded()
 
         XCTAssertEqual(view.titleBar.frame.minX, 24, accuracy: 0.5)
+    }
+}
+
+/// `contentInset` takes one number or four. A frame is rarely as thick at the
+/// top as at the sides, so a single value means clearing the thickest side
+/// everywhere — and the ✕ and ↔ marks sit at the ends of the title strip, so
+/// which sides clear the artwork decides whether they can be seen.
+@MainActor
+final class ContentInsetSidesTests: XCTestCase {
+    private var dir = FileManager.default.temporaryDirectory
+
+    override func setUpWithError() throws {
+        dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("sides-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    private func theme(_ json: String) throws -> Theme {
+        let manifest = dir.appendingPathComponent("theme.json")
+        try json.write(to: manifest, atomically: true, encoding: .utf8)
+        return ThemeLoader.loadTheme(from: dir)
+    }
+
+    func testOneNumberStillMeansAllFourSides() throws {
+        let inset = try theme(##"{ "layout": { "contentInset": 24 } }"##).layout.contentInset
+        XCTAssertEqual(inset.top, 24)
+        XCTAssertEqual(inset.left, 24)
+        XCTAssertEqual(inset.bottom, 24)
+        XCTAssertEqual(inset.right, 24)
+    }
+
+    func testEachSideCanDifferFromTheOthers() throws {
+        let inset = try theme(##"""
+        { "layout": { "contentInset": { "top": 140, "left": 152, "bottom": 80, "right": 152 } } }
+        """##).layout.contentInset
+        XCTAssertEqual(inset.top, 140)
+        XCTAssertEqual(inset.left, 152)
+        XCTAssertEqual(inset.bottom, 80)
+        XCTAssertEqual(inset.right, 152)
+    }
+
+    /// A side left unnamed keeps the built-in default rather than collapsing
+    /// to zero, which is how every other key in a manifest behaves.
+    func testUnnamedSidesFallBackRatherThanZeroing() throws {
+        let inset = try theme(##"{ "layout": { "contentInset": { "top": 90 } } }"##).layout.contentInset
+        XCTAssertEqual(inset.top, 90)
+        XCTAssertEqual(inset.left, DefaultTheme.layout.contentInset.left)
+        XCTAssertEqual(inset.bottom, DefaultTheme.layout.contentInset.bottom)
+    }
+
+    /// The sides are honoured independently all the way to the layout.
+    func testPanelLaysOutEachSideSeparately() {
+        var theme = DefaultTheme.theme
+        theme.layout.contentInset = NSEdgeInsets(top: 60, left: 20, bottom: 10, right: 40)
+
+        let view = PanelBackgroundView()
+        view.apply(theme: theme)
+        view.frame = NSRect(x: 0, y: 0, width: 400, height: 400)
+        view.layoutSubtreeIfNeeded()
+
+        XCTAssertEqual(view.titleBar.frame.minY, 60, accuracy: 0.5)
+        XCTAssertEqual(view.titleBar.frame.minX, 20, accuracy: 0.5)
+        XCTAssertEqual(view.titleBar.frame.maxX, 360, accuracy: 0.5)
+        XCTAssertEqual(view.list.frame.maxY, 390, accuracy: 0.5)
     }
 }

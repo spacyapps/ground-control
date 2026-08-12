@@ -88,10 +88,18 @@ enum ThemePromptText {
     the artwork alone decides where the content appears to stop. Bevels, glows
     and vignettes over the content all become possible.
 
-    Set `layout.contentInset` a little **wider than the frame is thick**, so the
-    app's own ✕ and ↔ marks stay inside the opening rather than under your
-    artwork. Narrower than the frame is a deliberate choice too: the rows then
-    tuck behind it and the frame trims their edges.
+    `layout.contentInset` takes one number or four:
+
+    ```json
+    "layout": { "contentInset": { "top": 140, "left": 152, "bottom": 80, "right": 152 } }
+    ```
+
+    Give the sides carrying the ✕ and ↔ marks — top, left, right — a little
+    **more than the frame is thick** there, so they are not buried under your
+    artwork. Anywhere you want the frame to visibly overlap the rows, go
+    **under** it: the rows tuck behind and the artwork trims their edges. A
+    frame is rarely as thick at the top as at the sides, which is why one
+    number for all four rarely fits.
 
     One requirement, and it reverses the rule above: **the middle must be the
     exact same colour as the outside** — one flat `#00FF00` everywhere that is

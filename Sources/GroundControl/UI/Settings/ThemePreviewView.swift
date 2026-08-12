@@ -142,12 +142,14 @@ final class ThemePreviewView: NSView {
             ? artScale
             : rect.width / Self.referencePanelWidth
         let ceiling = min(rect.width, rect.height) * 0.4
-        let inset = min(theme.layout.contentInset * scale, ceiling)
+        let declared = theme.layout.contentInset
+        func clamp(_ value: CGFloat) -> CGFloat { min(value * scale, ceiling) }
+        let left = clamp(declared.left), right = clamp(declared.right)
         return NSRect(
-            x: rect.minX + inset,
-            y: rect.minY + inset,
-            width: rect.width - inset * 2,
-            height: rect.height - inset
+            x: rect.minX + left,
+            y: rect.minY + clamp(declared.top),
+            width: rect.width - left - right,
+            height: rect.height - clamp(declared.top)
         )
     }
 

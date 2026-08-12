@@ -12,7 +12,12 @@ import XCTest
 final class ResizeGripTests: XCTestCase {
     private func laidOut(contentInset: CGFloat, width: CGFloat = 420) -> PanelBackgroundView {
         var theme = DefaultTheme.theme
-        theme.layout.contentInset = contentInset
+        theme.layout.contentInset = NSEdgeInsets(
+            top: contentInset,
+            left: contentInset,
+            bottom: contentInset,
+            right: contentInset
+        )
 
         let view = PanelBackgroundView()
         view.apply(theme: theme)

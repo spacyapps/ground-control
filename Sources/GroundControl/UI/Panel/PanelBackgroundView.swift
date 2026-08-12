@@ -87,7 +87,8 @@ final class PanelBackgroundView: NSView {
     /// Height at which nothing is clipped: title strip, every row, and the
     /// frame the theme asked to keep clear.
     var desiredHeight: CGFloat {
-        TitleBarView.height + list.contentHeight + effectiveInset * 2
+        let insets = effectiveInsets
+        return TitleBarView.height + list.contentHeight + insets.top + insets.bottom
     }
 
     /// `contentInset` measures where the frame ends in the artwork, so it is
@@ -105,11 +106,18 @@ final class PanelBackgroundView: NSView {
         theme.window.artworkScale(atPanelWidth: bounds.width)
     }
 
-    private var effectiveInset: CGFloat {
-        let scaled = theme.layout.contentInset * artworkScale
+    private var effectiveInsets: NSEdgeInsets {
+        let scale = artworkScale
+        let declared = theme.layout.contentInset
         let room = min(bounds.width, bounds.height)
-        guard room > 0 else { return scaled }
-        return min(scaled, room * 0.32)
+        let ceiling = room > 0 ? room * 0.32 : .greatestFiniteMagnitude
+        func clamp(_ value: CGFloat) -> CGFloat { min(value * scale, ceiling) }
+        return NSEdgeInsets(
+            top: clamp(declared.top),
+            left: clamp(declared.left),
+            bottom: clamp(declared.bottom),
+            right: clamp(declared.right)
+        )
     }
 
     func refreshElapsed() {
@@ -129,15 +137,20 @@ final class PanelBackgroundView: NSView {
         updateShapeMask()
         // Everything sits inside the inset, so a framed background shows all
         // the way round rather than only above the first row.
-        let inset = effectiveInset
-        let width = max(0, bounds.width - inset * 2)
+        let insets = effectiveInsets
+        let width = max(0, bounds.width - insets.left - insets.right)
 
-        titleBar.frame = NSRect(x: inset, y: inset, width: width, height: TitleBarView.height)
+        titleBar.frame = NSRect(
+            x: insets.left,
+            y: insets.top,
+            width: width,
+            height: TitleBarView.height
+        )
         list.frame = NSRect(
-            x: inset,
+            x: insets.left,
             y: titleBar.frame.maxY,
             width: width,
-            height: max(0, bounds.height - TitleBarView.height - inset * 2)
+            height: max(0, bounds.height - titleBar.frame.maxY - insets.bottom)
         )
 
         // Top-right of the title strip, mirroring the close mark at its left
@@ -164,7 +177,7 @@ final class PanelBackgroundView: NSView {
 
         let grip = ResizeGripView.size
         resizeGrip.frame = NSRect(
-            x: max(inset, titleBar.frame.maxX - TitleBarView.markInset - grip.width),
+            x: max(insets.left, titleBar.frame.maxX - TitleBarView.markInset - grip.width),
             y: titleBar.frame.minY + TitleBarView.markTop,
             width: grip.width,
             height: grip.height

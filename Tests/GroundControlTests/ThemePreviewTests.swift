@@ -14,7 +14,12 @@ final class ThemePreviewTests: XCTestCase {
 
     private func preview(contentInset: CGFloat) -> ThemePreviewView {
         var theme = DefaultTheme.theme
-        theme.layout.contentInset = contentInset
+        theme.layout.contentInset = NSEdgeInsets(
+            top: contentInset,
+            left: contentInset,
+            bottom: contentInset,
+            right: contentInset
+        )
         let view = ThemePreviewView()
         view.apply(theme: theme)
         return view

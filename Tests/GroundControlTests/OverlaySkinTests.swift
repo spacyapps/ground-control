@@ -72,7 +72,7 @@ final class OverlaySkinTests: XCTestCase {
             drawsOverContent: overlay,
             naturalWidth: 100
         )
-        theme.layout.contentInset = 0        // rows run right to the edge on purpose
+        theme.layout.contentInset = NSEdgeInsets()   // rows run to the edge on purpose
         return theme
     }
 

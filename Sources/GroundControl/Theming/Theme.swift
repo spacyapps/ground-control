@@ -164,7 +164,7 @@ struct Theme {
         /// Holds the rows away from the panel edge. A background that draws a
         /// frame is invisible without this: rows span the full width, so they
         /// cover exactly the border the artwork lives in.
-        var contentInset: CGFloat
+        var contentInset: NSEdgeInsets
         /// Corner radius of the content block, in the same artwork pixels as
         /// `contentInset` — a framed opening is rounded in the art, so this is
         /// measured off the art and scaled with it.
