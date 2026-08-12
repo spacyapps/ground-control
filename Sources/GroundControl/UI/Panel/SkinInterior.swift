@@ -16,8 +16,14 @@ import AppKit
 /// Reachability can: anything you can walk to from the border is outside, and
 /// anything you cannot is enclosed.
 enum SkinInterior {
-    /// Pixels the artwork encloses, and — as a side effect — those pixels made
-    /// opaque in `mask`, so the window covers its own middle.
+    /// The opening the artwork encloses, and — as a side effect — those pixels
+    /// made opaque in `mask`, so the window covers its own middle.
+    ///
+    /// Only the *largest* enclosed region counts. Decorative artwork traps small
+    /// pockets all over the place — between a unicorn's horn and the band it
+    /// leans on, say — and those are gaps you should see straight through. Left
+    /// in, they bloat the opening to nearly the whole panel and get painted with
+    /// the panel's colour, which shows as dark flecks caught in the artwork.
     ///
     /// Returns an empty array when nothing is enclosed, which is every ordinary
     /// skin: a solid one has no holes, and a shape open at one edge has no
@@ -27,25 +33,59 @@ enum SkinInterior {
         let width = mask.pixelsWide, height = mask.pixelsHigh
         guard width > 2, height > 2, let pixels = mask.bitmapData else { return [] }
 
-        let count = width * height
         let stride = mask.bytesPerRow
         let samples = mask.samplesPerPixel
         func alpha(_ x: Int, _ y: Int) -> UInt8 { pixels[y * stride + x * samples + 3] }
 
         let outside = reachableFromBorder(width: width, height: height, alpha: alpha)
+        guard let opening = largestEnclosedRegion(
+            width: width,
+            height: height,
+            alpha: alpha,
+            outside: outside
+        ) else { return [] }
 
-        var enclosed = [Bool](repeating: false, count: count)
-        var found = false
-        for y in 0..<height {
-            for x in 0..<width {
-                let cell = y * width + x
-                guard !outside[cell], alpha(x, y) <= 128 else { continue }
-                enclosed[cell] = true
-                found = true
-                pixels[y * stride + x * samples + 3] = 255
-            }
+        for cell in 0..<(width * height) where opening[cell] {
+            let x = cell % width, y = cell / width
+            pixels[y * stride + x * samples + 3] = 255
         }
-        return found ? enclosed : []
+        return opening
+    }
+
+    /// The biggest pocket the artwork closes off, found by walking each in turn.
+    private static func largestEnclosedRegion(width: Int,
+                                              height: Int,
+                                              alpha: (Int, Int) -> UInt8,
+                                              outside: [Bool]) -> [Bool]? {
+        let count = width * height
+        var seen = [Bool](repeating: false, count: count)
+        var best: [Int] = []
+
+        for start in 0..<count {
+            guard !seen[start], !outside[start],
+                  alpha(start % width, start / width) <= 128 else { continue }
+
+            var region: [Int] = []
+            var stack = [start]
+            seen[start] = true
+            while let cell = stack.popLast() {
+                region.append(cell)
+                let x = cell % width, y = cell / width
+                for (nx, ny) in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)] {
+                    guard nx >= 0, ny >= 0, nx < width, ny < height else { continue }
+                    let next = ny * width + nx
+                    guard !seen[next], !outside[next], alpha(nx, ny) <= 128 else { continue }
+                    seen[next] = true
+                    stack.append(next)
+                }
+            }
+            if region.count > best.count { best = region }
+        }
+
+        guard !best.isEmpty else { return nil }
+        var mask = [Bool](repeating: false, count: count)
+        for cell in best { mask[cell] = true }
+        return mask
     }
 
     /// Everything a walk from the border can reach without crossing the
