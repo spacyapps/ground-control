@@ -127,11 +127,12 @@ final class BackgroundAssetTests: XCTestCase {
         XCTAssertEqual(DefaultTheme.theme.backgrounds, Theme.Backgrounds.none)
     }
 
-    func testPromptExplainsThatTheCentreStretches() {
+    /// Asserts the keys a theme author must be told about, not the wording —
+    /// prose gets rewritten, key names do not.
+    func testPromptCoversTheNineSliceKeys() {
         let prompt = ThemePromptBuilder.prompt(for: .placeholder)
-        XCTAssertTrue(prompt.contains("nine-slice"))
-        XCTAssertTrue(prompt.contains("capInsets"))
-        XCTAssertTrue(prompt.contains("CORNERS only"))
-        XCTAssertTrue(prompt.contains("resizable"))
+        for key in ["capInsets", "contentInset", "corners", "nine-slice"] {
+            XCTAssertTrue(prompt.localizedCaseInsensitiveContains(key), "prompt never mentions \(key)")
+        }
     }
 }

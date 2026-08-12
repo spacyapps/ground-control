@@ -39,7 +39,7 @@ enum ThemeLoader {
             return DefaultTheme.theme
         }
         do {
-            let manifest = try JSONDecoder().decode(ThemeManifest.self, from: data)
+            let manifest = try JSONDecoder().decode(ThemeManifest.self, from: forgiving(data))
             return resolve(manifest, folder: folder)
         } catch {
             let name = folder.lastPathComponent
@@ -111,6 +111,42 @@ enum ThemeLoader {
             backgrounds: AssetResolver.backgrounds(from: manifest.assets, folder: folder),
             folder: folder
         )
+    }
+
+    /// Strips the two things an LLM adds to JSON that JSON does not allow.
+    ///
+    /// Themes are increasingly written by models, and they emit `//` comments
+    /// and trailing commas by habit. Strict decoding turns either into a silent
+    /// fallback to the default theme — the author sees "my theme did nothing"
+    /// with no clue why. Being lenient here costs a pass over the text and
+    /// removes a whole class of invisible failure.
+    private static func forgiving(_ data: Data) -> Data {
+        guard var text = String(data: data, encoding: .utf8) else { return data }
+
+        // Line comments, but not `//` inside a string such as a URL.
+        text = text.split(separator: "\n", omittingEmptySubsequences: false).map { line in
+            var insideString = false
+            var escaped = false
+            let characters = Array(line)
+            for index in characters.indices {
+                let character = characters[index]
+                if escaped { escaped = false; continue }
+                if character == "\\" { escaped = true; continue }
+                if character == "\"" { insideString.toggle(); continue }
+                if !insideString, character == "/", index + 1 < characters.count,
+                   characters[index + 1] == "/" {
+                    return String(characters[..<index])
+                }
+            }
+            return String(line)
+        }.joined(separator: "\n")
+
+        // Trailing commas before a closing brace or bracket.
+        while let range = text.range(of: ",[ \t\n\r]*[}\\]]", options: .regularExpression) {
+            let closing = text[range].last.map(String.init) ?? "}"
+            text.replaceSubrange(range, with: closing)
+        }
+        return Data(text.utf8)
     }
 
     /// Matrix colours fall back to the row palette, so recolouring a theme

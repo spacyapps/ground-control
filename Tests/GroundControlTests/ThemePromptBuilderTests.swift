@@ -82,10 +82,19 @@ final class ThemePromptBuilderTests: XCTestCase {
 
     /// The analyser is the most eye-catching part of the panel, so the model
     /// should be told it can colour it.
-    func testPromptExplainsTheMatrixPalette() {
+    func testPromptCoversTheMatrixKeys() {
         let prompt = ThemePromptBuilder.prompt(for: brief)
-        XCTAssertTrue(prompt.contains("\"matrix\""))
-        XCTAssertTrue(prompt.contains("alarm"))
+        for key in ["matrix", "alarm", "messages"] {
+            XCTAssertTrue(prompt.localizedCaseInsensitiveContains(key), "prompt never mentions \(key)")
+        }
+    }
+
+    /// A model shown commented JSON emits commented JSON, and the file then
+    /// falls back to the default theme with no visible cause.
+    func testPromptForbidsCommentsInTheJSON() {
+        let prompt = ThemePromptBuilder.prompt(for: brief)
+        XCTAssertTrue(prompt.localizedCaseInsensitiveContains("No comments"))
+        XCTAssertFalse(prompt.contains("// "), "the prompt itself must not show commented JSON")
     }
 
     func testPromptWarnsAgainstWebm() {

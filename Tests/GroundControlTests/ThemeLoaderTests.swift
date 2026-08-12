@@ -108,3 +108,34 @@ final class ThemeLoaderTests: XCTestCase {
         XCTAssertEqual(theme.typography.nameSize, DefaultTheme.typography.nameSize)
     }
 }
+
+extension ThemeLoaderTests {
+    /// Themes are increasingly model-written, and models add `//` comments and
+    /// trailing commas by habit. Strict decoding turned either into a silent
+    /// fallback to the default theme.
+    func testCommentsAndTrailingCommasAreTolerated() throws {
+        let folder = try makeTheme(named: "loose", json: """
+        {
+          // the model will do this
+          "name": "Loose",
+          "colors": {
+            "needsAction": "#ffb000",
+          },
+        }
+        """)
+        let theme = ThemeLoader.loadTheme(from: folder)
+        XCTAssertEqual(theme.name, "Loose")
+        XCTAssertEqual(theme.colors.needsAction, NSColor(hex: "#ffb000"))
+    }
+
+    /// …but a `//` inside a string is content, not a comment.
+    func testDoubleSlashInsideAStringSurvives() throws {
+        let folder = try makeTheme(named: "url", json: """
+        {
+          "name": "Url",
+          "description": "see https://example.com/themes"
+        }
+        """)
+        XCTAssertEqual(ThemeLoader.loadTheme(from: folder).name, "Url")
+    }
+}
