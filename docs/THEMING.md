@@ -84,7 +84,7 @@ A **framed** background — a bezel or border, with detail round the edge — al
 needs `layout.contentInset`, or the rows sit exactly on top of the frame:
 
 ```json
-"layout": { "contentInset": 14 }
+"layout": { "contentInset": 14, "contentCornerRadius": 10 }
 ```
 
 That holds every row and the title bar away from the panel edge. Match it
@@ -272,6 +272,10 @@ said — those come from your work rather than from anyone's idea of what the
 panel should say.
 
 ### `layout`
+- `contentInset` — holds the rows inside your frame, in artwork pixels.
+- `contentCornerRadius` — rounds the block the rows sit in, so a frame with a
+  rounded opening does not enclose a square-cornered screen. Same artwork
+  pixels, scaled the same way.
 - `rowMaxHeight` — cap per row (default 100px).
 - `marqueeOnOverflow` — auto-scroll long messages (default true).
 - `marqueeSpeed` — px/sec.

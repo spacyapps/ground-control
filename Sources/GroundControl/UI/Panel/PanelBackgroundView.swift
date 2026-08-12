@@ -81,8 +81,12 @@ final class PanelBackgroundView: NSView {
     /// Capped either way: the intent ("hold the rows inside the frame") is
     /// right even when the number is not, so it is honoured as far as it fits
     /// rather than leaving the rows no room at all.
+    private var artworkScale: CGFloat {
+        theme.window.artworkScale(atPanelWidth: bounds.width)
+    }
+
     private var effectiveInset: CGFloat {
-        let scaled = theme.layout.contentInset * theme.window.artworkScale(atPanelWidth: bounds.width)
+        let scaled = theme.layout.contentInset * artworkScale
         let room = min(bounds.width, bounds.height)
         guard room > 0 else { return scaled }
         return min(scaled, room * 0.32)
@@ -119,6 +123,23 @@ final class PanelBackgroundView: NSView {
         // Top-right of the title strip, mirroring the close mark at its left
         // end. Both corner marks then sit on the same line, inside the inset,
         // on the artwork rather than out on the invisible window edge.
+        // The title strip caps the block and the list closes it, so each rounds
+        // only its own outer pair — rounding both fully would put a notch in
+        // the seam where they meet.
+        let radius = theme.layout.contentCornerRadius * artworkScale
+        titleBar.wantsLayer = true
+        list.wantsLayer = true
+        titleBar.layer?.cornerRadius = radius
+        list.layer?.cornerRadius = radius
+        titleBar.layer?.masksToBounds = radius > 0
+        list.layer?.masksToBounds = radius > 0
+        // These views are flipped, so their layers are geometry-flipped with
+        // them and minY is the visual top. Not verifiable offscreen: AppKit's
+        // view capture draws through drawRect and omits layer-level rounding
+        // entirely, so this one was checked on screen.
+        titleBar.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        list.layer?.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+
         let grip = ResizeGripView.size
         resizeGrip.frame = NSRect(
             x: max(inset, titleBar.frame.maxX - TitleBarView.markInset - grip.width),

@@ -59,6 +59,8 @@ enum ThemePromptText {
     - With `lockAspect: false` the corners are drawn at their natural size, so
       **draw the whole thing about 400–500px wide** or the frame will swamp the
       panel. `window.capInsets` is likewise in artwork pixels
+    - If your opening is rounded, give `layout.contentCornerRadius` its radius
+      in the same pixels — otherwise a round frame encloses a square screen
     """
 
     static let shapeSection = """

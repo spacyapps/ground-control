@@ -130,6 +130,9 @@ struct ThemeManifest: Decodable, Equatable {
 
     struct Layout: Decodable, Equatable {
         var contentInset: Double?
+        /// Rounds the block the rows sit in, so a skin with a rounded opening
+        /// does not frame a square-cornered screen.
+        var contentCornerRadius: Double?
         var rowMaxHeight: Double?
         var rowPadding: Double?
         var marqueeOnOverflow: Bool?

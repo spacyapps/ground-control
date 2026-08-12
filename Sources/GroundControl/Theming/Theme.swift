@@ -157,6 +157,10 @@ struct Theme {
         /// frame is invisible without this: rows span the full width, so they
         /// cover exactly the border the artwork lives in.
         var contentInset: CGFloat
+        /// Corner radius of the content block, in the same artwork pixels as
+        /// `contentInset` — a framed opening is rounded in the art, so this is
+        /// measured off the art and scaled with it.
+        var contentCornerRadius: CGFloat = 0
         var rowMaxHeight: CGFloat
         var rowPadding: CGFloat
         var marqueeOnOverflow: Bool

@@ -49,6 +49,22 @@ enum ThemeLoader {
         }
     }
 
+    private static func layout(from manifestLayout: ThemeManifest.Layout?) -> Theme.Layout {
+        let defaultLayout = DefaultTheme.layout
+        return Theme.Layout(
+            contentInset: Theme.length(manifestLayout?.contentInset, defaultLayout.contentInset),
+            contentCornerRadius: Theme.length(
+                manifestLayout?.contentCornerRadius,
+                defaultLayout.contentCornerRadius
+            ),
+            rowMaxHeight: Theme.length(manifestLayout?.rowMaxHeight, defaultLayout.rowMaxHeight),
+            rowPadding: Theme.length(manifestLayout?.rowPadding, defaultLayout.rowPadding),
+            marqueeOnOverflow: manifestLayout?.marqueeOnOverflow ?? defaultLayout.marqueeOnOverflow,
+            marqueeSpeed: Theme.length(manifestLayout?.marqueeSpeed, defaultLayout.marqueeSpeed),
+            isCompact: (manifestLayout?.density ?? "").lowercased() == "compact"
+        )
+    }
+
     static func resolve(_ manifest: ThemeManifest, folder: URL?) -> Theme {
         let palette = manifest.colors ?? [:]
         func color(_ key: String, _ fallback: NSColor) -> NSColor {
@@ -76,16 +92,7 @@ enum ThemeLoader {
             divider: color("divider", base.divider)
         )
 
-        let defaultLayout = DefaultTheme.layout
-        let manifestLayout = manifest.layout
-        let layout = Theme.Layout(
-            contentInset: Theme.length(manifestLayout?.contentInset, defaultLayout.contentInset),
-            rowMaxHeight: Theme.length(manifestLayout?.rowMaxHeight, defaultLayout.rowMaxHeight),
-            rowPadding: Theme.length(manifestLayout?.rowPadding, defaultLayout.rowPadding),
-            marqueeOnOverflow: manifestLayout?.marqueeOnOverflow ?? defaultLayout.marqueeOnOverflow,
-            marqueeSpeed: Theme.length(manifestLayout?.marqueeSpeed, defaultLayout.marqueeSpeed),
-            isCompact: (manifestLayout?.density ?? "").lowercased() == "compact"
-        )
+        let layout = self.layout(from: manifest.layout)
 
         let defaultType = DefaultTheme.typography
         let manifestType = manifest.typography
