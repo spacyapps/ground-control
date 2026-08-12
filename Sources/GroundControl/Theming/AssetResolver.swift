@@ -38,7 +38,7 @@ enum AssetResolver {
                     bottom: CGFloat(insets?.bottom ?? 0),
                     right: CGFloat(insets?.right ?? 0)
                 ),
-                removeBackground: nil
+                removeBackground: ImageKeyer.Key(entry.removeBackground)
             )
         }
 

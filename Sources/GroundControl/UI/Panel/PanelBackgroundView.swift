@@ -67,7 +67,21 @@ final class PanelBackgroundView: NSView {
     /// Height at which nothing is clipped: title strip, every row, and the
     /// frame the theme asked to keep clear.
     var desiredHeight: CGFloat {
-        TitleBarView.height + list.contentHeight + theme.layout.contentInset * 2
+        TitleBarView.height + list.contentHeight + effectiveInset * 2
+    }
+
+    /// `contentInset` is in points, and a theme author reading pixels off their
+    /// own 1408px artwork will happily ask for 160 — which on a 320pt panel is
+    /// the entire width twice over, leaving the rows nothing to occupy and the
+    /// panel apparently empty.
+    ///
+    /// Capped rather than rejected: the intent ("hold the rows well inside the
+    /// frame") is right even when the number is not, so it is honoured as far
+    /// as it can be.
+    private var effectiveInset: CGFloat {
+        let room = min(bounds.width, bounds.height)
+        guard room > 0 else { return theme.layout.contentInset }
+        return min(theme.layout.contentInset, room * 0.32)
     }
 
     func refreshElapsed() {
@@ -87,7 +101,7 @@ final class PanelBackgroundView: NSView {
         updateShapeMask()
         // Everything sits inside the inset, so a framed background shows all
         // the way round rather than only above the first row.
-        let inset = theme.layout.contentInset
+        let inset = effectiveInset
         let width = max(0, bounds.width - inset * 2)
 
         titleBar.frame = NSRect(x: inset, y: inset, width: width, height: TitleBarView.height)

@@ -33,6 +33,11 @@ struct ThemeManifest: Decodable, Equatable {
         var image: String?
         var mode: String?
         var capInsets: Insets?
+        /// Same meaning as `window.removeBackground`. A generated background
+        /// arrives with a flat colour behind it as often as a skin does, and
+        /// leaving it out here meant a theme that reached for the wrong key had
+        /// no way at all to get transparency.
+        var removeBackground: String?
 
         struct Insets: Decodable, Equatable {
             var top: Double?
@@ -45,6 +50,7 @@ struct ThemeManifest: Decodable, Equatable {
             case image
             case mode
             case capInsets
+            case removeBackground
         }
 
         init(from decoder: Decoder) throws {
@@ -56,6 +62,7 @@ struct ThemeManifest: Decodable, Equatable {
             image = try container.decodeIfPresent(String.self, forKey: .image)
             mode = try container.decodeIfPresent(String.self, forKey: .mode)
             capInsets = try container.decodeIfPresent(Insets.self, forKey: .capInsets)
+            removeBackground = try container.decodeIfPresent(String.self, forKey: .removeBackground)
         }
 
         init(image: String?, mode: String? = nil, capInsets: Insets? = nil) {

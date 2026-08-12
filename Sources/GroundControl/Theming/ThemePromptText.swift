@@ -26,19 +26,39 @@ enum ThemePromptText {
     """
 
     static let backgroundSection = """
-    ## Background image (optional)
+    ## Panel artwork (optional)
 
-    The panel resizes, so a background is **nine-sliced**: corners hold their
-    size, edges stretch or tile, the centre fills.
+    **One key does this: `window`. Put the file in `window.image`.** There is no
+    other place for panel art — do not invent one, and do not put it under
+    `assets`.
+
+    The simplest version is also the best one, and is all most themes need:
+
+    ```json
+    "window": { "image": "panel.png", "removeBackground": "#00FF00" }
+    ```
+
+    That keeps the artwork's proportions, scales it as one piece, and scrolls
+    the rows inside it. Everything below is only for `lockAspect: false`, where
+    the panel grows with my sessions and the art must be **nine-sliced**:
+    corners hold their size, edges stretch or tile, the centre fills.
 
     - Detail and ornament → **corners only**
     - Long edges → plain, **seamlessly repeating** texture
     - Centre → flat or a tiling texture, dark enough for text
     - No single large object anywhere but a corner
 
-    Tell me:
-    - `capInsets` — px from each edge where the corner artwork ends
-    - `contentInset` — px from the edge where the calm centre begins
+    ### Sizes are in panel points, not image pixels
+
+    This is the one number themes get wrong. The panel is about **320–500
+    points wide** on screen, whatever your artwork's pixel size. A 1408px image
+    with a frame 180px thick does **not** mean `180` — that would be the whole
+    panel, twice over.
+
+    Convert: `value = thickness_in_px / image_width_in_px × 400`.
+
+    - `layout.contentInset` — holds rows inside your border. Sensible: **8–48**
+    - `window.capInsets` — where the corner art ends. Sensible: **12–60**
     """
 
     static let shapeSection = """
@@ -77,15 +97,15 @@ enum ThemePromptText {
     | `window.image` | filename of the skin |
     | `window.lockAspect` | `true` keeps proportions and rows scroll; `false` grows with sessions and the art slices |
     | `window.removeBackground` | `"auto"`, `"checkerboard"`, or a hex colour to key out |
-    | `window.capInsets` | `{ top, left, bottom, right }` in px — only when `lockAspect` is false |
-    | `layout.contentInset` | px holding rows inside your border |
+    | `window.capInsets` | `{ top, left, bottom, right }` — only when `lockAspect` is false |
+    | `layout.contentInset` | holds rows inside your border — panel points, 8–48 |
     | `matrix.messages` | array of phrases, 13 chars max, A–Z 0–9 `. - !` only |
 
     ## Colours
 
     | Key | Paints |
     |---|---|
-    | `windowBackground` | the panel |
+    | `windowBackground` | the panel's base colour, painted under any artwork |
     | `titleBarBackground` / `titleBarText` | title strip |
     | `rowBackground` / `rowBackgroundAlt` | alternating rows — **give these alpha** so a background shows through |
     | `rowBackgroundHover` | row under the pointer |
