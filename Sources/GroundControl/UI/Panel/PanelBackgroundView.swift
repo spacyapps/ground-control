@@ -20,7 +20,9 @@ final class PanelBackgroundView: NSView {
     /// shape is nine-sliced: a point on screen does not map linearly back to a
     /// pixel in the file once the edges have stretched. Rendering once per
     /// resize and sampling that is both simpler and exact.
-    private var shapeMask: NSBitmapImageRep?
+    /// Readable by tests: it is what decides both what shows and what takes a
+    /// click, and it has been wrong twice.
+    private(set) var shapeMask: NSBitmapImageRep?
 
     /// Animated backgrounds play only while something is working.
     ///
@@ -57,7 +59,13 @@ final class PanelBackgroundView: NSView {
         updateAnimation()
         layer?.cornerRadius = theme.window.isShaped ? 0 : 10
         needsLayout = true
-        layer?.backgroundColor = theme.colors.windowBackground.cgColor
+        // A shaped panel has no rectangle to fill — `draw` already refuses to
+        // paint one — and an opaque layer underneath contradicted that: where
+        // an animated skin moved and left a frame's pixels transparent, the
+        // background showed through as a black patch instead of nothing.
+        layer?.backgroundColor = theme.window.isShaped
+            ? NSColor.clear.cgColor
+            : theme.colors.windowBackground.cgColor
         titleBar.apply(theme: theme)
         list.apply(theme: theme)
         resizeGrip.apply(theme: theme)
@@ -230,7 +238,22 @@ final class PanelBackgroundView: NSView {
 
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-        BackgroundRenderer.draw(shape, in: NSRect(origin: .zero, size: size))
+        // Every frame, drawn over itself. A mask only removes, so a silhouette
+        // taken from frame one clips whatever a later frame moves into — and
+        // swallows clicks where the art has since moved away. Compositing the
+        // frames unions their coverage, which is the shape the skin occupies
+        // over its whole loop.
+        if let animated = AnimatedImage.load(shape), animated.isAnimated {
+            for index in 0..<animated.frames.count {
+                BackgroundRenderer.draw(
+                    shape,
+                    in: NSRect(origin: .zero, size: size),
+                    elapsed: Double(index) * animated.duration
+                )
+            }
+        } else {
+            BackgroundRenderer.draw(shape, in: NSRect(origin: .zero, size: size))
+        }
         NSGraphicsContext.restoreGraphicsState()
 
         shapeMask = rep
