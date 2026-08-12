@@ -25,6 +25,12 @@ final class PanelBackgroundView: NSView {
     /// click, and it has been wrong twice.
     private(set) var shapeMask: NSBitmapImageRep?
 
+    /// The panel's body for an overlay skin: the area the frame encloses,
+    /// painted so the rows have something to sit on. Clipped to that area
+    /// rather than filling the layer, because an animated frame leaves gaps
+    /// around itself where a full fill would show as a dark fringe.
+    private(set) var interiorBody: NSImage?
+
     /// Animated backgrounds play only while something is working.
     ///
     /// A full-panel redraw is a different order of cost from a 44pt avatar, and
@@ -60,6 +66,7 @@ final class PanelBackgroundView: NSView {
     func apply(theme: Theme) {
         self.theme = theme
         shapeMask = nil
+        interiorBody = nil
         updateAnimation()
         layer?.cornerRadius = theme.window.isShaped ? 0 : 10
         needsLayout = true
@@ -178,8 +185,17 @@ final class PanelBackgroundView: NSView {
 
         if let shape = theme.window.shape {
             // An overlay skin is drawn by SkinOverlayView after the rows; here
-            // it would only end up underneath them.
-            if !theme.window.drawsOverContent {
+            // only its body goes down, so the rows have something to sit on.
+            if theme.window.drawsOverContent {
+                interiorBody?.draw(
+                    in: bounds,
+                    from: .zero,
+                    operation: .sourceOver,
+                    fraction: 1,
+                    respectFlipped: true,
+                    hints: nil
+                )
+            } else {
                 BackgroundRenderer.draw(shape, in: bounds, elapsed: elapsed)
             }
             return
@@ -274,6 +290,20 @@ final class PanelBackgroundView: NSView {
             BackgroundRenderer.draw(shape, in: NSRect(origin: .zero, size: size))
         }
         NSGraphicsContext.restoreGraphicsState()
+
+        // An overlay skin's middle is transparent by design, which would
+        // otherwise mask away the very rows it is meant to frame.
+        if theme.window.drawsOverContent {
+            let enclosed = SkinInterior.fillEnclosed(in: rep)
+            interiorBody = SkinInterior.body(
+                from: enclosed,
+                width: rep.pixelsWide,
+                height: rep.pixelsHigh,
+                colour: theme.colors.windowBackground
+            )
+        } else {
+            interiorBody = nil
+        }
 
         shapeMask = rep
 

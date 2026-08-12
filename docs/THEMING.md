@@ -179,6 +179,12 @@ colour as the outside** — one flat key colour everywhere that is not frame, so
 both the surround and the opening key out together. A near miss is a miss: a
 slightly different green stays solid and the frame hides the panel.
 
+`contentInset` still matters, but only for looks now rather than for fit. Set it
+a little **wider than the frame is thick** and the app's ✕ and ↔ marks stay
+inside the opening; set it narrower and the rows tuck behind the frame, which
+trims their edges for you. Either way a few points out is invisible — which is
+the whole point of the mode.
+
 The app checks this rather than trusting it. If an overlay skin's middle is
 solid, it is drawn *behind* the rows instead — imperfect, but visible — and
 Settings says why. The frame never takes a click, however opaque it is; clicks

@@ -88,6 +88,11 @@ enum ThemePromptText {
     the artwork alone decides where the content appears to stop. Bevels, glows
     and vignettes over the content all become possible.
 
+    Set `layout.contentInset` a little **wider than the frame is thick**, so the
+    app's own ✕ and ↔ marks stay inside the opening rather than under your
+    artwork. Narrower than the frame is a deliberate choice too: the rows then
+    tuck behind it and the frame trims their edges.
+
     One requirement, and it reverses the rule above: **the middle must be the
     exact same colour as the outside** — one flat `#00FF00` everywhere that is
     not frame, inside and out. Only the frame itself is painted. A near miss is
