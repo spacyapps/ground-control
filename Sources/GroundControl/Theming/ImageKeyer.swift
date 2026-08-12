@@ -117,11 +117,17 @@ enum ImageKeyer {
 
     // MARK: - Spill
 
-    /// How far the key's light bleeds onto artwork, in pixels. Spill is solid
-    /// for the first couple and then tails off — a linear fade from the cut
-    /// edge left the rim still visibly tinted, which was the whole complaint.
-    private static let spillCore: Float = 2
-    private static let spillRadius: Float = 4
+    /// How far the key's light bleeds onto artwork, in pixels.
+    ///
+    /// Measured rather than picked. On a station hull rendered against green,
+    /// leftover cast reached 10px from the cut — thin details like solar panels
+    /// and antenna mounts pick up spill along their whole width, not just at
+    /// the outline. At a radius of 4 those kept a green glow on screen.
+    ///
+    /// Full strength for the first few pixels, then a fade, so a wide radius
+    /// does not flatten artwork that merely happens to be green further in.
+    private static let spillCore: Float = 7
+    private static let spillRadius: Float = 12
 
     /// Removes the coloured rim a key leaves around the artwork it cut out.
     ///

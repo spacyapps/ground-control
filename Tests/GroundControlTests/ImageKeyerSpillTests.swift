@@ -129,3 +129,88 @@ final class ImageKeyerSpillTests: XCTestCase {
         XCTAssertEqual(pixel(out, 30, 30).alpha, 255)
     }
 }
+
+/// The first version of the suppressor reached 4px and passed every test in the
+/// suite above while leaving a visible green glow on a real station hull. Thin
+/// artwork — solar panels, antenna mounts — picks up spill across its whole
+/// width, not just along its outline, and that spill measured 10px deep.
+final class DeepSpillTests: XCTestCase {
+    private let side = 80
+
+    /// A grey block whose outer 8px carry a strong green cast, on a green field.
+    private func artwork() throws -> CGImage {
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        for y in 0..<side {
+            for x in 0..<side {
+                let index = (y * side + x) * 4
+                let inBlock = (20..<60).contains(x) && (20..<60).contains(y)
+                let inCore = (28..<52).contains(x) && (28..<52).contains(y)
+
+                let rgb: [UInt8]
+                if !inBlock {
+                    rgb = [0, 255, 0]
+                } else if !inCore {
+                    rgb = [110, 200, 100]      // strong spill, 8px deep
+                } else {
+                    rgb = [130, 130, 140]
+                }
+                pixels[index] = rgb[0]
+                pixels[index + 1] = rgb[1]
+                pixels[index + 2] = rgb[2]
+                pixels[index + 3] = 255
+            }
+        }
+        let context = CGContext(
+            data: &pixels,
+            width: side,
+            height: side,
+            bitsPerComponent: 8,
+            bytesPerRow: side * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )
+        return try XCTUnwrap(context?.makeImage())
+    }
+
+    func testSpillIsCleanedThroughItsWholeDepth() throws {
+        let keyed = ImageKeyer.apply(
+            .color(NSColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)),
+            to: try artwork()
+        )
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        let context = CGContext(
+            data: &pixels,
+            width: side,
+            height: side,
+            bitsPerComponent: 8,
+            bytesPerRow: side * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )
+        context?.draw(keyed, in: CGRect(x: 0, y: 0, width: side, height: side))
+
+        func excess(atRow row: Int) -> Int {
+            let index = ((side - 1 - row) * side + side / 2) * 4
+            return Int(pixels[index + 1]) - max(Int(pixels[index]), Int(pixels[index + 2]))
+        }
+
+        // The block starts at row 20, so row 20 + n sits n + 1 pixels from the
+        // cut. Inside the full-strength core, nothing green may remain.
+        for row in [21, 23, 25] {
+            XCTAssertLessThanOrEqual(
+                excess(atRow: row),
+                8,
+                "green survived \(row - 19)px from the cut, inside the core"
+            )
+        }
+
+        // Beyond it the correction fades rather than stopping, so what matters
+        // is that most of a strong cast (90 here) is still taken off.
+        XCTAssertLessThanOrEqual(excess(atRow: 27), 25, "the fade gave up too early")
+
+        // The grey core is far from the cut and must be untouched.
+        let core = ((side - 1 - 40) * side + side / 2) * 4
+        XCTAssertEqual(Int(pixels[core]), 130)
+        XCTAssertEqual(Int(pixels[core + 1]), 130)
+    }
+}

@@ -43,10 +43,10 @@
     "marqueeOnOverflow": true,
     "density": "comfortable",
     "contentInset": {
-      "top": 132,
-      "left": 112,
+      "top": 120,
+      "left": 110,
       "bottom": 100,
-      "right": 112
+      "right": 110
     },
     "contentCornerRadius": 0
   },
