@@ -29,6 +29,7 @@ final class SettingsView: NSView {
 
     private let themePicker = NSPopUpButton()
     private let themeDetail = NSTextField(labelWithString: "")
+    private let themeWarning = NSTextField(labelWithString: "")
     private let preview = ThemePreviewView()
     private let onTopBox = NSButton()
     private let allSpacesBox = NSButton()
@@ -98,6 +99,14 @@ final class SettingsView: NSView {
         themeDetail.maximumNumberOfLines = 2
         themeDetail.preferredMaxLayoutWidth = Self.contentWidth
         stack.addArrangedSubview(themeDetail)
+
+        themeWarning.font = .systemFont(ofSize: 11)
+        themeWarning.textColor = SettingsChrome.caution
+        themeWarning.lineBreakMode = .byWordWrapping
+        themeWarning.maximumNumberOfLines = 3
+        themeWarning.preferredMaxLayoutWidth = Self.contentWidth
+        themeWarning.isHidden = true
+        stack.addArrangedSubview(themeWarning)
 
         stack.addArrangedSubview(viewport())
 
@@ -310,6 +319,12 @@ final class SettingsView: NSView {
             line += "\n" + summary
         }
         themeDetail.stringValue = line
+
+        // A theme that quietly does something other than what it asked for is
+        // the hardest kind of bug to find, so it says so here.
+        let warnings = theme.warnings.map { $0.replacingOccurrences(of: "\n", with: " ") }
+        themeWarning.stringValue = warnings.joined(separator: " ")
+        themeWarning.isHidden = warnings.isEmpty
     }
 
     /// Called when the theme hot-reloads underneath us.

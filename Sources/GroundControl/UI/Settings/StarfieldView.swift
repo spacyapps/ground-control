@@ -17,6 +17,7 @@ enum SettingsChrome {
     static let body = NSColor(srgbRed: 0.878, green: 0.870, blue: 0.925, alpha: 1)
     static let dim = NSColor(srgbRed: 0.878, green: 0.870, blue: 0.925, alpha: 0.55)
     static let viewportEdge = NSColor(srgbRed: 0.725, green: 0.640, blue: 0.890, alpha: 0.30)
+    static let caution = NSColor(srgbRed: 1.0, green: 0.72, blue: 0.35, alpha: 1)
 }
 
 /// A quiet star field behind the settings controls.

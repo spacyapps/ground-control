@@ -88,9 +88,11 @@ enum ThemePromptText {
     the artwork alone decides where the content appears to stop. Bevels, glows
     and vignettes over the content all become possible.
 
-    One requirement, and it reverses the rule above: **the centre must be the
-    flat background colour**, so it keys out and the rows show through the hole.
-    A solid middle painted on top hides the whole panel.
+    One requirement, and it reverses the rule above: **the middle must be the
+    exact same colour as the outside** — one flat `#00FF00` everywhere that is
+    not frame, inside and out. Only the frame itself is painted. A near miss is
+    a miss: a slightly different green does not key out, and a solid middle
+    drawn on top hides the whole panel.
 
     **Transparency — do not attempt real alpha.** Fill everything outside the
     artwork with one flat colour, `#00FF00` or `#FF00FF`. I key it out on load.

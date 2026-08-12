@@ -174,10 +174,15 @@ fine — and the artwork decides where they appear to stop. It also allows art
 *over* the content: bevels, inner shadows, a vignette, a mascot leaning across a
 corner.
 
-The catch reverses the usual rule: **the artwork's centre must be transparent**,
-which means filling it with the key colour like the outside. An opaque middle
-drawn on top hides the panel completely. The frame never takes a click, however
-opaque it is — clicks fall through to the rows beneath.
+The catch reverses the usual rule: **the artwork's centre must be the exact same
+colour as the outside** — one flat key colour everywhere that is not frame, so
+both the surround and the opening key out together. A near miss is a miss: a
+slightly different green stays solid and the frame hides the panel.
+
+The app checks this rather than trusting it. If an overlay skin's middle is
+solid, it is drawn *behind* the rows instead — imperfect, but visible — and
+Settings says why. The frame never takes a click, however opaque it is; clicks
+fall through to the rows beneath.
 
 **On `removeBackground`.** Image models cannot produce reliable transparency —
 they paint the checkerboard an editor *shows*, or drop alpha entirely. But they

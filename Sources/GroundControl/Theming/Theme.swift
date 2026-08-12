@@ -21,6 +21,10 @@ struct Theme {
     /// made it and what it is — the folder name alone is a poor label.
     var author: String?
     var summary: String?
+    /// Things wrong with the theme that it cannot fix for itself, in plain
+    /// words, shown in Settings. A theme that silently does nothing is the
+    /// worst outcome — this is how it says what happened instead.
+    var warnings: [String] = []
     var colors: Colors
     var layout: Layout
     var typography: Typography

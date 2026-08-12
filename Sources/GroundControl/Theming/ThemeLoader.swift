@@ -65,6 +65,31 @@ enum ThemeLoader {
         )
     }
 
+    /// An overlay skin whose centre does not key out covers the whole panel, so
+    /// it is measured before it is trusted and demoted to an ordinary
+    /// background if it would. Behind the rows the same artwork is merely
+    /// imperfect; in front of them it is an app that vanished.
+    private static func verifiedWindow(
+        from manifest: ThemeManifest,
+        folder: URL?
+    ) -> (window: Theme.Window, warnings: [String]) {
+        let window = AssetResolver.window(from: manifest.window, folder: folder)
+        guard window.drawsOverContent,
+              let shape = window.shape,
+              SkinCheck.hidesContent(shape) else { return (window, []) }
+
+        Log.theming.notice("Overlay skin has a solid centre; drawing it behind the rows instead")
+        var demoted = window
+        demoted.drawsOverContent = false
+        return (demoted, [
+            """
+            This skin is set to draw in front, but its middle is solid, which \
+            would hide the panel — so it is drawn behind instead. Fill the \
+            centre with the same colour as the outside edges to use overlay.
+            """
+        ])
+    }
+
     static func resolve(_ manifest: ThemeManifest, folder: URL?) -> Theme {
         let palette = manifest.colors ?? [:]
         func color(_ key: String, _ fallback: NSColor) -> NSColor {
@@ -103,10 +128,12 @@ enum ThemeLoader {
             nameWeight: weight(manifestType?.nameWeight) ?? defaultType.nameWeight
         )
 
+        let checked = verifiedWindow(from: manifest, folder: folder)
         return Theme(
             name: manifest.name ?? folder?.lastPathComponent ?? "Default",
             author: manifest.author,
             summary: manifest.description,
+            warnings: checked.warnings,
             colors: colors,
             layout: layout,
             typography: typography,
@@ -116,7 +143,7 @@ enum ThemeLoader {
                 fallback: DefaultTheme.avatar
             ),
             matrix: Self.matrix(manifest.matrix, colors: colors),
-            window: AssetResolver.window(from: manifest.window, folder: folder),
+            window: checked.window,
             backgrounds: AssetResolver.backgrounds(from: manifest.assets, folder: folder),
             folder: folder
         )
