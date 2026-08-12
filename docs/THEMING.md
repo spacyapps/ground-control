@@ -163,6 +163,17 @@ will fill a flat colour perfectly, which is what chroma keying is for. Ask for
 a pure `#00FF00` or `#FF00FF` background and name it here; `"auto"` reads the
 corner and picks between a colour key and a checkerboard flood fill.
 
+Two things follow from how a key works:
+
+- **Keep the artwork well away from the key colour**, not just different from
+  it. Anything within about 130 units of RGB distance is treated as background
+  and removed — against `#00FF00` that erases a bright green running light like
+  `#39ff14`. If the art needs green, key on `#FF00FF` instead.
+- **A soft or glowing edge is fine.** The key leaves a rim of its own colour on
+  whatever it cuts around, so that rim is suppressed afterwards — but only
+  within a few pixels of the cut, which is the only place it can physically be.
+  Your artwork's own colours, further in, are left alone.
+
 **Resizing a shaped panel.** A skin replaces the system window frame, so the
 panel carries its own handle: a ↔ mark at the right end of the title strip,
 mirroring the ✕ at its left end. It sits inside `contentInset`, on your artwork rather than out

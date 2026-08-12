@@ -54,11 +54,16 @@ enum ThemePromptText {
     - Protruding parts fully opaque, surrounded by pure background colour
 
     **Transparency — do not attempt real alpha.** Fill everything outside the
-    artwork with one flat colour, `#00FF00` or `#FF00FF`, and never use that
-    colour in the art itself. I key it out on load.
+    artwork with one flat colour, `#00FF00` or `#FF00FF`. I key it out on load.
 
-    A shaped theme has no system title bar or close button, so **draw somewhere
-    to grab and somewhere to close** into the skin itself.
+    - Keep the art **well clear of that colour**, not merely different from it:
+      anything close is removed too. Against `#00FF00`, a bright green light
+      like `#39ff14` is erased — pick `#FF00FF` if the art needs green
+    - I clean up the rim the key leaves, so a soft or glowing edge is fine
+
+    The app draws its own ✕ and ↔ marks at the ends of the title strip, so a
+    skin does not need to supply them — just leave `layout.contentInset` wide
+    enough that the strip sits inside the frame rather than under it.
     """
 
     static let paletteReference = """
