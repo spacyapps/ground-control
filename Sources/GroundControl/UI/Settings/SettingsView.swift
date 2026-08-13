@@ -41,7 +41,7 @@ final class SettingsView: NSView {
     init(preferences: Preferences = .shared, actions: Actions) {
         self.preferences = preferences
         self.actions = actions
-        super.init(frame: NSRect(x: 0, y: 0, width: 420, height: 626))
+        super.init(frame: NSRect(x: 0, y: 0, width: 420, height: 654))
         build()
         reloadThemes()
         syncFromPreferences()
@@ -69,7 +69,10 @@ final class SettingsView: NSView {
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 9
-        stack.edgeInsets = NSEdgeInsets(top: 14, left: 30, bottom: 22, right: 30)
+        // Clear of the window title. The title bar is transparent so the star
+        // field runs under it, which also means the content would start beneath
+        // the title text unless it is pushed down.
+        stack.edgeInsets = NSEdgeInsets(top: 42, left: 30, bottom: 22, right: 30)
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
 
