@@ -109,6 +109,13 @@ never calls the emitter. See `docs/LIMITATIONS.md`.
 ### If no rows appear
 
 - Was the terminal opened *after* running the installer? Hooks load at start.
+- **Check the registration.** Claude Code shows its own hooks in a panel —
+  *Agent Customizations → Hooks* — which is quicker than reading JSON, and lists
+  `cc-notify` against each event it fires on. Hooks you already had are listed
+  beside it, since the installer merges rather than replaces. (That panel does
+  not render `Notification` hooks, so seeing seven entries rather than eight is
+  normal; `~/.claude/settings.json` is the source of truth.) These are Claude
+  Code's settings and have no bearing on VS Code's own Copilot chat.
 - `ls ~/.groundcontrol/sessions/` — files here mean the hooks are firing and the
   problem is the app; an empty folder means the CLI is not calling them.
 - Hooks are never allowed to interrupt your agent, so `cc-notify` fails
