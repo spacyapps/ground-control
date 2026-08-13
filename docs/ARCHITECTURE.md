@@ -73,6 +73,12 @@ into one reload. The parser reads only the **last decodable line** of each file 
 that line is the row's current state, which is what makes the format append-only
 and crash-proof: a half-written line is skipped, and history is never replayed.
 
+**A row is a channel, not a log.** What it shows is the first line of whatever
+the agent last said, which means the opening sentence of an answer is the part a
+person reads at a glance. Worth writing deliberately rather than letting it be
+whatever preamble came out — an observation from a Claude Code session that
+found its own row while being watched by it.
+
 **4. Rows are drawn.** One file, one row. Files under `agents/` become child rows
 grouped beneath their parent session. Files untouched for 24 hours are deleted,
 so a forgotten terminal does not haunt the panel forever.

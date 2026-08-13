@@ -141,12 +141,24 @@ enum TerminalFocuser {
     ///
     /// Both cases name the app itself rather than a category: a session in
     /// iTerm said "Jump to Terminal", which is the name of a different app.
+    ///
+    /// The bundle's name on disk is preferred over the running process's:
+    /// `localizedName` for VS Code is "Code", so the menu offered "Jump to
+    /// Code" for something every person calls Visual Studio Code.
     static func destinationName(tty: String?, hostApp: String?, hostID: String?) -> String? {
         switch destination(tty: tty, hostApp: hostApp, hostID: hostID, fallbackPath: nil) {
         case .terminalTab(_, let bundleID), .application(let bundleID):
-            return NSRunningApplication
+            let running = NSRunningApplication
                 .runningApplications(withBundleIdentifier: bundleID)
-                .first?.localizedName
+                .first
+            if let path = running?.bundleURL?.path {
+                // displayName keeps the extension unless Finder is set to hide
+                // it, and "Jump to Visual Studio Code.app" reads like a file.
+                var name = FileManager.default.displayName(atPath: path)
+                if name.hasSuffix(".app") { name = String(name.dropLast(4)) }
+                if !name.isEmpty { return name }
+            }
+            return running?.localizedName
         case .finder, .nowhere:
             return nil
         }

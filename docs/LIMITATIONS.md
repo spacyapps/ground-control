@@ -155,6 +155,32 @@ AppleScript itself has never executed.
 
 ---
 
+### 3c. Claude Code's VS Code extension — rows yes, alarms no
+
+Driving Claude Code from the extension's own panel rather than a terminal was
+measured on 2026-08-12. The row appears, its name and message update live, and
+**clicking it works** — but no alarm ever rises.
+
+Two things are true of such a session:
+
+- **`tty` is `None`.** There is no terminal, so the walk finds no controlling
+  one. `host_app` is the only thing identifying the session, which makes this
+  the case where jumping by host is not an improvement but the sole reason a
+  click goes anywhere. Verified against the live values: the destination
+  resolves to `application(com.microsoft.VSCode)`, and the click raises the
+  editor.
+- **No `Notification` event arrives.** A permission prompt was on screen — the
+  extension asking to read a file — while that session's file recorded only
+  `PreToolUse` for the very same read, and no notification of any kind. Since
+  the alarm is driven entirely by `Notification`, a row in the extension goes
+  quiet rather than red when it needs you.
+
+The honest reading is that the extension renders permission prompts in the IDE
+without firing the hook the CLI fires. What must **not** be done is to infer the
+alarm from `PreToolUse` going quiet: that is indistinguishable from a slow build,
+and a monitor that cries wolf is worse than one that stays silent. See the
+`idle_prompt` history above for how that was already learned once.
+
 ## What is not an agent, as far as this app is concerned
 
 Ground Control is **hook-driven**. Its entire input is what an agent CLI reports
