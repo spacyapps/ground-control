@@ -29,6 +29,9 @@ final class AppCoordinator {
         // The themes that ship with the app are copied out before anything
         // reads the folder, so they are in the picker on a first launch.
         ThemeSeeder.seed()
+        // The emitter and this app are two halves of one contract, installed
+        // separately and therefore prone to drifting apart in silence.
+        HookUpdater.updateIfNeeded()
         wireMenu()
 
         statusItem.onTogglePanel = { [weak self] in self?.panel.toggle() }
