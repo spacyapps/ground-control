@@ -23,6 +23,7 @@ Every claim here is dated. When something is verified, move it up and say how.
 | Nine-slice cap insets | the frame holds its corners while the panel resizes | 2026-08-11 |
 | Jumping to a host app | VS Code session with no tty at all; clicking raised the editor | 2026-08-12 |
 | **The red alarm, end to end** | a blocked session turned the row red, the click landed on its tab, and the alarm cleared — watched, not derived | 2026-08-12 |
+| iTerm2 jump-to-pane | three sessions in two panes and a tab; every row landed on its own | 2026-08-12 |
 
 ---
 
@@ -173,11 +174,31 @@ to work by the same mechanism — Cursor is a VS Code fork with identically
 structured helper bundles — but expected is not measured, and this file exists
 to keep that distinction.
 
-### 4. iTerm2 jump-to-tab is written but untested
+### 4. iTerm2 jump-to-tab — **verified 2026-08-12, first execution**
 
-iTerm2 is not installed here. The script addresses it by bundle id and is only
-attempted when running, so a machine without it is unaffected — but the
-AppleScript itself has never executed.
+This entry said the AppleScript had never run, because iTerm2 was not installed.
+It is now, and it worked on the first attempt without a line being changed: the
+script has not been touched since it was written on 10 August, two days before
+anything executed it.
+
+It was tested harder than it was designed for. Three sessions were opened in
+iTerm — two **split panes** and a third tab — each with its own tty:
+
+```
+trial     /dev/ttys009   host=/Applications/iTerm.app
+empty     /dev/ttys013   host=/Applications/iTerm.app
+itermAva  /dev/ttys010   host=/Applications/iTerm.app
+```
+
+Clicking each row landed on the correct one, panes included. That matters
+because a pane is a *session* in iTerm's scripting model, so `select s` had to
+pick the right one within the right tab — a stricter match than Terminal.app can
+even express, since it has no panes.
+
+Worth noting what did *not* verify itself here: the script was written by
+analogy to the Terminal.app one and reviewed only by reading. It happened to be
+right. The surrounding decision — which terminal's script to run at all — was
+wrong twice today and needed measuring both times.
 
 ---
 
