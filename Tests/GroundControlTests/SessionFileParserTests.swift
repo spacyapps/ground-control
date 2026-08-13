@@ -86,3 +86,33 @@ final class SessionFileParserTests: XCTestCase {
         XCTAssertEqual(event?.message, "Finished")
     }
 }
+
+/// The app that owns the terminal, recorded by `cc-notify` because the process
+/// tree is visible there and nowhere else.
+final class HostAppFieldTests: XCTestCase {
+    private func event(_ json: String) throws -> SessionEvent {
+        try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
+    }
+
+    func testHostFieldsDecode() throws {
+        let decoded = try event(##"""
+        {
+          "session_id": "abc",
+          "tty": "/dev/ttys008",
+          "host_app": "/Applications/Visual Studio Code.app",
+          "host_id": "com.microsoft.VSCode"
+        }
+        """##)
+        XCTAssertEqual(decoded.hostApp, "/Applications/Visual Studio Code.app")
+        XCTAssertEqual(decoded.hostID, "com.microsoft.VSCode")
+    }
+
+    /// Lines written before this existed must still load — the emitter is
+    /// installed separately from the app and is routinely older than it.
+    func testOlderLinesWithoutTheFieldsStillDecode() throws {
+        let decoded = try event(##"{ "session_id": "abc", "tty": "/dev/ttys008" }"##)
+        XCTAssertNil(decoded.hostApp)
+        XCTAssertNil(decoded.hostID)
+        XCTAssertEqual(decoded.tty, "/dev/ttys008")
+    }
+}

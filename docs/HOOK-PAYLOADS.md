@@ -180,3 +180,25 @@ Grok additionally offers `PostToolUse`, `PostToolUseFailure`, `PermissionDenied`
 `StopFailure`, `PreCompact` and `PostCompact`. `PermissionDenied` is the most
 interesting unused one: it would be a genuine blocking alarm, which the Claude
 side still lacks.
+
+## Fields the script adds itself
+
+Not every field comes from a payload. These are resolved by `cc-notify`, because
+the process tree is visible there and nowhere else:
+
+| Field | How | Absent when |
+|---|---|---|
+| `tty` | walks up from the hook to the first controlling terminal | no terminal in the ancestry |
+| `host_app` | walks up to the first ancestor running from `<app>.app/Contents/MacOS/`, and takes the **outermost** `.app` | tmux, ssh, launchd — nothing in a bundle |
+| `host_id` | `__CFBundleIdentifier`, set by LaunchServices and inherited by every child | started outside LaunchServices |
+
+Two measured traps in `host_app`, both of which produce a confidently wrong
+answer rather than nothing:
+
+- **Nested bundles.** Electron helpers are app bundles inside the app. Taking
+  the last `.app` yields `com.github.Electron.helper`, which every Electron app
+  shares — so a click could raise Slack instead of VS Code.
+- **Tools inside bundles.** `/usr/bin/python3` with the developer tools resolves
+  to `/Applications/Xcode.app/.../Python.app/Contents/MacOS/Python` — the
+  emitter's own interpreter. Hence the walk starts at the *parent* process, and
+  requires `Contents/MacOS/`.

@@ -52,6 +52,8 @@ struct Session: Identifiable, Equatable {
     }
 
     var tty: String? { latest.tty }
+    var hostApp: String? { latest.hostApp }
+    var hostID: String? { latest.hostID }
     var source: String { latest.source }
     var cwd: String? { latest.cwd }
     var lastActivity: Date { latest.timestamp }

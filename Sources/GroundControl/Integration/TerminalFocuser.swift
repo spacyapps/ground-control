@@ -4,25 +4,39 @@
 import AppKit
 import Foundation
 
-/// Jumps to the terminal tab a session is running in, matched on tty.
+/// Takes you to the session you clicked.
 ///
-/// Jump is **best-effort** (docs/SPEC.md §7): `tty` can be nil when a session
-/// started outside a terminal or the script's process-tree walk failed. A nil
-/// tty degrades one row's click, never the row itself — so callers get a Bool
-/// and fall back to revealing the folder.
+/// Best where it can be: iTerm2 and Terminal expose a tty per tab, so those
+/// land on the exact tab. Nothing else does — VS Code and its forks, Warp,
+/// Ghostty and WezTerm all own real ptys that belong to no scriptable tab — so
+/// for those the destination is the application itself, which at least puts the
+/// session in front of you instead of opening Finder at the folder.
 ///
-/// The first AppleScript triggers a one-time macOS Automation permission
-/// prompt.
+/// The decision is separated from the doing so the whole matrix is testable
+/// without a running app or an AppleScript permission prompt.
 enum TerminalFocuser {
-    @discardableResult
-    static func focus(tty: String?, fallbackPath: String?) -> Bool {
-        if let tty, !tty.isEmpty, jump(to: tty) { return true }
+    /// Where a click should land, in order of how well it identifies the
+    /// session.
+    enum Destination: Equatable {
+        /// An exact tab in a terminal we can script.
+        case terminalTab(tty: String, bundleID: String)
+        /// The application hosting the terminal. No tab, but the right window
+        /// manager, and better than a file browser.
+        case application(bundleID: String)
+        /// Nothing reachable; show the folder instead.
+        case finder(path: String)
+        case nowhere
+    }
 
-        if let fallbackPath, !fallbackPath.isEmpty {
-            NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: fallbackPath)
-            return false
+    /// The bits of the running system the decision depends on, injected so
+    /// tests can state a machine rather than need one.
+    struct Probe {
+        var isBundleRunning: (String) -> Bool = { bundleID in
+            !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty
         }
-        return false
+        var bundleID: (String) -> String? = { path in
+            Bundle(url: URL(fileURLWithPath: path))?.bundleIdentifier
+        }
     }
 
     /// Terminals we know how to drive, in preference order.
@@ -36,25 +50,96 @@ enum TerminalFocuser {
         SupportedTerminal(bundleID: "com.apple.Terminal", script: terminalScript(tty:))
     ]
 
-    private static func jump(to tty: String) -> Bool {
-        // Only script terminals that are actually running.
-        //
-        // AppleScript resolves `tell application …` at *compile* time, so
-        // merely mentioning an app that is not installed pops the "Choose
-        // Application" picker before a single line executes — a runtime guard
-        // inside the script is too late. Checking natively here is also why
-        // this no longer asks System Events anything, which would need
-        // Accessibility permission on top of Automation.
-        for terminal in supported where isRunning(terminal.bundleID) {
-            if run(terminal.script(tty)) { return true }
+    // MARK: - Deciding
+
+    /// Resolves where a session's click should go.
+    ///
+    /// An exact tab wins whenever one is available. The host application comes
+    /// next — including when the tty is set but its tab has since been closed,
+    /// where the app is still the right place to arrive.
+    static func destination(tty: String?,
+                            hostApp: String?,
+                            hostID: String?,
+                            fallbackPath: String?,
+                            probe: Probe = Probe()) -> Destination {
+        if let tty, !tty.isEmpty {
+            for terminal in supported where probe.isBundleRunning(terminal.bundleID) {
+                return .terminalTab(tty: tty, bundleID: terminal.bundleID)
+            }
         }
-        Log.integration.notice("No terminal tab matched \(tty, privacy: .public)")
-        return false
+
+        // The path is preferred over the inherited bundle id: it reports what
+        // actually spawned the session, where `__CFBundleIdentifier` reports
+        // what was inherited — which is stale if the app was launched from
+        // another terminal.
+        for candidate in [hostApp.flatMap(probe.bundleID), hostID] {
+            if let candidate, !candidate.isEmpty, probe.isBundleRunning(candidate) {
+                return .application(bundleID: candidate)
+            }
+        }
+
+        if let fallbackPath, !fallbackPath.isEmpty {
+            return .finder(path: fallbackPath)
+        }
+        return .nowhere
     }
 
-    private static func isRunning(_ bundleID: String) -> Bool {
-        !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty
+    // MARK: - Doing
+
+    /// Goes there. Returns whether the click actually landed on the session —
+    /// which is what decides whether its alarm may be cleared, so revealing a
+    /// folder does not count.
+    @discardableResult
+    static func focus(tty: String?,
+                      hostApp: String?,
+                      hostID: String?,
+                      fallbackPath: String?) -> Bool {
+        switch destination(tty: tty, hostApp: hostApp, hostID: hostID, fallbackPath: fallbackPath) {
+        case .terminalTab(let tty, let bundleID):
+            guard let terminal = supported.first(where: { $0.bundleID == bundleID }) else { return false }
+            if run(terminal.script(tty)) { return true }
+            // The tab has gone but the app is still up: arriving at the app
+            // beats dropping the user in Finder.
+            Log.integration.notice("No tab matched \(tty, privacy: .public); raising the app")
+            return activate(bundleID: bundleID)
+
+        case .application(let bundleID):
+            return activate(bundleID: bundleID)
+
+        case .finder(let path):
+            NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: path)
+            return false
+
+        case .nowhere:
+            return false
+        }
     }
+
+    /// A human-readable name for where a click will go, for the row's menu.
+    static func destinationName(tty: String?, hostApp: String?, hostID: String?) -> String? {
+        switch destination(tty: tty, hostApp: hostApp, hostID: hostID, fallbackPath: nil) {
+        case .terminalTab:
+            return "Terminal"
+        case .application(let bundleID):
+            return NSRunningApplication
+                .runningApplications(withBundleIdentifier: bundleID)
+                .first?.localizedName
+        case .finder, .nowhere:
+            return nil
+        }
+    }
+
+    private static func activate(bundleID: String) -> Bool {
+        // Never launched, only raised: a session lives in an app that is
+        // already running, and starting an empty copy would be a lie about
+        // having arrived.
+        guard let app = NSRunningApplication
+            .runningApplications(withBundleIdentifier: bundleID)
+            .first else { return false }
+        return app.activate(options: [.activateAllWindows])
+    }
+
+    // MARK: - Scripts
 
     /// iTerm2 exposes the tty per session directly, so the match is exact.
     /// Addressed by bundle id rather than name so a missing app errors quietly

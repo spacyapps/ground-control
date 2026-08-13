@@ -124,6 +124,87 @@ def resolve_tty():
     return None
 
 
+def resolve_host_app():
+    """Walk up the process tree for the app the terminal belongs to.
+
+    A tty alone only identifies a tab inside iTerm or Terminal. Everything else
+    that hosts a shell — VS Code and its forks, Warp, Ghostty, WezTerm — owns a
+    real pty the app cannot match to anything, so a click there had nowhere to
+    go but Finder. The owning application is knowable here and nowhere else.
+
+    Returns the path to the .app, e.g. "/Applications/Visual Studio Code.app",
+    or None when no ancestor lives in a bundle (tmux, ssh, launchd).
+
+    Starts at the parent: this script's own interpreter can itself be an app
+    binary. /usr/bin/python3 with the developer tools installed is really
+    "/Applications/Xcode.app/.../Python.app/Contents/MacOS/Python", which is a
+    genuine bundled executable no path rule can exclude — measured here, and it
+    reported Xcode as the terminal for every session on the machine.
+    """
+    pid = os.getppid()
+    for _ in range(12):
+        try:
+            out = subprocess.run(
+                ["ps", "-o", "ppid=,comm=", "-p", str(pid)],
+                capture_output=True, text=True, timeout=2,
+            ).stdout.strip().split(None, 1)
+        except Exception:
+            return None
+        if len(out) < 2:
+            return None
+
+        ppid, command = out[0], out[1]
+        bundle = outermost_app(command)
+        if bundle:
+            return bundle
+        try:
+            pid = int(ppid)
+        except ValueError:
+            return None
+        if pid <= 1:
+            return None
+    return None
+
+
+def outermost_app(path):
+    """The application whose executable this is, or None.
+
+    Two traps here, both found by measuring rather than reading.
+
+    It must be an app's *own* binary, under `.app/Contents/MacOS/`. Merely
+    living somewhere inside a bundle is not enough: /usr/bin/python3 on a Mac
+    with the developer tools resolves to
+    "/Applications/Xcode.app/Contents/Developer/usr/bin/python3", so a looser
+    test matched this very script and reported Xcode as the terminal for every
+    session on the machine.
+
+    And it is the *outermost* .app. Electron nests helper bundles inside the
+    app — VS Code runs its terminals through
+    ".../Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/..."
+    — and the inner one's bundle id is "com.github.Electron.helper", shared by
+    every Electron app installed, so acting on it could raise something else
+    entirely.
+    """
+    if ".app/Contents/MacOS/" not in path:
+        return None
+    marker = ".app/"
+    index = path.find(marker)
+    return path[: index + len(marker) - 1]
+
+
+def resolve_host_id():
+    """The owning app's bundle id, straight from the environment.
+
+    LaunchServices sets __CFBundleIdentifier on an app it starts and every
+    child inherits it — measured as "com.apple.Terminal" from a shell in
+    Terminal.app. Kept as a second opinion because it survives cases the walk
+    does not, and costs nothing; the walk is preferred because it reports what
+    actually spawned this process rather than what was inherited.
+    """
+    value = os.environ.get("__CFBundleIdentifier") or ""
+    return value.strip() or None
+
+
 def condense(text, limit=MAX_MESSAGE):
     """Collapse a possibly-multiline, possibly-markdown blob to one row line."""
     if not text:
@@ -304,6 +385,8 @@ def main():
         return
     state, message, needs_action = interpreted
     tty = resolve_tty() or previous.get("tty")
+    host_app = resolve_host_app() or previous.get("host_app")
+    host_id = resolve_host_id() or previous.get("host_id")
 
     emit(path, {
         "schema": SCHEMA,
@@ -312,6 +395,8 @@ def main():
         "name": name,
         "cwd": cwd,
         "tty": tty,
+        "host_app": host_app,
+        "host_id": host_id,
         "event": get(payload, "hook_event_name", "hookEventName") or "",
         "state": state,
         "message": message,

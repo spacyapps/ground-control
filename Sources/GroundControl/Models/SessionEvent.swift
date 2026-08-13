@@ -18,6 +18,16 @@ struct SessionEvent: Decodable, Equatable {
     let name: String?
     let cwd: String?
     let tty: String?
+    /// The application hosting the terminal, as a path to its `.app`.
+    ///
+    /// A tty only identifies a tab inside iTerm or Terminal. Everything else
+    /// that hosts a shell owns a pty nothing can match, so without this a click
+    /// had nowhere to go but Finder. Resolved by `cc-notify`, which is the only
+    /// place the process tree is visible.
+    let hostApp: String?
+    /// The same app's bundle id, inherited from `__CFBundleIdentifier`. A
+    /// second opinion for when the process walk finds nothing.
+    let hostID: String?
     let event: String?
     let state: SessionState
     let message: String
@@ -32,6 +42,8 @@ struct SessionEvent: Decodable, Equatable {
         case name
         case cwd
         case tty
+        case hostApp = "host_app"
+        case hostID = "host_id"
         case event
         case state
         case message
@@ -58,6 +70,8 @@ struct SessionEvent: Decodable, Equatable {
         name = try container.decodeIfPresent(String.self, forKey: .name)
         cwd = try container.decodeIfPresent(String.self, forKey: .cwd)
         tty = try container.decodeIfPresent(String.self, forKey: .tty)
+        hostApp = try container.decodeIfPresent(String.self, forKey: .hostApp)
+        hostID = try container.decodeIfPresent(String.self, forKey: .hostID)
         event = try container.decodeIfPresent(String.self, forKey: .event)
         state = try container.decodeIfPresent(SessionState.self, forKey: .state) ?? .idle
         message = try container.decodeIfPresent(String.self, forKey: .message) ?? ""

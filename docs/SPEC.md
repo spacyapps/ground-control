@@ -289,6 +289,18 @@ in `docs/THEMING.md`; the shape of it:
   - `tty` may be `null` — a session started outside a terminal, or a walk that
     failed. Treat jump-to-tab as **best-effort**: a null tty degrades one row's
     click action, never the row itself.
+  - **A tty only names a tab inside iTerm or Terminal.** Every other host — VS
+    Code and its forks, Warp, Ghostty, WezTerm — owns a real pty that belongs
+    to no scriptable tab, so those clicks used to fall through to Finder. The
+    same walk therefore also records `host_app` (the owning `.app`) and
+    `host_id` (`__CFBundleIdentifier`, inherited from LaunchServices), and the
+    app raises that application when no exact tab is available.
+  - Order: exact tab, then host application, then reveal the folder. Only the
+    first two count as *arriving*, which is what may clear a row's alarm.
+  - `host_app` takes the **outermost** `.app` of an ancestor running from
+    `…/Contents/MacOS/…`. Both halves were measured: Electron nests helper
+    bundles whose id is the shared `com.github.Electron.helper`, and a looser
+    test matches `/usr/bin/python3` resolving inside `Xcode.app`.
 - **`HookInstaller`** (optional) — first-run helper that runs the equivalent of
   `Scripts/install-hooks.sh`: installs `cc-notify` and **merges** the hook
   entries into `~/.claude/settings.json`, with backup + user consent. Merging

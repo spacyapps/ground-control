@@ -75,7 +75,12 @@ final class AppCoordinator {
     /// session looking handled. Silencing an alarm nobody attended to is the
     /// one thing a monitor must not do.
     private func activate(_ session: Session) {
-        let arrived = TerminalFocuser.focus(tty: session.tty, fallbackPath: session.cwd)
+        let arrived = TerminalFocuser.focus(
+            tty: session.tty,
+            hostApp: session.hostApp,
+            hostID: session.hostID,
+            fallbackPath: session.cwd
+        )
         if arrived {
             store.acknowledge(sessionID: session.id)
         } else {
@@ -90,11 +95,19 @@ final class AppCoordinator {
     private func showContextMenu(for session: Session, event: NSEvent) {
         contextSession = session
 
+        // Named after where the click will actually land: "Terminal" is a lie
+        // when the session lives in VS Code, and the item was disabled on a
+        // missing tty even when the host app was perfectly reachable.
+        let destination = TerminalFocuser.destinationName(
+            tty: session.tty,
+            hostApp: session.hostApp,
+            hostID: session.hostID
+        )
         let menu = NSMenu()
         menu.addItem(menuItem(
-            title: "Jump to Terminal",
+            title: destination.map { "Jump to \($0)" } ?? "Jump to Terminal",
             action: #selector(contextJump),
-            isEnabled: session.tty != nil
+            isEnabled: destination != nil
         ))
         menu.addItem(menuItem(title: "Reveal in Finder", action: #selector(contextReveal)))
         // The deliberate way to silence an alarm you cannot reach — now that

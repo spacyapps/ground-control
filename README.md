@@ -96,6 +96,11 @@ Click a row to jump to the terminal it belongs to. The menu-bar icon toggles the
 panel and opens Settings, where you can pick a theme, and **Theme → Open Themes
 Folder…** is where your own themes go.
 
+Clicking a row goes to the exact tab in iTerm2 and Terminal, and raises the
+owning application for anything else — VS Code and its forks, Warp, Ghostty,
+WezTerm. If a click opens Finder instead, the hooks predate that support: re-run
+the installer above.
+
 ### If no rows appear
 
 - Was the terminal opened *after* running the installer? Hooks load at start.

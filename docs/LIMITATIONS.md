@@ -94,6 +94,35 @@ radius came back fully transparent, and a panel rendered byte-identical with
 of this work verified only on screen, by Walter, and it is marked as such in the
 code.
 
+### 3b. Jumping to a non-terminal host — measured for Terminal, reasoned for VS Code
+
+`host_app` / `host_id` are **verified end to end for Terminal.app**: the
+installed emitter writes `/System/Applications/Utilities/Terminal.app` and
+`com.apple.Terminal` for a live session, and the decision table has unit tests.
+
+**VS Code itself is not measured.** Cursor is installed on this machine but was
+never running with an integrated terminal open, and the shells here all belong
+to Terminal. Microsoft documents the pty host and the Code Helper processes, and
+that terminals are *relaunched* rather than reattached when the app restarts —
+consistent with shells living inside the app's process tree — but does not
+document the parent-child structure. So the walk reaching
+`Visual Studio Code.app` is inference, not evidence.
+
+To settle it, run this **inside a VS Code integrated terminal**:
+
+```bash
+pid=$$; while [ "${pid:-1}" -gt 1 ]; do ps -o pid=,ppid=,tty=,comm= -p "$pid"; \
+  pid=$(ps -o ppid= -p "$pid" | tr -d " "); done
+```
+
+A line containing `…/Visual Studio Code.app/…` confirms it. If the walk stops
+short, `host_id` covers it anyway: LaunchServices sets `__CFBundleIdentifier` on
+the app and every child inherits it, which is why both are recorded.
+
+Activation is **app-level only**. With several editor windows open you get the
+last-used one, not the window holding that repo — a deliberate trade against
+opening `vscode://file/<cwd>`, which can spawn a new window.
+
 ### 4. iTerm2 jump-to-tab is written but untested
 
 iTerm2 is not installed here. The script addresses it by bundle id and is only
