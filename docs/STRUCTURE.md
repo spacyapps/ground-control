@@ -121,6 +121,7 @@ GroundControl/
 │
 ├── docs/
 │   ├── STRUCTURE.md              # this file
+│   ├── ARCHITECTURE.md           # how a hook event becomes a row (start here)
 │   ├── SPEC.md                   # the full build brief
 │   ├── THEMING.md                # theme authoring guide
 │   ├── HOOK-PAYLOADS.md          # measured hook payloads — the data SPEC rests on
