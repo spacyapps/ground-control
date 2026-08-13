@@ -94,112 +94,127 @@ def sessions_dir():
     return os.path.join(base, "groundcontrol")
 
 
-def resolve_tty():
-    """Walk up the process tree for a controlling tty.
+class ProcessTree:
+    """The ancestry, read one process at a time and remembered.
 
-    A hook runs with stdin bound to the payload pipe, so `tty` always reports
-    "not a tty". The spawning `claude` process does hold one, a few levels up.
-    Returns e.g. "/dev/ttys008", or None when not run from a terminal.
+    Both walks below climb the same chain, so sharing a cache means each `ps`
+    runs once rather than once per walk.
+
+    Reading every process instead — a single `ps -axo` — was tried and measured
+    *slower*: about 900 rows to fetch and parse against the handful of `ps -p`
+    calls a walk actually makes. Hooks run on every tool call, so this is worth
+    knowing rather than assuming.
     """
-    pid = os.getpid()
-    for _ in range(8):
+
+    def __init__(self):
+        self._entries = {}
+
+    def entry(self, pid):
+        """(ppid, tty, command) for a pid, or None if it has gone."""
+        if pid not in self._entries:
+            self._entries[pid] = self._read(pid)
+        return self._entries[pid]
+
+    @staticmethod
+    def _read(pid):
         try:
             out = subprocess.run(
-                ["ps", "-o", "ppid=,tty=", "-p", str(pid)],
+                ["ps", "-o", "ppid=,tty=,comm=", "-p", str(pid)],
                 capture_output=True, text=True, timeout=2,
-            ).stdout.split()
+            ).stdout.strip()
         except Exception:
             return None
-        if len(out) < 2:
+
+        # The command is a path and may contain spaces, so it takes the rest.
+        parts = out.split(None, 2)
+        if len(parts) < 3:
             return None
-        ppid, term = out[0], out[1]
-        if term and term != "??":
-            return term if term.startswith("/") else "/dev/" + term
         try:
-            pid = int(ppid)
+            return (int(parts[0]), parts[1], parts[2])
         except ValueError:
             return None
+
+
+def walk_up(tree, start, pick):
+    """Climbs the ancestry from `start`, returning the first answer `pick` gives.
+
+    Bounded: a cycle or a very deep tree must not hang a hook, because a hook
+    that hangs is a CLI that hangs.
+    """
+    pid = start
+    for _ in range(16):
+        entry = tree.entry(pid)
+        if entry is None:
+            return None
+        found = pick(entry)
+        if found is not None:
+            return found
+        pid = entry[0]
         if pid <= 1:
             return None
     return None
 
 
-def resolve_host_app():
-    """Walk up the process tree for the app the terminal belongs to.
+def resolve_tty(tree):
+    """The controlling terminal, e.g. "/dev/ttys008".
+
+    A hook runs with stdin bound to the payload pipe, so `tty` here always
+    reports "not a tty". The spawning `claude` process does hold one, a few
+    levels up. None when not run from a terminal at all.
+    """
+    def pick(entry):
+        term = entry[1]
+        if term and term != "??":
+            return term if term.startswith("/") else "/dev/" + term
+        return None
+
+    return walk_up(tree, os.getpid(), pick)
+
+
+def resolve_host_app(tree):
+    """The app the terminal belongs to, as a path to its .app.
 
     A tty alone only identifies a tab inside iTerm or Terminal. Everything else
     that hosts a shell — VS Code and its forks, Warp, Ghostty, WezTerm — owns a
-    real pty the app cannot match to anything, so a click there had nowhere to
-    go but Finder. The owning application is knowable here and nowhere else.
-
-    Returns the path to the .app, e.g. "/Applications/Visual Studio Code.app",
-    or None when no ancestor lives in a bundle (tmux, ssh, launchd).
+    real pty that matches no scriptable tab, so a click there had nowhere to go
+    but Finder. The owning application is knowable here and nowhere else.
 
     Starts at the parent: this script's own interpreter can itself be an app
     binary. /usr/bin/python3 with the developer tools installed is really
-    "/Applications/Xcode.app/.../Python.app/Contents/MacOS/Python", which is a
-    genuine bundled executable no path rule can exclude — measured here, and it
-    reported Xcode as the terminal for every session on the machine.
+    "/Applications/Xcode.app/.../Python.app/Contents/MacOS/Python" — measured,
+    and it reported Xcode as the terminal for every session on the machine.
     """
-    pid = os.getppid()
-    for _ in range(12):
-        try:
-            out = subprocess.run(
-                ["ps", "-o", "ppid=,comm=", "-p", str(pid)],
-                capture_output=True, text=True, timeout=2,
-            ).stdout.strip().split(None, 1)
-        except Exception:
-            return None
-        if len(out) < 2:
-            return None
-
-        ppid, command = out[0], out[1]
-        bundle = outermost_app(command)
-        if bundle:
-            return bundle
-        try:
-            pid = int(ppid)
-        except ValueError:
-            return None
-        if pid <= 1:
-            return None
-    return None
+    return walk_up(tree, os.getppid(), lambda entry: outermost_app(entry[2]))
 
 
 def outermost_app(path):
     """The application whose executable this is, or None.
 
-    Two traps here, both found by measuring rather than reading.
+    Two traps, both found by measuring rather than reading.
 
     It must be an app's *own* binary, under `.app/Contents/MacOS/`. Merely
-    living somewhere inside a bundle is not enough: /usr/bin/python3 on a Mac
-    with the developer tools resolves to
-    "/Applications/Xcode.app/Contents/Developer/usr/bin/python3", so a looser
-    test matched this very script and reported Xcode as the terminal for every
-    session on the machine.
+    living inside a bundle is not enough, or the Xcode-provided python above
+    counts as an application.
 
     And it is the *outermost* .app. Electron nests helper bundles inside the
-    app — VS Code runs its terminals through
-    ".../Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/..."
-    — and the inner one's bundle id is "com.github.Electron.helper", shared by
-    every Electron app installed, so acting on it could raise something else
-    entirely.
+    app — VS Code spawns terminals under
+    ".../Visual Studio Code.app/Contents/Frameworks/Code Helper.app/..." — and
+    the inner one's bundle id is "com.github.Electron.helper", shared by every
+    Electron app installed, so acting on it could raise something else entirely.
     """
     if ".app/Contents/MacOS/" not in path:
         return None
     marker = ".app/"
-    index = path.find(marker)
-    return path[: index + len(marker) - 1]
+    return path[: path.find(marker) + len(marker) - 1]
 
 
 def resolve_host_id():
     """The owning app's bundle id, straight from the environment.
 
-    LaunchServices sets __CFBundleIdentifier on an app it starts and every
-    child inherits it — measured as "com.apple.Terminal" from a shell in
-    Terminal.app. Kept as a second opinion because it survives cases the walk
-    does not, and costs nothing; the walk is preferred because it reports what
-    actually spawned this process rather than what was inherited.
+    LaunchServices sets __CFBundleIdentifier on an app it starts and every child
+    inherits it — measured as "com.apple.Terminal" from a shell in Terminal.app.
+    A second opinion, kept because it survives cases the walk does not and costs
+    nothing.
     """
     value = os.environ.get("__CFBundleIdentifier") or ""
     return value.strip() or None
@@ -384,8 +399,9 @@ def main():
     if interpreted is None:
         return
     state, message, needs_action = interpreted
-    tty = resolve_tty() or previous.get("tty")
-    host_app = resolve_host_app() or previous.get("host_app")
+    tree = ProcessTree()
+    tty = resolve_tty(tree) or previous.get("tty")
+    host_app = resolve_host_app(tree) or previous.get("host_app")
     host_id = resolve_host_id() or previous.get("host_id")
 
     emit(path, {

@@ -138,11 +138,12 @@ enum TerminalFocuser {
     }
 
     /// A human-readable name for where a click will go, for the row's menu.
+    ///
+    /// Both cases name the app itself rather than a category: a session in
+    /// iTerm said "Jump to Terminal", which is the name of a different app.
     static func destinationName(tty: String?, hostApp: String?, hostID: String?) -> String? {
         switch destination(tty: tty, hostApp: hostApp, hostID: hostID, fallbackPath: nil) {
-        case .terminalTab:
-            return "Terminal"
-        case .application(let bundleID):
+        case .terminalTab(_, let bundleID), .application(let bundleID):
             return NSRunningApplication
                 .runningApplications(withBundleIdentifier: bundleID)
                 .first?.localizedName
