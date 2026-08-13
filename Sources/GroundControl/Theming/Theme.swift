@@ -160,10 +160,29 @@ struct Theme {
         var messages: [String]
     }
 
+    /// How the panel may be resized.
+    ///
+    /// A skin and a container want opposite things: a picture frame is a
+    /// designed object whose proportions are the point, while a plain panel is
+    /// a list that should grow with what is in it. Neither is right for a
+    /// person who simply wants the window a particular size.
+    enum Resize: String {
+        /// Height follows the rows. Drag the width; the panel grows and
+        /// shrinks with your sessions.
+        case content
+        /// Height follows the artwork's proportions. Drag the width; the rows
+        /// scroll inside rather than stretching the picture.
+        case aspect
+        /// Both are yours. The panel stays where you put it and the rows
+        /// scroll.
+        case free
+    }
+
     struct Layout {
         /// Holds the rows away from the panel edge. A background that draws a
         /// frame is invisible without this: rows span the full width, so they
         /// cover exactly the border the artwork lives in.
+        var resize: Resize = .content
         var contentInset: NSEdgeInsets
         /// Corner radius of the content block, in the same artwork pixels as
         /// `contentInset` — a framed opening is rounded in the art, so this is

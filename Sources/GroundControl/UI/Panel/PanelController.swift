@@ -13,7 +13,7 @@ final class PanelController {
     var onSecondaryClick: ((Session, NSEvent) -> Void)?
 
     private var theme: Theme = DefaultTheme.theme
-    private var resizeStartWidth: CGFloat = 0
+    private var resizeStart: CGSize = .zero
     private var frameObserver: NSObjectProtocol?
     private var elapsedTimer: Timer?
 
@@ -25,9 +25,9 @@ final class PanelController {
         }
         chrome.closeMark.onClose = { [weak self] in self?.hide() }
         chrome.resizeGrip.onResizeBegan = { [weak self] in
-            self?.resizeStartWidth = self?.panel?.frame.width ?? 0
+            self?.resizeStart = self?.panel?.frame.size ?? .zero
         }
-        chrome.resizeGrip.onResize = { [weak self] delta in self?.resizeWidth(by: delta) }
+        chrome.resizeGrip.onResize = { [weak self] delta in self?.resize(by: delta) }
     }
 
     deinit {
@@ -87,10 +87,14 @@ final class PanelController {
     func fitHeightToContent() {
         guard let panel, panel.isVisible else { return }
 
+        // Free: the height is the person's, and nothing here may take it back.
+        // Any derivation would fight them a frame after every drag.
+        if theme.layout.resize == .free { return }
+
         // A skin with its aspect locked is a designed object, not a container:
         // width is yours to drag, height follows the artwork, and the rows
         // scroll inside rather than stretching it out of shape.
-        if theme.window.locksAspect, theme.window.isShaped {
+        if theme.layout.resize == .aspect, theme.window.isShaped {
             let ratio = max(0.05, theme.window.aspectRatio)
             let target = (panel.frame.width / ratio).rounded()
             guard abs(panel.frame.height - target) > 0.5 else { return }
@@ -123,15 +127,32 @@ final class PanelController {
     /// rather than walking across the screen. Height is left to
     /// `fitHeightToContent`, which knows whether it follows the rows or the
     /// artwork.
-    private func resizeWidth(by delta: CGFloat) {
+    private func resize(by delta: CGSize) {
         guard let panel else { return }
 
-        let ceiling = (panel.screen ?? NSScreen.main)?.visibleFrame.width ?? 1600
-        let width = min(max(panel.minSize.width, resizeStartWidth + delta), ceiling)
+        let visible = (panel.screen ?? NSScreen.main)?.visibleFrame ?? .zero
+        let width = min(
+            max(panel.minSize.width, resizeStart.width + delta.width),
+            visible.width > 0 ? visible.width : 1600
+        )
+        // Vertical drag only means anything where the height is not derived,
+        // and the grip only offers it there.
+        let height = theme.layout.resize == .free
+            ? min(
+                max(panel.minSize.height, resizeStart.height + delta.height),
+                visible.height > 0 ? visible.height : 900
+            )
+            : panel.frame.height
 
         var frame = panel.frame
-        guard abs(frame.width - width) > 0.5 else { return }
+        guard abs(frame.width - width) > 0.5 || abs(frame.height - height) > 0.5 else { return }
+
+        // The top edge stays put: AppKit measures from the bottom, so growing
+        // downward means moving the origin as the height changes.
+        let top = frame.maxY
         frame.size.width = width
+        frame.size.height = height
+        frame.origin.y = top - height
         panel.setFrame(frame, display: true, animate: false)
         fitHeightToContent()
     }
@@ -159,10 +180,13 @@ final class PanelController {
         let panel = FloatingPanel(contentRect: defaultFrame())
         panel.contentView = chrome
         if let saved = preferences.panelFrame {
-            // Height is recomputed from content, so a saved one would only
-            // fight fitHeightToContent on the first paint.
             var frame = NSRectFromString(saved)
-            frame.size.height = panel.frame.height
+            // A derived height would only fight fitHeightToContent on the first
+            // paint — but a height the person chose has to survive a relaunch,
+            // or "free" means free until you quit.
+            if theme.layout.resize != .free {
+                frame.size.height = panel.frame.height
+            }
             panel.setFrame(frame, display: false)
         }
 

@@ -321,6 +321,23 @@ said — those come from your work rather than from anyone's idea of what the
 panel should say.
 
 ### `layout`
+- `resize` — how the panel may be resized. Three answers, because a skin and a
+  list want opposite things and a person wants neither:
+
+  | value | drag the grip and… |
+  |---|---|
+  | `content` (default) | width is yours, height follows the rows |
+  | `aspect` | width is yours, height follows the artwork's proportions |
+  | `free` | both are yours; the rows scroll and the panel stays put |
+
+  `window.lockAspect` is the older spelling and still works — `true` means
+  `aspect`, `false` means `content`. Where a theme sets both, `resize` wins.
+
+  **`free` wants nine-sliced artwork.** A skin scaled as one piece will stretch
+  out of shape when you drag both directions, so pair `"resize": "free"` with
+  `"lockAspect": false` and `capInsets` — corners then hold their size while the
+  edges tile. `spacyAppsLunarAvatar` is set up this way;
+  `spacyAppsUnicornOverlord` is the opposite, holding its proportions.
 - `contentInset` — holds the rows inside your frame, in artwork pixels. One
   number for all four sides, or `{ "top": …, "left": …, "bottom": …, "right": … }`
   for the common case where a frame is not equally thick all round.

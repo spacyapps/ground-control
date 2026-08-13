@@ -48,7 +48,8 @@
       "bottom": 100,
       "right": 110
     },
-    "contentCornerRadius": 0
+    "contentCornerRadius": 0,
+    "resize": "free"
   },
   "matrix": {
     "messages": [
@@ -64,9 +65,16 @@
   },
   "window": {
     "image": "frame.png",
-    "lockAspect": true,
+    "lockAspect": false,
     "overlay": true,
-    "removeBackground": "#00FF00"
+    "removeBackground": "#00FF00",
+    "mode": "stretch",
+    "capInsets": {
+      "top": 150,
+      "left": 150,
+      "bottom": 150,
+      "right": 150
+    }
   },
   "author": "SpacyApps"
 }
