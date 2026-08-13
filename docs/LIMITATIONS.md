@@ -26,19 +26,38 @@ Every claim here is dated. When something is verified, move it up and say how.
 
 ## Unverified assumptions
 
-### 1. The red alarm has no confirmed trigger
+### 1. The red alarm — **triggered and confirmed 2026-08-12**
 
 `idle_prompt` notifications are deliberately skipped (SPEC §3) because they mean
-"Claude finished, your turn", not "Claude is blocked". That is right for every
-payload we have measured — but `idle_prompt` is the **only** `notification_type`
-ever observed, because `permission_mode` is `auto` on this machine and
-permission prompts never fire.
+"Claude finished, your turn", not "Claude is blocked". This entry used to say
+that `idle_prompt` was the only `notification_type` ever seen, and that the
+alarm path was therefore correct-by-construction and unproven.
 
-So the alarm path is correct-by-construction and **unproven end to end**.
+It is proven now. The reason it stayed unproven for so long is worth keeping:
+`~/.claude/settings.json` on this machine carries `permissions.defaultMode:
+"auto"` and `skipAutoPermissionPrompt: true`, so Claude never asks and the path
+never runs. The first attempt at this test failed for exactly that reason — the
+session read the file without a murmur.
 
-*To verify:* run a session under a stricter permission mode, let Claude ask for
-something, capture the payload, confirm its `notification_type` and that the row
-goes red. Grok's `PermissionDenied` event is a second candidate trigger.
+Running one session with `claude --permission-mode manual` and asking it for a
+file outside its working directory produced:
+
+```
+event=Notification  notification_type=permission_prompt  needs_action=true
+message="Claude needs your permission"
+host_app=/System/Applications/Utilities/Terminal.app  tty=/dev/ttys009
+```
+
+and replaying that line through the app's own model gives `isActionable=true`,
+`state=needsInput`, `needsAction=true` — the red dot.
+
+Two things remain honest about this. Nobody watched the dot at the moment it
+appeared; the derivation is measured, the pixel is inferred from tested code.
+And anyone running in `auto` mode — which is this machine's default — will
+essentially never see an alarm, so the feature is largely untested by its own
+author. A machine with prompting left on is the better test bed.
+
+Grok's `PermissionDenied` event remains a second candidate trigger, unmeasured.
 
 ### 2. Internal-agent filtering — **now verified** (2026-08-11)
 
