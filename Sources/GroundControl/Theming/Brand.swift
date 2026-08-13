@@ -19,10 +19,18 @@ enum Brand {
     }
 
     /// Full lockup — mark plus wordmark. Illegible below ~120pt wide.
+    ///
+    /// This is SpacyApps, the maker, and stays that way: Settings is where you
+    /// see who wrote the thing.
     static var lockup: NSImage? { image(named: "logo-lockup") }
 
-    /// The mark alone, for anywhere too small for the wordmark.
-    static var glyph: NSImage? { image(named: "logo-glyph") }
+    /// The app's own icon, for the panel — that surface is Ground Control
+    /// rather than its publisher, and the icon is what a person recognises it
+    /// by everywhere else.
+    static var glyph: NSImage? { image(named: "app-mark") }
+
+    /// The maker's mark alone, for anywhere too small for the wordmark.
+    static var makerGlyph: NSImage? { image(named: "logo-glyph") }
 
     private static let cache = NSCache<NSString, NSImage>()
 
