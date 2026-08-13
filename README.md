@@ -85,7 +85,10 @@ something, which is what the hooks are for. One command:
 ```
 
 That installs `cc-notify` to `~/bin` and registers it in
-`~/.claude/settings.json`, backing up the file first. It merges rather than
+`~/.claude/settings.json`, backing up the file first. **You only run it once** —
+later versions of the app update the installed emitter themselves on launch, so
+the two halves cannot drift apart. It never installs one where you have not, and
+never touches your settings. It merges rather than
 overwrites, so hooks you already have are kept, and it is safe to re-run.
 Claude Code and Grok both read that file and both are covered.
 

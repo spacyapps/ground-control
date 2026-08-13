@@ -63,6 +63,10 @@ terminal can:
 | `host_app` | walking up to the first ancestor running from `<app>.app/Contents/MacOS/` |
 | `host_id` | `__CFBundleIdentifier`, which macOS sets on an app and children inherit |
 
+The script and the app are two halves of one contract, installed separately, so
+the app replaces an out-of-date `cc-notify` with its own copy at launch — only
+updating one that is already there, never installing or registering anything.
+
 **The script must never block your agent**, so every failure path exits 0 in
 silence. That is also its worst property: a wrong field name and a working setup
 look identical from outside. See `docs/LIMITATIONS.md`.
