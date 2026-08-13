@@ -2,20 +2,21 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Walter Mak
 #
-# Builds AppIcon.icns from the SpacyApps glyph.
+# Builds AppIcon.icns from the Ground Control artwork.
 #
-# The source art is wider than it is tall, so it is centred on a square canvas
-# first — sips would otherwise squash it, and a distorted icon is the most
-# visible possible flaw in a menu-bar app.
+# The source is square, full-bleed art. make-app-icon.swift gives it the shape
+# macOS expects — Apple's margin, rounded corners, transparent surround —
+# because recent macOS rounds nothing for you: whatever the .icns holds is what
+# the Dock shows, hard corners and all.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-SRC="Sources/GroundControl/Resources/logo-glyph.png"
+SRC="Packaging/AppIcon-source.png"
 OUT="Packaging/AppIcon.icns"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-swift Scripts/square-image.swift "$SRC" "$WORK/square.png"
+swift Scripts/make-app-icon.swift "$SRC" "$WORK/square.png" 1024
 
 ICONSET="$WORK/AppIcon.iconset"
 mkdir -p "$ICONSET"
