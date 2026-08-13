@@ -21,6 +21,8 @@ Every claim here is dated. When something is verified, move it up and say how.
 | Real subagents carry `agent_type` | spawned two Explore agents; both `type="Explore"` while every internal one was `""` | 2026-08-11 |
 | Background images render | a real theme with a starfield frame, on screen — and it was broken three ways until it was tried | 2026-08-11 |
 | Nine-slice cap insets | the frame holds its corners while the panel resizes | 2026-08-11 |
+| Jumping to a host app | VS Code session with no tty at all; clicking raised the editor | 2026-08-12 |
+| **The red alarm, end to end** | a blocked session turned the row red, the click landed on its tab, and the alarm cleared — watched, not derived | 2026-08-12 |
 
 ---
 
@@ -51,11 +53,16 @@ host_app=/System/Applications/Utilities/Terminal.app  tty=/dev/ttys009
 and replaying that line through the app's own model gives `isActionable=true`,
 `state=needsInput`, `needsAction=true` — the red dot.
 
-Two things remain honest about this. Nobody watched the dot at the moment it
-appeared; the derivation is measured, the pixel is inferred from tested code.
-And anyone running in `auto` mode — which is this machine's default — will
-essentially never see an alarm, so the feature is largely untested by its own
-author. A machine with prompting left on is the better test bed.
+The whole flow was then watched rather than derived: the row went red while the
+session sat blocked, clicking it brought Terminal forward **on that session's
+tab**, and the alarm cleared on arrival. That last part is the rule that a click
+only silences an alarm if it went somewhere — acknowledgement lives in memory
+and never on disk, so it could only ever be confirmed by looking.
+
+One honesty remains. Anyone running in `auto` mode — this machine's default —
+will essentially never see an alarm, so the feature is largely untested by its
+own author in ordinary use. A machine with prompting left on is the better test
+bed.
 
 Grok's `PermissionDenied` event remains a second candidate trigger, unmeasured.
 
