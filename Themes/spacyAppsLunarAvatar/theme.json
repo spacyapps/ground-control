@@ -43,10 +43,10 @@
     "marqueeOnOverflow": true,
     "density": "comfortable",
     "contentInset": {
-      "top": 120,
-      "left": 110,
-      "bottom": 100,
-      "right": 110
+      "top": 66,
+      "left": 58,
+      "bottom": 44,
+      "right": 58
     },
     "contentCornerRadius": 0,
     "resize": "free"
@@ -64,16 +64,16 @@
     ]
   },
   "window": {
-    "image": "frame.png",
+    "image": "frame-450.png",
     "lockAspect": false,
     "overlay": true,
     "removeBackground": "#00FF00",
     "mode": "stretch",
     "capInsets": {
-      "top": 150,
-      "left": 150,
-      "bottom": 150,
-      "right": 150
+      "top": 75,
+      "left": 75,
+      "bottom": 75,
+      "right": 75
     }
   },
   "author": "SpacyApps"

@@ -338,6 +338,13 @@ panel should say.
   `"lockAspect": false` and `capInsets` — corners then hold their size while the
   edges tile. `spacyAppsLunarAvatar` is set up this way;
   `spacyAppsUnicornOverlord` is the opposite, holding its proportions.
+
+  **And nine-slice art must be drawn near panel size.** Caps are points, drawn
+  1:1, so a 900px file with 150px caps puts 300pt of corner on a 487pt panel —
+  62% of the window is corner, and the skin looks enormous. The station art was
+  halved to 450px with 75pt caps for exactly this reason. `aspect` mode hides
+  the problem, because there the whole image is scaled; switching such a theme
+  to `free` is when it appears.
 - `contentInset` — holds the rows inside your frame, in artwork pixels. One
   number for all four sides, or `{ "top": …, "left": …, "bottom": …, "right": … }`
   for the common case where a frame is not equally thick all round.
