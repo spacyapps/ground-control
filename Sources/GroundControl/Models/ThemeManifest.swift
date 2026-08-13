@@ -164,6 +164,10 @@ struct ThemeManifest: Decodable, Equatable {
         /// One number for all four sides, or an object naming the ones you
         /// want. A frame is rarely as thick at the top as at the sides, and a
         /// single number forces the whole content block to clear the thickest.
+        /// `"content"`, `"aspect"` or `"free"`. Absent falls back to
+        /// `window.lockAspect`, which said the same thing in fewer words and
+        /// could not express the third case.
+        var resize: String?
         var contentInset: Sides?
         /// Rounds the block the rows sit in, so a skin with a rounded opening
         /// does not frame a square-cornered screen.

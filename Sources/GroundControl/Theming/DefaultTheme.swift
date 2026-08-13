@@ -40,6 +40,7 @@ enum DefaultTheme {
     )
 
     static let layout = Theme.Layout(
+        resize: .content,
         contentInset: NSEdgeInsets(),
         rowMaxHeight: 100,
         rowPadding: 10,

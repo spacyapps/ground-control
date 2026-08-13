@@ -52,6 +52,18 @@ enum ThemeLoader {
         }
     }
 
+    /// `layout.resize`, falling back to the older `window.lockAspect`.
+    ///
+    /// `lockAspect` said the same thing in fewer words and could not express
+    /// a freely resizable panel, so it stays readable rather than being broken:
+    /// themes written before this key still mean what they meant.
+    private static func resizeMode(_ declared: String?, lockAspect: Bool?) -> Theme.Resize {
+        let cleaned = declared?.trimmingCharacters(in: .whitespaces).lowercased() ?? ""
+        if let mode = Theme.Resize(rawValue: cleaned) { return mode }
+        guard let lockAspect else { return DefaultTheme.layout.resize }
+        return lockAspect ? .aspect : .content
+    }
+
     /// The default theme, but saying so.
     ///
     /// Falling back silently is what makes a broken manifest so hard to place:
@@ -64,9 +76,13 @@ enum ThemeLoader {
         return theme
     }
 
-    private static func layout(from manifestLayout: ThemeManifest.Layout?) -> Theme.Layout {
+    private static func layout(
+        from manifestLayout: ThemeManifest.Layout?,
+        window: ThemeManifest.Window?
+    ) -> Theme.Layout {
         let defaultLayout = DefaultTheme.layout
         return Theme.Layout(
+            resize: resizeMode(manifestLayout?.resize, lockAspect: window?.lockAspect),
             contentInset: NSEdgeInsets(
                 top: Theme.length(manifestLayout?.contentInset?.top, defaultLayout.contentInset.top),
                 left: Theme.length(manifestLayout?.contentInset?.left, defaultLayout.contentInset.left),
@@ -143,7 +159,7 @@ enum ThemeLoader {
             divider: color("divider", base.divider)
         )
 
-        let layout = self.layout(from: manifest.layout)
+        let layout = self.layout(from: manifest.layout, window: manifest.window)
 
         let defaultType = DefaultTheme.typography
         let manifestType = manifest.typography

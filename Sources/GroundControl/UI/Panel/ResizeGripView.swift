@@ -23,11 +23,16 @@ final class ResizeGripView: NSView {
     /// Reports the drag as a distance from where it started, in screen points.
     /// Absolute rather than incremental so a drag that outruns the clamp still
     /// tracks the pointer on the way back.
-    var onResize: ((CGFloat) -> Void)?
+    var onResize: ((CGSize) -> Void)?
     var onResizeBegan: (() -> Void)?
 
     private var theme: Theme = DefaultTheme.theme
-    private var startX: CGFloat = 0
+    private var start: NSPoint = .zero
+
+    /// Whether a vertical drag means anything. Everywhere else the height is
+    /// derived — from the rows, or from the artwork — so offering it would
+    /// promise a drag that snaps back the moment it ends.
+    private var allowsVertical: Bool { theme.layout.resize == .free }
     private var isHighlighted = false
     private var trackingArea: NSTrackingArea?
 
@@ -66,7 +71,9 @@ final class ResizeGripView: NSView {
     }
 
     override func cursorUpdate(with event: NSEvent) {
-        NSCursor.resizeLeftRight.set()
+        // No public cursor for a corner resize, so the closest honest thing:
+        // both directions when both are live, sideways when only width is.
+        (allowsVertical ? NSCursor.crosshair : NSCursor.resizeLeftRight).set()
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -82,20 +89,25 @@ final class ResizeGripView: NSView {
     override func mouseDown(with event: NSEvent) {
         // Screen coordinates, because the window is about to move under us and
         // anything window-relative would drift by exactly what we changed.
-        startX = NSEvent.mouseLocation.x
+        start = NSEvent.mouseLocation
         onResizeBegan?()
     }
 
     override func mouseDragged(with event: NSEvent) {
-        onResize?(NSEvent.mouseLocation.x - startX)
+        let now = NSEvent.mouseLocation
+        onResize?(NSSize(
+            width: now.x - start.x,
+            // Screen coordinates run upward and a panel grows downward, so
+            // dragging down has to read as taller.
+            height: allowsVertical ? start.y - now.y : 0
+        ))
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        // A double-headed arrow rather than a diagonal one: height is not
-        // draggable, and a corner arrow pointing both ways would promise a
-        // drag that snaps straight back.
+        // The glyph is a promise about what the drag does: sideways where only
+        // the width is yours, diagonal where the panel is free.
         let glyph = NSAttributedString(
-            string: "\u{2194}",
+            string: allowsVertical ? "\u{2921}" : "\u{2194}",
             attributes: [
                 .font: NSFont.systemFont(ofSize: 11),
                 .foregroundColor: MarkInk.colour(for: theme).withAlphaComponent(isHighlighted ? 1 : 0.5)
