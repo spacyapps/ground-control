@@ -102,6 +102,10 @@ owning application for anything else — VS Code and its forks, Warp, Ghostty,
 WezTerm. If a click opens Finder instead, the hooks predate that support: re-run
 the installer above.
 
+Rows come from agent CLIs that fire hooks, so **Claude Code running in VS Code's
+integrated terminal appears**, while VS Code's own Copilot chat does not — it
+never calls the emitter. See `docs/LIMITATIONS.md`.
+
 ### If no rows appear
 
 - Was the terminal opened *after* running the installer? Hooks load at start.

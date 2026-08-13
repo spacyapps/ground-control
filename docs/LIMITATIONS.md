@@ -96,9 +96,15 @@ code.
 
 ### 3b. Jumping to a non-terminal host — **measured 2026-08-12**
 
-`host_app` / `host_id` are verified end to end for **Terminal.app** and for
-**VS Code**, the latter on a real integrated terminal after installing it for
-the purpose. The chain, printed from a shell inside VS Code:
+`host_app` / `host_id` are verified for **Terminal.app** and for **VS Code**,
+the latter on a real Claude Code session in the integrated terminal after
+installing VS Code for the purpose: the row appeared, was attributed to
+`Visual Studio Code.app`, and clicking it raised VS Code. All three states were
+visible in the panel at once — a VS Code session, a Terminal session, and an
+older session carrying no host at all, which fell back to Finder exactly as it
+always did.
+
+The chain, printed from a shell inside VS Code:
 
 ```
 /bin/bash                                              ttys010
@@ -129,6 +135,13 @@ Activation is **app-level only**. With several editor windows open you get the
 last-used one, not the window holding that repo — a deliberate trade against
 opening `vscode://file/<cwd>`, which can spawn a new window.
 
+**One bug this caught late, worth keeping.** The first version searched every
+running terminal for the tty regardless of host, so a VS Code session with
+Terminal.app open claimed a Terminal tab, failed to find it, and then raised
+Terminal — the wrong app, confidently, which is worse than the Finder it
+replaced. A tty belongs to whichever app opened it; the search now runs only
+when the host is a terminal we can script.
+
 Still unmeasured: Cursor, Windsurf, Warp, Ghostty and WezTerm. All are expected
 to work by the same mechanism — Cursor is a VS Code fork with identically
 structured helper bundles — but expected is not measured, and this file exists
@@ -141,6 +154,25 @@ attempted when running, so a machine without it is unaffected — but the
 AppleScript itself has never executed.
 
 ---
+
+## What is not an agent, as far as this app is concerned
+
+Ground Control is **hook-driven**. Its entire input is what an agent CLI reports
+by running `~/bin/cc-notify` on its lifecycle events. An assistant that does not
+invoke a user-installable hook cannot appear, however busy it is.
+
+**VS Code's own chat (Copilot) does not appear**, and this was tested rather
+than assumed: prompting it, including agent mode running shell commands in a
+hidden terminal, produced no session file at all. It never calls the emitter,
+so nothing is written and no row exists to draw. Claude Code running in the same
+editor's integrated terminal appears normally.
+
+Supporting it would need a VS Code extension writing the same JSON lines — the
+format is deliberately dumb enough for that. The obstacle is not the writing but
+the signal: the reason this app exists is *"blocked, waiting on you"*, and VS
+Code's chat API exposes participants you address directly rather than
+observation of Copilot's own state. A Copilot row would likely manage *busy* and
+*not busy* and never the one that matters.
 
 ## Other CLIs
 

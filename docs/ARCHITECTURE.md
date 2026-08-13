@@ -38,6 +38,12 @@ flowchart TB
 
 ## The four steps
 
+Everything hangs on the first step: an agent has to *tell* the script something.
+Claude Code and Grok do. An assistant with no user-installable hook — VS Code's
+own Copilot chat, for instance — never calls the emitter and so never appears,
+even while running commands in a terminal of its own. Claude Code inside that
+same editor appears normally, because the hook fires wherever the CLI runs.
+
 **1. The CLI fires a hook.** `~/.claude/settings.json` registers one command —
 `~/bin/cc-notify` — against eight events: `SessionStart`, `UserPromptSubmit`,
 `PreToolUse`, `Notification`, `Stop`, `SubagentStart`, `SubagentStop`,
@@ -75,8 +81,10 @@ so a forgotten terminal does not haunt the panel forever.
 
 `TerminalFocuser` takes you to the session using what the script recorded:
 
-1. **The exact tab**, when `tty` is set and iTerm or Terminal is running — those
-   expose a tty per tab, so the match is precise.
+1. **The exact tab**, when the session is *in* iTerm or Terminal — those expose a
+   tty per tab, so the match is precise. A tty belongs to whichever app opened
+   it, so this search only runs when `host_app` names one of them (or names
+   nothing, for sessions written before that field existed).
 2. **The host application**, otherwise. VS Code, Cursor, Warp and Ghostty all own
    real ptys belonging to no scriptable tab, so the best available answer is to
    raise the app itself.
