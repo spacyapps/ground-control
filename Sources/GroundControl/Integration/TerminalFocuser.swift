@@ -62,26 +62,44 @@ enum TerminalFocuser {
                             hostID: String?,
                             fallbackPath: String?,
                             probe: Probe = Probe()) -> Destination {
+        let host = hostBundleID(hostApp: hostApp, hostID: hostID, probe: probe)
+
+        // A tty belongs to whichever app opened it, so a session hosted by VS
+        // Code has no tab in Terminal however many tabs Terminal has. Searching
+        // there anyway found nothing and then raised Terminal — the wrong app,
+        // and confidently. When the host is unknown, which is any session
+        // written before host_app existed, searching every running terminal is
+        // still the best available guess.
         if let tty, !tty.isEmpty {
-            for terminal in supported where probe.isBundleRunning(terminal.bundleID) {
+            for terminal in supported
+            where probe.isBundleRunning(terminal.bundleID)
+                && (host == nil || host == terminal.bundleID) {
                 return .terminalTab(tty: tty, bundleID: terminal.bundleID)
             }
         }
 
-        // The path is preferred over the inherited bundle id: it reports what
-        // actually spawned the session, where `__CFBundleIdentifier` reports
-        // what was inherited — which is stale if the app was launched from
-        // another terminal.
-        for candidate in [hostApp.flatMap(probe.bundleID), hostID] {
-            if let candidate, !candidate.isEmpty, probe.isBundleRunning(candidate) {
-                return .application(bundleID: candidate)
-            }
+        if let host, probe.isBundleRunning(host) {
+            return .application(bundleID: host)
         }
 
         if let fallbackPath, !fallbackPath.isEmpty {
             return .finder(path: fallbackPath)
         }
         return .nowhere
+    }
+
+    /// The app that owns the session, as a bundle id.
+    ///
+    /// The path is preferred over the inherited id: it reports what actually
+    /// spawned this session, where `__CFBundleIdentifier` reports what was
+    /// inherited — stale if the editor was itself launched from a terminal.
+    private static func hostBundleID(hostApp: String?,
+                                     hostID: String?,
+                                     probe: Probe) -> String? {
+        for candidate in [hostApp.flatMap(probe.bundleID), hostID] {
+            if let candidate, !candidate.isEmpty { return candidate }
+        }
+        return nil
     }
 
     // MARK: - Doing
@@ -94,14 +112,18 @@ enum TerminalFocuser {
                       hostApp: String?,
                       hostID: String?,
                       fallbackPath: String?) -> Bool {
-        switch destination(tty: tty, hostApp: hostApp, hostID: hostID, fallbackPath: fallbackPath) {
+        let target = destination(tty: tty, hostApp: hostApp, hostID: hostID, fallbackPath: fallbackPath)
+        switch target {
         case .terminalTab(let tty, let bundleID):
-            guard let terminal = supported.first(where: { $0.bundleID == bundleID }) else { return false }
-            if run(terminal.script(tty)) { return true }
-            // The tab has gone but the app is still up: arriving at the app
-            // beats dropping the user in Finder.
-            Log.integration.notice("No tab matched \(tty, privacy: .public); raising the app")
-            return activate(bundleID: bundleID)
+            if let terminal = supported.first(where: { $0.bundleID == bundleID }),
+               run(terminal.script(tty)) {
+                return true
+            }
+            // The tab has been closed. Ask again as if there were no tty at
+            // all, which lands on the host app or the folder — never on the
+            // terminal we just failed to find it in.
+            Log.integration.notice("No tab matched \(tty, privacy: .public); trying the host")
+            return focus(tty: nil, hostApp: hostApp, hostID: hostID, fallbackPath: fallbackPath)
 
         case .application(let bundleID):
             return activate(bundleID: bundleID)
@@ -136,7 +158,23 @@ enum TerminalFocuser {
         guard let app = NSRunningApplication
             .runningApplications(withBundleIdentifier: bundleID)
             .first else { return false }
-        return app.activate(options: [.activateAllWindows])
+
+        // Through NSWorkspace rather than NSRunningApplication.activate:
+        // recent macOS only lets the frontmost app raise another, and this one
+        // is an accessory whose panel is deliberately non-activating, so it is
+        // never frontmost. openApplication is the sanctioned route and, for an
+        // app already running, activates rather than launching a second copy.
+        guard let url = app.bundleURL else { return app.activate() }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        configuration.addsToRecentItems = false
+        NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, error in
+            if let error {
+                let reason = error.localizedDescription
+                Log.integration.error("Could not raise \(bundleID, privacy: .public): \(reason, privacy: .public)")
+            }
+        }
+        return true
     }
 
     // MARK: - Scripts

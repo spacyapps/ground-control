@@ -26,13 +26,20 @@ final class TerminalFocuserTests: XCTestCase {
         )
     }
 
-    func testExactTabWinsWhenItsTerminalIsRunning() {
+    /// A tab is the most precise destination there is, so it wins whenever the
+    /// session is genuinely in a terminal we can script.
+    ///
+    /// This test used to pass a VS Code host and still expect an iTerm tab,
+    /// which is exactly the bug that shipped: the tty belongs to whoever opened
+    /// it, so searching iTerm for it found nothing and then raised iTerm.
+    func testExactTabWinsWhenTheSessionIsInThatTerminal() {
+        let iTermPath = "/Applications/iTerm.app"
         let destination = TerminalFocuser.destination(
             tty: "/dev/ttys008",
-            hostApp: vsCodePath,
-            hostID: vsCode,
+            hostApp: iTermPath,
+            hostID: iTerm,
             fallbackPath: "/repo",
-            probe: probe(running: [iTerm, vsCode], ids: [vsCodePath: vsCode])
+            probe: probe(running: [iTerm, vsCode], ids: [iTermPath: iTerm])
         )
         XCTAssertEqual(destination, .terminalTab(tty: "/dev/ttys008", bundleID: iTerm))
     }
@@ -134,5 +141,77 @@ final class TerminalFocuserTests: XCTestCase {
             probe: probe(running: [iTerm])
         )
         XCTAssertEqual(destination, .finder(path: "/repo"))
+    }
+}
+
+/// The bug the first version shipped: a session in VS Code has a real tty, and
+/// with Terminal.app running the decision claimed a Terminal tab, found no such
+/// tab, and then raised Terminal — the wrong app, confidently.
+final class HostAwareTabTests: XCTestCase {
+    private let terminal = "com.apple.Terminal"
+    private let vsCodePath = "/Applications/Visual Studio Code.app"
+    private let vsCode = "com.microsoft.VSCode"
+
+    private func probe(running: Set<String>,
+                       ids: [String: String] = [:]) -> TerminalFocuser.Probe {
+        TerminalFocuser.Probe(
+            isBundleRunning: { running.contains($0) },
+            bundleID: { ids[$0] }
+        )
+    }
+
+    /// A tty belongs to whichever app opened it. Terminal cannot hold a tab for
+    /// a session hosted by VS Code, however many tabs Terminal has open.
+    func testAKnownNonTerminalHostIsNotSearchedForInTerminal() {
+        let destination = TerminalFocuser.destination(
+            tty: "/dev/ttys010",
+            hostApp: vsCodePath,
+            hostID: vsCode,
+            fallbackPath: "/repo",
+            probe: probe(running: [terminal, vsCode], ids: [vsCodePath: vsCode])
+        )
+        XCTAssertEqual(destination, .application(bundleID: vsCode))
+    }
+
+    /// The host being a terminal we *can* script is exactly when the tab search
+    /// is right.
+    func testAKnownTerminalHostStillGetsItsExactTab() {
+        let destination = TerminalFocuser.destination(
+            tty: "/dev/ttys008",
+            hostApp: "/System/Applications/Utilities/Terminal.app",
+            hostID: terminal,
+            fallbackPath: "/repo",
+            probe: probe(
+                running: [terminal],
+                ids: ["/System/Applications/Utilities/Terminal.app": terminal]
+            )
+        )
+        XCTAssertEqual(destination, .terminalTab(tty: "/dev/ttys008", bundleID: terminal))
+    }
+
+    /// Sessions written before host_app existed name no host, so every running
+    /// terminal is still worth searching — that is all we ever had.
+    func testAnUnknownHostStillSearchesRunningTerminals() {
+        let destination = TerminalFocuser.destination(
+            tty: "/dev/ttys008",
+            hostApp: nil,
+            hostID: nil,
+            fallbackPath: "/repo",
+            probe: probe(running: [terminal])
+        )
+        XCTAssertEqual(destination, .terminalTab(tty: "/dev/ttys008", bundleID: terminal))
+    }
+
+    /// With the tty ignored — which is what happens after a tab search fails —
+    /// the host app is where the click should land.
+    func testDroppingTheTtyLandsOnTheHost() {
+        let destination = TerminalFocuser.destination(
+            tty: nil,
+            hostApp: vsCodePath,
+            hostID: vsCode,
+            fallbackPath: "/repo",
+            probe: probe(running: [terminal, vsCode], ids: [vsCodePath: vsCode])
+        )
+        XCTAssertEqual(destination, .application(bundleID: vsCode))
     }
 }
