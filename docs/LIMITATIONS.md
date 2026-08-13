@@ -94,34 +94,45 @@ radius came back fully transparent, and a panel rendered byte-identical with
 of this work verified only on screen, by Walter, and it is marked as such in the
 code.
 
-### 3b. Jumping to a non-terminal host — measured for Terminal, reasoned for VS Code
+### 3b. Jumping to a non-terminal host — **measured 2026-08-12**
 
-`host_app` / `host_id` are **verified end to end for Terminal.app**: the
-installed emitter writes `/System/Applications/Utilities/Terminal.app` and
-`com.apple.Terminal` for a live session, and the decision table has unit tests.
+`host_app` / `host_id` are verified end to end for **Terminal.app** and for
+**VS Code**, the latter on a real integrated terminal after installing it for
+the purpose. The chain, printed from a shell inside VS Code:
 
-**VS Code itself is not measured.** Cursor is installed on this machine but was
-never running with an integrated terminal open, and the shells here all belong
-to Terminal. Microsoft documents the pty host and the Code Helper processes, and
-that terminals are *relaunched* rather than reattached when the app restarts —
-consistent with shells living inside the app's process tree — but does not
-document the parent-child structure. So the walk reaching
-`Visual Studio Code.app` is inference, not evidence.
-
-To settle it, run this **inside a VS Code integrated terminal**:
-
-```bash
-pid=$$; while [ "${pid:-1}" -gt 1 ]; do ps -o pid=,ppid=,tty=,comm= -p "$pid"; \
-  pid=$(ps -o ppid= -p "$pid" | tr -d " "); done
+```
+/bin/bash                                              ttys010
+  /bin/zsh                                             ttys010
+    …/Code Helper.app/Contents/MacOS/Code Helper       ??
+      …/Visual Studio Code.app/Contents/MacOS/Code     ??
 ```
 
-A line containing `…/Visual Studio Code.app/…` confirms it. If the walk stops
-short, `host_id` covers it anyway: LaunchServices sets `__CFBundleIdentifier` on
-the app and every child inherits it, which is why both are recorded.
+and what the emitter made of it:
+
+```
+tty       '/dev/ttys010'
+host_app  '/Applications/Visual Studio Code.app'
+host_id   'com.microsoft.VSCode'
+```
+
+Three things this proves rather than assumes. VS Code's integrated terminal does
+hold a real controlling tty, so `resolve_tty()` was never the problem. The walk
+does reach the application. And **the nested-helper trap is real, not
+theoretical** — the first bundled ancestor is `Code Helper.app`, whose bundle id
+is the shared `com.github.Electron.helper`, so taking the nearest `.app` would
+have raised whichever Electron app macOS felt like.
+
+`$TMPDIR` also matched the app's exactly, which is the other thing that has to
+be true for a row to appear at all.
 
 Activation is **app-level only**. With several editor windows open you get the
 last-used one, not the window holding that repo — a deliberate trade against
 opening `vscode://file/<cwd>`, which can spawn a new window.
+
+Still unmeasured: Cursor, Windsurf, Warp, Ghostty and WezTerm. All are expected
+to work by the same mechanism — Cursor is a VS Code fork with identically
+structured helper bundles — but expected is not measured, and this file exists
+to keep that distinction.
 
 ### 4. iTerm2 jump-to-tab is written but untested
 
