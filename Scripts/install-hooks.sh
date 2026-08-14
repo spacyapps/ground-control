@@ -70,6 +70,52 @@ with open(settings_path, "w") as handle:
 print("Registered on: " + (", ".join(added) if added else "(already registered, no change)"))
 PY
 
+# --- Cursor's own agent -------------------------------------------------
+#
+# Composer is not a terminal process, so nothing above reaches it: Cursor reads
+# its own ~/.cursor/hooks.json and nothing from ~/.claude. Its payloads are
+# snake_case like Claude's, and three of its event names already normalise to
+# ours, so cc-notify needs no separate emitter — only registering.
+#
+# Skipped silently where Cursor is not installed. Claude Code running *inside*
+# Cursor's terminal is covered by the block above and needs none of this.
+if [ -d "$HOME/.cursor" ]; then
+  CURSOR_HOOKS="$HOME/.cursor/hooks.json"
+  if [ -f "$CURSOR_HOOKS" ]; then
+    cp "$CURSOR_HOOKS" "${CURSOR_HOOKS}.bak-$(date +%Y%m%d-%H%M%S)"
+  fi
+  /usr/bin/python3 - "$CURSOR_HOOKS" "$BIN_DIR/cc-notify" <<'CURSOR'
+import json, os, sys
+
+path, command = sys.argv[1], sys.argv[2]
+
+try:
+    with open(path) as handle:
+        config = json.load(handle)
+except (OSError, ValueError):
+    config = {}
+
+config.setdefault("version", 1)
+hooks = config.setdefault("hooks", {})
+
+# Only the events that become a row. beforeShellExecution, afterShellExecution
+# and postToolUse were captured too and say nothing preToolUse has not already
+# said — registering them would double every line for a single command.
+for event in ["sessionStart", "beforeSubmitPrompt", "preToolUse", "stop", "sessionEnd"]:
+    entries = hooks.setdefault(event, [])
+    if any(command in (e.get("command") or "") for e in entries if isinstance(e, dict)):
+        continue
+    entries.append({"command": command})
+
+os.makedirs(os.path.dirname(path), exist_ok=True)
+with open(path, "w") as handle:
+    json.dump(config, handle, indent=2)
+    handle.write("\n")
+print("Registered Cursor's own agent in ~/.cursor/hooks.json")
+CURSOR
+  echo "  Restart Cursor — it reads hooks.json at startup."
+fi
+
 echo
 echo "Done. Hooks take effect immediately — no restart needed."
 echo "Verify with a fresh session, then: ls \"\${TMPDIR:-/tmp}/groundcontrol/\""
