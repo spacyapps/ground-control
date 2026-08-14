@@ -23,6 +23,22 @@ struct BackgroundImage: Equatable {
         self.removeBackground = removeBackground
     }
 
+    /// Whether AppKit draws this through its resizable-image path rather than
+    /// simply painting the picture into the rect.
+    ///
+    /// `tile` always does — it repeats the art whether or not caps divide it —
+    /// and `stretch` does once caps are set. The two paths disagree about which
+    /// way up a flipped context is, so the renderer has to know which it will
+    /// get. Established by measuring all four combinations, not from the docs.
+    var usesResizableDrawing: Bool {
+        switch mode {
+        case .tile: return true
+        case .stretch:
+            return capInsets.top + capInsets.left + capInsets.bottom + capInsets.right > 0
+        case .center, .aspectFill: return false
+        }
+    }
+
     /// How the art fills a box larger than itself.
     ///
     /// `tile` and `stretch` both honour `capInsets` — that is the nine-slice
