@@ -214,3 +214,107 @@ final class DeepSpillTests: XCTestCase {
         XCTAssertEqual(Int(pixels[core + 1]), 130)
     }
 }
+
+/// A shaded or dithered key is still the key.
+///
+/// The band that softens the cut is a sphere around the key colour, so a
+/// *darker* green — which is what shading, dithering and downscaling all
+/// produce — falls outside the hard cut and into the soft band. There the
+/// un-multiply divides the pixel's small red and blue by its alpha and returns
+/// them saturated: a background pixel of `36,207,35` came back as magenta at
+/// 13% opacity, which is the pink the station frame wore along every edge.
+///
+/// Recognising the key by hue instead catches those, and measurement on both
+/// shipped skins found no opaque artwork pixel that is this key-hued — so the
+/// rule takes only background.
+final class ImageKeyerShadedKeyTests: XCTestCase {
+    private let side = 8
+    private let green = NSColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)
+
+    private func buffer(_ pixels: inout [UInt8]) -> CGContext? {
+        CGContext(
+            data: &pixels,
+            width: side,
+            height: side,
+            bitsPerComponent: 8,
+            bytesPerRow: side * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )
+    }
+
+    /// One row of test colours, each repeated down the image so position plays
+    /// no part in the result.
+    private func keyed(_ colours: [[UInt8]]) throws -> [[Int]] {
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        for y in 0..<side {
+            for x in 0..<side {
+                let index = (y * side + x) * 4
+                let rgb = colours[min(x, colours.count - 1)]
+                pixels[index] = rgb[0]; pixels[index + 1] = rgb[1]
+                pixels[index + 2] = rgb[2]; pixels[index + 3] = 255
+            }
+        }
+        let context = buffer(&pixels)
+        let image = ImageKeyer.apply(.color(green), to: try XCTUnwrap(context?.makeImage()))
+
+        var out = [UInt8](repeating: 0, count: side * side * 4)
+        let read = buffer(&out)
+        read?.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
+
+        // Middle row, one sample per input colour.
+        return (0..<colours.count).map { x in
+            let index = ((side / 2) * side + x) * 4
+            return [Int(out[index]), Int(out[index + 1]), Int(out[index + 2]), Int(out[index + 3])]
+        }
+    }
+
+    /// The exact pixel from the station's background that produced the pink.
+    func testTheShadedBackgroundIsCutRatherThanTurnedPink() throws {
+        let result = try keyed([[36, 207, 35]])
+        XCTAssertEqual(result[0][3], 0, "a shaded key survived, and it survives as magenta")
+    }
+
+    /// Shades read off the station's own background, not invented ones.
+    func testKeyShadesFromTheRealArtworkAreAllCut() throws {
+        let shades: [[UInt8]] = [[0, 255, 0], [16, 176, 16], [43, 209, 42], [54, 223, 52]]
+        for (index, pixel) in try keyed(shades).enumerated() {
+            XCTAssertEqual(pixel[3], 0, "shade \(shades[index]) was left in")
+        }
+    }
+
+    /// Darker than any background this has met, and left to the ordinary band
+    /// on purpose. It lands at 83% opacity, where the un-multiply divides by a
+    /// number close to one and so returns the dark green it started as — the
+    /// amplification that makes pink only happens at the bottom of the ramp.
+    func testAVeryDarkGreenIsHandledByTheBandWithoutGoingPink() throws {
+        let pixel = try keyed([[20, 140, 20]])[0]
+        XCTAssertGreaterThan(pixel[1], max(pixel[0], pixel[2]), "it should still read as green")
+    }
+
+    /// The rule may only take things that are nearly pure key hue. Artwork that
+    /// merely leans green — a lit hull, a lamp, a leaf — has to survive, or
+    /// every skin loses its own colour.
+    func testArtworkThatMerelyLeansGreenSurvives() throws {
+        let artwork: [[UInt8]] = [
+            [130, 130, 140],    // neutral hull
+            [80, 170, 90],      // the lamp the spill test already guards
+            [120, 190, 110],    // hull edge with green cast on it
+            [90, 200, 120]      // strongly green-lit, still not the key
+        ]
+        for (index, pixel) in try keyed(artwork).enumerated() {
+            XCTAssertGreaterThan(pixel[3], 0, "artwork \(artwork[index]) was keyed away")
+        }
+    }
+
+    /// Nothing may come back as the key's opposite, which is the whole point.
+    func testNothingIsLeftMagenta() throws {
+        let shades: [[UInt8]] = [[36, 207, 35], [43, 209, 42], [54, 223, 52], [16, 176, 16]]
+        for pixel in try keyed(shades) where pixel[3] > 20 {
+            let scale = 255.0 / Double(pixel[3])
+            let red = Double(pixel[0]) * scale, green = Double(pixel[1]) * scale
+            let blue = Double(pixel[2]) * scale
+            XCTAssertFalse(red > green + 40 && blue > green + 40, "magenta ghost: \(pixel)")
+        }
+    }
+}
