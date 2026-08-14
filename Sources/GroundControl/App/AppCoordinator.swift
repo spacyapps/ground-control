@@ -139,9 +139,13 @@ final class AppCoordinator {
         // why. Cursor fires no hook while its agent waits for approval, so a
         // blocked chat is indistinguishable from a busy one — measured, and
         // confirmed against their docs. See docs/LIMITATIONS.md.
-        if session.source == "cursor" {
+        //
+        // Worded without naming the CLI: the row already says CURSOR, and an
+        // editor's built-in agent is going to keep being the shape of this
+        // problem — VS Code's chat will land here too.
+        if StatusDotView.Mark.forSource(session.source) == .square {
             menu.addItem(.separator())
-            menu.addItem(note("Cursor agent: limited support"))
+            menu.addItem(note("Agent: limited support"))
             menu.addItem(note("No alert when it waits for approval"))
         }
         return menu
