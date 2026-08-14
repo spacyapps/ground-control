@@ -53,6 +53,28 @@ final class AnalyserTintTests: XCTestCase {
         }
     }
 
+    /// The sweeping word has to belong to the display. Left as the theme's, a
+    /// green message crossed magenta bars and read as two unrelated things.
+    func testTheMessageFollowsTheChosenColour() {
+        let picked = NSColor(srgbRed: 0.85, green: 0.1, blue: 0.75, alpha: 1)
+        let text = rgb(matrix.tinted(picked).text)
+        XCTAssertGreaterThan(text.redComponent, 0.5, "the word lost the hue it was given")
+        XCTAssertGreaterThan(text.blueComponent, 0.5, "the word lost the hue it was given")
+    }
+
+    /// But not the same colour as the bars: letters that match disappear into
+    /// them, and all that shows the word is the dent it makes.
+    func testTheMessageStaysReadableAgainstTheBars() {
+        for picked: NSColor in [.systemPink, .systemBlue, .systemGreen, .black] {
+            let tinted = matrix.tinted(picked)
+            XCTAssertGreaterThan(
+                brightness(tinted.text) - brightness(tinted.high),
+                0.1,
+                "\(picked) left the word too close to its bars"
+            )
+        }
+    }
+
     /// The grid the bars sit in belongs to the theme, not to the choice.
     func testTheUnlitGridAndMessagesAreLeftAlone() {
         let tinted = matrix.tinted(.systemPurple)
