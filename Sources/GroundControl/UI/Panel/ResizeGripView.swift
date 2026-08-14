@@ -28,6 +28,16 @@ final class ResizeGripView: CornerMarkView {
     /// would promise a drag that snaps back the moment it ends.
     private var allowsVertical: Bool { theme.layout.resize == .free }
 
+    // Bigger than the close mark, and its own box to draw it in. An arrow is
+    // thin strokes and a lot of nothing, so at the ✕'s eleven points it read as
+    // a speck — and unlike the ✕, it is the *only* way to resize a shaped
+    // panel, so it has to be findable.
+    //
+    // swiftlint:disable static_over_final_class
+    override class var size: NSSize { NSSize(width: 20, height: 20) }
+    override class var glyphPointSize: CGFloat { 15 }
+    // swiftlint:enable static_over_final_class
+
     override var hint: String { "Resize" }
 
     /// The glyph is a promise about what the drag does: sideways where only the
