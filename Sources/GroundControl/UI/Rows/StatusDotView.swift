@@ -8,6 +8,28 @@ import AppKit
 /// `needsAction` is the loud case — it fills solid in the theme's needsAction
 /// colour. Quiet states draw dimmer so a panel of idle rows stays calm.
 final class StatusDotView: NSView {
+    /// A round mark reports fully; a square one cannot.
+    ///
+    /// Cursor's agent fires no hook while it waits for approval, so its rows
+    /// never turn red however stuck they are. A dot that means "state" beside a
+    /// dot that means "state, as far as we can tell" is a quiet lie, and the
+    /// difference is worth a shape — it reads at a glance and survives every
+    /// theme, since it costs no colour.
+    enum Mark: Equatable {
+        case round
+        case square
+
+        /// Which sources can be trusted to say they are blocked. Kept here so
+        /// the rule has one home rather than being re-decided per view.
+        static func forSource(_ source: String) -> Mark {
+            source == "cursor" ? .square : .round
+        }
+    }
+
+    var mark: Mark = .round {
+        didSet { needsDisplay = true }
+    }
+
     var color: NSColor = DefaultTheme.colors.idle {
         didSet { needsDisplay = true }
     }
@@ -38,7 +60,13 @@ final class StatusDotView: NSView {
             image.draw(in: rect)
             return
         }
-        let path = NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1))
+        let body = rect.insetBy(dx: 1, dy: 1)
+        // Slightly rounded rather than a hard square: at eight points a sharp
+        // corner reads as an artefact, and this still cannot be mistaken for
+        // the circle beside it.
+        let path = mark == .square
+            ? NSBezierPath(roundedRect: body, xRadius: 1.5, yRadius: 1.5)
+            : NSBezierPath(ovalIn: body)
         color.withAlphaComponent(isProminent ? 1.0 : 0.55).setFill()
         path.fill()
     }

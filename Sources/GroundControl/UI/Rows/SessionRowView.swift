@@ -130,6 +130,7 @@ final class SessionRowView: NSView {
         dot.color = seen ? theme.colors.idle : theme.colors.color(for: session.state)
         dot.isProminent = session.needsAction
         dot.badge = theme.backgrounds.needsActionDot
+        dot.mark = .forSource(session.source)
         avatar.alphaValue = seen ? 0.4 : 1
         nameLabel.alphaValue = seen ? 0.55 : 1
 
