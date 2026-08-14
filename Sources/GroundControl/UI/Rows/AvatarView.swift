@@ -23,6 +23,9 @@ final class AvatarView: NSView {
     private var isHovering = false
     private var trackingArea: NSTrackingArea?
     private static let spinKey = "groundcontrol.spin"
+    private var gears: CALayer?
+    private var gearBox: NSSize?
+    private var gearColour: NSColor?
 
     /// Decoded images are reused across rows and state flips — the same few
     /// files are asked for constantly.
@@ -59,7 +62,9 @@ final class AvatarView: NSView {
         // read as a heavy block. Theme artwork is composed to fill its tile,
         // so it gets the whole area.
         let padding: CGFloat = asset == nil ? bounds.width * 0.20 : 0
-        imageView.frame = bounds.insetBy(dx: padding, dy: padding)
+        let box = bounds.insetBy(dx: padding, dy: padding)
+        imageView.frame = box
+        layoutGears(in: box)
     }
 
     /// The avatar is the row's most obvious hit target, so it is dressed as a
@@ -134,15 +139,55 @@ final class AvatarView: NSView {
 
     private func showDrawnDefault(for state: SessionState) {
         teardownPlayer()
+        stopSpin()
+        // Motion is what separates "thinking" from "stopped" at a glance, and
+        // layer rotation costs nothing next to decoding video.
+        if DrawnAvatar.isAnimated(state) {
+            imageView.isHidden = true
+            imageView.image = nil
+            needsLayout = true
+            return
+        }
+        teardownGears()
         imageView.isHidden = false
         imageView.image = DrawnAvatar.symbol(for: state)
-        // Motion is what separates "thinking" from "stopped" at a glance, and
-        // a layer rotation costs nothing next to decoding video.
-        if DrawnAvatar.isAnimated(state) { startSpin() } else { stopSpin() }
+    }
+
+    // MARK: - Gears
+
+    /// Built for one size and rebuilt when that changes, because the wheels are
+    /// positioned in points rather than scaled — a train stretched to fit would
+    /// mesh at one size and slide at every other.
+    private func layoutGears(in box: NSRect) {
+        guard let state = drawnState, DrawnAvatar.isAnimated(state), asset == nil else {
+            teardownGears()
+            return
+        }
+        let colour = theme.colors.color(for: state)
+        if gears != nil, gearBox == box.size, gearColour == colour { return }
+
+        teardownGears()
+        let train = GearTrain.layer(size: box.size, colour: colour)
+        // bounds and position, never frame: frame is derived from the transform,
+        // so writing it back to a rotating layer re-derives bounds from a
+        // rotated bounding box. That is what made the old single gear collapse.
+        train.position = CGPoint(x: box.midX, y: box.midY)
+        layer?.addSublayer(train)
+        gears = train
+        gearBox = box.size
+        gearColour = colour
+    }
+
+    private func teardownGears() {
+        gears?.removeFromSuperlayer()
+        gears = nil
+        gearBox = nil
+        gearColour = nil
     }
 
     private func show(imageAt url: URL) {
         teardownPlayer()
+        teardownGears()
         stopSpin()
         imageView.isHidden = false
 
