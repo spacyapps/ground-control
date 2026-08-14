@@ -64,6 +64,10 @@ def get(payload, *names):
 def source_of(payload):
     """Which CLI produced this. Session ids are only unique per tool, and rows
     from different tools are worth telling apart."""
+    # Checked before Claude: Cursor uses snake_case fields and the same
+    # `hook_event_name` key, so the two are indistinguishable without this.
+    if "cursor_version" in payload:
+        return "cursor"
     if "hookEventName" in payload:
         return "grok"
     if "hook_event_name" in payload:
@@ -71,10 +75,19 @@ def source_of(payload):
     return "unknown"
 
 
+# Events that mean what one of ours means under another name. Measured from a
+# real Cursor session, not read off its docs: three of its events — sessionStart,
+# preToolUse and stop — already normalise to our spelling and need nothing here.
+ALIASES = {
+    "beforesubmitprompt": "userpromptsubmit",   # Cursor: carries `prompt`, as ours does
+}
+
+
 def canonical_event(payload):
     """Normalises `session_start` / `SessionStart` to one spelling."""
     raw = get(payload, "hook_event_name", "hookEventName") or ""
-    return raw.replace("_", "").lower()
+    flattened = raw.replace("_", "").lower()
+    return ALIASES.get(flattened, flattened)
 
 
 def timestamp_of(payload):
@@ -387,7 +400,13 @@ def main():
 
     path = os.path.join(root, "%s.jsonl" % session_id)
     previous = last_line(path) or {}
-    cwd = get(payload, "cwd", "workspaceRoot") or previous.get("cwd") or os.getcwd()
+    # Cursor sends `cwd` as an empty string and puts the real answer in
+    # `workspace_roots`. Falling through to os.getcwd() would name every Cursor
+    # row after ~/.cursor, which is where its hooks run from.
+    roots = get(payload, "workspace_roots", "workspaceRoots")
+    root = roots[0] if isinstance(roots, list) and roots else None
+    cwd = (get(payload, "cwd", "workspaceRoot") or root
+           or previous.get("cwd") or os.getcwd())
 
     # session_title is the name you gave the session in Claude and is the better
     # label when it differs from the folder ("spacyapps" vs "fluffy-carnival").
