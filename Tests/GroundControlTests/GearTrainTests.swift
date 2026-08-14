@@ -48,8 +48,11 @@ final class GearTrainTests: XCTestCase {
             return (spin?.toValue as? Double ?? 0) < 0 ? -1 : 1
         }
         for index in 1..<directions.count {
-            XCTAssertNotEqual(directions[index], directions[index - 1],
-                              "wheels \(index - 1) and \(index) turn the same way")
+            XCTAssertNotEqual(
+                directions[index],
+                directions[index - 1],
+                "wheels \(index - 1) and \(index) turn the same way"
+            )
         }
     }
 
@@ -60,8 +63,11 @@ final class GearTrainTests: XCTestCase {
             (gear.animation(forKey: "spin") as? CABasicAnimation)?.duration ?? 0
         }
         for index in 1..<durations.count {
-            XCTAssertLessThan(durations[index], durations[index - 1],
-                              "wheel \(index) should come round quicker")
+            XCTAssertLessThan(
+                durations[index],
+                durations[index - 1],
+                "wheel \(index) should come round quicker"
+            )
         }
         XCTAssertTrue(durations.allSatisfy { $0 > 0 })
     }
