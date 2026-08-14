@@ -215,10 +215,13 @@ final class SessionRowView: NSView {
         // Above the dot, sharing its column: the row's own affordances stay in
         // one line down the leading edge. Right-click still works — this is the
         // visible way in, not a replacement.
-        let markSide: CGFloat = 14
+        //
+        // The gap allows for the tile drawn around it: without that, the tile's
+        // lower edge sat against the status dot and the two read as one object.
+        let markSide: CGFloat = 12
         menuRect = NSRect(
             x: dot.frame.midX - markSide / 2,
-            y: max(2, dot.frame.minY - markSide - 4),
+            y: max(6, dot.frame.minY - markSide - 9),
             width: markSide,
             height: markSide
         )

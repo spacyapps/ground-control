@@ -11,7 +11,7 @@ import AppKit
 extension SessionRowView {
     /// Larger than the mark it lights: three small dots are easy to draw and
     /// hard to hit, and the click test uses this same rectangle.
-    var menuTarget: NSRect { menuRect.insetBy(dx: -6, dy: -6) }
+    var menuTarget: NSRect { menuRect.insetBy(dx: -4, dy: -4) }
 
     /// Three dots above the status dot: the same menu right-click gives, for
     /// anyone who never thinks to right-click a row.
@@ -41,18 +41,22 @@ extension SessionRowView {
             .withAlphaComponent(isMenuHovered ? 1 : (isHovering ? 0.8 : 0.35))
         ink.setFill()
 
-        let diameter: CGFloat = 2.5
-        let gap: CGFloat = 4
-        let total = diameter * 3 + gap * 2
+        // Three lines rather than three dots: the shape people already read as
+        // "menu", and it survives being small better than dots do — a 2.5pt
+        // circle is four pixels of grey, while a line keeps its length.
+        let lineWidth = menuRect.width - 1
+        let thickness: CGFloat = 1.5
+        let gap: CGFloat = 3
+        let total = thickness * 3 + gap * 2
         var y = menuRect.midY - total / 2
         for _ in 0..<3 {
-            NSBezierPath(ovalIn: NSRect(
-                x: menuRect.midX - diameter / 2,
+            NSBezierPath(rect: NSRect(
+                x: menuRect.midX - lineWidth / 2,
                 y: y,
-                width: diameter,
-                height: diameter
+                width: lineWidth,
+                height: thickness
             )).fill()
-            y += diameter + gap
+            y += thickness + gap
         }
     }
 }
