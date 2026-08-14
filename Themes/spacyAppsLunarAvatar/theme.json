@@ -64,16 +64,16 @@
     ]
   },
   "window": {
-    "image": "frame-450.png",
+    "image": "frame.gif",
     "lockAspect": false,
     "overlay": true,
     "removeBackground": "#00FF00",
     "mode": "tile",
     "capInsets": {
-      "top": 75,
-      "left": 75,
-      "bottom": 75,
-      "right": 75
+      "top": 94,
+      "left": 94,
+      "bottom": 94,
+      "right": 94
     }
   },
   "author": "SpacyApps"

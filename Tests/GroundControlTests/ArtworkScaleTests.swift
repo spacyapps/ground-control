@@ -117,3 +117,50 @@ final class ContentCornerTests: XCTestCase {
         XCTAssertEqual(view.list.layer?.masksToBounds, false)
     }
 }
+
+/// Nine-slice caps are points, drawn 1:1, so they set a size the panel cannot
+/// go below — a lesson from a 900px redraw of the station frame whose manifest
+/// still carried the 450px version's caps. At 75pt into 900px art the cut fell
+/// inside the corner tower, and everything past it went into the *tiled* strip,
+/// which repeated the tower down the edges.
+@MainActor
+final class MinimumPanelSizeTests: XCTestCase {
+    private func window(caps: CGFloat) -> Theme.Window {
+        Theme.Window(
+            shape: BackgroundImage(
+                url: URL(fileURLWithPath: "/x.png"),
+                mode: .tile,
+                capInsets: NSEdgeInsets(top: caps, left: caps, bottom: caps, right: caps)
+            ),
+            locksAspect: false,
+            aspectRatio: 1,
+            naturalWidth: 450
+        )
+    }
+
+    func testCapsSetTheFloor() {
+        XCTAssertEqual(window(caps: 94).minimumPanelSize, NSSize(width: 188, height: 188))
+    }
+
+    /// Art that is stretched or scaled bodily has no size it stops working at.
+    func testUnslicedArtImposesNothing() {
+        XCTAssertEqual(Theme.Window.standard.minimumPanelSize, .zero)
+    }
+
+    func testPanelNeverShrinksBelowTheCaps() {
+        let panel = FloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 300, height: 130))
+        panel.enforce(minimum: window(caps: 94).minimumPanelSize)
+
+        XCTAssertEqual(panel.minSize.height, 188, "the caps did not raise the floor")
+        XCTAssertGreaterThanOrEqual(panel.frame.height, 188, "a short panel was left short")
+        // Wide enough already, so the width is left exactly where it was.
+        XCTAssertEqual(panel.frame.width, 300)
+    }
+
+    /// A theme with modest caps must not lower the floor below what a row needs.
+    func testTheReadableFloorStillWins() {
+        let panel = FloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300))
+        panel.enforce(minimum: window(caps: 20).minimumPanelSize)
+        XCTAssertEqual(panel.minSize, FloatingPanel.smallest)
+    }
+}

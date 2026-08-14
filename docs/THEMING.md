@@ -318,6 +318,35 @@ Nine-slice applies, so two more keys matter:
 - `tile` keeps texture at its drawn size, which reads as the pattern sliding
   past as the panel grows. `stretch` suits gradients.
 
+##### Caps are points, so the artwork's size is a design decision
+
+Caps are drawn **1:1 in points**. That makes the pixel size of nine-grid art
+something other than a quality setting: it decides how thick the frame appears
+on screen and how narrow the panel may get, and the caps must move with it.
+
+Redrawing `spacyAppsLunarAvatar` at 900px while its manifest still said
+`capInsets: 75` cut 75px into a corner tower that runs 190px deep. Everything
+past the cut belongs to the *tiled* strip, so the tower repeated down both
+edges and the frame never closed.
+
+```
+450px art, caps 94   ->  corner ends at the cut, girder tiles cleanly
+900px art, caps 75   ->  cut lands mid-tower; the rest tiles down the edge
+900px art, caps 190  ->  correct, but a 380pt-wide frame on a 487pt panel
+```
+
+Two rules follow:
+
+- **Draw nine-grid art at roughly the panel's own size**, 400–500px. Bigger art
+  is not sharper, it is heavier.
+- **Re-measure the caps whenever the art is redrawn**, at the column where the
+  corner ornament ends and the plain edge begins.
+  `swift Scripts/fit-frame-art.swift <in> <out> 450` resizes the art — animated
+  or still, keeping every frame and its timing — and prints that measurement.
+
+The panel now refuses to shrink below `left + right` and `top + bottom`, so
+caps that are too large cost you a minimum size rather than a mangled frame.
+
 **Insets are measured in the artwork's own pixels** — read them straight off
 your image. A 900px picture whose frame is 180px thick uses `180`.
 

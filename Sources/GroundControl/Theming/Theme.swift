@@ -131,6 +131,20 @@ struct Theme {
 
         var isShaped: Bool { shape != nil }
 
+        /// The smallest panel this artwork can be drawn into.
+        ///
+        /// Nine-slice caps are points, drawn 1:1 — a panel narrower than
+        /// `left + right` has nowhere to put its two corners, and AppKit
+        /// resolves that by squashing them into each other. The frame stops
+        /// looking like a frame well before that, so the floor is the caps.
+        ///
+        /// Zero for everything else: stretched and bodily-scaled art have no
+        /// size they stop working at.
+        var minimumPanelSize: NSSize {
+            guard let caps = shape?.capInsets else { return .zero }
+            return NSSize(width: caps.left + caps.right, height: caps.top + caps.bottom)
+        }
+
         static let standard = Window(shape: nil, locksAspect: false, aspectRatio: 1)
 
         /// How much the artwork is scaled when drawn `width` points wide.
