@@ -273,6 +273,20 @@ def describe_tool(payload):
     return "Working… (%s)" % tool
 
 
+def opening_line(payload):
+    """A row label taken from a first prompt, or None if this is not one.
+
+    Kept short: it sits beside the folder-derived names of every other row, and
+    a sentence there would push the message out of the panel.
+    """
+    if canonical_event(payload) != "userpromptsubmit":
+        return None
+    text = condense(strip_wrapper(get(payload, "prompt")), limit=38)
+    if not text:
+        return None
+    return text
+
+
 def strip_wrapper(text):
     """Grok wraps prompts in <user_query> tags; the row wants the words."""
     if not isinstance(text, str):
@@ -412,7 +426,25 @@ def main():
     # label when it differs from the folder ("spacyapps" vs "fluffy-carnival").
     # It only ships on UserPromptSubmit, so latch it from the previous line.
     title = get(payload, "session_title", "sessionTitle")
-    name = title or previous.get("name") or os.path.basename(cwd.rstrip("/"))
+    folder = os.path.basename(cwd.rstrip("/"))
+    source = source_of(payload)
+    name = title or previous.get("name") or folder
+
+    # Cursor keeps several chats open against one workspace, so the folder names
+    # them all the same thing. It titles them itself — "Free service inquiry" —
+    # but that title is app state reached through an internal MCP tool, absent
+    # from both the hook payload and the transcript on disk.
+    #
+    # The opening prompt is what Cursor derives its own title from, and it is
+    # right there in the payload. Latched, so the row keeps the question it
+    # started from rather than following the conversation.
+    # Cursor only. Claude and Grok give one session per terminal, where the
+    # folder is the useful label and a first prompt would be noise — replacing
+    # "avaterm" with "hello" was caught by a test rather than by taste.
+    if source == "cursor" and name == folder:
+        opening = opening_line(payload)
+        if opening:
+            name = opening
 
     interpreted = interpret(payload)
     if interpreted is None:
@@ -425,7 +457,7 @@ def main():
 
     emit(path, {
         "schema": SCHEMA,
-        "source": source_of(payload),
+        "source": source,
         "session_id": session_id,
         "name": name,
         "cwd": cwd,

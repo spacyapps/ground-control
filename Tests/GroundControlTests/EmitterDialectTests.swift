@@ -92,11 +92,29 @@ final class EmitterDialectTests: XCTestCase {
 
     /// Cursor sends `cwd` as an empty string and the real answer in
     /// `workspace_roots`. Taking `cwd` at face value would fall through to the
-    /// hook's own working directory and name every Cursor row `.cursor`.
-    func testCursorRowIsNamedAfterTheWorkspace() throws {
-        let line = try emit(cursorPrompt)
-        XCTAssertEqual(line["cwd"] as? String, "/Users/waltermak/github/empty")
-        XCTAssertEqual(line["name"] as? String, "empty")
+    /// hook's own working directory and put `.cursor` on every row.
+    func testCursorWorkspaceComesFromWorkspaceRoots() throws {
+        XCTAssertEqual(try emit(cursorPrompt)["cwd"] as? String, "/Users/waltermak/github/empty")
+    }
+
+    /// Cursor keeps several chats against one workspace, so naming rows after
+    /// the folder makes them all `empty`. Its own titles live in app state we
+    /// cannot reach, but the opening prompt — which is what Cursor titles them
+    /// from — is right there in the payload.
+    func testCursorRowIsNamedAfterItsOpeningPrompt() throws {
+        XCTAssertEqual(try emit(cursorPrompt)["name"] as? String, "Hello, what can you here ?")
+    }
+
+    /// And it latches: a chat keeps the question it started from rather than
+    /// renaming itself on every prompt.
+    func testCursorNameDoesNotFollowTheConversation() throws {
+        try emit(cursorPrompt)
+        let later = try emit("""
+        {"session_id":"0639bbe2","hook_event_name":"beforeSubmitPrompt","cursor_version":"3.15.6",\
+        "prompt":"and now something completely different",\
+        "workspace_roots":["/Users/waltermak/github/empty"]}
+        """)
+        XCTAssertEqual(later["name"] as? String, "Hello, what can you here ?")
     }
 
     /// Three of Cursor's events already spell what we call them once case and
