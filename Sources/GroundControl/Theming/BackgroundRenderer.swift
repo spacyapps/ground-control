@@ -30,12 +30,36 @@ enum BackgroundRenderer {
         AnimatedImage.load(background)?.isAnimated ?? false
     }
 
+    /// Draws the artwork the way up its author drew it.
+    ///
+    /// Only AppKit's resizable-image path needs correcting, and it needs it
+    /// badly: it lays the pieces out in image order and ignores the context's
+    /// flip, so in a flipped view the bottom cap lands at the top and the whole
+    /// skin comes out mirrored. `respectFlipped:` does not reach that path.
+    /// Mirroring the context around the destination rect does.
+    ///
+    /// Plain drawing already honours the flip, and mirroring *that* turns a
+    /// correct image upside down — so the two cases cannot share a branch.
+    /// Measured across every mode and cap combination rather than assumed.
+    private static func drawUpright(_ image: NSImage, resizable: Bool, in rect: NSRect) {
+        guard resizable, let context = NSGraphicsContext.current, context.isFlipped else {
+            image.draw(in: rect)
+            return
+        }
+        let cg = context.cgContext
+        cg.saveGState()
+        cg.translateBy(x: 0, y: rect.minY * 2 + rect.height)
+        cg.scaleBy(x: 1, y: -1)
+        image.draw(in: rect)
+        cg.restoreGState()
+    }
+
     private static func draw(_ image: NSImage?, background: BackgroundImage, in rect: NSRect) {
         guard let image else { return }
 
         switch background.mode {
         case .tile, .stretch:
-            image.draw(in: rect)
+            drawUpright(image, resizable: background.usesResizableDrawing, in: rect)
         case .center:
             drawCentered(image, in: rect, fill: false)
         case .aspectFill:
