@@ -16,6 +16,8 @@ final class SettingsView: NSView {
         var selectTheme: (String?) -> Void
         var applyWindowBehaviour: () -> Void
         var reloadSessions: () -> Void
+        /// Re-lays the panel: the analyser's absence changes the strip's height.
+        var refreshPanelChrome: () -> Void
         var openThemesFolder: () -> Void
         var resetPanelPosition: () -> Void
         var createTheme: () -> Void
@@ -25,15 +27,16 @@ final class SettingsView: NSView {
     private let actions: Actions
 
     /// Everything lines up to one gutter; the rules run to the same edge.
-    private static let contentWidth: CGFloat = 360
+    static let contentWidth: CGFloat = 360
 
     private let themePicker = NSPopUpButton()
     private let themeDetail = NSTextField(labelWithString: "")
     private let themeWarning = NSTextField(labelWithString: "")
     private let preview = ThemePreviewView()
-    private let onTopBox = NSButton()
-    private let allSpacesBox = NSButton()
-    private let internalAgentsBox = NSButton()
+    let onTopBox = NSButton()
+    let allSpacesBox = NSButton()
+    let internalAgentsBox = NSButton()
+    let analyserBox = NSButton()
 
     /// Folder names in picker order; `nil` is the built-in default.
     private var themeNames: [String?] = [nil]
@@ -118,44 +121,6 @@ final class SettingsView: NSView {
         stack.setCustomSpacing(20, after: buttons)
     }
 
-    private func panelSection(in stack: NSStackView) {
-        stack.addArrangedSubview(header("Panel"))
-
-        configure(onTopBox, title: "Always on top", action: #selector(togglesChanged))
-        configure(allSpacesBox, title: "Show on all Spaces", action: #selector(togglesChanged))
-        stack.addArrangedSubview(onTopBox)
-        stack.addArrangedSubview(allSpacesBox)
-
-        let reset = NSButton(
-            title: "Reset Panel Position",
-            target: self,
-            action: #selector(resetPosition)
-        )
-        reset.bezelStyle = .rounded
-        stack.addArrangedSubview(reset)
-        stack.setCustomSpacing(20, after: reset)
-    }
-
-    private func advancedSection(in stack: NSStackView) {
-        stack.addArrangedSubview(header("Advanced"))
-
-        configure(
-            internalAgentsBox,
-            title: "Show Claude Code's internal agents",
-            action: #selector(internalAgentsChanged)
-        )
-        stack.addArrangedSubview(internalAgentsBox)
-
-        let caveat = NSTextField(labelWithString:
-            "Internal agents are hidden because their messages read like your own prompts.")
-        caveat.font = .systemFont(ofSize: 10)
-        caveat.textColor = SettingsChrome.dim
-        caveat.lineBreakMode = .byWordWrapping
-        caveat.maximumNumberOfLines = 2
-        caveat.preferredMaxLayoutWidth = Self.contentWidth
-        stack.addArrangedSubview(caveat)
-    }
-
     /// The app's own mark and a way back to whoever made it. Settings is a
     /// system surface, so unlike the panel no theme ever replaces this.
     private func brandRow() -> NSView {
@@ -214,7 +179,7 @@ final class SettingsView: NSView {
 
     /// Section headers double as the dividers, so the old separator boxes are
     /// gone: one line per section instead of a label and a rule competing.
-    private func header(_ title: String) -> NSView {
+    func header(_ title: String) -> NSView {
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
 
@@ -274,7 +239,7 @@ final class SettingsView: NSView {
         return frame
     }
 
-    private func configure(_ box: NSButton, title: String, action: Selector) {
+    func configure(_ box: NSButton, title: String, action: Selector) {
         box.setButtonType(.switch)
         box.title = title
         box.target = self
@@ -302,6 +267,7 @@ final class SettingsView: NSView {
         onTopBox.state = preferences.alwaysOnTop ? .on : .off
         allSpacesBox.state = preferences.showOnAllSpaces ? .on : .off
         internalAgentsBox.state = preferences.showsInternalAgents ? .on : .off
+        analyserBox.state = preferences.showsAnalyser ? .on : .off
     }
 
     private func updatePreview() {
@@ -344,13 +310,18 @@ final class SettingsView: NSView {
         updatePreview()
     }
 
-    @objc private func togglesChanged() {
+    @objc func togglesChanged() {
         preferences.alwaysOnTop = onTopBox.state == .on
         preferences.showOnAllSpaces = allSpacesBox.state == .on
         actions.applyWindowBehaviour()
     }
 
-    @objc private func internalAgentsChanged() {
+    @objc func analyserChanged() {
+        preferences.showsAnalyser = analyserBox.state == .on
+        actions.refreshPanelChrome()
+    }
+
+    @objc func internalAgentsChanged() {
         preferences.showsInternalAgents = internalAgentsBox.state == .on
         actions.reloadSessions()
     }
@@ -376,7 +347,7 @@ final class SettingsView: NSView {
         reloadThemes()
     }
 
-    @objc private func resetPosition() {
+    @objc func resetPosition() {
         actions.resetPanelPosition()
     }
 }

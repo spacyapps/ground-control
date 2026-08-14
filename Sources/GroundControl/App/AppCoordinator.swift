@@ -185,12 +185,23 @@ final class AppCoordinator {
         panel.apply(sessions: store.sessions)
     }
 
+    /// Re-applies the current theme, which is what rebuilds the title strip.
+    ///
+    /// Turning the analyser off changes the strip's height, so the panel has to
+    /// lay out again — and `apply(theme:)` already refits the height, so there
+    /// is nothing else to say.
+    private func refreshPanelChrome() {
+        panel.apply(theme: themeStore.theme)
+        panel.apply(sessions: store.sessions)
+    }
+
     private func showSettings() {
         if settings == nil {
             settings = SettingsWindowController(actions: SettingsView.Actions(
                 selectTheme: { [weak self] name in self?.themeStore.select(name: name) },
                 applyWindowBehaviour: { [weak self] in self?.panel.applyWindowBehaviour() },
                 reloadSessions: { [weak self] in self?.store.reload() },
+                refreshPanelChrome: { [weak self] in self?.refreshPanelChrome() },
                 openThemesFolder: { [weak self] in self?.openThemesFolder() },
                 resetPanelPosition: { [weak self] in self?.panel.resetPosition() },
                 createTheme: { [weak self] in self?.showThemeBuilder() }

@@ -107,7 +107,7 @@ final class PanelBackgroundView: NSView {
     /// frame the theme asked to keep clear.
     var desiredHeight: CGFloat {
         let insets = effectiveInsets
-        return TitleBarView.height + list.contentHeight + insets.top + insets.bottom
+        return titleBar.preferredHeight + list.contentHeight + insets.top + insets.bottom
     }
 
     /// `contentInset` measures where the frame ends in the artwork, so it is
@@ -163,7 +163,7 @@ final class PanelBackgroundView: NSView {
             x: insets.left,
             y: insets.top,
             width: width,
-            height: TitleBarView.height
+            height: titleBar.preferredHeight
         )
         list.frame = NSRect(
             x: insets.left,

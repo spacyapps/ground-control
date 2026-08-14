@@ -9,6 +9,9 @@ import AppKit
 /// is what you grab to move it.
 final class TitleBarView: NSView {
     static let height: CGFloat = 64
+    /// Without the analyser only the title row is left, so the strip closes up
+    /// rather than leaving a band of empty theme where the bars used to be.
+    static let compactHeight: CGFloat = 30
     /// Where a corner mark sits, so the resize handle can mirror the close
     /// mark exactly rather than approximating it.
     static let markInset: CGFloat = 8
@@ -19,10 +22,17 @@ final class TitleBarView: NSView {
     private let mark = NSImageView()
     private var theme: Theme = DefaultTheme.theme
     private var trackingArea: NSTrackingArea?
+    private let preferences: Preferences
+
+    /// What this strip needs, which the panel asks for rather than assuming.
+    var preferredHeight: CGFloat {
+        preferences.showsAnalyser ? Self.height : Self.compactHeight
+    }
 
     override var isFlipped: Bool { true }
 
-    init() {
+    init(preferences: Preferences = .shared) {
+        self.preferences = preferences
         super.init(frame: .zero)
         wantsLayer = true
 
@@ -54,6 +64,15 @@ final class TitleBarView: NSView {
             mark.image = Brand.glyph
         }
         visualizer.apply(theme: theme)
+        // Taken out of the hierarchy rather than hidden: the analyser stops
+        // its 24fps timer and its message countdown when it loses its window,
+        // so leaving is how it switches off completely.
+        if preferences.showsAnalyser {
+            if visualizer.superview == nil { addSubview(visualizer) }
+        } else {
+            visualizer.removeFromSuperview()
+        }
+        needsLayout = true
         needsDisplay = true
     }
 
@@ -62,6 +81,10 @@ final class TitleBarView: NSView {
     /// the count, each carries its own dot, and the analyser goes to its alarm
     /// colour the moment anything needs you.
     func update(sessions: [Session]) {
+        // Switched off means switched off: the analyser runs a 24fps timer and
+        // a message scheduler, and a monitor someone asked to sit still should
+        // not be waking the CPU to animate something nobody can see.
+        guard preferences.showsAnalyser else { return }
         visualizer.update(sessions: sessions)
     }
 
@@ -88,6 +111,7 @@ final class TitleBarView: NSView {
             height: 14
         )
 
+        guard visualizer.superview != nil else { return }
         visualizer.frame = NSRect(
             x: inset,
             y: titleRow + 6,
