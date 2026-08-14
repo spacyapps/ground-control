@@ -30,6 +30,10 @@ struct ThemeBrief: Equatable {
     var subject: String
     var style: String
     var mood: String
+    /// Animates the two states that are asking for attention — working and
+    /// needsInput. Idle and done stay still whatever this says: motion there
+    /// competes with the states that mean something, and four looping GIFs on
+    /// screen at once means nothing stands out.
     var wantsAnimation: Bool
     /// How the frame behaves when the panel is resized. The single most
     /// consequential choice in a theme, and the one an author cannot deduce

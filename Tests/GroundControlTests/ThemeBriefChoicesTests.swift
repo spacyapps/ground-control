@@ -65,3 +65,52 @@ final class ThemeBriefChoicesTests: XCTestCase {
         XCTAssertFalse(prompt.contains("corner │"), "no artwork, no frame instructions")
     }
 }
+
+/// Motion is reserved for the two states that are asking for attention. Four
+/// looping avatars means nothing stands out, which is the opposite of the
+/// point.
+final class AnimatedStateTests: XCTestCase {
+    private var animated: ThemeBrief {
+        var brief = ThemeBrief.placeholder
+        brief.wantsAnimation = true
+        return brief
+    }
+
+    func testWorkingAndNeedsInputAnimate() {
+        let prompt = ThemePromptBuilder.prompt(for: animated)
+        XCTAssertTrue(prompt.contains("working.gif"))
+        XCTAssertTrue(prompt.contains("needs-input.gif"))
+    }
+
+    /// The resting states stay still whatever the author asked for.
+    func testIdleAndDoneNeverAnimate() {
+        for wants in [true, false] {
+            var brief = ThemeBrief.placeholder
+            brief.wantsAnimation = wants
+            let prompt = ThemePromptBuilder.prompt(for: brief)
+            XCTAssertTrue(prompt.contains("idle.png"))
+            XCTAssertTrue(prompt.contains("done.png"))
+            XCTAssertFalse(prompt.contains("idle.gif"))
+            XCTAssertFalse(prompt.contains("done.gif"))
+        }
+    }
+
+    /// The starter manifest has to name the same files the prompt asked for, or
+    /// the author draws a GIF the theme never loads.
+    func testTheManifestNamesTheAnimatedFiles() throws {
+        let json = ThemePromptBuilder.starterManifest(for: animated)
+        let manifest = try JSONDecoder().decode(ThemeManifest.self, from: Data(json.utf8))
+        XCTAssertEqual(manifest.avatar?.states?["working"]?.image, "working.gif")
+        XCTAssertEqual(manifest.avatar?.states?["needsInput"]?.image, "needs-input.gif")
+        XCTAssertEqual(manifest.avatar?.states?["idle"]?.image, "idle.png")
+        XCTAssertEqual(manifest.avatar?.states?["done"]?.image, "done.png")
+    }
+
+    /// Small is the only size these are ever seen at, so the prompt has to say
+    /// what carries each state when a face is a few dozen pixels.
+    func testThePromptSaysHowToMakeStatesReadableWhenSmall() {
+        let prompt = ThemePromptBuilder.prompt(for: animated)
+        XCTAssertTrue(prompt.contains("stop and look"), "needsInput needs to be called out")
+        XCTAssertTrue(prompt.contains("Squint"), "the check an author can actually perform")
+    }
+}

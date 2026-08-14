@@ -53,18 +53,33 @@ enum ThemePromptBuilder {
         """
     }
 
+    /// The needsInput filename, which follows the animation choice like
+    /// `working` does — both are attention states.
+    static func needsInputFile(for brief: ThemeBrief) -> String {
+        brief.wantsAnimation ? "needs-input.gif" : "needs-input.png"
+    }
+
     private static func artwork(for brief: ThemeBrief) -> String {
         let pixels = brief.recommendedPixels
+        // Motion is reserved for the two states that are asking for attention.
+        // A theme that animates all four is four looping GIFs on screen at all
+        // times, and nothing stands out because everything moves.
         let working = brief.wantsAnimation ? "working.gif" : "working.png"
+        let needsInput = needsInputFile(for: brief)
+        let motion = brief.wantsAnimation ? "animated" : "still"
 
         let animationNote = brief.wantsAnimation
             ? """
 
 
-            `working` must be an **animated GIF** (or APNG): 8–16 frames, looping
-            seamlessly, roughly 10fps. `.mov` / `.mp4` (H.264 or HEVC) also work if
-            you would rather make real video. Do **not** produce `.webm` — macOS
-            cannot decode it and the app will refuse the file.
+            `\(working)` and `\(needsInput)` must be **animated GIFs** (or APNG):
+            8–16 frames, looping seamlessly, roughly 10fps. `.mov` / `.mp4`
+            (H.264 or HEVC) also work if you would rather make real video. Do
+            **not** produce `.webm` — macOS cannot decode it and the app will
+            refuse the file.
+
+            **`idle` and `done` must be still images.** They are the resting
+            states, and motion there competes with the two that mean something.
             """
             : ""
 
@@ -73,22 +88,40 @@ enum ThemePromptBuilder {
 
         One per session state. Use exactly these filenames:
 
-        | file | state | shown when |
-        |---|---|---|
-        | `idle.png` | idle | the session is quiet |
-        | `\(working)` | working | Claude is actively running tools |
-        | `needs-input.png` | needsInput | Claude is blocked and needs me |
-        | `done.png` | done | Claude just finished its turn |
+        | file | state | shown when | motion |
+        |---|---|---|---|
+        | `idle.png` | idle | the session is quiet | still |
+        | `\(working)` | working | it is actively running tools | \(motion) |
+        | `\(needsInput)` | needsInput | it is blocked and needs me | \(motion) |
+        | `done.png` | done | it just finished its turn | still |
 
         Requirements:
 
         - Square, **\(pixels)×\(pixels)px**. They display at \(brief.avatarSize)pt, so this
           stays crisp on Retina and if I scale the avatar up later.
         - PNG with transparency, unless the design wants a solid tile.
-        - The four must read as the **same character in four moods**, and be
-          distinguishable at a glance at \(brief.avatarSize)pt. Silhouette and colour do
-          that work — fine detail disappears at this size.
-        - They sit on a dark panel, so avoid dark-on-dark and thin outlines.\(animationNote)
+        - They sit on a dark panel, so avoid dark-on-dark and thin outlines.
+
+        ### Each state must be obvious at \(brief.avatarSize)pt
+
+        This is the whole job of these images. At that size a face is a few dozen
+        pixels and its expression is unreadable, so **the state has to be carried
+        by colour and shape, not by acting**:
+
+        | state | read it as | carry it with |
+        |---|---|---|
+        | idle | resting, nothing wanted | dim, cool, low contrast — it should recede |
+        | working | busy, leave it alone | motion, and a cool blue or cyan cast |
+        | needsInput | **stop and look** | warm alarm colour, highest contrast of the four, plus a symbol |
+        | done | finished well | a settled green, calm but bright |
+
+        The one that matters is `needsInput`: I should notice it from across the
+        room without reading anything. Give it the boldest silhouette, the
+        brightest background, or a mark — anything that survives being small.
+
+        Squint at each image at \(brief.avatarSize)pt. If two of them look alike, the
+        difference is in detail I cannot see, and the colour or shape has to do
+        more work.\(animationNote)
         """
     }
 
@@ -113,19 +146,10 @@ enum ThemePromptBuilder {
           only for `.mov` / `.mp4`. If both are set, video wins.
         - Omit any state you do not want to draw and the app's own drawn face is
           used for it, tinted from this palette.
-        \(brief.wantsBackgroundArt ? backgroundKeys(for: brief) : "")
+        \(brief.wantsBackgroundArt ? ThemeFramePrompt.keys(for: brief) : "")
         """
     }
 
-    /// Only shown when a background was asked for, and shows the *same* API the
-    /// background sections describe — a JSON example that disagrees with the
-    /// prose wins, because it is the concrete thing.
-    /// The frame instructions, which differ completely between the two kinds
-    /// and are the thing an author most needs to get right.
-    ///
-    /// A JSON example that disagrees with the prose wins, because it is the
-    /// concrete thing — so each branch prints the manifest it is describing,
-    /// carrying the key colour the author actually chose.
     /// Stated once, near the top, because both facts govern every image the
     /// author is about to draw.
     static func choices(for brief: ThemeBrief) -> String {
@@ -143,92 +167,6 @@ enum ThemePromptBuilder {
         the frame is drawn in front. I remove it on load. Never use it, or
         anything near it, inside the art itself: that is why it is chosen per
         theme rather than fixed.
-        """
-    }
-
-    private static func backgroundKeys(for brief: ThemeBrief) -> String {
-        brief.frame == .ninegrid ? ninegridKeys(for: brief) : simpleKeys(for: brief)
-    }
-
-    private static func simpleKeys(for brief: ThemeBrief) -> String {
-        """
-        Add this block for the frame:
-
-        ```json
-        "window": {
-          "image": "panel.png",
-          "lockAspect": true,
-          "removeBackground": "\(brief.keyColour)"
-        },
-        "layout": { "resize": "aspect", "contentInset": 60 }
-        ```
-
-        **The whole picture is scaled to the panel as one piece.** Draw it at any
-        size you like and at whatever proportions suit the art — the panel keeps
-        those proportions, and the rows scroll inside. Nothing needs to tile and
-        nothing needs measuring.
-
-        - `contentInset` holds the rows off your border. Measure it in your own
-          artwork's pixels: if the frame is 120px thick in a 900px image, use
-          `120`. It is scaled along with everything else.
-        - Give `rowBackground` and `rowBackgroundAlt` alpha, or the rows cover
-          your artwork completely.
-        """
-    }
-
-    private static func ninegridKeys(for brief: ThemeBrief) -> String {
-        """
-        Add this block for the frame:
-
-        ```json
-        "window": {
-          "image": "frame.png",
-          "lockAspect": false,
-          "mode": "tile",
-          "capInsets": { "top": 75, "left": 75, "bottom": 75, "right": 75 },
-          "removeBackground": "\(brief.keyColour)"
-        },
-        "layout": { "resize": "free", "contentInset": 60 }
-        ```
-
-        **This is the nine-grid, and it decides how you must draw.** The image is
-        cut into nine pieces by `capInsets`, and each behaves differently as the
-        panel is dragged to any size:
-
-        ```
-        ┌────────┬──────────────┬────────┐
-        │ corner │  top edge    │ corner │   corners     never change size
-        │  FIXED │  repeats ↔   │  FIXED │   top/bottom  repeat sideways
-        ├────────┼──────────────┼────────┤   left/right  repeat vertically
-        │ left   │              │ right  │   centre      repeats both ways
-        │ rpts ↕ │  centre ↔↕   │ rpts ↕ │
-        ├────────┼──────────────┼────────┤
-        │ corner │  bottom edge │ corner │
-        │  FIXED │  repeats ↔   │  FIXED │
-        └────────┴──────────────┴────────┘
-        ```
-
-        So, drawing rules — these are not style advice, the art breaks without
-        them:
-
-        - **Every ornament goes in a corner.** Towers, masts, dishes, mascots,
-          flourishes. Anything distinctive on an edge is repeated across the
-          whole side.
-        - **Each edge must be a seamless repeating strip.** The top edge tiles
-          left-to-right, so its left and right ends have to meet. Same for the
-          others down their own axis.
-        - **The centre must be flat or a seamless tile**, and dark enough for
-          white text.
-        - **Draw the whole thing about 450px square.** Cap insets are used at
-          their literal size, so a 150px corner on a 450px-wide panel leaves
-          almost no middle. This is the single most common way one of these
-          goes wrong.
-        - `capInsets` is where your corner artwork ends, in those same pixels —
-          75 for a 450px image with corners about a sixth of the way in.
-        - Use `"mode": "tile"` for detailed edges made of repeating segments,
-          `"stretch"` for plain gradients.
-        - Give `rowBackground` and `rowBackgroundAlt` alpha, or the rows cover
-          your artwork completely.
         """
     }
 
@@ -283,7 +221,7 @@ enum ThemePromptBuilder {
             "states": {
               "idle":       { "image": "idle.png" },
               "working":    { "image": "\(working)" },
-              "needsInput": { "image": "needs-input.png" },
+              "needsInput": { "image": "\(needsInputFile(for: brief))" },
               "done":       { "image": "done.png" }
             }
           },

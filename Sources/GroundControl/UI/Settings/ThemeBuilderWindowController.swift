@@ -74,7 +74,7 @@ final class ThemeBuilderWindowController: NSWindowController {
         ))
 
         animateBox.setButtonType(.switch)
-        animateBox.title = "Animate the working state (GIF)"
+        animateBox.title = "Animate working and needs-input (GIF)"
         animateBox.state = .on
         animateBox.target = self
         animateBox.action = #selector(regenerate)
