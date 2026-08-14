@@ -25,6 +25,7 @@ Every claim here is dated. When something is verified, move it up and say how.
 | **The red alarm, end to end** | a blocked session turned the row red, the click landed on its tab, and the alarm cleared — watched, not derived | 2026-08-12 |
 | iTerm2 jump-to-pane | three sessions in two panes and a tab; every row landed on its own | 2026-08-12 |
 | Cursor as a host app | Claude Code in Cursor's terminal: the row appeared, went red for a permission prompt, and clicking it raised Cursor | 2026-08-14 |
+| Cursor's **own** agent | probed a live Composer turn, then ran two: rows appeared, named after the workspace, attributed to `/Applications/Cursor.app` with no tty | 2026-08-14 |
 | Nine-slice orientation | red-top/blue-bottom test image drawn through the real overlay view; the caps were swapping | 2026-08-14 |
 
 ---
@@ -182,13 +183,34 @@ have found no scriptable terminal and the row would have fallen through to
 Finder. So the outermost-bundle rule holds on a real Cursor install, not just
 against the paths inspected when it was written.
 
-Cursor's **own** agent — Composer and Chat — remains invisible, and is a
-different problem rather than an unmeasured one. It has its own hook system in
-`~/.cursor/hooks.json`, camelCased (`sessionStart`, `preToolUse`, `stop`), and
-reads nothing from `~/.claude/settings.json`. The transport is the same JSON on
-stdin, so an adapter is small, but it must be built from probed payloads: this
-file exists because writing an integration from documentation has silently
-failed twice here.
+Cursor's **own** agent — **supported since 2026-08-14**, and it took a probe
+first. `Scripts/probe-cursor-hooks.sh` captured a real Composer turn; the
+adapter was written from that, never from the docs.
+
+What the capture settled:
+
+- Payloads are **snake_case**, like Claude's — the docs describe only output
+  fields and show no input, so this was a coin flip beforehand.
+- Three events (`sessionStart`, `preToolUse`, `stop`) already normalise to our
+  spelling once case and underscores are stripped. Only `beforeSubmitPrompt`
+  needed an alias, and it carries `prompt` exactly as `UserPromptSubmit` does.
+- `cwd` arrives as an **empty string**, with the real path in
+  `workspace_roots`. Taken at face value every Cursor row would be named
+  `.cursor`, after the directory its hooks run from.
+- `cursor_version` is the only field distinguishing it from Claude Code, which
+  matters because session ids are unique per tool.
+
+Two live Composer sessions then produced rows named after the workspace,
+attributed to `/Applications/Cursor.app` / `com.todesktop.230313mzl4w4u92` with
+**no tty** — Composer is not a shell. That is the right shape: the destination
+logic sends a host-without-tty row to the application, so clicking raises
+Cursor.
+
+**Not yet measured: what a permission request looks like.** Every command in
+three captured turns ran with `"sandbox": true` and was never put to the user,
+so no event carrying a prompt has been seen. `needsInput` therefore has no
+Cursor path, and the alarm cannot fire for Composer. Guessing at
+`beforeShellExecution` would put an alarm on every shell command instead.
 
 Still unmeasured: Windsurf, Warp, Ghostty and WezTerm.
 
@@ -280,7 +302,7 @@ change.
 | Grok | ✓ — reads `~/.claude/settings.json` | camelCase | same, lowercased | **working** |
 | Codex | ✓ experimental, `[features] codex_hooks = true` | unconfirmed | same as Claude | untested, likely works |
 | Gemini | ✓ `~/.gemini/settings.json` | snake_case, same names | **its own** | needs aliases |
-| Cursor | `~/.cursor/hooks.json`, schema `version: 1` | unknown | **camelCase** (`sessionStart`, `preToolUse`, `stop`) | its terminal works today; its own agent needs an adapter |
+| Cursor | `~/.cursor/hooks.json`, schema `version: 1` | snake_case | **camelCase** (`sessionStart`, `preToolUse`, `stop`) | **working** — no alarm yet |
 | opencode | plugin API (`@opencode-ai/plugin`), `event` hook | n/a — TypeScript | n/a | would need a plugin, not a script |
 
 ### Codex (researched 2026-08-11, not installed)

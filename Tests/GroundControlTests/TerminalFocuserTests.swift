@@ -189,6 +189,36 @@ final class HostAwareTabTests: XCTestCase {
         XCTAssertEqual(destination, .terminalTab(tty: "/dev/ttys008", bundleID: terminal))
     }
 
+    /// Cursor's own agent has no terminal at all — Composer is not a shell — so
+    /// the row carries a host and no tty. Values below are the real ones a
+    /// Composer turn wrote on 2026-08-14, including the outermost bundle id
+    /// rather than the `com.github.Electron.helper` every Electron app shares.
+    func testCursorsOwnAgentJumpsToCursor() {
+        let cursor = "com.todesktop.230313mzl4w4u92"
+        let destination = TerminalFocuser.destination(
+            tty: nil,
+            hostApp: "/Applications/Cursor.app",
+            hostID: cursor,
+            fallbackPath: "/Users/waltermak/github/empty",
+            probe: probe(running: [cursor, terminal],
+                         ids: ["/Applications/Cursor.app": cursor])
+        )
+        XCTAssertEqual(destination, .application(bundleID: cursor))
+    }
+
+    /// With Cursor closed there is nothing to raise, and revealing the folder
+    /// beats launching a fresh empty window.
+    func testAClosedCursorFallsBackToFinder() {
+        let destination = TerminalFocuser.destination(
+            tty: nil,
+            hostApp: "/Applications/Cursor.app",
+            hostID: "com.todesktop.230313mzl4w4u92",
+            fallbackPath: "/Users/waltermak/github/empty",
+            probe: probe(running: [terminal])
+        )
+        XCTAssertEqual(destination, .finder(path: "/Users/waltermak/github/empty"))
+    }
+
     /// Sessions written before host_app existed name no host, so every running
     /// terminal is still worth searching — that is all we ever had.
     func testAnUnknownHostStillSearchesRunningTerminals() {
