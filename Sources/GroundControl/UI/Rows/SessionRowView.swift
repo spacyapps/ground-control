@@ -28,6 +28,10 @@ final class SessionRowView: NSView {
     private var useAlternateBackground = false
     private var trackingArea: NSTrackingArea?
 
+    /// Where the menu mark sits, filled in during layout so the click test and
+    /// the drawing cannot disagree about it.
+    private var menuRect: NSRect = .zero
+
     override var isFlipped: Bool { true }
 
     init() {
@@ -200,6 +204,17 @@ final class SessionRowView: NSView {
         let dotX = leadingInset + disclosureWidth + (isGroup ? 4 : 0)
         dot.frame = NSRect(x: dotX, y: (bounds.height - dotSize) / 2, width: dotSize, height: dotSize)
 
+        // Above the dot, sharing its column: the row's own affordances stay in
+        // one line down the leading edge. Right-click still works — this is the
+        // visible way in, not a replacement.
+        let markSide: CGFloat = 14
+        menuRect = NSRect(
+            x: dot.frame.midX - markSide / 2,
+            y: max(2, dot.frame.minY - markSide - 4),
+            width: markSide,
+            height: markSide
+        )
+
         let textX = dot.frame.maxX + 8
         let trailingInset = padding + (onLeft ? 0 : avatarSpan)
         let textWidth = max(0, bounds.width - textX - trailingInset)
@@ -277,6 +292,33 @@ final class SessionRowView: NSView {
         line.move(to: NSPoint(x: 0, y: bounds.maxY - 0.5))
         line.line(to: NSPoint(x: bounds.width, y: bounds.maxY - 0.5))
         line.stroke()
+
+        drawMenuMark()
+    }
+
+    /// Three dots above the status dot: the same menu right-click gives, for
+    /// anyone who never thinks to right-click a row.
+    ///
+    /// Faint until the pointer is on the row, so a list at rest stays about the
+    /// sessions rather than about its own controls.
+    private func drawMenuMark() {
+        guard menuRect.height > 0 else { return }
+        let ink = theme.colors.messageDim.withAlphaComponent(isHovering ? 0.95 : 0.35)
+        ink.setFill()
+
+        let diameter: CGFloat = 2.5
+        let gap: CGFloat = 4
+        let total = diameter * 3 + gap * 2
+        var y = menuRect.midY - total / 2
+        for _ in 0..<3 {
+            NSBezierPath(ovalIn: NSRect(
+                x: menuRect.midX - diameter / 2,
+                y: y,
+                width: diameter,
+                height: diameter
+            )).fill()
+            y += diameter + gap
+        }
     }
 
     override func updateTrackingAreas() {
@@ -307,6 +349,11 @@ final class SessionRowView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
+        // Generously sized: the mark is 14pt but the target is not.
+        if menuRect.insetBy(dx: -6, dy: -6).contains(point) {
+            onSecondaryClick?(event)
+            return
+        }
         if isGroup && disclosure.frame.insetBy(dx: -4, dy: -4).contains(point) {
             onToggleChildren?()
             return
