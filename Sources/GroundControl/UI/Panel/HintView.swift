@@ -78,7 +78,14 @@ final class HintView: NSView {
 
     private func position(near anchor: NSRect, in container: NSView) {
         let padding = NSSize(width: 8, height: 4)
-        let text = label.intrinsicContentSize
+        // Measured from the string rather than read off the label: a fresh
+        // value leaves intrinsicContentSize stale until the next layout pass,
+        // and the hint was sized for whatever it said a moment ago.
+        label.sizeToFit()
+        let text = NSSize(
+            width: ceil(label.frame.width) + 1,
+            height: ceil(label.frame.height)
+        )
         let size = NSSize(
             width: min(text.width + padding.width * 2, container.bounds.width - 16),
             height: text.height + padding.height * 2
