@@ -33,7 +33,7 @@ change stays changed.
 |---|---|
 | `default/` | every colour key, no artwork |
 | `example-avatars/` | the avatar system — three stills and an animated GIF |
-| `spacyAppsLunarAvatar/` | a shaped window: avatars, chroma keying, matrix messages, art past the panel edge |
+| `spacyAppsLunarAvatar/` | a shaped window: nine-grid frame, an animated skin, chroma keying, art past the panel edge |
 | `spacyAppsUnicornOverlord/` | a frame drawn *in front* of the rows — `window.overlay`, four-sided insets, an animated loop |
 
 Copy whichever is closest to what you want.
@@ -344,8 +344,48 @@ Two rules follow:
   `swift Scripts/fit-frame-art.swift <in> <out> 450` resizes the art — animated
   or still, keeping every frame and its timing — and prints that measurement.
 
-The panel now refuses to shrink below `left + right` and `top + bottom`, so
-caps that are too large cost you a minimum size rather than a mangled frame.
+  It measures by how *deep* the artwork hangs in each column: the girder is a
+  thin band and any ornament is thicker than it. An earlier version looked for
+  where the silhouette's top edge stops moving, and read `10` on artwork whose
+  corner towers happen to have flat tops — a cap that would have sliced the
+  whole corner into the tiled strip.
+
+The panel refuses to shrink below `left + right` and `top + bottom`, so caps
+that are too large cost you a minimum size rather than a mangled frame.
+
+##### Ornament depth is a layout decision too
+
+The cap measurement says how far in an ornament reaches *across*. How far it
+reaches *down* matters just as much, because the panel's own chrome lives in
+the top-left: the ✕, the brand glyph, and the title, in that order from the
+edge.
+
+The marks are drawn above the skin and always visible. **The title and glyph
+are not** — they sit under an `overlay: true` frame, so a corner ornament
+deeper than about 60px in a 450px image will cover them. Keep corner ornaments
+shallow, or accept that the strip's left end is decoration.
+
+#### Animated frames
+
+An animated skin has two failure modes a still cannot have, and both are worth
+stating to whoever draws it:
+
+- **The silhouette must be locked.** Every frame must have identical outer
+  bounds. Frames generated one from the next drift: one station frame varied
+  17px in height and 6px in width across 60 frames, and read on screen as the
+  panel changing size while it played.
+- **The loop must close.** The last frame has to flow into the first. The same
+  frame ended 2,300 artwork pixels heavier than it started — it grew steadily,
+  then snapped back at the wrap.
+
+Both are measurable before the file is installed: compare each frame's bounding
+box and its opaque pixel count. A good one holds all four edges at zero
+variation and returns to its starting pixel count exactly.
+
+Animate surface detail only — window lights, indicator lamps, a glint moving
+along a hull panel — and keep the frame count low. Twenty-four to thirty frames
+at 450px is roughly 700KB; sixty frames at 900px was 5.9MB for the same
+animation.
 
 **Insets are measured in the artwork's own pixels** — read them straight off
 your image. A 900px picture whose frame is 180px thick uses `180`.

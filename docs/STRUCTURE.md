@@ -58,8 +58,10 @@ GroundControl/
 │   │   │   ├── PanelController.swift      # show/hide, position persistence
 │   │   │   ├── PanelBackgroundView.swift  # themed surface: title bar + list
 │   │   │   ├── TitleBarView.swift         # themed strip, drag handle, analyser
+│   │   │   ├── CornerMarkView.swift       # what the two corner marks share
 │   │   │   ├── CloseMarkView.swift        # the ✕ — above any skin (see below)
 │   │   │   ├── ResizeGripView.swift       # the ↔ — the only resize on a shaped panel
+│   │   │   ├── HintView.swift             # the panel's own tooltip; AppKit's never show
 │   │   │   ├── SkinOverlayView.swift      # window.overlay: the skin drawn in front
 │   │   │   ├── SkinInterior.swift         # what a frame encloses vs what is outside it
 │   │   │   ├── VisualizerView.swift       # WinAmp-style analyser, driven by state
