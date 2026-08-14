@@ -59,4 +59,15 @@ extension SessionRowView {
             y += thickness + gap
         }
     }
+
+    /// The hint for the menu mark's rectangle. Right-click is mentioned because
+    /// it still works, and someone who learns it stops needing the mark.
+    public func view(_ view: NSView,
+                     stringForToolTip tag: NSView.ToolTipTag,
+                     point: NSPoint,
+                     userData: UnsafeMutableRawPointer?) -> String {
+        "Menu — right-clicking the row does the same"
+    }
 }
+
+extension SessionRowView: NSViewToolTipOwner {}

@@ -39,6 +39,12 @@ final class SessionRowView: NSView {
     /// when the pointer is on *it*, the way the avatar button does, not
     /// whenever the pointer is anywhere in the row.
     var isMenuHovered = false
+    /// Removed and re-added as the row lays out, so the hint follows the mark
+    /// rather than describing where it used to be.
+    private var menuToolTipTag: NSView.ToolTipTag?
+    /// What clicking the avatar will actually do — the app it will raise, which
+    /// the row is told because only the coordinator can work it out.
+    private var jumpHint: String?
 
     override var isFlipped: Bool { true }
 
@@ -226,6 +232,9 @@ final class SessionRowView: NSView {
             height: markSide
         )
 
+        if let menuToolTipTag { removeToolTip(menuToolTipTag) }
+        menuToolTipTag = addToolTip(menuTarget, owner: self, userData: nil)
+
         let textX = dot.frame.maxX + 8
         let trailingInset = padding + (onLeft ? 0 : avatarSpan)
         let textWidth = max(0, bounds.width - textX - trailingInset)
@@ -339,6 +348,13 @@ final class SessionRowView: NSView {
         guard inside != isMenuHovered else { return }
         isMenuHovered = inside
         needsDisplay = true
+    }
+
+    /// Says where the click goes, not merely that it goes somewhere: "Jump to
+    /// Visual Studio Code" answers a question "Jump to session" leaves open.
+    func applyJumpHint(_ destination: String?) {
+        jumpHint = destination
+        avatar.toolTip = destination.map { "Jump to \($0)" } ?? "Show the folder in Finder"
     }
 
     override func mouseDown(with event: NSEvent) {

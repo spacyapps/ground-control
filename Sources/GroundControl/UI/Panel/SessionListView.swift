@@ -150,6 +150,14 @@ final class SessionListView: NSView {
                 isAlternate: index.isMultiple(of: 2),
                 showsSource: showsSource
             ))
+            // Where the click lands is worked out from what cc-notify recorded,
+            // so the hint can name the app rather than saying "the terminal" and
+            // being wrong for anyone in an editor.
+            row.applyJumpHint(TerminalFocuser.destinationName(
+                tty: session.tty,
+                hostApp: session.hostApp,
+                hostID: session.hostID
+            ))
             row.onActivate = { [weak self] in self?.onActivate?(session) }
             row.onSecondaryClick = { [weak self] event in self?.onSecondaryClick?(session, event) }
             row.onToggleChildren = { [weak self] in self?.toggleExpansion(of: session.id) }
