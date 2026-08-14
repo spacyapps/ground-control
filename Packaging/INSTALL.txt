@@ -1,0 +1,55 @@
+Ground Control — alpha
+======================
+
+1. Drag GroundControl.app to your Applications folder.
+
+   It is signed with a Developer ID and notarised by Apple, so it opens on a
+   double-click. No right-click, no warning, and it works offline.
+
+2. Wire up your agent CLI. One command, once:
+
+      /Applications/GroundControl.app/Contents/Resources/install-hooks.sh
+
+   That installs the `cc-notify` emitter to ~/bin and registers it in
+   ~/.claude/settings.json, backing the file up first. It MERGES — hooks you
+   already have keep working — and it is safe to re-run. Claude Code and Grok
+   both read that file, so one install covers both.
+
+   Later versions of the app update the installed emitter themselves on launch,
+   so you never run this again.
+
+3. Open a NEW terminal and start Claude Code or Grok.
+
+   A CLI that is already running has not loaded the hooks. A row appears in the
+   panel as soon as the agent does anything.
+
+The panel lives in the menu bar — the ✦ icon. Click it to show or hide.
+
+
+What to look at
+---------------
+
+- Clicking a row should jump to the terminal or editor that session is in.
+  Terminal.app and iTerm2 land on the exact tab; VS Code, Cursor and the rest
+  bring the app forward.
+
+- A row turns RED when an agent is waiting on you. If you run Claude Code with
+  permissions set to `auto`, it never stops to ask, so you will not see this —
+  worth testing with the default permission mode.
+
+- Right-click a row, or use the ☰ mark above the status dot, for the menu.
+
+- Settings > Theme has two demo skins. Both are shaped windows; drag the
+  bottom-right corner to resize.
+
+- Settings > Panel > "Show the analyser" turns off the moving bars.
+
+
+Known rough edges
+-----------------
+
+- Codex and Gemini are not verified. Claude Code and Grok are.
+- Sessions inside tmux, over ssh, or from a launchd job have no app to jump to,
+  so clicking a row reveals the folder in Finder instead.
+
+Send anything odd to Walter, ideally with a screenshot.

@@ -23,6 +23,7 @@ APP="build/GroundControl.app"
 VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Packaging/Info.plist)"
 PROFILE="${NOTARY_PROFILE:-notary}"
 UPLOAD="build/GroundControl-${VERSION}-upload.zip"
+STAGE="build/zip-stage/GroundControl-${VERSION}"
 DEST="$HOME/Desktop/GroundControl-${VERSION}.zip"
 
 bash Scripts/build-app.sh
@@ -55,9 +56,16 @@ else
   rm -f "$UPLOAD"
 fi
 
+# The app travels with a note. install-hooks.sh lives inside the bundle, and a
+# tester who does not run it sees an empty panel and reasonably concludes the
+# app is broken.
 echo "==> Zipping for delivery"
-rm -f "$DEST"
-ditto -c -k --sequesterRsrc --keepParent "$APP" "$DEST"
+rm -rf "$STAGE" "$DEST"
+mkdir -p "$STAGE"
+cp -R "$APP" "$STAGE/"
+cp Packaging/INSTALL.txt "$STAGE/INSTALL.txt"
+ditto -c -k --sequesterRsrc --keepParent "$STAGE" "$DEST"
+rm -rf "$STAGE"
 
 echo "==> Verifying as the other machine will see it"
 spctl -a -vvv "$APP" 2>&1 | sed 's/^/    /'
