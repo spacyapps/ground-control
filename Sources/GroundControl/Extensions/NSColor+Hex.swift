@@ -21,3 +21,19 @@ extension NSColor {
         self.init(srgbRed: red, green: green, blue: blue, alpha: alpha)
     }
 }
+
+extension NSColor {
+    /// `#rrggbb`, for writing a colour somewhere that only holds text.
+    ///
+    /// Converted to sRGB first: a colour straight from the picker can be in any
+    /// space, and asking an unconverted one for its red component throws.
+    var hexString: String? {
+        guard let rgb = usingColorSpace(.sRGB) else { return nil }
+        return String(
+            format: "#%02X%02X%02X",
+            Int((rgb.redComponent * 255).rounded()),
+            Int((rgb.greenComponent * 255).rounded()),
+            Int((rgb.blueComponent * 255).rounded())
+        )
+    }
+}

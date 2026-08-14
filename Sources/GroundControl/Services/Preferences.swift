@@ -24,6 +24,15 @@ final class Preferences {
         static let renames = "renames"
         static let showsInternalAgents = "showsInternalAgents"
         static let showsAnalyser = "showsAnalyser"
+        static let analyserTint = "analyserTint"
+    }
+
+    /// The analyser's colour, as `#rrggbb`, or nil to use whatever the theme
+    /// asked for. Stored as text because a colour is not a defaults value and
+    /// archiving one would tie the file to an AppKit class.
+    var analyserTint: String? {
+        get { defaults.string(forKey: Key.analyserTint) }
+        set { defaults.set(newValue, forKey: Key.analyserTint) }
     }
 
     /// The bars across the title strip. On by default — it is the first thing

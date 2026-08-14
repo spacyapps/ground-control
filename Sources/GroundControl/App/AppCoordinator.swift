@@ -240,6 +240,7 @@ final class AppCoordinator {
                 applyWindowBehaviour: { [weak self] in self?.panel.applyWindowBehaviour() },
                 reloadSessions: { [weak self] in self?.store.reload() },
                 refreshPanelChrome: { [weak self] in self?.refreshPanelChrome() },
+                reloadTheme: { [weak self] in self?.themeStore.reload() },
                 openThemesFolder: { [weak self] in self?.openThemesFolder() },
                 resetPanelPosition: { [weak self] in self?.panel.resetPosition() },
                 createTheme: { [weak self] in self?.showThemeBuilder() }
