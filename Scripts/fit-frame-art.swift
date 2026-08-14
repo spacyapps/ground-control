@@ -87,28 +87,61 @@ func resample(_ image: CGImage, to side: Int) -> CGImage? {
 /// happen to have flat tops, which is a cap that would slice the whole corner
 /// into the tiled strip. Depth cannot be fooled that way: the girder is a thin
 /// band and every ornament is thicker than it.
-func girderStart(of image: CGImage, key: (Int, Int, Int) = (0, 255, 0)) -> Int? {
-    let width = image.width, height = image.height
-    var pixels = [UInt8](repeating: 0, count: width * height * 4)
-    guard let context = CGContext(
-        data: &pixels,
-        width: width,
-        height: height,
-        bitsPerComponent: 8,
-        bytesPerRow: width * 4,
-        space: CGColorSpaceCreateDeviceRGB(),
-        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-    ) else { return nil }
-    context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+struct Silhouette {
+    let width: Int
+    let height: Int
+    private let opaque: [Bool]
 
-    func isArtwork(_ x: Int, _ y: Int) -> Bool {
-        let index = ((height - 1 - y) * width + x) * 4
-        guard pixels[index + 3] > 120 else { return false }
-        let red = Int(pixels[index]) - key.0
-        let green = Int(pixels[index + 1]) - key.1
-        let blue = Int(pixels[index + 2]) - key.2
-        return red * red + green * green + blue * blue > 130 * 130
+    init?(_ image: CGImage, key: (Int, Int, Int) = (0, 255, 0)) {
+        width = image.width
+        height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        guard let context = CGContext(
+            data: &pixels,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        var mask = [Bool](repeating: false, count: width * height)
+        for cell in 0..<(width * height) {
+            let index = cell * 4
+            guard pixels[index + 3] > 120 else { continue }
+            let red = Int(pixels[index]) - key.0
+            let green = Int(pixels[index + 1]) - key.1
+            let blue = Int(pixels[index + 2]) - key.2
+            mask[cell] = red * red + green * green + blue * blue > 130 * 130
+        }
+        opaque = mask
     }
+
+    /// Row 0 is the top of the picture, which is how the caps are described.
+    func isArtwork(_ x: Int, _ y: Int) -> Bool {
+        opaque[(height - 1 - y) * width + x]
+    }
+
+    /// How far the left girder's inner face sits from the edge, on this row.
+    func leftInnerFace(atRow y: Int) -> Int {
+        var inner = -1
+        for x in 0..<(width / 2) where isArtwork(x, y) { inner = x }
+        return inner
+    }
+
+    /// The same for the top girder, down this column.
+    func topInnerFace(atColumn x: Int) -> Int {
+        var inner = -1
+        for y in 0..<(height / 2) where isArtwork(x, y) { inner = y }
+        return inner
+    }
+}
+
+func girderStart(of art: Silhouette) -> Int? {
+    let width = art.width, height = art.height
+    func isArtwork(_ x: Int, _ y: Int) -> Bool { art.isArtwork(x, y) }
 
     // How far down the artwork reaches in each column, across the top half.
     var depth = [Int](repeating: 0, count: width)
@@ -126,6 +159,34 @@ func girderStart(of image: CGImage, key: (Int, Int, Int) = (0, 255, 0)) -> Int? 
     let limit = width / 2
     guard let last = (0..<limit).last(where: { depth[$0] > girder + 8 }) else { return nil }
     return last + 1
+}
+
+/// The cap that makes a tiled frame join cleanly.
+///
+/// `tile` repeats the band between the caps, so that band's two ends meet at
+/// every repeat. Where a girder bows even slightly — hand-drawn and generated
+/// art both do — the join shows as a step, and the cap is what decides which
+/// two rows have to match. The smallest cap that clears the ornament is not
+/// automatically the one that joins best.
+///
+/// Sweeps outward from `floor` and reports the first cap whose seam is within a
+/// pixel of the best on offer, because a smaller cap keeps the frame lighter and
+/// the panel's minimum size lower.
+func seamAt(_ cap: Int, of art: Silhouette) -> Int {
+    let vertical = abs(art.leftInnerFace(atRow: cap)
+        - art.leftInnerFace(atRow: art.height - 1 - cap))
+    let horizontal = abs(art.topInnerFace(atColumn: cap)
+        - art.topInnerFace(atColumn: art.width - 1 - cap))
+    return max(vertical, horizontal)
+}
+
+func seamlessCap(of art: Silhouette, from floor: Int) -> (cap: Int, seam: Int)? {
+    let reach = min(art.width, art.height) / 2
+    guard floor < reach else { return nil }
+
+    let candidates = (floor..<min(floor + 60, reach)).map { ($0, seamAt($0, of: art)) }
+    guard let best = candidates.map(\.1).min() else { return nil }
+    return candidates.first { $0.1 <= best + 1 }
 }
 
 // MARK: - Run
@@ -174,9 +235,21 @@ let attributes = try? FileManager.default.attributesOfItem(atPath: outputPath)
 let bytes = (attributes?[.size] as? Int) ?? 0
 print("wrote \(outputPath) — \(frames.count) frame(s), \(side)px -> \(target)px, \(bytes / 1024)KB")
 
-if let cap = girderStart(of: frames[0]) {
-    print("measured cap inset: \(cap)  (the girder starts there; caps are points, drawn 1:1)")
-    print("minimum sensible panel width: \(cap * 2)pt")
-} else {
+guard let art = Silhouette(frames[0]) else { exit(0) }
+
+guard let floor = girderStart(of: art) else {
     print("could not find a flat girder — this art may not suit nine-slice at all")
+    exit(0)
+}
+print("ornament ends at: \(floor)px  (caps are points, drawn 1:1)")
+
+// `tile` repeats the band between the caps, so a bowed girder shows a step
+// wherever it wraps. Worth reporting even when the answer is "no improvement".
+let floorSeam = seamAt(floor, of: art)
+if let (cap, seam) = seamlessCap(of: art, from: floor), cap != floor, seam < floorSeam {
+    print("suggested capInsets: \(cap)   — tiled seam \(seam)px here, \(floorSeam)px at \(floor)")
+    print("minimum panel size: \(cap * 2)pt")
+} else {
+    print("suggested capInsets: \(floor)   — tiled seam \(floorSeam)px, nothing larger improves it")
+    print("minimum panel size: \(floor * 2)pt")
 }

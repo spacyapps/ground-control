@@ -350,6 +350,27 @@ Two rules follow:
   corner towers happen to have flat tops — a cap that would have sliced the
   whole corner into the tiled strip.
 
+##### With `tile`, the cap also decides where the seam falls
+
+`tile` repeats the band between the caps, so that band's **two ends meet at
+every repeat**. Where a girder bows even slightly — hand-drawn and generated art
+both do — that join shows as a step, and the cap is what decides which two rows
+have to match.
+
+The smallest cap that clears the ornament is therefore not automatically the
+best one. On the current lunar frame the ornament ends at 119, where the join
+steps 6px; going out to 137 brings it to 1px:
+
+```
+cap 119  ->  seam 6px      (the smallest cap that clears the ornament)
+cap 129  ->  seam 2px
+cap 137  ->  seam 1px      (what the script suggests)
+```
+
+`fit-frame-art.swift` sweeps this and prints both numbers, so the trade is
+visible: a larger cap joins better but raises the panel's minimum size, since
+that minimum is `cap × 2`. Where nothing larger helps, it says so.
+
 The panel refuses to shrink below `left + right` and `top + bottom`, so caps
 that are too large cost you a minimum size rather than a mangled frame.
 
