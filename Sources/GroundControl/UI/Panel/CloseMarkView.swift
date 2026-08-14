@@ -17,6 +17,9 @@ final class CloseMarkView: NSView {
 
     private var theme: Theme = DefaultTheme.theme
     private var isHighlighted = false
+    /// The panel draws its own hints; AppKit's tooltips never show here, the
+    /// app being an accessory whose panel does not activate.
+    var onHint: ((String?, NSRect) -> Void)?
     private var trackingArea: NSTrackingArea?
 
     override var isFlipped: Bool { true }
@@ -28,7 +31,6 @@ final class CloseMarkView: NSView {
     init() {
         super.init(frame: NSRect(origin: .zero, size: Self.size))
         wantsLayer = true
-        toolTip = "Hide the panel"
     }
 
     @available(*, unavailable)
@@ -60,11 +62,13 @@ final class CloseMarkView: NSView {
     override func mouseEntered(with event: NSEvent) {
         isHighlighted = true
         needsDisplay = true
+        onHint?("Hide", frame)
     }
 
     override func mouseExited(with event: NSEvent) {
         isHighlighted = false
         needsDisplay = true
+        onHint?(nil, .zero)
     }
 
     override func mouseUp(with event: NSEvent) {

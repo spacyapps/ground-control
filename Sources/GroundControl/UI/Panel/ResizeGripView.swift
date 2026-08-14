@@ -34,6 +34,9 @@ final class ResizeGripView: NSView {
     /// promise a drag that snaps back the moment it ends.
     private var allowsVertical: Bool { theme.layout.resize == .free }
     private var isHighlighted = false
+    /// The panel draws its own hints; AppKit's tooltips never show here, the
+    /// app being an accessory whose panel does not activate.
+    var onHint: ((String?, NSRect) -> Void)?
     private var trackingArea: NSTrackingArea?
 
     override var isFlipped: Bool { true }
@@ -45,7 +48,6 @@ final class ResizeGripView: NSView {
     init() {
         super.init(frame: NSRect(origin: .zero, size: Self.size))
         wantsLayer = true
-        toolTip = "Drag to resize"
     }
 
     @available(*, unavailable)
@@ -79,11 +81,13 @@ final class ResizeGripView: NSView {
     override func mouseEntered(with event: NSEvent) {
         isHighlighted = true
         needsDisplay = true
+        onHint?("Resize", frame)
     }
 
     override func mouseExited(with event: NSEvent) {
         isHighlighted = false
         needsDisplay = true
+        onHint?(nil, .zero)
     }
 
     override func mouseDown(with event: NSEvent) {
