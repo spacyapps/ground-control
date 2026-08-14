@@ -12,12 +12,12 @@ import AppKit
 /// question, so it is where the answer belongs.
 @MainActor
 final class ContextMenuTests: XCTestCase {
-    private func session(source: String, needsAction: Bool = false) -> Session {
+    private func session(source: String, needsAction: Bool = false) throws -> Session {
         let json = """
         {"session_id":"s1","source":"\(source)","name":"empty","cwd":"/tmp/empty",\
         "state":"working","needs_action":\(needsAction),"ts":1}
         """
-        let event = try! JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
+        let event = try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
         return Session(id: event.sessionID, latest: event, children: [], acknowledgedAt: nil)
     }
 
@@ -25,15 +25,15 @@ final class ContextMenuTests: XCTestCase {
         menu.items.filter { !$0.isSeparatorItem }.map(\.title)
     }
 
-    func testACursorRowExplainsWhyItNeverTurnsRed() {
-        let menu = AppCoordinator().contextMenu(for: session(source: "cursor"))
+    func testACursorRowExplainsWhyItNeverTurnsRed() throws {
+        let menu = AppCoordinator().contextMenu(for: try session(source: "cursor"))
         XCTAssertTrue(titles(menu).contains("Cursor agent: limited support"))
         XCTAssertTrue(titles(menu).contains("No alert when it waits for approval"))
     }
 
     /// The note explains; it must never look like something you failed to click.
-    func testTheNoteIsNotAnAction() {
-        let menu = AppCoordinator().contextMenu(for: session(source: "cursor"))
+    func testTheNoteIsNotAnAction() throws {
+        let menu = AppCoordinator().contextMenu(for: try session(source: "cursor"))
         let note = menu.items.first { $0.title == "Cursor agent: limited support" }
         XCTAssertNotNil(note?.attributedTitle, "a plain title reads as a disabled action")
         XCTAssertNil(note?.action, "it must not be selectable")
@@ -42,9 +42,9 @@ final class ContextMenuTests: XCTestCase {
 
     /// Claude and Grok have a working alarm, so the note would be a lie there —
     /// and a menu that carries a caveat on every row teaches people to skip it.
-    func testOtherCLIsCarryNoNote() {
+    func testOtherCLIsCarryNoNote() throws {
         for source in ["claude", "grok"] {
-            let menu = AppCoordinator().contextMenu(for: session(source: source))
+            let menu = AppCoordinator().contextMenu(for: try session(source: source))
             XCTAssertFalse(
                 titles(menu).contains { $0.hasPrefix("Cursor agent") },
                 "\(source) rows should not mention Cursor"
@@ -54,8 +54,8 @@ final class ContextMenuTests: XCTestCase {
 
     /// The actions stay first and unchanged: the note is an addition, not a
     /// rearrangement of a menu people already know.
-    func testTheActionsComeFirstAndAreUnchanged() {
-        let menu = AppCoordinator().contextMenu(for: session(source: "cursor"))
+    func testTheActionsComeFirstAndAreUnchanged() throws {
+        let menu = AppCoordinator().contextMenu(for: try session(source: "cursor"))
         XCTAssertEqual(
             Array(titles(menu).prefix(6)),
             ["Jump to Terminal", "Reveal in Finder", "Dismiss Alert",
