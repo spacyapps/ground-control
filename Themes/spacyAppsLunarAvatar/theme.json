@@ -43,10 +43,10 @@
     "marqueeOnOverflow": true,
     "density": "comfortable",
     "contentInset": {
-      "top": 66,
-      "left": 58,
-      "bottom": 44,
-      "right": 58
+      "top": 36,
+      "left": 32,
+      "bottom": 52,
+      "right": 32
     },
     "contentCornerRadius": 0,
     "resize": "free"
@@ -70,10 +70,10 @@
     "removeBackground": "#00FF00",
     "mode": "tile",
     "capInsets": {
-      "top": 94,
-      "left": 94,
-      "bottom": 94,
-      "right": 94
+      "top": 97,
+      "left": 97,
+      "bottom": 97,
+      "right": 97
     }
   },
   "author": "SpacyApps"
