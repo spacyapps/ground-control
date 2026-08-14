@@ -6,11 +6,40 @@ import Foundation
 /// What the author wants, gathered from a few questions in Settings and turned
 /// into a prompt for an image-capable LLM.
 struct ThemeBrief: Equatable {
+    /// The two ways a frame can meet a resize.
+    enum Frame: String, CaseIterable {
+        /// One picture, scaled as a whole. Any artwork works, nothing to
+        /// measure, and the panel keeps the picture's proportions.
+        case simple
+        /// Nine-grid: corners hold their size while the edges repeat. More to
+        /// get right — the corners must contain the ornament and the edges must
+        /// tile — and the only kind that survives being dragged to any shape.
+        case ninegrid
+
+        static let defaultKey = "#00FF00"
+
+        var title: String {
+            switch self {
+            case .simple: return "Simple — one picture, scaled to fit"
+            case .ninegrid: return "Nine-grid — corners hold, edges repeat"
+            }
+        }
+    }
+
     var name: String
     var subject: String
     var style: String
     var mood: String
     var wantsAnimation: Bool
+    /// How the frame behaves when the panel is resized. The single most
+    /// consequential choice in a theme, and the one an author cannot deduce
+    /// from the artwork alone.
+    var frame: Frame = .simple
+    /// The flat colour filled around — and, for an overlay, behind — the
+    /// artwork, which the app keys out on load. It has to be a colour the art
+    /// never uses, so it cannot be a fixed one: a green frame keyed on green
+    /// erases itself.
+    var keyColour: String = Frame.defaultKey
     /// Empty means "colours only" — no background artwork requested.
     var background: String
     var avatarSize: Int
@@ -22,6 +51,8 @@ struct ThemeBrief: Equatable {
         style: "16-bit pixel art, chunky outlines",
         mood: "warm amber on near-black",
         wantsAnimation: true,
+        frame: .simple,
+        keyColour: Frame.defaultKey,
         background: "brushed dark metal with a faint scanline texture",
         avatarSize: 48,
         position: "right"

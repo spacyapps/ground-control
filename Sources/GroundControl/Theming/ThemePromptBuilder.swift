@@ -12,9 +12,15 @@ import AppKit
 enum ThemePromptBuilder {
     static func prompt(for brief: ThemeBrief) -> String {
         let numbered = [
+            brief.wantsBackgroundArt ? choices(for: brief) : "",
             artwork(for: brief),
-            brief.wantsBackgroundArt ? ThemePromptText.backgroundSection : "",
-            brief.wantsBackgroundArt ? ThemePromptText.shapeSection : "",
+            brief.wantsBackgroundArt
+                ? ThemePromptText.backgroundSection(
+                    key: brief.keyColour,
+                    ninegrid: brief.frame == .ninegrid
+                )
+                : "",
+            brief.wantsBackgroundArt ? ThemePromptText.shapeSection(key: brief.keyColour) : "",
             manifestSection(for: brief),
             installation(for: brief)
         ].filter { !$0.isEmpty }
@@ -107,37 +113,124 @@ enum ThemePromptBuilder {
           only for `.mov` / `.mp4`. If both are set, video wins.
         - Omit any state you do not want to draw and the app's own drawn face is
           used for it, tinted from this palette.
-        \(brief.wantsBackgroundArt ? backgroundKeys : "")
+        \(brief.wantsBackgroundArt ? backgroundKeys(for: brief) : "")
         """
     }
 
     /// Only shown when a background was asked for, and shows the *same* API the
     /// background sections describe — a JSON example that disagrees with the
     /// prose wins, because it is the concrete thing.
-    private static let backgroundKeys = """
-        Add this block for the background, with the numbers you chose:
+    /// The frame instructions, which differ completely between the two kinds
+    /// and are the thing an author most needs to get right.
+    ///
+    /// A JSON example that disagrees with the prose wins, because it is the
+    /// concrete thing — so each branch prints the manifest it is describing,
+    /// carrying the key colour the author actually chose.
+    /// Stated once, near the top, because both facts govern every image the
+    /// author is about to draw.
+    static func choices(for brief: ThemeBrief) -> String {
+        let frame = brief.frame == .ninegrid
+            ? "**nine-grid** — corners hold their size, edges repeat, so the panel can be dragged to any shape"
+            : "**one picture, scaled** — the whole frame shrinks and grows together, keeping its proportions"
+
+        return """
+        ## Two things that govern everything below
+
+        **Frame:** \(frame).
+
+        **Key colour: `\(brief.keyColour)`.** Fill every pixel that is not
+        artwork with exactly this colour — the surround, and the middle too if
+        the frame is drawn in front. I remove it on load. Never use it, or
+        anything near it, inside the art itself: that is why it is chosen per
+        theme rather than fixed.
+        """
+    }
+
+    private static func backgroundKeys(for brief: ThemeBrief) -> String {
+        brief.frame == .ninegrid ? ninegridKeys(for: brief) : simpleKeys(for: brief)
+    }
+
+    private static func simpleKeys(for brief: ThemeBrief) -> String {
+        """
+        Add this block for the frame:
 
         ```json
         "window": {
           "image": "panel.png",
-          "lockAspect": false,
-          "removeBackground": "#00FF00",
-          "mode": "tile",
-          "capInsets": { "top": 100, "left": 100, "bottom": 100, "right": 100 }
+          "lockAspect": true,
+          "removeBackground": "\(brief.keyColour)"
         },
-        "layout": { "contentInset": 75 }
+        "layout": { "resize": "aspect", "contentInset": 60 }
         ```
 
-        - `lockAspect: false` lets the panel grow with my sessions and slices the
-          art to follow, so `mode` and `capInsets` apply. Use `true` instead to
-          keep your proportions exactly, with the rows scrolling inside.
-        - `removeBackground` must match the flat colour you filled around the
-          artwork.
-        - Cap insets are drawn 1:1, so **draw at roughly 450px**, not larger. A
-          200px corner on a 400px-wide panel leaves no middle.
+        **The whole picture is scaled to the panel as one piece.** Draw it at any
+        size you like and at whatever proportions suit the art — the panel keeps
+        those proportions, and the rows scroll inside. Nothing needs to tile and
+        nothing needs measuring.
+
+        - `contentInset` holds the rows off your border. Measure it in your own
+          artwork's pixels: if the frame is 120px thick in a 900px image, use
+          `120`. It is scaled along with everything else.
         - Give `rowBackground` and `rowBackgroundAlt` alpha, or the rows cover
           your artwork completely.
-    """
+        """
+    }
+
+    private static func ninegridKeys(for brief: ThemeBrief) -> String {
+        """
+        Add this block for the frame:
+
+        ```json
+        "window": {
+          "image": "frame.png",
+          "lockAspect": false,
+          "mode": "tile",
+          "capInsets": { "top": 75, "left": 75, "bottom": 75, "right": 75 },
+          "removeBackground": "\(brief.keyColour)"
+        },
+        "layout": { "resize": "free", "contentInset": 60 }
+        ```
+
+        **This is the nine-grid, and it decides how you must draw.** The image is
+        cut into nine pieces by `capInsets`, and each behaves differently as the
+        panel is dragged to any size:
+
+        ```
+        ┌────────┬──────────────┬────────┐
+        │ corner │  top edge    │ corner │   corners     never change size
+        │  FIXED │  repeats ↔   │  FIXED │   top/bottom  repeat sideways
+        ├────────┼──────────────┼────────┤   left/right  repeat vertically
+        │ left   │              │ right  │   centre      repeats both ways
+        │ rpts ↕ │  centre ↔↕   │ rpts ↕ │
+        ├────────┼──────────────┼────────┤
+        │ corner │  bottom edge │ corner │
+        │  FIXED │  repeats ↔   │  FIXED │
+        └────────┴──────────────┴────────┘
+        ```
+
+        So, drawing rules — these are not style advice, the art breaks without
+        them:
+
+        - **Every ornament goes in a corner.** Towers, masts, dishes, mascots,
+          flourishes. Anything distinctive on an edge is repeated across the
+          whole side.
+        - **Each edge must be a seamless repeating strip.** The top edge tiles
+          left-to-right, so its left and right ends have to meet. Same for the
+          others down their own axis.
+        - **The centre must be flat or a seamless tile**, and dark enough for
+          white text.
+        - **Draw the whole thing about 450px square.** Cap insets are used at
+          their literal size, so a 150px corner on a 450px-wide panel leaves
+          almost no middle. This is the single most common way one of these
+          goes wrong.
+        - `capInsets` is where your corner artwork ends, in those same pixels —
+          75 for a 450px image with corners about a sixth of the way in.
+        - Use `"mode": "tile"` for detailed edges made of repeating segments,
+          `"stretch"` for plain gradients.
+        - Give `rowBackground` and `rowBackgroundAlt` alpha, or the rows cover
+          your artwork completely.
+        """
+    }
 
     private static func installation(for brief: ThemeBrief) -> String {
         """
