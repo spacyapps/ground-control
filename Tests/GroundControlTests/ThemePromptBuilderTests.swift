@@ -49,13 +49,15 @@ final class ThemePromptBuilderTests: XCTestCase {
         XCTAssertEqual(manifest.avatar?.states?["working"]?.image, "working.png")
         // The artwork brief must not demand motion; the format notes may still
         // mention GIF as a supported option.
-        XCTAssertFalse(ThemePromptBuilder.prompt(for: still).contains("must be an **animated GIF**"))
-        XCTAssertTrue(ThemePromptBuilder.prompt(for: brief).contains("must be an **animated GIF**"))
+        XCTAssertFalse(ThemePromptBuilder.prompt(for: still).contains("must be **animated GIFs**"))
+        XCTAssertTrue(ThemePromptBuilder.prompt(for: brief).contains("must be **animated GIFs**"))
     }
 
     func testPromptNamesEveryStateAndTheAuthorsAnswers() {
         let prompt = ThemePromptBuilder.prompt(for: brief)
-        for filename in ["idle.png", "working.gif", "needs-input.png", "done.png"] {
+        // needs-input animates alongside working now: both are states asking
+        // for attention, and idle and done stay still.
+        for filename in ["idle.png", "working.gif", "needs-input.gif", "done.png"] {
             XCTAssertTrue(prompt.contains(filename), "prompt never mentions \(filename)")
         }
         XCTAssertTrue(prompt.contains("a neon cat"))

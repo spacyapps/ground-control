@@ -345,6 +345,25 @@ The per-state face/mascot. Each state can be an **image** *or* a **video**
 - `states.needsInput` — shown when the session needs you (pairs with the red dot).
 - `states.done` — shown briefly on completion.
 - `size`, `position` (`left` | `right`), `cornerRadius` — layout of the avatar.
+
+**Animate only what is asking for you.** `working` and `needsInput` are the two
+states with something to say, and motion is how they say it. `idle` and `done`
+are resting states — animating them means four looping avatars on screen at once
+and nothing standing out, which is the opposite of the point.
+
+**And they are only ever seen small.** At 48pt a face is a few dozen pixels and
+its expression is unreadable, so the state has to be carried by colour and
+shape:
+
+| state | reads as | carried by |
+|---|---|---|
+| idle | nothing wanted | dim, cool, low contrast — it should recede |
+| working | busy, leave it | motion, cool blue or cyan |
+| needsInput | **stop and look** | warm alarm colour, highest contrast, a symbol if you can |
+| done | finished well | settled green, calm but bright |
+
+Squint at the four at 48pt. If two look alike, the difference is in detail
+nobody can see.
 - Omit a state → the **built-in drawn face** for that state is used, tinted
   with your palette. You never get a blank row, and overriding one state does
   not oblige you to draw the other three.
