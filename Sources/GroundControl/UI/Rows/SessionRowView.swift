@@ -12,6 +12,9 @@ final class SessionRowView: NSView {
     var onActivate: (() -> Void)?
     var onToggleChildren: (() -> Void)?
     var onSecondaryClick: ((NSEvent) -> Void)?
+    /// Reports what the pointer is over, so the panel can draw a hint for it.
+    /// Nil means "nothing worth explaining here".
+    var onHint: ((String?, NSRect) -> Void)?
 
     private let dot = StatusDotView()
     private let nameLabel = NSTextField(labelWithString: "")
@@ -341,13 +344,29 @@ final class SessionRowView: NSView {
         isMenuHovered = false
         NSCursor.pop()
         needsDisplay = true
+        onHint?(nil, .zero)
     }
 
     override func mouseMoved(with event: NSEvent) {
-        let inside = menuTarget.contains(convert(event.locationInWindow, from: nil))
-        guard inside != isMenuHovered else { return }
-        isMenuHovered = inside
-        needsDisplay = true
+        let point = convert(event.locationInWindow, from: nil)
+        let inside = menuTarget.contains(point)
+        if inside != isMenuHovered {
+            isMenuHovered = inside
+            needsDisplay = true
+        }
+        updateHint(at: point)
+    }
+
+    /// The two controls worth explaining, and nothing else: a hint that follows
+    /// the pointer everywhere is noise.
+    private func updateHint(at point: NSPoint) {
+        if isMenuHovered {
+            onHint?("Menu — right-clicking the row does the same", menuTarget)
+        } else if !avatar.isHidden, avatar.frame.contains(point) {
+            onHint?(avatar.toolTip, avatar.frame)
+        } else {
+            onHint?(nil, .zero)
+        }
     }
 
     /// Says where the click goes, not merely that it goes somewhere: "Jump to

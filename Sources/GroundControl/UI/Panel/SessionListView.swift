@@ -24,6 +24,8 @@ private final class TopAlignedClipView: NSClipView {
 final class SessionListView: NSView {
     var onActivate: ((Session) -> Void)?
     var onSecondaryClick: ((Session, NSEvent) -> Void)?
+    /// A hint to draw, already converted into this view's coordinates.
+    var onHint: ((String?, NSRect) -> Void)?
 
     private let scrollView = NSScrollView()
     private let stack = TopAlignedStackView()
@@ -161,6 +163,10 @@ final class SessionListView: NSView {
             row.onActivate = { [weak self] in self?.onActivate?(session) }
             row.onSecondaryClick = { [weak self] event in self?.onSecondaryClick?(session, event) }
             row.onToggleChildren = { [weak self] in self?.toggleExpansion(of: session.id) }
+            row.onHint = { [weak self, weak row] text, rect in
+                guard let self, let row else { return }
+                self.onHint?(text, row.convert(rect, to: self))
+            }
             add(row, height: rowHeight)
             rowViews.append(DrawnRow(session: session, view: row, drawnState: session.state))
             total += rowHeight
