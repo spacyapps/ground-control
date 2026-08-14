@@ -15,7 +15,9 @@ import AppKit
 /// the ink, the hint wiring, and the rule that a drag on a mark must not be
 /// taken as a drag on the window behind it.
 class CornerMarkView: NSView {
-    static let size = NSSize(width: 16, height: 16)
+    /// A class property rather than a stored one so a mark can ask for more
+    /// room — the resize arrow needs it, the ✕ does not.
+    class var size: NSSize { NSSize(width: 16, height: 16) }
 
     /// The panel draws its own hints. AppKit's tooltips never show here: they
     /// appear for the active application, and this one is an accessory whose
@@ -51,6 +53,10 @@ class CornerMarkView: NSView {
     var glyph: String { "" }
 
     var markCursor: NSCursor { .arrow }
+
+    /// How big the glyph is drawn. The ✕ is a solid, familiar shape and reads
+    /// at eleven points; a two-headed arrow is mostly empty space and does not.
+    class var glyphPointSize: CGFloat { 11 }
 
     /// The title colour, so the marks match the strip they sit on — falling
     /// back to plain contrast when a theme picks one that vanishes against its
@@ -107,7 +113,7 @@ class CornerMarkView: NSView {
         let text = NSAttributedString(
             string: glyph,
             attributes: [
-                .font: NSFont.systemFont(ofSize: 11),
+                .font: NSFont.systemFont(ofSize: Self.glyphPointSize),
                 .foregroundColor: ink.withAlphaComponent(isHighlighted ? 1 : 0.5),
                 .shadow: shadow
             ]
