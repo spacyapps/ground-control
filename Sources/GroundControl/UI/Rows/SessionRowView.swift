@@ -21,8 +21,12 @@ final class SessionRowView: NSView {
     private let sourceTag = NSTextField(labelWithString: "")
     private let elapsedLabel = NSTextField(labelWithString: "")
 
-    private var theme: Theme = DefaultTheme.theme
-    private var isHovering = false
+    /// Not private: the menu mark draws itself from the same palette, from
+    /// its own file.
+    var theme: Theme = DefaultTheme.theme
+    /// Not private: the menu mark, in its own file, dims itself when the
+    /// pointer is elsewhere in the row.
+    var isHovering = false
     private var isGroup = false
     private var isExpanded = false
     private var useAlternateBackground = false
@@ -30,7 +34,11 @@ final class SessionRowView: NSView {
 
     /// Where the menu mark sits, filled in during layout so the click test and
     /// the drawing cannot disagree about it.
-    private var menuRect: NSRect = .zero
+    var menuRect: NSRect = .zero
+    /// Tracked separately from the row's own hover: the mark should light up
+    /// when the pointer is on *it*, the way the avatar button does, not
+    /// whenever the pointer is anywhere in the row.
+    var isMenuHovered = false
 
     override var isFlipped: Bool { true }
 
@@ -296,37 +304,12 @@ final class SessionRowView: NSView {
         drawMenuMark()
     }
 
-    /// Three dots above the status dot: the same menu right-click gives, for
-    /// anyone who never thinks to right-click a row.
-    ///
-    /// Faint until the pointer is on the row, so a list at rest stays about the
-    /// sessions rather than about its own controls.
-    private func drawMenuMark() {
-        guard menuRect.height > 0 else { return }
-        let ink = theme.colors.messageDim.withAlphaComponent(isHovering ? 0.95 : 0.35)
-        ink.setFill()
-
-        let diameter: CGFloat = 2.5
-        let gap: CGFloat = 4
-        let total = diameter * 3 + gap * 2
-        var y = menuRect.midY - total / 2
-        for _ in 0..<3 {
-            NSBezierPath(ovalIn: NSRect(
-                x: menuRect.midX - diameter / 2,
-                y: y,
-                width: diameter,
-                height: diameter
-            )).fill()
-            y += diameter + gap
-        }
-    }
-
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         if let trackingArea { removeTrackingArea(trackingArea) }
         let area = NSTrackingArea(
             rect: bounds,
-            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
             owner: self
         )
         addTrackingArea(area)
@@ -343,14 +326,22 @@ final class SessionRowView: NSView {
 
     override func mouseExited(with event: NSEvent) {
         isHovering = false
+        isMenuHovered = false
         NSCursor.pop()
+        needsDisplay = true
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        let inside = menuTarget.contains(convert(event.locationInWindow, from: nil))
+        guard inside != isMenuHovered else { return }
+        isMenuHovered = inside
         needsDisplay = true
     }
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         // Generously sized: the mark is 14pt but the target is not.
-        if menuRect.insetBy(dx: -6, dy: -6).contains(point) {
+        if menuTarget.contains(point) {
             onSecondaryClick?(event)
             return
         }
