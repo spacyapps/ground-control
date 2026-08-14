@@ -24,6 +24,8 @@ Every claim here is dated. When something is verified, move it up and say how.
 | Jumping to a host app | VS Code session with no tty at all; clicking raised the editor | 2026-08-12 |
 | **The red alarm, end to end** | a blocked session turned the row red, the click landed on its tab, and the alarm cleared — watched, not derived | 2026-08-12 |
 | iTerm2 jump-to-pane | three sessions in two panes and a tab; every row landed on its own | 2026-08-12 |
+| Cursor as a host app | Claude Code in Cursor's terminal: the row appeared, went red for a permission prompt, and clicking it raised Cursor | 2026-08-14 |
+| Nine-slice orientation | red-top/blue-bottom test image drawn through the real overlay view; the caps were swapping | 2026-08-14 |
 
 ---
 
@@ -169,10 +171,26 @@ Terminal — the wrong app, confidently, which is worse than the Finder it
 replaced. A tty belongs to whichever app opened it; the search now runs only
 when the host is a terminal we can script.
 
-Still unmeasured: Cursor, Windsurf, Warp, Ghostty and WezTerm. All are expected
-to work by the same mechanism — Cursor is a VS Code fork with identically
-structured helper bundles — but expected is not measured, and this file exists
-to keep that distinction.
+**Cursor — measured 2026-08-14.** Claude Code running in Cursor's integrated
+terminal: the row appeared, went red when the agent asked permission to run a
+command, and clicking it brought Cursor forward.
+
+The click is what proves the attribution, more firmly than reading the field
+would have. Raising an application is only reachable through the `.application`
+destination, which needs `host_id` resolved; had the walk failed, the tty would
+have found no scriptable terminal and the row would have fallen through to
+Finder. So the outermost-bundle rule holds on a real Cursor install, not just
+against the paths inspected when it was written.
+
+Cursor's **own** agent — Composer and Chat — remains invisible, and is a
+different problem rather than an unmeasured one. It has its own hook system in
+`~/.cursor/hooks.json`, camelCased (`sessionStart`, `preToolUse`, `stop`), and
+reads nothing from `~/.claude/settings.json`. The transport is the same JSON on
+stdin, so an adapter is small, but it must be built from probed payloads: this
+file exists because writing an integration from documentation has silently
+failed twice here.
+
+Still unmeasured: Windsurf, Warp, Ghostty and WezTerm.
 
 ### 4. iTerm2 jump-to-tab — **verified 2026-08-12, first execution**
 
@@ -262,7 +280,7 @@ change.
 | Grok | ✓ — reads `~/.claude/settings.json` | camelCase | same, lowercased | **working** |
 | Codex | ✓ experimental, `[features] codex_hooks = true` | unconfirmed | same as Claude | untested, likely works |
 | Gemini | ✓ `~/.gemini/settings.json` | snake_case, same names | **its own** | needs aliases |
-| Cursor | `~/.cursor/hooks.json` exists | unknown | unknown | unexamined |
+| Cursor | `~/.cursor/hooks.json`, schema `version: 1` | unknown | **camelCase** (`sessionStart`, `preToolUse`, `stop`) | its terminal works today; its own agent needs an adapter |
 | opencode | plugin API (`@opencode-ai/plugin`), `event` hook | n/a — TypeScript | n/a | would need a plugin, not a script |
 
 ### Codex (researched 2026-08-11, not installed)
