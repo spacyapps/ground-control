@@ -71,6 +71,11 @@ final class PanelController {
         panel?.apply(shaped: theme.window.isShaped)
         chrome.apply(theme: theme)
         panel?.invalidateShadow()
+        // Themes disagree about what the panel's size means — one derives the
+        // height from its artwork, the next from the rows, a third leaves it to
+        // you. Without this, a theme was drawn at whatever size the *previous*
+        // one had settled on, and looked wrong through no fault of its own.
+        fitHeightToContent()
     }
 
     func apply(sessions: [Session]) {

@@ -234,6 +234,55 @@ the rows, or the artwork when `lockAspect` is true.
 panel is scaled as one piece and the list scrolls. Unlocked, it grows with your
 sessions and the art must slice to follow.
 
+### What each combination actually does
+
+Two keys decide how the artwork behaves; a third decides the panel. They are
+easy to set in combinations that quietly cancel each other out, so here is the
+whole matrix.
+
+| `lockAspect` | `mode` | `capInsets` | What happens as the panel resizes |
+|---|---|---|---|
+| `true` *(default)* | **ignored** | **ignored** | The whole image is **scaled** to the panel as one piece. Everything shrinks together. |
+| `false` | `tile` *(default)* | `0` | The image **repeats** as a texture. Nothing scales. |
+| `false` | `tile` | set | **Nine-grid.** Corners hold their size; edges and centre *repeat*. |
+| `false` | `stretch` | set | **Nine-grid.** Corners hold their size; edges and centre *stretch*. |
+| `false` | `center` | ignored | Drawn once at natural size, centred. The panel grows around it. |
+| `false` | `aspectFill` | ignored | Scaled to cover and cropped. Proportions kept, edges lost. |
+
+**The first row is the one that catches people.** With `lockAspect` left at its
+default, `mode` and `capInsets` are discarded — a carefully measured set of caps
+does nothing at all, and the frame simply scales.
+
+### The nine grid
+
+```
+┌────────┬──────────────┬────────┐
+│ corner │  top edge    │ corner │    corners     never change size
+│  FIXED │  ↔ only      │  FIXED │    top/bottom  grow horizontally only
+├────────┼──────────────┼────────┤    left/right  grow vertically only
+│ left   │              │ right  │    centre      grows both ways
+│ ↕ only │  centre ↔↕   │ ↕ only │
+├────────┼──────────────┼────────┤    capInsets = how far in from each edge
+│ corner │  bottom edge │ corner │    your corner artwork ends
+│  FIXED │  ↔ only      │  FIXED │
+└────────┴──────────────┴────────┘
+```
+
+### Choosing by what your artwork is
+
+| Your image is | Write | Because |
+|---|---|---|
+| a **picture frame**, detail in the corners | `lockAspect: false`, `mode: "stretch"`, caps at the corner extent | ornaments hold their size; only the plain bands stretch |
+| a **seamless texture** | `lockAspect: false`, `mode: "tile"`, no caps | it repeats forever at any size |
+| a **designed object** whose proportions matter | `lockAspect: true` with `layout.resize: "aspect"` | scaled as one piece, never distorted |
+| a **mascot or vignette** on a plain field | `lockAspect: false`, `mode: "center"` | it keeps its own size while the panel grows |
+
+**Pair the panel's mode deliberately.** `layout.resize: "free"` with
+`lockAspect: true` lets you drag the panel to any shape while the artwork is
+scaled as one piece — so the picture distorts. `free` wants a nine-grid skin.
+The two shipped demos are the clean pairs: `spacyAppsLunarAvatar` is
+`free` + nine-grid, `spacyAppsUnicornOverlord` is `aspect` + scaled-whole.
+
 #### When the aspect is unlocked
 
 Nine-slice applies, so two more keys matter:

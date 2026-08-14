@@ -48,6 +48,20 @@ enum ThemePromptText {
     - Centre → flat or a tiling texture, dark enough for text
     - No single large object anywhere but a corner
 
+    ### How the frame behaves when I resize the panel
+
+    | `lockAspect` | `mode` | `capInsets` | Result |
+    |---|---|---|---|
+    | `true` (default) | ignored | ignored | whole image scales as one piece |
+    | `false` | `tile` | none | image repeats as a texture |
+    | `false` | `tile` / `stretch` | set | **nine-grid**: corners hold, edges and centre repeat or stretch |
+    | `false` | `center` | ignored | drawn once at natural size, centred |
+
+    **For a picture frame, use the nine-grid row**: `"lockAspect": false`,
+    `"mode": "stretch"`, and `capInsets` set to where your corner ornaments end.
+    With `lockAspect` left at its default your caps are ignored entirely and the
+    frame just shrinks.
+
     ### Insets are measured in your artwork's own pixels
 
     `layout.contentInset` is where your painted frame ends and the calm centre
