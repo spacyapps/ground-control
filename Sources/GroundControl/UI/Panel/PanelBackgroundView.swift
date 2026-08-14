@@ -13,6 +13,7 @@ final class PanelBackgroundView: NSView {
     let resizeGrip = ResizeGripView()
     let skinOverlay = SkinOverlayView()
     let closeMark = CloseMarkView()
+    let hint = HintView()
 
     private var theme: Theme = DefaultTheme.theme
 
@@ -57,6 +58,12 @@ final class PanelBackgroundView: NSView {
         // ...but never the two controls: marks, then frame, then panel.
         addSubview(resizeGrip)
         addSubview(closeMark)
+        // Above even the marks: it describes them.
+        addSubview(hint)
+        list.onHint = { [weak self] text, rect in
+            guard let self else { return }
+            self.hint.show(text, near: self.list.convert(rect, to: self), in: self)
+        }
         skinOverlay.elapsed = { [weak self] in self?.currentElapsed }
     }
 
@@ -83,6 +90,7 @@ final class PanelBackgroundView: NSView {
         list.apply(theme: theme)
         resizeGrip.apply(theme: theme)
         closeMark.apply(theme: theme)
+        hint.apply(theme: theme)
         skinOverlay.apply(theme: theme)
         needsDisplay = true
     }
