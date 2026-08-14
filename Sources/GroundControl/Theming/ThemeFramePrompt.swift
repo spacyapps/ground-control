@@ -48,7 +48,7 @@ enum ThemeFramePrompt {
           "image": "frame.png",
           "lockAspect": false,
           "mode": "tile",
-          "capInsets": { "top": 75, "left": 75, "bottom": 75, "right": 75 },
+          "capInsets": { "top": 90, "left": 90, "bottom": 90, "right": 90 },
           "removeBackground": "\(brief.keyColour)"
         },
         "layout": { "resize": "free", "contentInset": 60 }
@@ -86,8 +86,12 @@ enum ThemeFramePrompt {
           their literal size, so a 150px corner on a 450px-wide panel leaves
           almost no middle. This is the single most common way one of these
           goes wrong.
-        - `capInsets` is where your corner artwork ends, in those same pixels —
-          75 for a 450px image with corners about a sixth of the way in.
+        - `capInsets` is where your corner artwork ends, in those same pixels.
+          **Measure it off the drawing you actually produced** — the column
+          where the ornament stops and the plain edge begins — rather than
+          reusing a number from an example. A cap that falls short leaves the
+          rest of the ornament in the *tiled* strip, which then repeats it
+          along the edge. Roughly a fifth of the image is typical.
         - Use `"mode": "tile"` for detailed edges made of repeating segments,
           `"stretch"` for plain gradients.
         - Give `rowBackground` and `rowBackgroundAlt` alpha, or the rows cover
