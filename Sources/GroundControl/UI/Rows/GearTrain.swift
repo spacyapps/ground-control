@@ -55,14 +55,20 @@ enum GearTrain {
     /// from their tooth counts, so this is the only speed to choose.
     private static let period: TimeInterval = 4
 
-    /// Builds the train into `size`, tinted, already turning.
-    static func layer(size: CGSize, colour: NSColor) -> CALayer {
-        let root = CALayer()
-        root.bounds = CGRect(origin: .zero, size: size)
-        root.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        // The train is laid out in its own units and fitted afterwards, so the
-        // geometry never has to know how big an avatar is.
-        let module = 1.0
+    /// Where each wheel sits and how big it is, in points, for a given box.
+    ///
+    /// Separate from building layers because it is the part with all the
+    /// decisions in it, and the part worth reading on its own.
+    private struct Layout {
+        let centres: [CGPoint]
+        let radii: [CGFloat]
+        let module: CGFloat
+    }
+
+    private static func layout(in size: CGSize) -> Layout {
+        // Laid out in its own units and fitted afterwards, so the geometry
+        // never has to know how big an avatar is.
+        let module: CGFloat = 1
         var centres: [CGPoint] = []
         var radii: [CGFloat] = []
 
@@ -85,17 +91,19 @@ enum GearTrain {
             radii.append(radius)
         }
 
-        // Fit the whole train, teeth included, into the box with a little air.
-        var hull = CGRect.null
+        var tips = CGRect.null
+        var hubs = CGRect.null
         for (centre, radius) in zip(centres, radii) {
-            let outer = radius + module          // tooth tips stand one module proud
-            hull = hull.union(CGRect(
+            let outer = radius + module      // tooth tips stand one module proud
+            tips = tips.union(CGRect(
                 x: centre.x - outer,
                 y: centre.y - outer,
                 width: outer * 2,
                 height: outer * 2
             ))
+            hubs = hubs.union(CGRect(origin: centre, size: .zero))
         }
+
         // Two limits, and the tighter one wins.
         //
         // Overfilling makes the teeth big enough to watch, but pushed far
@@ -103,38 +111,49 @@ enum GearTrain {
         // a 40pt box — and a gear cropped past its hub reads as a stray curve
         // rather than as a wheel. So the scale is also capped by keeping every
         // centre inside, with a margin.
-        var centresHull = CGRect.null
-        for centre in centres {
-            centresHull = centresHull.union(CGRect(origin: centre, size: .zero))
-        }
         let margin = min(size.width, size.height) * 0.16
         let room = CGSize(
             width: max(1, size.width - margin * 2),
             height: max(1, size.height - margin * 2)
         )
-        let byTips = min(size.width / hull.width, size.height / hull.height) * overfill
-        let byCentres = min(
-            centresHull.width > 0 ? room.width / centresHull.width : .greatestFiniteMagnitude,
-            centresHull.height > 0 ? room.height / centresHull.height : .greatestFiniteMagnitude
+        let byTips = min(size.width / tips.width, size.height / tips.height) * overfill
+        let byHubs = min(
+            hubs.width > 0 ? room.width / hubs.width : .greatestFiniteMagnitude,
+            hubs.height > 0 ? room.height / hubs.height : .greatestFiniteMagnitude
         )
-        let scale = min(byTips, byCentres)
+        let scale = min(byTips, byHubs)
+
+        // Centred on the wheels themselves rather than on the toothed hull, so
+        // cropping takes teeth off both sides evenly.
+        return Layout(
+            centres: centres.map {
+                CGPoint(
+                    x: ($0.x - hubs.midX) * scale + size.width / 2,
+                    y: ($0.y - hubs.midY) * scale + size.height / 2
+                )
+            },
+            radii: radii.map { $0 * scale },
+            module: module * scale
+        )
+    }
+
+    /// Builds the train into `size`, tinted, already turning.
+    static func layer(size: CGSize, colour: NSColor) -> CALayer {
+        let root = CALayer()
+        root.bounds = CGRect(origin: .zero, size: size)
+        root.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        let plan = layout(in: size)
 
         for (index, wheel) in wheels.enumerated() {
-            let radius = radii[index] * scale
             let gear = CALayer()
-            let side = (radius + module * scale) * 2
+            let side = (plan.radii[index] + plan.module) * 2
             gear.bounds = CGRect(x: 0, y: 0, width: side, height: side)
-            // Centred on the wheels themselves rather than on the toothed
-            // hull, so cropping takes teeth off both sides evenly.
-            gear.position = CGPoint(
-                x: (centres[index].x - centresHull.midX) * scale + size.width / 2,
-                y: (centres[index].y - centresHull.midY) * scale + size.height / 2
-            )
+            gear.position = plan.centres[index]
             gear.contents = image(teeth: wheel.teeth, side: side, colour: colour)
             gear.contentsScale = NSScreen.main?.backingScaleFactor ?? 2
 
             // Speed is inverse to teeth, and every second wheel turns back the
-            // other way. Offset each start so they do not all begin aligned.
+            // other way. Offset each start so they do not begin aligned.
             let turn = CABasicAnimation(keyPath: "transform.rotation.z")
             let direction: Double = index.isMultiple(of: 2) ? -1 : 1
             turn.fromValue = 0
