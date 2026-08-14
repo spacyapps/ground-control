@@ -70,4 +70,16 @@ extension SessionRowView {
     }
 }
 
-extension SessionRowView: NSViewToolTipOwner {}
+extension SessionRowView: NSViewToolTipOwner {
+    /// The two controls worth explaining, and nothing else: a hint that follows
+    /// the pointer everywhere is noise.
+    func updateHint(at point: NSPoint) {
+        if isMenuHovered {
+            onHint?("Menu", menuTarget)
+        } else if let avatarFrame = avatarFrameIfVisible, avatarFrame.contains(point) {
+            onHint?(jumpHint, avatarFrame)
+        } else {
+            onHint?(nil, .zero)
+        }
+    }
+}

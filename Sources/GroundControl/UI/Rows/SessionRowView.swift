@@ -21,6 +21,9 @@ final class SessionRowView: NSView {
     private let messageLabel = MarqueeLabel()
     private let disclosure = NSButton()
     private let avatar = AvatarView()
+    /// For the hint, which lives in its own file and only needs to know where
+    /// the avatar is when it is on screen at all.
+    var avatarFrameIfVisible: NSRect? { avatar.isHidden ? nil : avatar.frame }
     private let sourceTag = NSTextField(labelWithString: "")
     private let elapsedLabel = NSTextField(labelWithString: "")
 
@@ -47,7 +50,7 @@ final class SessionRowView: NSView {
     private var menuToolTipTag: NSView.ToolTipTag?
     /// What clicking the avatar will actually do — the app it will raise, which
     /// the row is told because only the coordinator can work it out.
-    private var jumpHint: String?
+    var jumpHint: String?
 
     override var isFlipped: Bool { true }
 
@@ -357,23 +360,12 @@ final class SessionRowView: NSView {
         updateHint(at: point)
     }
 
-    /// The two controls worth explaining, and nothing else: a hint that follows
-    /// the pointer everywhere is noise.
-    private func updateHint(at point: NSPoint) {
-        if isMenuHovered {
-            onHint?("Menu — right-clicking the row does the same", menuTarget)
-        } else if !avatar.isHidden, avatar.frame.contains(point) {
-            onHint?(avatar.toolTip, avatar.frame)
-        } else {
-            onHint?(nil, .zero)
-        }
-    }
-
-    /// Says where the click goes, not merely that it goes somewhere: "Jump to
-    /// Visual Studio Code" answers a question "Jump to session" leaves open.
+    /// One word, because the hint appears beside a 48pt avatar in a panel that
+    /// is often narrow. The row menu names the destination in full; this only
+    /// has to say what kind of thing a click is.
     func applyJumpHint(_ destination: String?) {
-        jumpHint = destination
-        avatar.toolTip = destination.map { "Jump to \($0)" } ?? "Show the folder in Finder"
+        jumpHint = destination == nil ? "Finder" : "Jump"
+        avatar.toolTip = jumpHint
     }
 
     override func mouseDown(with event: NSEvent) {
