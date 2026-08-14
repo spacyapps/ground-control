@@ -23,6 +23,15 @@ final class Preferences {
         static let themeName = "themeName"
         static let renames = "renames"
         static let showsInternalAgents = "showsInternalAgents"
+        static let showsAnalyser = "showsAnalyser"
+    }
+
+    /// The bars across the title strip. On by default — it is the first thing
+    /// anyone notices — but it is decoration that never stops moving, and some
+    /// people want a monitor that sits still.
+    var showsAnalyser: Bool {
+        get { defaults.object(forKey: Key.showsAnalyser) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Key.showsAnalyser) }
     }
 
     /// Escape hatch for the internal-agent filter in `AgentGrouper`, which is a
