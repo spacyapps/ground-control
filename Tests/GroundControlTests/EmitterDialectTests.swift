@@ -15,7 +15,9 @@ import XCTest
 /// Cursor lines from a Composer turn on 2026-08-14. Writing them by hand would
 /// test the fixture rather than the CLI.
 final class EmitterDialectTests: XCTestCase {
-    private var home: URL!
+    /// Each test gets its own TMPDIR, so nothing lands in the real session
+    /// folder and the cases cannot see each other's files.
+    private var home = URL(fileURLWithPath: NSTemporaryDirectory())
 
     override func setUpWithError() throws {
         home = URL(fileURLWithPath: NSTemporaryDirectory())
