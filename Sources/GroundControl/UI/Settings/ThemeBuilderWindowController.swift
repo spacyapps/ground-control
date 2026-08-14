@@ -14,6 +14,9 @@ final class ThemeBuilderWindowController: NSWindowController {
     private let animateBox = NSButton()
     private let sizeField = NSTextField(string: "48")
     private let framePicker = NSPopUpButton()
+    /// The motion cells, kept so the table can answer the animation checkbox
+    /// rather than describing a fixed arrangement.
+    private var motionCells: [NSTextField] = []
     private let keyPicker = NSPopUpButton()
     private let positionPicker = NSPopUpButton()
     private let promptView = NSTextView()
@@ -79,6 +82,7 @@ final class ThemeBuilderWindowController: NSWindowController {
         animateBox.target = self
         animateBox.action = #selector(regenerate)
         form.addArrangedSubview(animateBox)
+        form.addArrangedSubview(statesTable())
         addFrameQuestion(to: form)
         form.addArrangedSubview(geometryRow())
 
@@ -133,6 +137,64 @@ final class ThemeBuilderWindowController: NSWindowController {
             + "the corners and repeats the edges, so the panel can be dragged to any "
             + "shape — it asks more of the art, and it is how spacyAppsLunarAvatar works."
         ))
+    }
+
+    /// What the four avatars are for, shown while the author is deciding rather
+    /// than only inside the generated prompt.
+    ///
+    /// Motion belongs to the two states that are asking for something. The
+    /// other column is the part authors get wrong: at 48pt an expression is
+    /// invisible, so the state has to be carried by colour and contrast.
+    private func statesTable() -> NSView {
+        let grid = NSGridView(numberOfColumns: 3, rows: 0)
+        grid.rowSpacing = 4
+        grid.columnSpacing = 14
+
+        func cell(_ text: String, header: Bool = false, strong: Bool = false) -> NSTextField {
+            let label = NSTextField(labelWithString: text)
+            label.font = .systemFont(ofSize: 11, weight: strong ? .semibold : .regular)
+            label.textColor = header || !strong ? .secondaryLabelColor : .labelColor
+            return label
+        }
+
+        grid.addRow(with: [cell("State", header: true),
+                           cell("Motion", header: true),
+                           cell("Must read as", header: true)])
+
+        motionCells = []
+        let states = [
+            ("idle", false, "quiet — dim, cool, recedes"),
+            ("working", true, "busy — moving, cool blue"),
+            ("needs input", true, "STOP — warmest, highest contrast"),
+            ("done", false, "finished — settled green")
+        ]
+        for (name, animates, reads) in states {
+            let motion = cell("still")
+            if animates { motionCells.append(motion) }
+            grid.addRow(with: [cell(name, strong: true), motion, cell(reads, strong: name == "needs input")])
+        }
+        updateMotionCells()
+
+        // NSGridView fills whatever it is given, which flung the two right-hand
+        // columns to the far edge of the window. A spacer beside it takes the
+        // slack so the table keeps its natural width at the leading edge.
+        grid.setContentHuggingPriority(.required, for: .horizontal)
+        let spacer = NSView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let row = NSStackView(views: [grid, spacer])
+        row.orientation = .horizontal
+        row.distribution = .fill
+        row.spacing = 0
+        return row
+    }
+
+    /// The two attention states follow the checkbox; the resting two never do.
+    private func updateMotionCells() {
+        let animated = animateBox.state == .on
+        for cell in motionCells {
+            cell.stringValue = animated ? "animated" : "still"
+            cell.textColor = animated ? .labelColor : .secondaryLabelColor
+        }
     }
 
     private func frameRow() -> NSView {
@@ -281,6 +343,7 @@ final class ThemeBuilderWindowController: NSWindowController {
     // MARK: - Actions
 
     @objc private func regenerate() {
+        updateMotionCells()
         promptView.string = ThemePromptBuilder.prompt(for: brief)
         statusLabel.stringValue = ""
     }
