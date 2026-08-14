@@ -50,6 +50,14 @@ Works with **Claude Code** and **Grok** today — Grok reads `~/.claude/settings
 by design, so one install covers both. The app itself is CLI-agnostic; only the
 emitter script knows anything about a vendor.
 
+**Cursor's own agent has limited support.** Composer chats appear as rows, named
+after the question they started from, and clicking one raises Cursor — the
+installer registers `~/.cursor/hooks.json` when Cursor is present. The alarm
+cannot work there: Cursor fires no hook while its agent waits for approval, so a
+blocked chat looks like a busy one. Measured, and confirmed against Cursor's own
+docs and an open feature request — see `docs/LIMITATIONS.md`. Claude Code running
+in Cursor's *terminal* is fully supported, alarm included.
+
 See `docs/SPEC.md` §3 for the event contract, `docs/HOOK-PAYLOADS.md` for the
 measured payloads it is built on, `docs/ARCHITECTURE.md` for how a hook event
 becomes a row, and `docs/LIMITATIONS.md` for what is proven
