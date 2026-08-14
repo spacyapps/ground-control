@@ -188,6 +188,12 @@ struct Theme {
             tinted.low = colour.blended(withFraction: 0.55, of: .black) ?? colour
             tinted.peak = (colour.blended(withFraction: 0.6, of: .white) ?? colour)
                 .withAlphaComponent(0.75)
+            // The sweeping word belongs to the display, not to the theme it is
+            // sweeping across: left alone, a green message crossed magenta bars
+            // and read as two unrelated things. Lightened rather than matched,
+            // because letters the same colour as the bars disappear into them —
+            // all that would distinguish the word is the dent it makes.
+            tinted.text = colour.blended(withFraction: 0.72, of: .white) ?? colour
             return tinted
         }
     }
