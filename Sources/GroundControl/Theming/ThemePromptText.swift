@@ -61,7 +61,12 @@ enum ThemePromptText {
           to the panel and the inset scales with it. Any resolution works
         - With `lockAspect: false` the corners are drawn at their natural size, so
           **draw the whole thing about 400–500px wide** or the frame will swamp the
-          panel. `window.capInsets` is likewise in artwork pixels
+          panel. `window.capInsets` is likewise in artwork pixels.
+          Pixel size is **not** a quality setting here: it is how thick the frame
+          appears and how narrow the panel may get. The same art at 900px is not
+          sharper, it is twice as heavy — and its caps must double with it, or the
+          cut lands inside the corner ornament and the leftover ornament is tiled
+          down the edges. **Redraw at a new size, re-measure the caps**
         - If your opening is rounded, give `layout.contentCornerRadius` its radius
           in the same pixels — otherwise a round frame encloses a square screen
         """

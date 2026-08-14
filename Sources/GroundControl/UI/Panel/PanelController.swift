@@ -69,6 +69,7 @@ final class PanelController {
     func apply(theme: Theme) {
         self.theme = theme
         panel?.apply(shaped: theme.window.isShaped)
+        panel?.enforce(minimum: theme.window.minimumPanelSize)
         chrome.apply(theme: theme)
         panel?.invalidateShadow()
         // Themes disagree about what the panel's size means — one derives the
