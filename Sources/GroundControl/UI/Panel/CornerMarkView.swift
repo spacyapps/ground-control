@@ -94,11 +94,22 @@ class CornerMarkView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
+        // These marks land wherever the theme's artwork happens to be, and a
+        // shaped skin puts them over its corner ornament — where a thin glyph
+        // in the title colour disappears into the detail. A soft halo of the
+        // opposite tone makes them readable against anything without drawing a
+        // box around them.
+        let shadow = NSShadow()
+        shadow.shadowColor = MarkInk.halo(behind: ink).withAlphaComponent(0.85)
+        shadow.shadowBlurRadius = 3
+        shadow.shadowOffset = .zero
+
         let text = NSAttributedString(
             string: glyph,
             attributes: [
                 .font: NSFont.systemFont(ofSize: 11),
-                .foregroundColor: ink.withAlphaComponent(isHighlighted ? 1 : 0.5)
+                .foregroundColor: ink.withAlphaComponent(isHighlighted ? 1 : 0.5),
+                .shadow: shadow
             ]
         )
         let size = text.size()
@@ -131,5 +142,11 @@ enum MarkInk {
 
     private static func opposite(of color: NSColor) -> NSColor {
         luminance(of: color) < 0.5 ? .white : .black
+    }
+
+    /// The tone to put *behind* a mark so it reads against artwork of any
+    /// brightness — the opposite of the mark's own.
+    static func halo(behind color: NSColor) -> NSColor {
+        opposite(of: color)
     }
 }
