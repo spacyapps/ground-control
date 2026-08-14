@@ -194,6 +194,11 @@ the red dot if any child needs action.
    `defaults write GroundControl showsInternalAgents -bool YES` restores them
    without a rebuild.
 
+3. **The analyser can be switched off.** Settings > Panel > "Show the
+   analyser". Off removes the view from the hierarchy rather than hiding it, so
+   its 24fps timer and message countdown stop with it, and the title strip
+   closes from 64pt to 30pt. Stored as `showsAnalyser`, default on.
+
 Resolve the first before enabling B (§10).
 
 ---
