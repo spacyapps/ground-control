@@ -105,6 +105,34 @@ final class EmitterDialectTests: XCTestCase {
         XCTAssertEqual(try emit(cursorPrompt)["name"] as? String, "Hello, what can you here ?")
     }
 
+    /// A Cursor row can be created by a tool event, before any prompt is seen.
+    /// The folder alone reads as the name of one chat when it is really the
+    /// container several of them share, so it says which it is.
+    func testACursorRowWithNoPromptYetSaysItIsAWorkspace() throws {
+        let line = try emit("""
+        {"session_id":"s9","hook_event_name":"preToolUse","cursor_version":"3.15.6",\
+        "tool_name":"Write","tool_input":{"file_path":"/x"},"cwd":"",\
+        "workspace_roots":["/Users/waltermak/github/empty"]}
+        """)
+        XCTAssertEqual(line["name"] as? String, "workspace: empty")
+    }
+
+    /// And the placeholder still gives way to the first prompt — it is a label
+    /// for "not named yet", not a name.
+    func testTheWorkspaceLabelGivesWayToTheFirstPrompt() throws {
+        try emit("""
+        {"session_id":"s9","hook_event_name":"preToolUse","cursor_version":"3.15.6",\
+        "tool_name":"Write","tool_input":{"file_path":"/x"},"cwd":"",\
+        "workspace_roots":["/Users/waltermak/github/empty"]}
+        """)
+        let named = try emit("""
+        {"session_id":"s9","hook_event_name":"beforeSubmitPrompt","cursor_version":"3.15.6",\
+        "prompt":"do I pick composer or Grok?",\
+        "workspace_roots":["/Users/waltermak/github/empty"]}
+        """)
+        XCTAssertEqual(named["name"] as? String, "do I pick composer or Grok?")
+    }
+
     /// And it latches: a chat keeps the question it started from rather than
     /// renaming itself on every prompt.
     func testCursorNameDoesNotFollowTheConversation() throws {

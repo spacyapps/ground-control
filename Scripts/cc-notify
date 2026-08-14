@@ -441,10 +441,14 @@ def main():
     # Cursor only. Claude and Grok give one session per terminal, where the
     # folder is the useful label and a first prompt would be noise — replacing
     # "avaterm" with "hello" was caught by a test rather than by taste.
-    if source == "cursor" and name == folder:
-        opening = opening_line(payload)
-        if opening:
-            name = opening
+    if source == "cursor":
+        # "workspace: empty" rather than "empty" while nothing better is known:
+        # a row can be created by a tool event long before any prompt is seen,
+        # and a bare folder name there reads as the name of one chat when it is
+        # really the container several of them share.
+        placeholder = "workspace: %s" % folder
+        if name in (folder, placeholder):
+            name = opening_line(payload) or placeholder
 
     interpreted = interpret(payload)
     if interpreted is None:

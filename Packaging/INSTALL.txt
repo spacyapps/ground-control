@@ -48,6 +48,13 @@ What to look at
 Known rough edges
 -----------------
 
+- Cursor's own agent (Composer) has LIMITED SUPPORT. Its chats appear as rows,
+  named after the question they started from, and clicking one raises Cursor.
+  But the red alarm cannot work there: Cursor fires no hook while its agent
+  waits for you to approve something, so a blocked Composer chat looks the same
+  as a busy one. Claude Code running in Cursor's TERMINAL is fully supported,
+  alarm included.
+
 - Codex and Gemini are not verified. Claude Code and Grok are.
 - Sessions inside tmux, over ssh, or from a launchd job have no app to jump to,
   so clicking a row reveals the folder in Finder instead.
