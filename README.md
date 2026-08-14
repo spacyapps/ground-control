@@ -100,6 +100,11 @@ never touches your settings. It merges rather than
 overwrites, so hooks you already have are kept, and it is safe to re-run.
 Claude Code and Grok both read that file and both are covered.
 
+If Cursor is installed it also registers `~/.cursor/hooks.json`, which is what
+its own agent reads — merging there too, and backing up anything already in it.
+**Restart Cursor** afterwards: it reads that file at startup. Nothing else needs
+restarting.
+
 **3. Start a session.** Open a *new* terminal — a CLI already running has not
 loaded the hooks — and start Claude Code or Grok. A row appears as soon as it
 does anything.
