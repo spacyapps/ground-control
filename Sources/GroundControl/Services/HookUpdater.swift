@@ -15,6 +15,15 @@ import Foundation
 /// So on launch, if the emitter is already installed and differs from the copy
 /// inside the app, it is replaced with ours.
 ///
+/// **This direction is only right when the app is the newer half**, which it
+/// always is for anyone who installed it. While developing it is backwards: run
+/// a stale build after editing `cc-notify` and the app quietly puts its own
+/// older copy back, the hook loses whatever was just added, and the symptom
+/// appears in code that is perfectly correct. It cost an hour once — every
+/// Cursor row came out named `.cursor` because the reinstalled emitter had been
+/// replaced by a build from before `workspace_roots` was understood. Rebuild
+/// after touching the script, and the bundle carries what you wrote.
+///
 /// **Only ever updates, never installs.** An absent `cc-notify` means the user
 /// has not run the installer, and putting a script in their `~/bin` uninvited
 /// is not this app's business — nor would it help, since nothing would be
