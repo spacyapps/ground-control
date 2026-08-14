@@ -85,16 +85,24 @@ enum ImageKeyer {
                                   width: Int,
                                   height: Int) {
         guard let srgb = color.usingColorSpace(.sRGB) else { return }
-        let key = (Int(srgb.redComponent * 255), Int(srgb.greenComponent * 255), Int(srgb.blueComponent * 255))
+        let key = [Int(srgb.redComponent * 255), Int(srgb.greenComponent * 255), Int(srgb.blueComponent * 255)]
+        let roles = channelRoles(of: key)
         let inner = 60.0, outer = 130.0
 
         for index in stride(from: 0, to: pixels.count, by: 4) {
             let red = Int(pixels[index]), green = Int(pixels[index + 1]), blue = Int(pixels[index + 2])
-            let distance = Double((red - key.0) * (red - key.0)
-                + (green - key.1) * (green - key.1)
-                + (blue - key.2) * (blue - key.2)).squareRoot()
+            let distance = Double((red - key[0]) * (red - key[0])
+                + (green - key[1]) * (green - key[1])
+                + (blue - key[2]) * (blue - key[2])).squareRoot()
 
-            if distance <= inner {
+            // A shaded or dithered key is still the key, and must be cut whole.
+            // Distance alone says otherwise: a background pixel that came back
+            // 36,207,35 is 69 from pure green, outside the hard cut, so it fell
+            // into the band below — where un-multiplying divides its small red
+            // and blue by the alpha floor and hands back saturated magenta at
+            // low opacity. Measured on both shipped skins: no opaque artwork
+            // pixel is this key-hued, so nothing real is lost.
+            if distance <= inner || isShadedKey(pixels, index, roles) {
                 pixels[index] = 0; pixels[index + 1] = 0
                 pixels[index + 2] = 0; pixels[index + 3] = 0
                 continue
@@ -106,13 +114,43 @@ enum ImageKeyer {
                 let corrected = (Double(value) - Double(keyed) * (1 - alpha)) / max(alpha, 0.15)
                 return UInt8(min(255, max(0, corrected)))
             }
-            pixels[index] = despill(red, key.0)
-            pixels[index + 1] = despill(green, key.1)
-            pixels[index + 2] = despill(blue, key.2)
+            pixels[index] = despill(red, key[0])
+            pixels[index + 1] = despill(green, key[1])
+            pixels[index + 2] = despill(blue, key[2])
             pixels[index + 3] = UInt8(alpha * 255)
         }
 
-        suppressSpill(&pixels, width: width, height: height, key: [key.0, key.1, key.2])
+        suppressSpill(&pixels, width: width, height: height, key: key)
+    }
+
+    /// Which channels the key is made of, and which it is not.
+    ///
+    /// Green screen gives `[G]` against `[R, B]`; magenta gives `[R, B]`
+    /// against `[G]`. Both halves are needed to say anything about a pixel's
+    /// hue, so a grey or white key — where every channel leads — yields
+    /// nothing, and the callers fall back to distance alone.
+    private static func channelRoles(of key: [Int]) -> (dominant: [Int], others: [Int]) {
+        guard let brightest = key.max(), brightest > 100 else { return ([], []) }
+        let dominant = (0..<3).filter { Double(key[$0]) >= Double(brightest) * 0.6 }
+        let others = (0..<3).filter { !dominant.contains($0) }
+        return (dominant.isEmpty || others.isEmpty) ? ([], []) : (dominant, others)
+    }
+
+    /// How far the key's own channels run ahead of the ones it lacks.
+    ///
+    /// Brightness moves every channel together and so cannot change this, which
+    /// is the point: it recognises the key in shadow, where a straight distance
+    /// comparison loses it. The bar is set high enough that only a near-pure
+    /// key hue clears it.
+    private static let shadedKeyLead = 120
+
+    private static func isShadedKey(_ pixels: [UInt8],
+                                    _ index: Int,
+                                    _ roles: (dominant: [Int], others: [Int])) -> Bool {
+        guard !roles.dominant.isEmpty else { return false }
+        let low = roles.dominant.map { Int(pixels[index + $0]) }.min() ?? 0
+        let high = roles.others.map { Int(pixels[index + $0]) }.max() ?? 0
+        return low - high > shadedKeyLead
     }
 
     // MARK: - Spill
@@ -145,13 +183,8 @@ enum ImageKeyer {
                                       width: Int,
                                       height: Int,
                                       key components: [Int]) {
-        guard let brightest = components.max(), brightest > 100 else { return }
-
-        // The channels the key is made of, and the ones it is not. Green screen
-        // gives [G] against [R, B]; magenta gives [R, B] against [G].
-        let dominant = (0..<3).filter { Float(components[$0]) >= Float(brightest) * 0.6 }
-        let others = (0..<3).filter { !dominant.contains($0) }
-        guard !others.isEmpty, !dominant.isEmpty else { return }
+        let (dominant, others) = channelRoles(of: components)
+        guard !dominant.isEmpty else { return }
 
         let distance = distanceToCutout(pixels, width: width, height: height)
 
