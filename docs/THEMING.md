@@ -3,6 +3,25 @@
 A theme is a **folder** containing one `theme.json` manifest plus any images or
 videos it references. That's it.
 
+## Two choices before you draw anything
+
+**Create a Theme…** in Settings asks these first, because neither can be
+recovered afterwards:
+
+**Frame.** *Simple* draws one picture scaled to the panel — any artwork works,
+nothing to measure. *Nine-grid* holds the corners and repeats the edges, so the
+panel can be dragged to any shape. Nine-grid asks more of the art (ornaments in
+the corners, edges that tile) and is what the good themes will be, because it is
+the only kind that survives a resize intact.
+
+**Transparent colour.** Whatever is filled around — and behind — the artwork,
+which the app keys out on load. It must be a colour the art never uses: a green
+frame keyed on green erases itself. Green, magenta and blue are offered; pick
+the one furthest from your palette.
+
+Both go into the generated prompt as instructions rather than suggestions, and
+the starter `theme.json` is written to match.
+
 ## Quick start
 
 Four themes ship with the app and are copied into your themes folder the first

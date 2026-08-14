@@ -25,115 +25,136 @@ enum ThemePromptText {
     - Only include keys you are actually setting.
     """
 
-    static let backgroundSection = """
-    ## Panel artwork (optional)
+    static func backgroundSection(key: String, ninegrid: Bool) -> String {
+        """
+        ## Panel artwork (optional)
 
-    **One key does this: `window`. Put the file in `window.image`.** There is no
-    other place for panel art — do not invent one, and do not put it under
-    `assets`.
+        **One key does this: `window`. Put the file in `window.image`.** There is no
+        other place for panel art — do not invent one, and do not put it under
+        `assets`.
 
-    The simplest version is also the best one, and is all most themes need:
+        The simplest version is also the best one, and is all most themes need:
 
-    ```json
-    "window": { "image": "panel.png", "removeBackground": "#00FF00" }
-    ```
+        ```json
+        "window": { "image": "panel.png", "removeBackground": "\(key)" }
+        ```
 
-    That keeps the artwork's proportions, scales it as one piece, and scrolls
-    the rows inside it. Everything below is only for `lockAspect: false`, where
-    the panel grows with my sessions and the art must be **nine-sliced**:
-    corners hold their size, edges stretch or tile, the centre fills.
+        That keeps the artwork's proportions, scales it as one piece, and scrolls
+        the rows inside it. Everything below is only for `lockAspect: false`, where
+        the panel grows with my sessions and the art must be **nine-sliced**:
+        corners hold their size, edges stretch or tile, the centre fills.
 
-    - Detail and ornament → **corners only**
-    - Long edges → plain, **seamlessly repeating** texture
-    - Centre → flat or a tiling texture, dark enough for text
-    - No single large object anywhere but a corner
+        - Detail and ornament → **corners only**
+        - Long edges → plain, **seamlessly repeating** texture
+        - Centre → flat or a tiling texture, dark enough for text
+        - No single large object anywhere but a corner
 
-    ### How the frame behaves when I resize the panel
+        \(ninegrid ? resizeMatrix : scaledNote)
 
-    | `lockAspect` | `mode` | `capInsets` | Result |
-    |---|---|---|---|
-    | `true` (default) | ignored | ignored | whole image scales as one piece |
-    | `false` | `tile` | none | image repeats as a texture |
-    | `false` | `tile` / `stretch` | set | **nine-grid**: corners hold, edges and centre repeat or stretch |
-    | `false` | `center` | ignored | drawn once at natural size, centred |
+        ### Insets are measured in your artwork's own pixels
 
-    **For a picture frame, use the nine-grid row**: `"lockAspect": false`,
-    `"mode": "stretch"`, and `capInsets` set to where your corner ornaments end.
-    With `lockAspect` left at its default your caps are ignored entirely and the
-    frame just shrinks.
+        `layout.contentInset` is where your painted frame ends and the calm centre
+        begins — read it straight off your image. A 900px picture with a frame
+        180px thick is `180`.
 
-    ### Insets are measured in your artwork's own pixels
+        - With `lockAspect: true` (the default, and what you want) the art is scaled
+          to the panel and the inset scales with it. Any resolution works
+        - With `lockAspect: false` the corners are drawn at their natural size, so
+          **draw the whole thing about 400–500px wide** or the frame will swamp the
+          panel. `window.capInsets` is likewise in artwork pixels
+        - If your opening is rounded, give `layout.contentCornerRadius` its radius
+          in the same pixels — otherwise a round frame encloses a square screen
+        """
+    }
 
-    `layout.contentInset` is where your painted frame ends and the calm centre
-    begins — read it straight off your image. A 900px picture with a frame
-    180px thick is `180`.
+    /// Only for a nine-grid brief. A simple frame is scaled whole, and handing
+    /// its author a slicing table invites them to measure caps that will be
+    /// discarded.
+    private static let resizeMatrix = """
+        ### How the frame behaves when I resize the panel
 
-    - With `lockAspect: true` (the default, and what you want) the art is scaled
-      to the panel and the inset scales with it. Any resolution works
-    - With `lockAspect: false` the corners are drawn at their natural size, so
-      **draw the whole thing about 400–500px wide** or the frame will swamp the
-      panel. `window.capInsets` is likewise in artwork pixels
-    - If your opening is rounded, give `layout.contentCornerRadius` its radius
-      in the same pixels — otherwise a round frame encloses a square screen
+        | `lockAspect` | `mode` | `capInsets` | Result |
+        |---|---|---|---|
+        | `true` (default) | ignored | ignored | whole image scales as one piece |
+        | `false` | `tile` | none | image repeats as a texture |
+        | `false` | `tile` / `stretch` | set | **nine-grid**: corners hold, edges and centre repeat or stretch |
+        | `false` | `center` | ignored | drawn once at natural size, centred |
+
+        **For a picture frame, use the nine-grid row**: `"lockAspect": false`,
+        `"mode": "stretch"`, and `capInsets` set to where your corner ornaments end.
+        With `lockAspect` left at its default your caps are ignored entirely and the
+        frame just shrinks.
+
     """
 
-    static let shapeSection = """
-    ## Breaking the rectangle (optional)
+    private static let scaledNote = """
+        ### The whole picture scales
 
-    The image's alpha can become the window itself: transparent pixels are
-    see-through and click-through, so art can extend past the panel edge —
-    antennae, masts, a mascot leaning out, a torn border.
-
-    - Canvas **larger than the panel body**; surplus is where art escapes
-    - Body **opaque** — rows are drawn on it
-    - **Centre must never be keyed out**; a hole there erases the rows
-      (unless you use `overlay` below, where the opposite is true)
-    - Protruding parts fully opaque, surrounded by pure background colour
-
-    ### `overlay` — the frame in front (recommended for picture frames)
-
-    ```json
-    "window": { "image": "frame.png", "overlay": true, "removeBackground": "#00FF00" }
-    ```
-
-    Normally the skin is painted behind the rows, so its opening and the rows
-    have to be fitted to each other by hand. With `overlay` it is painted **in
-    front**, and the frame simply covers whatever it overlaps — no fitting, and
-    the artwork alone decides where the content appears to stop. Bevels, glows
-    and vignettes over the content all become possible.
-
-    `layout.contentInset` takes one number or four:
-
-    ```json
-    "layout": { "contentInset": { "top": 140, "left": 152, "bottom": 80, "right": 152 } }
-    ```
-
-    The ✕ and ↔ marks always draw on top of your artwork, so they cannot be
-    lost — but they sit at the ends of the title strip, so `top`, `left` and
-    `right` still decide whether they land on the frame or inside the opening.
-    Anywhere you want the frame to visibly overlap the rows, go
-    **under** it: the rows tuck behind and the artwork trims their edges. A
-    frame is rarely as thick at the top as at the sides, which is why one
-    number for all four rarely fits.
-
-    One requirement, and it reverses the rule above: **the middle must be the
-    exact same colour as the outside** — one flat `#00FF00` everywhere that is
-    not frame, inside and out. Only the frame itself is painted. A near miss is
-    a miss: a slightly different green does not key out, and a solid middle
-    drawn on top hides the whole panel.
-
-    **Transparency — do not attempt real alpha.** Fill everything outside the
-    artwork with one flat colour, `#00FF00` or `#FF00FF`. I key it out on load.
-
-    - Keep the art **well clear of that colour**, not merely different from it:
-      anything close is removed too. Against `#00FF00`, a bright green light
-      like `#39ff14` is erased — pick `#FF00FF` if the art needs green
-    - I clean up the rim the key leaves, so a soft or glowing edge is fine
-
-    The app draws its own ✕ and ↔ marks at the ends of the title strip, so a
-    skin does not need to supply them — just leave `layout.contentInset` wide
-    enough that the strip sits inside the frame rather than under it.
+        Your frame is drawn as one piece and scaled to the panel, so it keeps
+        its proportions and nothing needs to tile or line up. Draw it at any
+        size, at whatever shape suits the art.
     """
+
+    static func shapeSection(key: String) -> String {
+        """
+        ## Breaking the rectangle (optional)
+
+        The image's alpha can become the window itself: transparent pixels are
+        see-through and click-through, so art can extend past the panel edge —
+        antennae, masts, a mascot leaning out, a torn border.
+
+        - Canvas **larger than the panel body**; surplus is where art escapes
+        - Body **opaque** — rows are drawn on it
+        - **Centre must never be keyed out**; a hole there erases the rows
+          (unless you use `overlay` below, where the opposite is true)
+        - Protruding parts fully opaque, surrounded by pure background colour
+
+        ### `overlay` — the frame in front (recommended for picture frames)
+
+        ```json
+        "window": { "image": "frame.png", "overlay": true, "removeBackground": "\(key)" }
+        ```
+
+        Normally the skin is painted behind the rows, so its opening and the rows
+        have to be fitted to each other by hand. With `overlay` it is painted **in
+        front**, and the frame simply covers whatever it overlaps — no fitting, and
+        the artwork alone decides where the content appears to stop. Bevels, glows
+        and vignettes over the content all become possible.
+
+        `layout.contentInset` takes one number or four:
+
+        ```json
+        "layout": { "contentInset": { "top": 140, "left": 152, "bottom": 80, "right": 152 } }
+        ```
+
+        The ✕ and ↔ marks always draw on top of your artwork, so they cannot be
+        lost — but they sit at the ends of the title strip, so `top`, `left` and
+        `right` still decide whether they land on the frame or inside the opening.
+        Anywhere you want the frame to visibly overlap the rows, go
+        **under** it: the rows tuck behind and the artwork trims their edges. A
+        frame is rarely as thick at the top as at the sides, which is why one
+        number for all four rarely fits.
+
+        One requirement, and it reverses the rule above: **the middle must be the
+        exact same colour as the outside** — one flat `\(key)` everywhere that is
+        not frame, inside and out. Only the frame itself is painted. A near miss is
+        a miss: a slightly different green does not key out, and a solid middle
+        drawn on top hides the whole panel.
+
+        **Transparency — do not attempt real alpha.** Fill everything outside the
+        artwork with the flat key colour named above: `\(key)`. I key it out on
+        load.
+
+        - Keep the art **well clear of it**, not merely different from it: anything
+          close is removed too. Against a green key a bright green light like
+          `#39ff14` is erased, which is why the colour is picked per theme
+        - I clean up the rim the key leaves, so a soft or glowing edge is fine
+
+        The app draws its own ✕ and ↔ marks at the ends of the title strip, so a
+        skin does not need to supply them — just leave `layout.contentInset` wide
+        enough that the strip sits inside the frame rather than under it.
+        """
+    }
 
     static let paletteReference = """
     ## Keys

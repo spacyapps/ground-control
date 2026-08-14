@@ -13,6 +13,8 @@ final class ThemeBuilderWindowController: NSWindowController {
     private let backgroundField = NSTextField(string: "")
     private let animateBox = NSButton()
     private let sizeField = NSTextField(string: "48")
+    private let framePicker = NSPopUpButton()
+    private let keyPicker = NSPopUpButton()
     private let positionPicker = NSPopUpButton()
     private let promptView = NSTextView()
     private let statusLabel = NSTextField(labelWithString: "")
@@ -77,6 +79,7 @@ final class ThemeBuilderWindowController: NSWindowController {
         animateBox.target = self
         animateBox.action = #selector(regenerate)
         form.addArrangedSubview(animateBox)
+        addFrameQuestion(to: form)
         form.addArrangedSubview(geometryRow())
 
         let scroll = NSScrollView()
@@ -120,6 +123,51 @@ final class ThemeBuilderWindowController: NSWindowController {
         ])
         return root
     }
+
+    /// The two choices that govern every image the author is about to draw, so
+    /// they belong in the questions rather than buried in the prompt.
+    private func addFrameQuestion(to form: NSStackView) {
+        form.addArrangedSubview(frameRow())
+        form.addArrangedSubview(caption(
+            "Simple scales the whole picture and suits any artwork. Nine-grid holds "
+            + "the corners and repeats the edges, so the panel can be dragged to any "
+            + "shape — it asks more of the art, and it is how spacyAppsLunarAvatar works."
+        ))
+    }
+
+    private func frameRow() -> NSView {
+        let row = NSStackView()
+        row.orientation = .horizontal
+        row.spacing = 8
+
+        for style in ThemeBrief.Frame.allCases {
+            framePicker.addItem(withTitle: style.title)
+        }
+        framePicker.target = self
+        framePicker.action = #selector(regenerate)
+
+        // Named by colour rather than hex: the point is picking one the art
+        // never uses, which is a question about the art, not about notation.
+        for (title, _) in Self.keyColours {
+            keyPicker.addItem(withTitle: title)
+        }
+        keyPicker.target = self
+        keyPicker.action = #selector(regenerate)
+
+        row.addArrangedSubview(NSTextField(labelWithString: "Frame"))
+        row.addArrangedSubview(framePicker)
+        row.addArrangedSubview(NSTextField(labelWithString: "Transparent"))
+        row.addArrangedSubview(keyPicker)
+        return row
+    }
+
+    /// A key colour has to be one the artwork never contains, so the choice is
+    /// the author's — a green frame keyed on green erases itself.
+    private static let keyColours = [
+        ("Green — unless the art is green", "#00FF00"),
+        ("Magenta — unless the art is pink", "#FF00FF"),
+        ("Blue — unless the art is blue", "#0000FF")
+    ]
 
     private func geometryRow() -> NSView {
         let row = NSStackView()
@@ -216,6 +264,12 @@ final class ThemeBuilderWindowController: NSWindowController {
             style: value(styleField, fallback: example.style),
             mood: value(moodField, fallback: example.mood),
             wantsAnimation: animateBox.state == .on,
+            frame: ThemeBrief.Frame.allCases[
+                max(0, min(ThemeBrief.Frame.allCases.count - 1, framePicker.indexOfSelectedItem))
+            ],
+            keyColour: Self.keyColours[
+                max(0, min(Self.keyColours.count - 1, keyPicker.indexOfSelectedItem))
+            ].1,
             // Blank is meaningful here: it means "no background", so this one
             // does not fall back to the placeholder like the others.
             background: backgroundField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines),
