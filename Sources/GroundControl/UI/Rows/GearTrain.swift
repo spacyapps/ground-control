@@ -77,8 +77,12 @@ enum GearTrain {
         var hull = CGRect.null
         for (centre, radius) in zip(centres, radii) {
             let outer = radius + module          // tooth tips stand one module proud
-            hull = hull.union(CGRect(x: centre.x - outer, y: centre.y - outer,
-                                     width: outer * 2, height: outer * 2))
+            hull = hull.union(CGRect(
+                x: centre.x - outer,
+                y: centre.y - outer,
+                width: outer * 2,
+                height: outer * 2
+            ))
         }
         let scale = min(size.width / hull.width, size.height / hull.height) * 0.98
 
@@ -152,10 +156,14 @@ enum GearTrain {
             let radius = onTooth ? outer : root
             // Teeth are narrower at the tip, which is what a gear looks like.
             let width = onTooth ? step * 0.34 : step * 0.46
-            let start = CGPoint(x: centre.x + cos(angle - width) * radius,
-                                y: centre.y + sin(angle - width) * radius)
-            let end = CGPoint(x: centre.x + cos(angle + width) * radius,
-                              y: centre.y + sin(angle + width) * radius)
+            let start = CGPoint(
+                x: centre.x + cos(angle - width) * radius,
+                y: centre.y + sin(angle - width) * radius
+            )
+            let end = CGPoint(
+                x: centre.x + cos(angle + width) * radius,
+                y: centre.y + sin(angle + width) * radius
+            )
             if index == 0 { path.move(to: start) } else { path.line(to: start) }
             path.line(to: end)
         }
@@ -168,8 +176,10 @@ enum GearTrain {
         // reversed oval and filling even-odd joined the hole to the rim with a
         // wedge — visible as a bite out of every wheel.
         let hub = NSBezierPath(ovalIn: CGRect(
-            x: centre.x - root * 0.34, y: centre.y - root * 0.34,
-            width: root * 0.68, height: root * 0.68
+            x: centre.x - root * 0.34,
+            y: centre.y - root * 0.34,
+            width: root * 0.68,
+            height: root * 0.68
         ))
         NSGraphicsContext.current?.compositingOperation = .clear
         NSColor.black.setFill()
