@@ -97,7 +97,15 @@ final class AppCoordinator {
 
     private func showContextMenu(for session: Session, event: NSEvent) {
         contextSession = session
+        let menu = contextMenu(for: session)
+        guard let view = panel.panel?.contentView else { return }
+        let location = view.convert(event.locationInWindow, from: nil)
+        menu.popUp(positioning: nil, at: location, in: view)
+    }
 
+    /// Built apart from showing it, so what the menu says about a session can be
+    /// checked without a window, a click, or a running app.
+    func contextMenu(for session: Session) -> NSMenu {
         // Named after where the click will actually land: "Terminal" is a lie
         // when the session lives in VS Code, and the item was disabled on a
         // missing tty even when the host app was perfectly reachable.
@@ -126,9 +134,35 @@ final class AppCoordinator {
         menu.addItem(.separator())
         menu.addItem(menuItem(title: "Remove Row", action: #selector(contextRemove)))
 
-        guard let view = panel.panel?.contentView else { return }
-        let location = view.convert(event.locationInWindow, from: nil)
-        menu.popUp(positioning: nil, at: location, in: view)
+        // Said on the row it applies to, because that is where the question
+        // gets asked: this one never turns red, and nothing about it explains
+        // why. Cursor fires no hook while its agent waits for approval, so a
+        // blocked chat is indistinguishable from a busy one — measured, and
+        // confirmed against their docs. See docs/LIMITATIONS.md.
+        if session.source == "cursor" {
+            menu.addItem(.separator())
+            menu.addItem(note("Cursor agent: limited support"))
+            menu.addItem(note("No alert when it waits for approval"))
+        }
+        return menu
+    }
+
+    /// A line that explains rather than does.
+    ///
+    /// A plain disabled item reads as an action you cannot have right now; the
+    /// smaller grey type says it was never a button. No target, so it cannot be
+    /// chosen however hard anyone tries.
+    private func note(_ text: String) -> NSMenuItem {
+        let item = NSMenuItem(title: text, action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        item.attributedTitle = NSAttributedString(
+            string: text,
+            attributes: [
+                .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+                .foregroundColor: NSColor.secondaryLabelColor
+            ]
+        )
+        return item
     }
 
     private func menuItem(title: String, action: Selector, isEnabled: Bool = true) -> NSMenuItem {
