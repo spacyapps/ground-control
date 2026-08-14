@@ -4,7 +4,7 @@
 import AppKit
 import QuartzCore
 
-/// Three meshed gears, for the `working` avatar.
+/// Two meshed gears, for the `working` avatar.
 ///
 /// The old one was a single SF Symbol with a rotation on the image view's own
 /// layer — and `layout()` writes that view's `frame` on every pass. `frame` is
@@ -30,18 +30,30 @@ enum GearTrain {
     }
 
     /// Bearings are absolute, not relative to the wheel before. A chain of
-    /// relative turns folded back on itself — the third wheel landed almost on
-    /// top of the first, which drew as a bite out of it — and absolute angles
-    /// make that visible in the numbers instead of only on screen.
+    /// relative turns folded back on itself — a third wheel once landed almost
+    /// on top of the first — and absolute angles make that visible in the
+    /// numbers instead of only on screen.
+    ///
+    /// Two wheels, not three. An avatar is around forty points across, and
+    /// three trains fitted into that left every wheel too small to see turning,
+    /// which defeats the only thing the animation is for.
     private static let wheels = [
-        Wheel(teeth: 13, bearing: 0),
-        Wheel(teeth: 9, bearing: .pi * 0.30),
-        Wheel(teeth: 7, bearing: -.pi * 0.10)
+        Wheel(teeth: 12, bearing: 0),
+        Wheel(teeth: 8, bearing: .pi * 0.28)
     ]
+
+    /// Drawn larger than the box and clipped by the avatar's plate.
+    ///
+    /// Fitting the whole train inside meant shrinking it until the teeth were a
+    /// pixel or two — visible as a blur rather than as rotation. Cropping costs
+    /// nothing here: a gear is the same shape all the way round, so a wheel
+    /// running off the edge still reads as a wheel, and the parts that remain
+    /// are big enough to watch.
+    private static let overfill: CGFloat = 2.05
 
     /// How long the largest wheel takes to come round once. The others follow
     /// from their tooth counts, so this is the only speed to choose.
-    private static let period: TimeInterval = 6
+    private static let period: TimeInterval = 4
 
     /// Builds the train into `size`, tinted, already turning.
     static func layer(size: CGSize, colour: NSColor) -> CALayer {
@@ -84,7 +96,7 @@ enum GearTrain {
                 height: outer * 2
             ))
         }
-        let scale = min(size.width / hull.width, size.height / hull.height) * 0.98
+        let scale = min(size.width / hull.width, size.height / hull.height) * overfill
 
         for (index, wheel) in wheels.enumerated() {
             let radius = radii[index] * scale

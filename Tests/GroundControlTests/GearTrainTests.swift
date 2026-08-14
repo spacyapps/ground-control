@@ -17,7 +17,7 @@ final class GearTrainTests: XCTestCase {
     }
 
     func testItHasAWholeTrain() {
-        XCTAssertEqual(train().count, 3)
+        XCTAssertEqual(train().count, 2)
     }
 
     /// The first version placed each wheel relative to the one before, and the
@@ -72,15 +72,22 @@ final class GearTrainTests: XCTestCase {
         XCTAssertTrue(durations.allSatisfy { $0 > 0 })
     }
 
-    /// Every wheel has to fit the box it was asked for, or a row clips it.
-    func testTheTrainFitsTheBoxItWasGiven() {
+    /// The train deliberately overflows and is clipped by the avatar's plate:
+    /// fitted inside, the teeth were too small to see turning. What must hold
+    /// is that every wheel still has its centre on screen — a wheel cropped to
+    /// an arc reads as a stray curve rather than as a gear.
+    func testEveryWheelKeepsItsCentreInTheBox() {
         let side: CGFloat = 40
         for gear in train(side) {
-            let radius = gear.bounds.width / 2
-            XCTAssertGreaterThanOrEqual(gear.position.x - radius, -0.5)
-            XCTAssertGreaterThanOrEqual(gear.position.y - radius, -0.5)
-            XCTAssertLessThanOrEqual(gear.position.x + radius, side + 0.5)
-            XCTAssertLessThanOrEqual(gear.position.y + radius, side + 0.5)
+            XCTAssertTrue((0...side).contains(gear.position.x), "x \(gear.position.x)")
+            XCTAssertTrue((0...side).contains(gear.position.y), "y \(gear.position.y)")
         }
+    }
+
+    /// And it does overflow — otherwise the teeth are back to a blur.
+    func testTheTrainIsDrawnLargerThanTheBox() {
+        let side: CGFloat = 40
+        let widest = train(side).map(\.bounds.width).max() ?? 0
+        XCTAssertGreaterThan(widest, side * 0.6, "the wheels shrank back to nothing")
     }
 }
