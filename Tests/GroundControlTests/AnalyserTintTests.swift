@@ -13,22 +13,23 @@ import AppKit
 final class AnalyserTintTests: XCTestCase {
     private var matrix: Theme.Matrix { DefaultTheme.theme.matrix }
 
-    private func components(_ colour: NSColor) -> (CGFloat, CGFloat, CGFloat) {
-        let rgb = colour.usingColorSpace(.sRGB) ?? .black
-        return (rgb.redComponent, rgb.greenComponent, rgb.blueComponent)
+    private func rgb(_ colour: NSColor) -> NSColor {
+        colour.usingColorSpace(.sRGB) ?? .black
     }
 
     private func brightness(_ colour: NSColor) -> CGFloat {
-        let (red, green, blue) = components(colour)
-        return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+        let colour = rgb(colour)
+        return 0.2126 * colour.redComponent
+            + 0.7152 * colour.greenComponent
+            + 0.0722 * colour.blueComponent
     }
 
     func testTheTopOfTheRampIsExactlyWhatWasPicked() {
         let picked = NSColor(srgbRed: 0.2, green: 0.7, blue: 1, alpha: 1)
-        let (red, green, blue) = components(matrix.tinted(picked).high)
-        XCTAssertEqual(red, 0.2, accuracy: 0.01)
-        XCTAssertEqual(green, 0.7, accuracy: 0.01)
-        XCTAssertEqual(blue, 1, accuracy: 0.01)
+        let high = rgb(matrix.tinted(picked).high)
+        XCTAssertEqual(high.redComponent, 0.2, accuracy: 0.01)
+        XCTAssertEqual(high.greenComponent, 0.7, accuracy: 0.01)
+        XCTAssertEqual(high.blueComponent, 1, accuracy: 0.01)
     }
 
     /// A ramp needs somewhere to ramp from. Bars at rest use the low end, and a
@@ -36,8 +37,11 @@ final class AnalyserTintTests: XCTestCase {
     func testTheBottomOfTheRampIsDarkerThanTheTop() {
         for picked: NSColor in [.systemPink, .systemGreen, .white, .systemYellow] {
             let tinted = matrix.tinted(picked)
-            XCTAssertLessThan(brightness(tinted.low), brightness(tinted.high),
-                              "\(picked) gave no ramp")
+            XCTAssertLessThan(
+                brightness(tinted.low),
+                brightness(tinted.high),
+                "\(picked) gave no ramp"
+            )
         }
     }
 
@@ -61,9 +65,15 @@ final class AnalyserTintTests: XCTestCase {
     func testAVeryDarkChoiceStillLeavesSomethingVisible() {
         let tinted = matrix.tinted(.black)
         XCTAssertEqual(brightness(tinted.high), 0, accuracy: 0.01)
-        XCTAssertGreaterThan(tinted.peak.alphaComponent, 0,
-                             "the peak mark is all that shows a black analyser")
-        XCTAssertGreaterThan(brightness(tinted.peak), 0.2,
-                             "a black choice must not erase the analyser entirely")
+        XCTAssertGreaterThan(
+            tinted.peak.alphaComponent,
+            0,
+            "the peak mark is all that shows a black analyser"
+        )
+        XCTAssertGreaterThan(
+            brightness(tinted.peak),
+            0.2,
+            "a black choice must not erase the analyser entirely"
+        )
     }
 }
