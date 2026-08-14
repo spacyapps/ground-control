@@ -68,7 +68,7 @@
     "lockAspect": false,
     "overlay": true,
     "removeBackground": "#00FF00",
-    "mode": "stretch",
+    "mode": "tile",
     "capInsets": {
       "top": 75,
       "left": 75,
