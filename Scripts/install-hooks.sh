@@ -101,19 +101,24 @@ hooks = config.setdefault("hooks", {})
 # Only the events that become a row. beforeShellExecution, afterShellExecution
 # and postToolUse were captured too and say nothing preToolUse has not already
 # said — registering them would double every line for a single command.
+added = []
 for event in ["sessionStart", "beforeSubmitPrompt", "preToolUse", "stop", "sessionEnd"]:
     entries = hooks.setdefault(event, [])
     if any(command in (e.get("command") or "") for e in entries if isinstance(e, dict)):
         continue
     entries.append({"command": command})
+    added.append(event)
 
 os.makedirs(os.path.dirname(path), exist_ok=True)
 with open(path, "w") as handle:
     json.dump(config, handle, indent=2)
     handle.write("\n")
-print("Registered Cursor's own agent in ~/.cursor/hooks.json")
+if added:
+    print("Registered Cursor's own agent in ~/.cursor/hooks.json")
+    print("  Restart Cursor — it reads hooks.json at startup.")
+else:
+    print("Cursor's own agent was already registered (no change, no restart).")
 CURSOR
-  echo "  Restart Cursor — it reads hooks.json at startup."
 fi
 
 echo
