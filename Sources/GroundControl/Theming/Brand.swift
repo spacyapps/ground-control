@@ -29,9 +29,6 @@ enum Brand {
     /// by everywhere else.
     static var glyph: NSImage? { image(named: "app-mark") }
 
-    /// The maker's mark alone, for anywhere too small for the wordmark.
-    static var makerGlyph: NSImage? { image(named: "logo-glyph") }
-
     private static let cache = NSCache<NSString, NSImage>()
 
     private static func image(named name: String) -> NSImage? {
