@@ -78,13 +78,15 @@ func resample(_ image: CGImage, to side: Int) -> CGImage? {
 
 // MARK: - Where the caps belong
 
-/// Walks in from the left along the top of the artwork and reports the column
-/// where the silhouette stops moving.
+/// Walks in from the left and reports the column where the ornate corner ends
+/// and the plain girder begins.
 ///
-/// The ornate corner — towers, dishes, solar arrays — has a wildly varying
-/// profile; the girder that follows it is flat. That transition is the only
-/// correct place to cut a cap, and it is measurable rather than a matter of
-/// taste, so nobody has to guess at it again.
+/// Measured by how deep the artwork hangs in each column, not by where its top
+/// edge sits. The first version used the top edge — the profile settles once
+/// the silhouette stops moving — and it read 10 on artwork whose corner towers
+/// happen to have flat tops, which is a cap that would slice the whole corner
+/// into the tiled strip. Depth cannot be fooled that way: the girder is a thin
+/// band and every ornament is thicker than it.
 func girderStart(of image: CGImage, key: (Int, Int, Int) = (0, 255, 0)) -> Int? {
     let width = image.width, height = image.height
     var pixels = [UInt8](repeating: 0, count: width * height * 4)
@@ -101,28 +103,29 @@ func girderStart(of image: CGImage, key: (Int, Int, Int) = (0, 255, 0)) -> Int? 
 
     func isArtwork(_ x: Int, _ y: Int) -> Bool {
         let index = ((height - 1 - y) * width + x) * 4
-        guard pixels[index + 3] > 60 else { return false }
+        guard pixels[index + 3] > 120 else { return false }
         let red = Int(pixels[index]) - key.0
         let green = Int(pixels[index + 1]) - key.1
         let blue = Int(pixels[index + 2]) - key.2
         return red * red + green * green + blue * blue > 130 * 130
     }
 
-    var top = [Int](repeating: height, count: width)
+    // How far down the artwork reaches in each column, across the top half.
+    var depth = [Int](repeating: 0, count: width)
     for x in 0..<width {
-        for y in 0..<height where isArtwork(x, y) {
-            top[x] = y
-            break
-        }
+        for y in 0..<(height / 2) where isArtwork(x, y) { depth[x] = y }
     }
 
-    let run = 40
-    for x in 0..<max(0, width - run) {
-        let window = top[x..<(x + run)]
-        guard let low = window.min(), let high = window.max(), low < height else { continue }
-        if high - low <= 3 { return x }
-    }
-    return nil
+    // The girder is whatever the middle of the edge measures.
+    let middle = width / 2
+    let girder = depth[(middle - 10)...(middle + 10)].min() ?? 0
+    guard girder > 0 else { return nil }
+
+    // The cap goes past the last column that is deeper than the girder, with a
+    // little tolerance for the odd protruding rivet.
+    let limit = width / 2
+    guard let last = (0..<limit).last(where: { depth[$0] > girder + 8 }) else { return nil }
+    return last + 1
 }
 
 // MARK: - Run
