@@ -35,10 +35,18 @@ EVENTS=(
   beforeSubmitPrompt
   preToolUse
   postToolUse
+  postToolUseFailure
   beforeShellExecution
   afterShellExecution
+  beforeMCPExecution
+  afterMCPExecution
+  beforeReadFile
+  afterFileEdit
   subagentStart
   subagentStop
+  preCompact
+  afterAgentResponse
+  afterAgentThought
   stop
 )
 
