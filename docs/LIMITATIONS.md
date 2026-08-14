@@ -206,11 +206,35 @@ attributed to `/Applications/Cursor.app` / `com.todesktop.230313mzl4w4u92` with
 logic sends a host-without-tty row to the application, so clicking raises
 Cursor.
 
-**Not yet measured: what a permission request looks like.** Every command in
-three captured turns ran with `"sandbox": true` and was never put to the user,
-so no event carrying a prompt has been seen. `needsInput` therefore has no
-Cursor path, and the alarm cannot fire for Composer. Guessing at
-`beforeShellExecution` would put an alarm on every shell command instead.
+**No alarm for Composer — measured, then confirmed against the docs.**
+
+With all eighteen documented agent events registered, an agent visibly blocked
+on a "Waiting for approval" card fired *nothing*. The last hooks were
+`preToolUse` / `postToolUse` at 12:09:27, then silence for as long as the card
+sat there, and the web search it was asking about produced no event at all. So
+`preToolUse` fires only for tools Cursor may already run.
+
+Cursor's own documentation lists no waiting-or-blocked event, and the state is
+an open feature request. Cursor staff replied there suggesting
+`beforeShellExecution` as the closest thing and said they were "tracking this to
+gauge interest" — no commitment, no timeline.
+
+`beforeShellExecution` is not that signal on its own. It fired here for a
+command that then ran **without** ever prompting (`"sandbox": true`), so it
+means "about to run a command", not "waiting for you". Wiring the alarm to it
+would turn every shell command red — the same mistake as treating Claude's
+`idle_prompt` as an alarm, which made red mean nothing.
+
+**One untested lead.** The captured `beforeShellExecution` carried
+`"sandbox": true` and did not prompt. If `sandbox: false` reliably means Cursor
+is about to ask, that is a real signal — for shell commands only. It would still
+miss web search, MCP tools and file edits, which is what the observed block
+actually was.
+
+The other route is inversion: an MCP server exposing an `ask` tool, so the agent
+*tells* the monitor it needs a decision rather than the monitor detecting it.
+That depends on the agent choosing to call it, and changes how the agent
+behaves.
 
 Still unmeasured: Windsurf, Warp, Ghostty and WezTerm.
 
