@@ -152,10 +152,10 @@ final class SessionListView: NSView {
                 isAlternate: index.isMultiple(of: 2),
                 showsSource: showsSource
             ))
-            // Where the click lands is worked out from what cc-notify recorded,
-            // so the hint can name the app rather than saying "the terminal" and
-            // being wrong for anyone in an editor.
-            row.applyJumpHint(TerminalFocuser.destinationName(
+            // Only whether there is anywhere to go, not where: naming the app
+            // meant a display-name lookup per row on every list update, to
+            // produce a word the hint no longer shows.
+            row.applyJumpHint(canJump: TerminalFocuser.canReach(
                 tty: session.tty,
                 hostApp: session.hostApp,
                 hostID: session.hostID

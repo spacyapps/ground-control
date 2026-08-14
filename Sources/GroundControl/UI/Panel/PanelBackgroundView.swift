@@ -64,6 +64,14 @@ final class PanelBackgroundView: NSView {
             guard let self else { return }
             self.hint.show(text, near: self.list.convert(rect, to: self), in: self)
         }
+        // The panel's own two controls answer to the same mechanism: they are
+        // buttons in the same window, and AppKit's tooltips fail them equally.
+        let showHint: (String?, NSRect) -> Void = { [weak self] text, rect in
+            guard let self else { return }
+            self.hint.show(text, near: rect, in: self)
+        }
+        closeMark.onHint = showHint
+        resizeGrip.onHint = showHint
         skinOverlay.elapsed = { [weak self] in self?.currentElapsed }
     }
 

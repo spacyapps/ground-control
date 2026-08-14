@@ -137,6 +137,16 @@ enum TerminalFocuser {
         }
     }
 
+    /// Whether a click has anywhere to land — the cheap question, asked once
+    /// per row on every list update. `destinationName` answers a richer one and
+    /// costs a display-name lookup for it.
+    static func canReach(tty: String?, hostApp: String?, hostID: String?) -> Bool {
+        switch destination(tty: tty, hostApp: hostApp, hostID: hostID, fallbackPath: nil) {
+        case .terminalTab, .application: return true
+        case .finder, .nowhere: return false
+        }
+    }
+
     /// A human-readable name for where a click will go, for the row's menu.
     ///
     /// Both cases name the app itself rather than a category: a session in

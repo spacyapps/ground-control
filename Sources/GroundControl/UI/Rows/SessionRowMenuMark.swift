@@ -3,7 +3,7 @@
 
 import AppKit
 
-/// The row's menu affordance: three dots above the status dot.
+/// The row's menu affordance, and the hints for its two controls.
 ///
 /// The menu was right-click only, which nobody discovers. This is the visible
 /// way in, and it borrows the avatar button's chrome so the two read as the
@@ -13,7 +13,7 @@ extension SessionRowView {
     /// hard to hit, and the click test uses this same rectangle.
     var menuTarget: NSRect { menuRect.insetBy(dx: -4, dy: -4) }
 
-    /// Three dots above the status dot: the same menu right-click gives, for
+    /// Three lines above the status dot: the same menu right-click gives, for
     /// anyone who never thinks to right-click a row.
     ///
     /// Faint until the pointer is on the row, so a list at rest stays about the
@@ -60,17 +60,6 @@ extension SessionRowView {
         }
     }
 
-    /// The hint for the menu mark's rectangle. Right-click is mentioned because
-    /// it still works, and someone who learns it stops needing the mark.
-    public func view(_ view: NSView,
-                     stringForToolTip tag: NSView.ToolTipTag,
-                     point: NSPoint,
-                     userData: UnsafeMutableRawPointer?) -> String {
-        "Menu — right-clicking the row does the same"
-    }
-}
-
-extension SessionRowView: NSViewToolTipOwner {
     /// The two controls worth explaining, and nothing else: a hint that follows
     /// the pointer everywhere is noise.
     func updateHint(at point: NSPoint) {
