@@ -19,7 +19,31 @@ extension SettingsView {
         let note = caption("The bars across the title strip. Turning them off closes the strip "
             + "up and stops the animation entirely.")
         stack.addArrangedSubview(note)
-        stack.setCustomSpacing(14, after: note)
+
+        // Beside the switch it belongs to, on one line: a colour well on its
+        // own row would read as a separate setting.
+        let colourRow = NSStackView(views: [
+            NSTextField(labelWithString: "Colour"),
+            analyserWell,
+            NSButton(title: "Use theme's", target: self, action: #selector(analyserColourReset))
+        ])
+        colourRow.orientation = .horizontal
+        colourRow.spacing = 8
+        analyserWell.target = self
+        analyserWell.action = #selector(analyserColourChanged)
+        // Continuous, so dragging around the picker shows the panel changing
+        // rather than making you guess and close it.
+        analyserWell.isContinuous = true
+        NSLayoutConstraint.activate([
+            analyserWell.widthAnchor.constraint(equalToConstant: 44),
+            analyserWell.heightAnchor.constraint(equalToConstant: 22)
+        ])
+        if let reset = colourRow.views.last as? NSButton {
+            reset.bezelStyle = .rounded
+            reset.controlSize = .small
+        }
+        stack.addArrangedSubview(colourRow)
+        stack.setCustomSpacing(14, after: colourRow)
 
         let reset = NSButton(
             title: "Reset Panel Position",

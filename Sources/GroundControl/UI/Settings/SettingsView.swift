@@ -18,6 +18,8 @@ final class SettingsView: NSView {
         var reloadSessions: () -> Void
         /// Re-lays the panel: the analyser's absence changes the strip's height.
         var refreshPanelChrome: () -> Void
+        /// Re-reads the theme so a changed analyser colour is applied to it.
+        var reloadTheme: () -> Void
         var openThemesFolder: () -> Void
         var resetPanelPosition: () -> Void
         var createTheme: () -> Void
@@ -37,6 +39,7 @@ final class SettingsView: NSView {
     let allSpacesBox = NSButton()
     let internalAgentsBox = NSButton()
     let analyserBox = NSButton()
+    let analyserWell = NSColorWell()
 
     /// Folder names in picker order; `nil` is the built-in default.
     private var themeNames: [String?] = [nil]
@@ -268,6 +271,10 @@ final class SettingsView: NSView {
         allSpacesBox.state = preferences.showOnAllSpaces ? .on : .off
         internalAgentsBox.state = preferences.showsInternalAgents ? .on : .off
         analyserBox.state = preferences.showsAnalyser ? .on : .off
+        // No stored colour means "whatever the theme picked", and the well
+        // should show that rather than a colour nobody chose.
+        analyserWell.color = preferences.analyserTint.flatMap { NSColor(hex: $0) }
+            ?? ThemeLoader.loadTheme(named: preferences.themeName).matrix.high
     }
 
     private func updatePreview() {
@@ -319,6 +326,19 @@ final class SettingsView: NSView {
     @objc func analyserChanged() {
         preferences.showsAnalyser = analyserBox.state == .on
         actions.refreshPanelChrome()
+    }
+
+    @objc func analyserColourChanged() {
+        preferences.analyserTint = analyserWell.color.hexString
+        actions.reloadTheme()
+    }
+
+    /// Hands the analyser back to the theme, which is otherwise unreachable
+    /// once a colour has been picked — a colour well has no "none".
+    @objc func analyserColourReset() {
+        preferences.analyserTint = nil
+        actions.reloadTheme()
+        syncFromPreferences()
     }
 
     @objc func internalAgentsChanged() {

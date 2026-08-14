@@ -172,6 +172,24 @@ struct Theme {
         var peak: NSColor
         /// What the display spells. Empty means the built-in phrases.
         var messages: [String]
+
+        /// The same analyser in somebody's own colour.
+        ///
+        /// Only the ramp moves. `alarm` is left alone because red is the one
+        /// thing in the panel that has to keep meaning what it means, and
+        /// `unlit` is the dark grid the bars sit in rather than part of them.
+        ///
+        /// The bottom of the ramp is derived rather than asked for: a single
+        /// colour is the whole point of the control, and two pickers to get one
+        /// gradient right is a worse deal than a sensible darkening.
+        func tinted(_ colour: NSColor) -> Matrix {
+            var tinted = self
+            tinted.high = colour
+            tinted.low = colour.blended(withFraction: 0.55, of: .black) ?? colour
+            tinted.peak = (colour.blended(withFraction: 0.6, of: .white) ?? colour)
+                .withAlphaComponent(0.75)
+            return tinted
+        }
     }
 
     /// How the panel may be resized.

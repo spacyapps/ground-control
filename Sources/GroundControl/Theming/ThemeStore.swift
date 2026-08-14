@@ -38,7 +38,13 @@ final class ThemeStore {
     private func apply(name: String?) {
         // Editing a PNG must re-skin as readily as editing the manifest.
         BackgroundRenderer.clearCache()
-        theme = ThemeLoader.loadTheme(named: name)
+        var loaded = ThemeLoader.loadTheme(named: name)
+        // A personal choice sits on top of the theme rather than inside it:
+        // themes are files people share, and this is a preference.
+        if let hex = preferences.analyserTint, let tint = NSColor(hex: hex) {
+            loaded.matrix = loaded.matrix.tinted(tint)
+        }
+        theme = loaded
         watchActiveFolder()
         onChange?(theme)
     }
