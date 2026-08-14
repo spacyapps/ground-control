@@ -27,14 +27,14 @@ final class ContextMenuTests: XCTestCase {
 
     func testACursorRowExplainsWhyItNeverTurnsRed() throws {
         let menu = AppCoordinator().contextMenu(for: try session(source: "cursor"))
-        XCTAssertTrue(titles(menu).contains("Cursor agent: limited support"))
+        XCTAssertTrue(titles(menu).contains("Agent: limited support"))
         XCTAssertTrue(titles(menu).contains("No alert when it waits for approval"))
     }
 
     /// The note explains; it must never look like something you failed to click.
     func testTheNoteIsNotAnAction() throws {
         let menu = AppCoordinator().contextMenu(for: try session(source: "cursor"))
-        let note = menu.items.first { $0.title == "Cursor agent: limited support" }
+        let note = menu.items.first { $0.title == "Agent: limited support" }
         XCTAssertNotNil(note?.attributedTitle, "a plain title reads as a disabled action")
         XCTAssertNil(note?.action, "it must not be selectable")
         XCTAssertFalse(note?.isEnabled ?? true)
@@ -46,9 +46,18 @@ final class ContextMenuTests: XCTestCase {
         for source in ["claude", "grok"] {
             let menu = AppCoordinator().contextMenu(for: try session(source: source))
             XCTAssertFalse(
-                titles(menu).contains { $0.hasPrefix("Cursor agent") },
-                "\(source) rows should not mention Cursor"
+                titles(menu).contains { $0.hasPrefix("Agent:") },
+                "\(source) rows should carry no caveat"
             )
+        }
+    }
+
+    /// The wording never names the CLI. The row already says which one, and the
+    /// next editor agent to arrive should need no new string.
+    func testTheNoteDoesNotNameTheCLI() throws {
+        let menu = AppCoordinator().contextMenu(for: try session(source: "cursor"))
+        for title in titles(menu).dropFirst() where title.hasPrefix("Agent") {
+            XCTAssertFalse(title.lowercased().contains("cursor"), title)
         }
     }
 
