@@ -299,8 +299,14 @@ does nothing at all, and the frame simply scales.
 **Pair the panel's mode deliberately.** `layout.resize: "free"` with
 `lockAspect: true` lets you drag the panel to any shape while the artwork is
 scaled as one piece — so the picture distorts. `free` wants a nine-grid skin.
-The two shipped demos are the clean pairs: `spacyAppsLunarAvatar` is
-`free` + nine-grid, `spacyAppsUnicornOverlord` is `aspect` + scaled-whole.
+`spacyAppsLunarAvatar` is the clean pair: `free` + nine-grid, which is the
+combination that survives any shape.
+
+`spacyAppsUnicornOverlord` is deliberately the other way — `free` +
+scaled-whole. Its border is ornate the whole way round, so nine-slicing would
+cut through the corners, and dragging the panel away from the artwork's
+proportions stretches the picture. That is an accepted trade for being able to
+drag it at all; use `aspect` instead if the proportions matter more.
 
 #### When the aspect is unlocked
 
