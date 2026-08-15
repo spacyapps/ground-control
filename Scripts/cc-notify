@@ -284,7 +284,10 @@ def asked_question(payload):
     text = first.get("question") or first.get("header")
     if not isinstance(text, str) or not text.strip():
         return None
-    return condense(text, 160)
+    # The full budget, not the 160 a tool description gets. A question's tail is
+    # where the decision usually is — "…changed sinc…" is worse than no help at
+    # all — and the row scrolls, so length costs nothing but time.
+    return condense(text)
 
 
 def describe_tool(payload):
