@@ -60,9 +60,14 @@ final class ResizeModeTests: XCTestCase {
         XCTAssertEqual(try mode(##"{ "layout": { "resize": 7 } }"##), .content)
     }
 
-    /// The two shipped demos exist to show the difference, so it is worth
-    /// noticing if one of them quietly stops.
-    func testTheDemoThemesDemonstrateBothModes() {
+    /// Both demos now resize freely, which is a choice rather than a mistake:
+    /// the unicorn frame was moved off `aspect` so its panel could be dragged
+    /// to any shape. Its artwork is scaled whole rather than nine-sliced, so it
+    /// stretches when the panel stops matching the picture's proportions.
+    ///
+    /// Worth knowing: `aspect` now has no shipped example. This test says so
+    /// out loud so the gap is deliberate rather than discovered.
+    func testTheDemoThemesResizeFreely() {
         let lunar = ThemeLoader.loadTheme(from: URL(fileURLWithPath: "Themes/spacyAppsLunarAvatar"))
         XCTAssertEqual(lunar.layout.resize, .free, "the station should resize freely")
         XCTAssertFalse(lunar.window.locksAspect, "and nine-slice, so it does not distort")
@@ -70,6 +75,10 @@ final class ResizeModeTests: XCTestCase {
         let unicorn = ThemeLoader.loadTheme(
             from: URL(fileURLWithPath: "Themes/spacyAppsUnicornOverlord")
         )
-        XCTAssertEqual(unicorn.layout.resize, .aspect, "the frame should hold its proportions")
+        XCTAssertEqual(unicorn.layout.resize, .free)
+        XCTAssertTrue(
+            unicorn.window.locksAspect,
+            "scaled whole — nine-slicing this artwork would cut through its corners"
+        )
     }
 }
