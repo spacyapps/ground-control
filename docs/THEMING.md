@@ -38,6 +38,11 @@ change stays changed.
 
 Copy whichever is closest to what you want.
 
+The unicorn theme lives in `ExtraThemes/` and ships only in alpha builds — it is
+3.6 MB, most of it one avatar, and a release should not make everyone download a
+theme they may never pick. It is still checked by the test suite, and still the
+worked example of `window.overlay`.
+
 Themes live in `~/Library/Application Support/GroundControl/Themes/`. The
 menu-bar menu has **Theme → Open Themes Folder…** if you'd rather not type it.
 
@@ -519,8 +524,9 @@ panel should say.
   **`free` wants nine-sliced artwork.** A skin scaled as one piece will stretch
   out of shape when you drag both directions, so pair `"resize": "free"` with
   `"lockAspect": false` and `capInsets` — corners then hold their size while the
-  edges tile. `spacyAppsLunarAvatar` is set up this way;
-  `spacyAppsUnicornOverlord` is the opposite, holding its proportions.
+  edges tile. `spacyAppsLunarAvatar` is set up this way. `spacyAppsUnicornOverlord`
+  is `free` with `lockAspect: true`, which stretches the picture — an accepted
+  trade for a border that cannot be nine-sliced.
 
   **And nine-slice art must be drawn near panel size.** Caps are points, drawn
   1:1, so a 900px file with 150px caps puts 300pt of corner on a 487pt panel —

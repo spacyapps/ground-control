@@ -23,12 +23,16 @@ import ImageIO
 /// A manifest and its artwork drift apart silently: the theme still loads, the
 /// panel still draws, and it simply looks wrong. Nothing else notices.
 final class ThemeIntegrityTests: XCTestCase {
-    private static var themesRoot: URL {
-        URL(fileURLWithPath: #filePath)
+    /// Both roots. `Themes/` ships inside the app; `ExtraThemes/` is demo
+    /// weight included only in alpha builds — but an unchecked theme rots, and
+    /// the whole point of these tests is that nothing else notices when it does.
+    private static var themeRoots: [URL] {
+        let repo = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()      // GroundControlTests
             .deletingLastPathComponent()      // Tests
             .deletingLastPathComponent()      // repo root
-            .appendingPathComponent("Themes")
+        return [repo.appendingPathComponent("Themes"),
+                repo.appendingPathComponent("ExtraThemes")]
     }
 
     private struct Shipped {
@@ -39,13 +43,18 @@ final class ThemeIntegrityTests: XCTestCase {
 
     /// Every theme folder that ships inside the app.
     private func shippedThemes() throws -> [Shipped] {
-        let folders = try FileManager.default.contentsOfDirectory(
-            at: Self.themesRoot,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        ).filter { FileManager.default.fileExists(atPath: $0.appendingPathComponent("theme.json").path) }
+        let folders = try Self.themeRoots
+            .filter { FileManager.default.fileExists(atPath: $0.path) }
+            .flatMap {
+                try FileManager.default.contentsOfDirectory(
+                    at: $0,
+                    includingPropertiesForKeys: nil,
+                    options: [.skipsHiddenFiles]
+                )
+            }
+            .filter { FileManager.default.fileExists(atPath: $0.appendingPathComponent("theme.json").path) }
 
-        XCTAssertFalse(folders.isEmpty, "no themes found at \(Self.themesRoot.path)")
+        XCTAssertFalse(folders.isEmpty, "no themes found in \(Self.themeRoots.map(\.lastPathComponent))")
         return folders.map {
             Shipped(name: $0.lastPathComponent, folder: $0, theme: ThemeLoader.loadTheme(from: $0))
         }

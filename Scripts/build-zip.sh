@@ -26,7 +26,9 @@ UPLOAD="build/GroundControl-${VERSION}-upload.zip"
 STAGE="build/zip-stage/GroundControl-${VERSION}"
 DEST="$HOME/Desktop/GroundControl-${VERSION}.zip"
 
-bash Scripts/build-app.sh
+# Testers get the demo themes: an alpha is judged on what it looks like,
+# and the unicorn skin is what exercises overlay and a long animation.
+EXTRA_THEMES=1 bash Scripts/build-app.sh
 
 # Notarisation is only possible for Developer ID signing, so say so here rather
 # than after a round trip to Apple.

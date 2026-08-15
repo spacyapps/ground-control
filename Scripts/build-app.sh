@@ -54,6 +54,17 @@ install -m 0755 Scripts/install-hooks.sh "$APP/Contents/Resources/install-hooks.
 mkdir -p "$APP/Contents/Resources/Themes"
 cp -R Themes/* "$APP/Contents/Resources/Themes/"
 
+# ExtraThemes/ is demo weight, not the product. The unicorn frame alone is
+# 3.6 MB — a third of the app — and most of that is one avatar. Bundling it
+# made every download pay for a theme most people will never pick.
+#
+# EXTRA_THEMES=1 puts it back, which is what an alpha wants: testers need
+# something that exercises overlay, a scaled-whole skin and a long animation.
+if [ "${EXTRA_THEMES:-0}" = "1" ] && [ -d ExtraThemes ]; then
+  cp -R ExtraThemes/* "$APP/Contents/Resources/Themes/"
+  echo "==> Included ExtraThemes ($(du -sh ExtraThemes | cut -f1))"
+fi
+
 # SwiftPM emits resources as a bundle beside the binary; it has to travel too
 # or Brand.lockup and every themed asset comes back nil at runtime.
 for bundle in "$BIN"/*.bundle; do

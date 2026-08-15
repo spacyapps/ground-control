@@ -1,3 +1,20 @@
+# Theme delivery
+
+> **Settled 2026-08-15.** `ExtraThemes/` exists; `spacyAppsUnicornOverlord`
+> lives there and is bundled only when `EXTRA_THEMES=1`, which the alpha zip and
+> the dmg both set. The release app went from 9.6 MB to **6.0 MB**.
+>
+> The proposal below — `.gcTheme` packaging, release-asset downloads, an in-app
+> gallery — is **not being built**. It was written when the unicorn theme was
+> 5.5 MB of an 11 MB app and the split looked structural. It is not: 2.6 MB of
+> that theme is a single avatar GIF, and a theme's weight is its maker's problem
+> once themes are distributed separately. Moving one folder and adding one
+> environment variable got the whole benefit.
+>
+> Kept for the reasoning, not as a plan.
+
+---
+
 # Delivering themes separately — a proposal
 
 **Status: proposal, nothing built.** Written 2026-08-12 during alpha.
