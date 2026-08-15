@@ -252,6 +252,18 @@ final class PanelBackgroundView: NSView {
 
     // MARK: - Animation
 
+    /// Which of the two surfaces draws the animation, and therefore the only
+    /// one worth invalidating on a frame.
+    ///
+    /// With `window.overlay`, `SkinOverlayView` draws the moving skin and this
+    /// view draws `interiorBody` — a cached still that does not take `elapsed`
+    /// at all. Without it, the reverse: this view animates and the overlay is
+    /// hidden. Either way exactly one of them changes, and both were being
+    /// marked dirty.
+    var overlayOwnsAnimation: Bool {
+        theme.window.drawsOverContent && theme.window.shape != nil
+    }
+
     private var animatedBackground: BackgroundImage? {
         let candidate = theme.window.shape ?? theme.backgrounds.window
         guard let candidate, BackgroundRenderer.isAnimated(candidate) else { return nil }
@@ -273,8 +285,15 @@ final class PanelBackgroundView: NSView {
         let interval = AnimatedImage.load(background)?.duration ?? 1.0 / 12
         animationStart = Date()
         let timer = Timer.scheduledTimer(withTimeInterval: max(0.05, interval), repeats: true) { [weak self] _ in
-            self?.needsDisplay = true
-            self?.skinOverlay.needsDisplay = true
+            guard let self else { return }
+            // Only the surface that actually draws the moving picture. Marking
+            // both meant a full-bounds image blit twenty times a second for
+            // something that never changed — see `overlayOwnsAnimation`.
+            if self.overlayOwnsAnimation {
+                self.skinOverlay.needsDisplay = true
+            } else {
+                self.needsDisplay = true
+            }
         }
         RunLoop.main.add(timer, forMode: .common)
         animationTimer = timer

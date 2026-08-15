@@ -150,3 +150,47 @@ final class OverlaySkinTests: XCTestCase {
         XCTAssertFalse(view.skinOverlay.isHidden)
     }
 }
+
+/// Which surface an animated skin invalidates each frame.
+///
+/// An animated panel was marking *both* the background view and the overlay
+/// dirty twenty times a second. Only one of them ever draws the moving picture;
+/// the other was doing a full-bounds blit of something that never changed.
+@MainActor
+final class AnimationInvalidationTests: XCTestCase {
+    private func view(overlay: Bool, shaped: Bool) -> PanelBackgroundView {
+        var theme = DefaultTheme.theme
+        theme.window = Theme.Window(
+            shape: shaped
+                ? BackgroundImage(
+                    url: URL(fileURLWithPath: "/x.gif"),
+                    mode: .tile,
+                    capInsets: NSEdgeInsets()
+                )
+                : nil,
+            locksAspect: false,
+            aspectRatio: 1,
+            drawsOverContent: overlay
+        )
+        let view = PanelBackgroundView()
+        view.apply(theme: theme)
+        return view
+    }
+
+    /// `window.overlay` draws the skin in SkinOverlayView; this view draws only
+    /// a cached still underneath it.
+    func testAnOverlaySkinIsTheOverlaysToRedraw() {
+        XCTAssertTrue(view(overlay: true, shaped: true).overlayOwnsAnimation)
+    }
+
+    /// Without overlay the background view draws the skin itself, and the
+    /// overlay is hidden — redrawing it would be the wasted half.
+    func testABackgroundSkinIsThisViewsToRedraw() {
+        XCTAssertFalse(view(overlay: false, shaped: true).overlayOwnsAnimation)
+    }
+
+    /// `overlay` on a theme with no artwork means nothing to draw over.
+    func testOverlayWithoutArtworkClaimsNothing() {
+        XCTAssertFalse(view(overlay: true, shaped: false).overlayOwnsAnimation)
+    }
+}
