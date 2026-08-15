@@ -103,7 +103,9 @@ GroundControl/
 ├── Themes/
 │   ├── default/theme.json        # reference palette (ships in-repo, copyable)
 │   ├── example-avatars/          # working avatar theme: 3 stills + a GIF
-│   ├── spacyAppsLunarAvatar/     # the full set: avatars + shaped skin
+│   └── spacyAppsLunarAvatar/     # the full set: avatars + shaped skin
+│
+├── ExtraThemes/                 # demo weight, bundled only with EXTRA_THEMES=1
 │   └── spacyAppsUnicornOverlord/ # a frame drawn in front of the rows
 │
 ├── Scripts/                     # cc-notify and install-hooks.sh are also copied

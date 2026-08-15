@@ -73,7 +73,7 @@ final class ResizeModeTests: XCTestCase {
         XCTAssertFalse(lunar.window.locksAspect, "and nine-slice, so it does not distort")
 
         let unicorn = ThemeLoader.loadTheme(
-            from: URL(fileURLWithPath: "Themes/spacyAppsUnicornOverlord")
+            from: URL(fileURLWithPath: "ExtraThemes/spacyAppsUnicornOverlord")
         )
         XCTAssertEqual(unicorn.layout.resize, .free)
         XCTAssertTrue(
