@@ -167,6 +167,58 @@ final class EmitterDialectTests: XCTestCase {
         XCTAssertEqual(line["needs_action"] as? Bool, false)
     }
 
+    // MARK: - The question an agent is asking
+
+    /// Payload shape measured from a live `AskUserQuestion`, not guessed: the
+    /// text sits at `tool_input.questions[0].question`, a list of objects. The
+    /// flat-key search walked past it, so every such row read
+    /// "Working… (AskUserQuestion)" and told you nothing.
+    private let askPayload = """
+    {"session_id":"q1","hook_event_name":"PreToolUse","tool_name":"AskUserQuestion",\
+    "cwd":"/Users/waltermak/github/avaterm","tool_input":{"questions":[{\
+    "question":"Commit the JournalShell.tsx fix?","header":"Commit",\
+    "options":[{"label":"Approve"},{"label":"Deny"}]}]}}
+    """
+
+    func testTheQuestionBecomesTheMessage() throws {
+        XCTAssertEqual(try emit(askPayload)["message"] as? String,
+                       "Commit the JournalShell.tsx fix?")
+    }
+
+    /// The alarm arrives on a *different* event six seconds later, carrying
+    /// only "Claude needs your permission". Last line wins, so without a latch
+    /// the words are lost exactly when they matter most.
+    func testTheAlarmKeepsTheQuestionRatherThanReplacingIt() throws {
+        try emit(askPayload)
+        let alarm = try emit("""
+        {"session_id":"q1","hook_event_name":"Notification",\
+        "message":"Claude needs your permission","cwd":"/Users/waltermak/github/avaterm"}
+        """)
+        XCTAssertEqual(alarm["state"] as? String, "needsInput")
+        XCTAssertEqual(alarm["needs_action"] as? Bool, true)
+        XCTAssertEqual(alarm["message"] as? String, "Commit the JournalShell.tsx fix?")
+    }
+
+    /// An alarm with no question before it must still say something. Not every
+    /// notification comes from a question the agent asked.
+    func testAnAlarmWithNoQuestionFallsBackToWhatItWasGiven() throws {
+        let alarm = try emit("""
+        {"session_id":"q2","hook_event_name":"Notification",\
+        "message":"Claude needs your permission","cwd":"/tmp/x"}
+        """)
+        XCTAssertEqual(alarm["message"] as? String, "Claude needs your permission")
+    }
+
+    /// Every other tool keeps the phrasing it had — the question is an addition
+    /// to the search, not a replacement for it.
+    func testOtherToolsAreUnchanged() throws {
+        let line = try emit("""
+        {"session_id":"q3","hook_event_name":"PreToolUse","tool_name":"Bash",\
+        "tool_input":{"description":"Run the tests"},"cwd":"/tmp/x"}
+        """)
+        XCTAssertEqual(line["message"] as? String, "Bash: Run the tests")
+    }
+
     // MARK: - The dialects that already worked
 
     func testClaudeIsStillClaude() throws {

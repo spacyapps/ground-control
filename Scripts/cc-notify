@@ -261,9 +261,40 @@ def last_line(path):
         return None
 
 
+def asked_question(payload):
+    """The question an agent is putting to you, or None.
+
+    Measured from a real payload rather than guessed: `AskUserQuestion` carries
+    `tool_input.questions[0].question`, a *list of objects* — which is why the
+    flat-key search below walked straight past it and every such row read
+    "Working… (AskUserQuestion)".
+
+    Only the question. The options belong to whoever is answering, and they
+    answer in the terminal — a row exists to tell you whether to get up.
+    """
+    tool_input = get(payload, "tool_input", "toolInput")
+    if not isinstance(tool_input, dict):
+        return None
+    questions = tool_input.get("questions")
+    if not isinstance(questions, list) or not questions:
+        return None
+    first = questions[0]
+    if not isinstance(first, dict):
+        return None
+    text = first.get("question") or first.get("header")
+    if not isinstance(text, str) or not text.strip():
+        return None
+    return condense(text, 160)
+
+
 def describe_tool(payload):
     """Best available phrasing for what the agent is doing right now."""
     tool = get(payload, "tool_name", "toolName") or "tool"
+    question = asked_question(payload)
+    if question:
+        # Without the tool name: "AskUserQuestion: …" is noise in front of the
+        # only words on the row that a person needs to read.
+        return question
     tool_input = get(payload, "tool_input", "toolInput")
     if isinstance(tool_input, dict):
         for key in ("description", "file_path", "pattern", "command", "prompt"):
@@ -454,6 +485,16 @@ def main():
     if interpreted is None:
         return
     state, message, needs_action = interpreted
+
+    # The question and the alarm arrive on different events, six seconds apart:
+    # PreToolUse carries the words, Notification turns the row red with a
+    # generic "Claude needs your permission". Last line wins, so without this
+    # the words are overwritten by the moment they matter most. Latched the same
+    # way tty and host_app are.
+    asked = asked_question(payload) or previous.get("asked") or ""
+    if state == "needsInput" and asked:
+        message = asked
+
     tree = ProcessTree()
     tty = resolve_tty(tree) or previous.get("tty")
     host_app = resolve_host_app(tree) or previous.get("host_app")
@@ -471,6 +512,7 @@ def main():
         "event": get(payload, "hook_event_name", "hookEventName") or "",
         "state": state,
         "message": message,
+        "asked": asked,
         "needs_action": needs_action,
         "notification_type": get(payload, "notification_type", "notificationType") or "",
         "transcript_path": get(payload, "transcript_path", "transcriptPath") or "",
