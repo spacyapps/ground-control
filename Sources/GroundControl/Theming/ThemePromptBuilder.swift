@@ -146,7 +146,29 @@ enum ThemePromptBuilder {
           only for `.mov` / `.mp4`. If both are set, video wins.
         - Omit any state you do not want to draw and the app's own drawn face is
           used for it, tinted from this palette.
+        \(matrixNote(for: brief))
         \(brief.wantsBackgroundArt ? ThemeFramePrompt.keys(for: brief) : "")
+        """
+    }
+
+    /// Either "keep what the author wrote" or "write some yourself", but always
+    /// an explanation of the display, because the model has no other way to know
+    /// the panel has a 3×5 LED sign in it.
+    private static func matrixNote(for brief: ThemeBrief) -> String {
+        let shared = """
+        - `matrix.messages` is what the panel's little LED display spells while \
+        nothing is happening. **Only A–Z, 0–9, space and `. - !`** — no accents, \
+        no other punctuation — and **13 characters maximum** per phrase. \
+        Anything else is dropped when the theme loads.
+        """
+        guard brief.words.isEmpty else {
+            return shared + "\n  Keep the phrases exactly as written above."
+        }
+        return shared + """
+
+          Write 8–10 of them in this theme's voice: things \(brief.subject) \
+        would say. Short, dry, and in keeping with the mood — not instructions \
+        to the user.
         """
     }
 
@@ -230,9 +252,24 @@ enum ThemePromptBuilder {
             "rowMaxHeight": 100,
             "marqueeOnOverflow": true,
             "density": "comfortable"
+          },
+
+          "matrix": {
+            "messages": [\(messageList(for: brief))]
           }
         }
         """
+    }
+
+    /// The words the analyser spells, always present in the manifest even when
+    /// the author gave none.
+    ///
+    /// An empty array left in the file is the point: it is the only way anyone
+    /// finds out the display can be given something to say. A key that appears
+    /// only when used teaches nobody.
+    private static func messageList(for brief: ThemeBrief) -> String {
+        guard !brief.words.isEmpty else { return "" }
+        return "\n" + brief.words.map { "      \"\(escaped($0))\"" }.joined(separator: ",\n") + "\n    "
     }
 
     /// JSON-safe, including control characters.

@@ -48,6 +48,13 @@ struct ThemeBrief: Equatable {
     var background: String
     var avatarSize: Int
     var position: String
+    /// What the analyser spells while the panel is quiet. Empty means the model
+    /// is asked to invent them in the theme's voice, which is the more likely
+    /// path: most authors do not know the display can speak until they see it.
+    ///
+    /// Already filtered to what the 3×5 font can draw, so nothing unusable
+    /// reaches the manifest.
+    var words: [String] = []
 
     static let placeholder = ThemeBrief(
         name: "My Theme",
@@ -59,7 +66,8 @@ struct ThemeBrief: Equatable {
         keyColour: Frame.defaultKey,
         background: "brushed dark metal with a faint scanline texture",
         avatarSize: 48,
-        position: "right"
+        position: "right",
+        words: ["BEEP BOOP", "STILL AWAKE"]
     )
 
     /// Folder name on disk. Themes are picked by folder, so this has to be a
