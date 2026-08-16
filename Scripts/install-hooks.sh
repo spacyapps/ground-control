@@ -11,18 +11,27 @@
 # to re-run — an existing cc-notify registration is not duplicated.
 set -euo pipefail
 
-BIN_DIR="${HOME}/bin"
+# Beside the themes, in the folder this app already owns. Not inside the bundle:
+# a hook registration is an absolute path, and app bundles move — someone drags
+# the app from Downloads to Applications and every hook silently stops. Not
+# ~/bin either: that folder belongs to the user, is not on PATH here, and mixing
+# an executable in beside their own scripts makes uninstalling ambiguous.
+BIN_DIR="${HOME}/Library/Application Support/GroundControl/bin"
+LEGACY="${HOME}/bin/cc-notify"
 SETTINGS="${HOME}/.claude/settings.json"
-SRC="$(cd "$(dirname "$0")" && pwd)/cc-notify"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+SRC="${HERE}/cc-notify"
 
 install -d "$BIN_DIR"
 install -m 0755 "$SRC" "$BIN_DIR/cc-notify"
 echo "Installed cc-notify -> $BIN_DIR/cc-notify"
 
-case ":$PATH:" in
-  *":$BIN_DIR:"*) ;;
-  *) echo "NOTE: $BIN_DIR is not on your PATH (the hook uses an absolute path, so this is cosmetic)." ;;
-esac
+# The uninstaller travels with it, so removing the hooks does not depend on the
+# app still being there. People trash the app first; that should not strand a
+# registration pointing at a command that no longer exists.
+if [ -f "${HERE}/uninstall-hooks.sh" ]; then
+  install -m 0755 "${HERE}/uninstall-hooks.sh" "$BIN_DIR/uninstall-hooks.sh"
+fi
 
 mkdir -p "$(dirname "$SETTINGS")"
 [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
@@ -46,17 +55,29 @@ events = [
     "SessionStart", "UserPromptSubmit", "PreToolUse", "Notification",
     "Stop", "SubagentStart", "SubagentStop", "SessionEnd",
 ]
-added = []
+added, moved = [], []
+
+
+def ours(hook):
+    return isinstance(hook, dict) and "cc-notify" in (hook.get("command") or "")
+
 
 for event in events:
     entries = hooks.setdefault(event, [])
-    already = any(
-        command in (hook.get("command") or "")
-        for entry in entries if isinstance(entry, dict)
-        for hook in entry.get("hooks", []) if isinstance(hook, dict)
-    )
-    if already:
+
+    # Repoint rather than add. An earlier install put the emitter in ~/bin, and
+    # leaving that registered alongside the new path would run two emitters into
+    # the same session file — every line written twice.
+    existing = [hook for entry in entries if isinstance(entry, dict)
+                for hook in entry.get("hooks", []) if ours(hook)]
+    if existing:
+        for hook in existing:
+            if hook["command"] != command:
+                hook["command"] = command
+                if event not in moved:
+                    moved.append(event)
         continue
+
     entries.append({
         "matcher": "",
         "hooks": [{"type": "command", "command": command}],
@@ -67,6 +88,8 @@ with open(settings_path, "w") as handle:
     json.dump(settings, handle, indent=2)
     handle.write("\n")
 
+if moved:
+    print("Moved to the new location on: " + ", ".join(moved))
 print("Registered on: " + (", ".join(added) if added else "(already registered, no change)"))
 PY
 
@@ -101,10 +124,19 @@ hooks = config.setdefault("hooks", {})
 # Only the events that become a row. beforeShellExecution, afterShellExecution
 # and postToolUse were captured too and say nothing preToolUse has not already
 # said — registering them would double every line for a single command.
-added = []
+added, moved = [], []
 for event in ["sessionStart", "beforeSubmitPrompt", "preToolUse", "stop", "sessionEnd"]:
     entries = hooks.setdefault(event, [])
-    if any(command in (e.get("command") or "") for e in entries if isinstance(e, dict)):
+    # Repoint an older install rather than adding beside it — Cursor keeps the
+    # command on the entry itself rather than nested as Claude does.
+    existing = [e for e in entries
+                if isinstance(e, dict) and "cc-notify" in (e.get("command") or "")]
+    if existing:
+        for entry in existing:
+            if entry["command"] != command:
+                entry["command"] = command
+                if event not in moved:
+                    moved.append(event)
         continue
     entries.append({"command": command})
     added.append(event)
@@ -113,12 +145,20 @@ os.makedirs(os.path.dirname(path), exist_ok=True)
 with open(path, "w") as handle:
     json.dump(config, handle, indent=2)
     handle.write("\n")
-if added:
+if added or moved:
     print("Registered Cursor's own agent in ~/.cursor/hooks.json")
     print("  Restart Cursor — it reads hooks.json at startup.")
 else:
     print("Cursor's own agent was already registered (no change, no restart).")
 CURSOR
+fi
+
+# Only after both configs have been repointed: a half-migrated setup that has
+# lost its emitter is worse than one that still has the old file lying about.
+if [ -f "$LEGACY" ]; then
+  rm -f "$LEGACY"
+  echo "Removed the previous copy at $LEGACY"
+  rmdir "${HOME}/bin" 2>/dev/null || true
 fi
 
 echo

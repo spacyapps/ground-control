@@ -6,17 +6,25 @@ Ground Control — alpha
    It is signed with a Developer ID and notarised by Apple, so it opens on a
    double-click. No right-click, no warning, and it works offline.
 
-2. Wire up your agent CLI. One command, once:
+2. Wire up your agent CLI.
+
+   Easiest: click the menu-bar icon and choose "Set Up Hooks…".
+
+   Or from Terminal, if you prefer:
 
       /Applications/GroundControl.app/Contents/Resources/install-hooks.sh
 
-   That installs the `cc-notify` emitter to ~/bin and registers it in
-   ~/.claude/settings.json, backing the file up first. It MERGES — hooks you
-   already have keep working — and it is safe to re-run. Claude Code and Grok
-   both read that file, so one install covers both.
+   Either one installs the `cc-notify` emitter to
+   ~/Library/Application Support/GroundControl/bin/ and registers it in
+   ~/.claude/settings.json — and ~/.cursor/hooks.json if Cursor is installed.
+   It MERGES: hooks you already have keep working, and each file is backed up
+   first. Safe to run again at any time.
+
+   Claude Code and Grok both read the Claude settings file, so one run covers
+   both. Restart Cursor afterwards if it was open; it reads hooks at startup.
 
    Later versions of the app update the installed emitter themselves on launch,
-   so you never run this again.
+   so you only do this once.
 
 3. Open a NEW terminal and start Claude Code or Grok.
 
@@ -24,6 +32,22 @@ Ground Control — alpha
    panel as soon as the agent does anything.
 
 The panel lives in the menu bar — the ✦ icon. Click it to show or hide.
+
+
+Uninstalling
+------------
+
+Menu-bar icon > "Remove Hooks…", then quit and drag the app to the Trash.
+
+Order does not matter: a copy of the uninstaller is kept beside the emitter, so
+if the app is already gone you can still run
+
+   ~/Library/Application\ Support/GroundControl/bin/uninstall-hooks.sh
+
+It unregisters only Ground Control. Hooks belonging to anything else are left
+alone, and your themes are not touched — they stay in
+~/Library/Application Support/GroundControl/Themes if you want to keep them,
+or delete that folder to remove everything.
 
 
 What to look at

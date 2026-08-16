@@ -1,0 +1,93 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 Walter Mak
+# uninstall-hooks.sh — unregister cc-notify and remove it.
+#
+# Run this *before* dragging the app to the Trash, or don't — a copy of this
+# script is installed alongside the emitter precisely so the order cannot
+# matter. Deleting the app first would otherwise leave every agent CLI calling
+# a command that no longer exists, on every tool use.
+#
+# Removes only what we registered. Hooks belonging to anything else are left
+# exactly as they are, in both config files.
+#
+# Your themes are *not* touched: they live beside this folder and are yours.
+set -euo pipefail
+
+SUPPORT="${HOME}/Library/Application Support/GroundControl"
+BIN_DIR="${SUPPORT}/bin"
+LEGACY="${HOME}/bin/cc-notify"
+
+unregister() {
+  local path="$1" label="$2"
+  [ -f "$path" ] || return 0
+  cp "$path" "${path}.bak-$(date +%Y%m%d-%H%M%S)"
+  /usr/bin/python3 - "$path" "$label" <<'PY'
+import json, sys
+
+path, label = sys.argv[1], sys.argv[2]
+try:
+    with open(path) as handle:
+        config = json.load(handle)
+except (OSError, ValueError):
+    raise SystemExit
+
+hooks = config.get("hooks")
+if not isinstance(hooks, dict):
+    raise SystemExit
+
+# Ours is any command naming cc-notify, wherever it was installed — the old
+# ~/bin location included, so an upgrade that moved it still cleans up.
+def ours(command):
+    return "cc-notify" in (command or "")
+
+removed = 0
+for event, entries in list(hooks.items()):
+    if not isinstance(entries, list):
+        continue
+    kept = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            kept.append(entry)
+            continue
+        # Claude nests commands one level deeper than Cursor does.
+        inner = entry.get("hooks")
+        if isinstance(inner, list):
+            survivors = [h for h in inner if not ours(h.get("command"))]
+            removed += len(inner) - len(survivors)
+            if survivors:
+                entry["hooks"] = survivors
+                kept.append(entry)
+            continue
+        if ours(entry.get("command")):
+            removed += 1
+            continue
+        kept.append(entry)
+    if kept:
+        hooks[event] = kept
+    else:
+        del hooks[event]
+
+with open(path, "w") as handle:
+    json.dump(config, handle, indent=2)
+    handle.write("\n")
+print("  %s: removed %d registration(s)" % (label, removed))
+PY
+}
+
+echo "==> Unregistering"
+unregister "${HOME}/.claude/settings.json" "Claude Code / Grok"
+unregister "${HOME}/.cursor/hooks.json" "Cursor"
+
+echo "==> Removing the emitter"
+rm -rf "$BIN_DIR"
+[ -f "$LEGACY" ] && rm -f "$LEGACY" && echo "  also removed the old ${LEGACY}"
+
+echo
+echo "Done. Hooks stop at your next agent session — a CLI already running keeps"
+echo "the ones it loaded at startup."
+echo
+echo "Your themes are untouched, in:"
+echo "  ${SUPPORT}/Themes"
+echo "Delete that folder too if you want them gone. Then quit Ground Control and"
+echo "drag it to the Trash."

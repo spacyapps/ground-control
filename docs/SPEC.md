@@ -94,7 +94,7 @@ Claude Code hooks run a shell command on events. They all point at one script,
 event registers the identical command:
 
 ```json
-{ "type": "command", "command": "~/bin/cc-notify" }
+{ "type": "command", "command": "~/Library/Application Support/GroundControl/bin/cc-notify" }
 ```
 
 **Hooks used** (`~/.claude/settings.json`, merged by `install-hooks.sh` so

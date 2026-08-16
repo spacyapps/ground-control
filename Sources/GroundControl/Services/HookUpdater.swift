@@ -25,15 +25,16 @@ import Foundation
 /// after touching the script, and the bundle carries what you wrote.
 ///
 /// **Only ever updates, never installs.** An absent `cc-notify` means the user
-/// has not run the installer, and putting a script in their `~/bin` uninvited
-/// is not this app's business — nor would it help, since nothing would be
-/// registered to call it. Settings are never touched: the registration lives in
+/// has not run the installer, and writing one uninvited is not this app's
+/// business — nor would it help, since nothing would be registered to call it.
+/// The menu offers to run the installer; that is an invitation, not an
+/// assumption. Settings are never touched: the registration lives in
 /// `~/.claude/settings.json` and is the installer's job alone.
 enum HookUpdater {
-    /// Where the installer puts it.
+    /// Where the installer puts it. Must match `install-hooks.sh`, or the app
+    /// keeps a file up to date that nothing calls.
     static var installed: URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("bin/cc-notify")
+        Paths.binRoot.appendingPathComponent("cc-notify")
     }
 
     /// The copy that shipped inside the app.
