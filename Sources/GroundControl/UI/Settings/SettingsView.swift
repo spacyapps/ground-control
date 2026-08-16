@@ -27,15 +27,25 @@ final class SettingsView: NSView {
     }
 
     private let preferences: Preferences
-    private let actions: Actions
+    let actions: Actions
 
-    /// Everything lines up to one gutter; the rules run to the same edge.
+    /// The left column: wide enough for the preview, which is the one thing
+    /// here with a size of its own.
     static let contentWidth: CGFloat = 360
+
+    /// The right column, holding the switches. Narrower because a checkbox and
+    /// its caption need far less room than a picture of the panel — and a
+    /// caption measured much wider than this reads as a paragraph.
+    static let sideWidth: CGFloat = 250
+
+    /// Between the columns. Wide enough that the right column's rule does not
+    /// look like a continuation of the left one's.
+    static let gutter: CGFloat = 24
 
     private let themePicker = NSPopUpButton()
     private let themeDetail = NSTextField(labelWithString: "")
     private let themeWarning = NSTextField(labelWithString: "")
-    private let preview = ThemePreviewView()
+    let preview = ThemePreviewView()
     let onTopBox = NSButton()
     let allSpacesBox = NSButton()
     let internalAgentsBox = NSButton()
@@ -48,7 +58,7 @@ final class SettingsView: NSView {
     init(preferences: Preferences = .shared, actions: Actions) {
         self.preferences = preferences
         self.actions = actions
-        super.init(frame: NSRect(x: 0, y: 0, width: 420, height: 654))
+        super.init(frame: NSRect(x: 0, y: 0, width: Self.windowWidth, height: 560))
         build()
         reloadThemes()
         syncFromPreferences()
@@ -91,16 +101,52 @@ final class SettingsView: NSView {
         ])
 
         stack.addArrangedSubview(brandRow())
-        themeSection(in: stack)
-        panelSection(in: stack)
-        advancedSection(in: stack)
+        stack.addArrangedSubview(columns())
     }
+
+    /// The theme on the left, the switches on the right.
+    ///
+    /// One column meant the window was mostly empty to the right of every
+    /// checkbox while the whole thing scrolled — the preview is tall, and the
+    /// settings beside it are short. Side by side, both fit on screen at once
+    /// and nothing has to be scrolled to be found.
+    private func columns() -> NSView {
+        let left = column(width: Self.contentWidth)
+        let right = column(width: Self.sideWidth)
+
+        themeSection(in: left)
+        panelSection(in: right)
+        advancedSection(in: right)
+
+        let row = NSStackView(views: [left, right])
+        row.orientation = .horizontal
+        // Top, not centre: the columns are different heights, and a short right
+        // column floating in the middle of a tall left one reads as unfinished.
+        row.alignment = .top
+        row.spacing = Self.gutter
+        return row
+    }
+
+    private func column(width: CGFloat) -> NSStackView {
+        let stack = NSStackView()
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 9
+        stack.widthAnchor.constraint(equalToConstant: width).isActive = true
+        return stack
+    }
+
+    /// Both columns, both gutters, and the inset the outer stack applies.
+    static var windowWidth: CGFloat { contentWidth + gutter + sideWidth + 60 }
 
     private func themeSection(in stack: NSStackView) {
         stack.addArrangedSubview(header("Theme"))
 
         themePicker.target = self
         themePicker.action = #selector(themeChanged)
+        // Left to itself a pop-up is exactly as wide as its longest entry, so
+        // the control jumped about as themes were added and left a ragged edge.
+        themePicker.widthAnchor.constraint(equalToConstant: Self.contentWidth).isActive = true
         stack.addArrangedSubview(themePicker)
 
         themeDetail.font = .systemFont(ofSize: 11)
@@ -123,131 +169,6 @@ final class SettingsView: NSView {
         let buttons = buttonRow()
         stack.addArrangedSubview(buttons)
         stack.setCustomSpacing(20, after: buttons)
-    }
-
-    /// The app's own mark and a way back to whoever made it. Settings is a
-    /// system surface, so unlike the panel no theme ever replaces this.
-    private func brandRow() -> NSView {
-        let column = NSStackView()
-        column.orientation = .vertical
-        column.alignment = .leading
-        column.spacing = 2
-
-        let mark = NSImageView()
-        mark.image = Brand.lockup
-        mark.imageScaling = .scaleProportionallyUpOrDown
-        mark.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            mark.widthAnchor.constraint(equalToConstant: 190),
-            mark.heightAnchor.constraint(equalToConstant: 52)
-        ])
-
-        column.addArrangedSubview(mark)
-        column.addArrangedSubview(websiteLink())
-        return column
-    }
-
-    private func websiteLink() -> NSButton {
-        let link = NSButton(title: "www.spacyapps.com", target: self, action: #selector(openWebsite))
-        link.isBordered = false
-        link.contentTintColor = .linkColor
-        link.font = .systemFont(ofSize: 11)
-        link.attributedTitle = NSAttributedString(
-            string: "www.spacyapps.com",
-            attributes: [
-                .foregroundColor: NSColor.linkColor,
-                .font: NSFont.systemFont(ofSize: 11),
-                .underlineStyle: NSUnderlineStyle.single.rawValue
-            ]
-        )
-        return link
-    }
-
-    private func buttonRow() -> NSView {
-        let row = NSStackView()
-        row.orientation = .horizontal
-        row.spacing = 8
-
-        let create = NSButton(title: "Create a Theme…", target: self, action: #selector(createTheme))
-        create.bezelStyle = .rounded
-        let open = NSButton(title: "Open Folder…", target: self, action: #selector(openFolder))
-        open.bezelStyle = .rounded
-        let refresh = NSButton(title: "Refresh", target: self, action: #selector(refreshThemes))
-        refresh.bezelStyle = .rounded
-
-        row.addArrangedSubview(create)
-        row.addArrangedSubview(open)
-        row.addArrangedSubview(refresh)
-        return row
-    }
-
-    /// Section headers double as the dividers, so the old separator boxes are
-    /// gone: one line per section instead of a label and a rule competing.
-    func header(_ title: String) -> NSView {
-        let container = NSView()
-        container.translatesAutoresizingMaskIntoConstraints = false
-
-        let label = NSTextField(labelWithAttributedString: NSAttributedString(
-            string: title.uppercased(),
-            attributes: [
-                .font: NSFont.systemFont(ofSize: 10, weight: .semibold),
-                .foregroundColor: SettingsChrome.heading,
-                .kern: 1.8
-            ]
-        ))
-        label.translatesAutoresizingMaskIntoConstraints = false
-
-        let rule = NSView()
-        rule.wantsLayer = true
-        rule.layer?.backgroundColor = SettingsChrome.rule.cgColor
-        rule.translatesAutoresizingMaskIntoConstraints = false
-
-        container.addSubview(label)
-        container.addSubview(rule)
-        NSLayoutConstraint.activate([
-            container.widthAnchor.constraint(equalToConstant: Self.contentWidth),
-            container.heightAnchor.constraint(equalToConstant: 15),
-            label.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            label.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            rule.leadingAnchor.constraint(equalTo: label.trailingAnchor, constant: 10),
-            rule.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            rule.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            rule.heightAnchor.constraint(equalToConstant: 1)
-        ])
-        return container
-    }
-
-    /// The preview sits behind a hairline frame so it reads as a screen showing
-    /// the theme, rather than as part of the window's own styling.
-    private func viewport() -> NSView {
-        let frame = NSView()
-        frame.wantsLayer = true
-        frame.layer?.cornerRadius = 10
-        frame.layer?.borderWidth = 1
-        frame.layer?.borderColor = SettingsChrome.viewportEdge.cgColor
-        frame.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.25).cgColor
-        frame.translatesAutoresizingMaskIntoConstraints = false
-
-        preview.translatesAutoresizingMaskIntoConstraints = false
-        frame.addSubview(preview)
-
-        let size = ThemePreviewView.preferredSize
-        NSLayoutConstraint.activate([
-            frame.widthAnchor.constraint(equalToConstant: Self.contentWidth),
-            frame.heightAnchor.constraint(equalToConstant: size.height + 20),
-            preview.centerXAnchor.constraint(equalTo: frame.centerXAnchor),
-            preview.centerYAnchor.constraint(equalTo: frame.centerYAnchor),
-            preview.widthAnchor.constraint(equalToConstant: size.width - 20),
-            preview.heightAnchor.constraint(equalToConstant: size.height)
-        ])
-        return frame
-    }
-
-    func configure(_ box: NSButton, title: String, action: Selector) {
-        box.setButtonType(.switch)
-        box.title = title
-        box.target = self
-        box.action = action
     }
 
     // MARK: - State
@@ -351,19 +272,19 @@ final class SettingsView: NSView {
         actions.reloadSessions()
     }
 
-    @objc private func openFolder() {
+    @objc func openFolder() {
         actions.openThemesFolder()
     }
 
-    @objc private func refreshThemes() {
+    @objc func refreshThemes() {
         reloadThemes()
     }
 
-    @objc private func openWebsite() {
+    @objc func openWebsite() {
         Brand.openWebsite()
     }
 
-    @objc private func createTheme() {
+    @objc func createTheme() {
         actions.createTheme()
     }
 

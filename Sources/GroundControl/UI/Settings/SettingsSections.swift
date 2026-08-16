@@ -7,7 +7,7 @@ import AppKit
 /// about the window rather than about its rows.
 extension SettingsView {
     func panelSection(in stack: NSStackView) {
-        stack.addArrangedSubview(header("Panel"))
+        stack.addArrangedSubview(header("Panel", width: SettingsView.sideWidth))
 
         configure(onTopBox, title: "Always on top", action: #selector(togglesChanged))
         configure(allSpacesBox, title: "Show on all Spaces", action: #selector(togglesChanged))
@@ -56,7 +56,7 @@ extension SettingsView {
     }
 
     func advancedSection(in stack: NSStackView) {
-        stack.addArrangedSubview(header("Advanced"))
+        stack.addArrangedSubview(header("Advanced", width: SettingsView.sideWidth))
 
         configure(
             internalAgentsBox,
@@ -86,8 +86,10 @@ extension SettingsView {
         label.font = .systemFont(ofSize: 10)
         label.textColor = SettingsChrome.dim
         label.lineBreakMode = .byWordWrapping
-        label.maximumNumberOfLines = 2
-        label.preferredMaxLayoutWidth = SettingsView.contentWidth
+        // Captions live in the narrow column, so they run to more lines there
+        // than they did across the full width.
+        label.maximumNumberOfLines = 4
+        label.preferredMaxLayoutWidth = SettingsView.sideWidth
         return label
     }
 }

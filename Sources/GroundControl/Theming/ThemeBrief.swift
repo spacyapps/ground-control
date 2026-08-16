@@ -89,6 +89,12 @@ struct ThemeBrief: Equatable {
         return cleaned.isEmpty ? "my-theme" : cleaned
     }
 
+    /// The needsInput filename, which follows the animation choice like
+    /// `working` does — both are the states that are asking for something.
+    var needsInputFile: String {
+        wantsAnimation ? "needs-input.gif" : "needs-input.png"
+    }
+
     var wantsBackgroundArt: Bool {
         !background.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }

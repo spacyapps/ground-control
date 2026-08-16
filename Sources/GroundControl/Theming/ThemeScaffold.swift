@@ -29,7 +29,7 @@ enum ThemeScaffold {
         }
 
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        try ThemePromptBuilder.starterManifest(for: brief)
+        try ThemeStarterManifest.text(for: brief)
             .write(to: folder.appendingPathComponent("theme.json"), atomically: true, encoding: .utf8)
 
         // The prompt goes in beside it: the folder becomes self-describing, and
