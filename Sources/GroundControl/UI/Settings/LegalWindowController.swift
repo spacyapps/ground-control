@@ -85,16 +85,32 @@ final class LegalWindowController: NSWindowController {
     }
 
     private static func paragraphs(_ source: String) -> NSAttributedString {
-        let style = NSMutableParagraphStyle()
-        style.lineSpacing = 3
-        style.paragraphSpacing = 11
-
         let output = NSMutableAttributedString()
         for (index, line) in source.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
             if index > 0 { output.append(NSAttributedString(string: "\n")) }
-            output.append(emphasised(String(line), style: style))
+            output.append(emphasised(bulleted(String(line)), style: pointStyle))
         }
         return output
+    }
+
+    /// A hanging indent, so the second line of a point starts under the first
+    /// word rather than under the bullet. Without it a wrapped point reads as
+    /// two points.
+    private static let pointStyle: NSParagraphStyle = {
+        let style = NSMutableParagraphStyle()
+        style.lineSpacing = 3
+        style.paragraphSpacing = 9
+        style.headIndent = LegalWindowController.indent
+        style.tabStops = [NSTextTab(textAlignment: .left, location: LegalWindowController.indent)]
+        return style
+    }()
+
+    private static let indent: CGFloat = 15
+
+    /// `- point` becomes `•⇥point`. Anything else is left exactly as written.
+    private static func bulleted(_ line: String) -> String {
+        guard line.hasPrefix("- ") else { return line }
+        return "•\t" + line.dropFirst(2)
     }
 
     /// Turns `**this**` bold, leaving everything else alone.
