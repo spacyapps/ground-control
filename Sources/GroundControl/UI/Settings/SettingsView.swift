@@ -20,6 +20,7 @@ final class SettingsView: NSView {
         var refreshPanelChrome: () -> Void
         /// Re-reads the theme so a changed analyser colour is applied to it.
         var reloadTheme: () -> Void
+        var openLegal: () -> Void
         var openThemesFolder: () -> Void
         var resetPanelPosition: () -> Void
         var createTheme: () -> Void
@@ -331,6 +332,10 @@ final class SettingsView: NSView {
     @objc func analyserColourChanged() {
         preferences.analyserTint = analyserWell.color.hexString
         actions.reloadTheme()
+    }
+
+    @objc func openLegal() {
+        actions.openLegal()
     }
 
     /// Hands the analyser back to the theme, which is otherwise unreachable

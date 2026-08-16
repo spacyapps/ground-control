@@ -67,6 +67,17 @@ extension SettingsView {
         stack.addArrangedSubview(caption(
             "Internal agents are hidden because their messages read like your own prompts."
         ))
+
+        // Anyone deciding whether to let a monitor near their terminal should
+        // be able to find out what it touches without reading the source.
+        let legal = NSButton(
+            title: "Licence, Privacy & Disclaimer…",
+            target: self,
+            action: #selector(openLegal)
+        )
+        legal.bezelStyle = .rounded
+        stack.setCustomSpacing(16, after: stack.arrangedSubviews.last ?? legal)
+        stack.addArrangedSubview(legal)
     }
 
     /// The small grey line under a checkbox that says what it costs you.

@@ -233,6 +233,14 @@ final class AppCoordinator {
         panel.apply(sessions: store.sessions)
     }
 
+    /// Kept alive between openings, so the window remembers where it was put.
+    private var legal: LegalWindowController?
+
+    private func showLegal() {
+        if legal == nil { legal = LegalWindowController() }
+        legal?.present()
+    }
+
     private func showSettings() {
         if settings == nil {
             settings = SettingsWindowController(actions: SettingsView.Actions(
@@ -241,6 +249,7 @@ final class AppCoordinator {
                 reloadSessions: { [weak self] in self?.store.reload() },
                 refreshPanelChrome: { [weak self] in self?.refreshPanelChrome() },
                 reloadTheme: { [weak self] in self?.themeStore.reload() },
+                openLegal: { [weak self] in self?.showLegal() },
                 openThemesFolder: { [weak self] in self?.openThemesFolder() },
                 resetPanelPosition: { [weak self] in self?.panel.resetPosition() },
                 createTheme: { [weak self] in self?.showThemeBuilder() }

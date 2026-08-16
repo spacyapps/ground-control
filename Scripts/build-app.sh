@@ -41,6 +41,10 @@ cp "$BIN/GroundControl" "$APP/Contents/MacOS/GroundControl"
 cp Packaging/Info.plist "$APP/Contents/Info.plist"
 [ -f Packaging/AppIcon.icns ] && cp Packaging/AppIcon.icns "$APP/Contents/Resources/"
 
+# The GPL asks that the licence travel with the binary, and the Settings window
+# tells people the full text ships with the app. Both are only true if it does.
+cp LICENSE "$APP/Contents/Resources/LICENSE"
+
 # The hook emitter and its installer ride along, so a dmg is self-sufficient:
 # without cc-notify registered the panel is empty forever, and a downloaded app
 # has no repo to run the installer from. install-hooks.sh resolves cc-notify
