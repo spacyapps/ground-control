@@ -152,3 +152,18 @@ in `~/.groundcontrol/`, themes in
 ## License
 
 GPL-3.0-or-later — see `LICENSE`.
+
+Themes are not covered by it. They are plain folders of images and JSON, not a
+derivative of the code, and artwork carries whatever licence its author gives
+it. Ask whoever made a theme before redistributing it.
+
+## Contributions
+
+**Not accepting code contributions** — no pull requests, patches, or pasted
+snippets. Bug reports, feature requests and themes are very welcome, and the
+best thing you can send is a clear description of what happened.
+
+This is not unfriendliness. One merged contribution means the licence can never
+change again without tracking that person down for permission, and keeping sole
+copyright is what makes it possible to offer this under other terms later. If
+you have found a fix, describe the problem and it will get written.
