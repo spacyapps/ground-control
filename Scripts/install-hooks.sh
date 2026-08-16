@@ -56,7 +56,7 @@ prune() {
 prune "$SETTINGS"
 
 /usr/bin/python3 - "$SETTINGS" "$BIN_DIR/cc-notify" <<'PY'
-import json, sys
+import json, os, sys
 
 settings_path, command = sys.argv[1], sys.argv[2]
 
@@ -70,7 +70,7 @@ events = [
     "SessionStart", "UserPromptSubmit", "PreToolUse", "Notification",
     "Stop", "SubagentStart", "SubagentStop", "SessionEnd",
 ]
-added, moved = [], []
+added, moved, retired = [], [], set()
 
 
 def ours(hook):
@@ -88,6 +88,7 @@ for event in events:
     if existing:
         for hook in existing:
             if hook["command"] != command:
+                retired.add(hook["command"])
                 hook["command"] = command
                 if event not in moved:
                     moved.append(event)
@@ -102,6 +103,19 @@ for event in events:
 with open(settings_path, "w") as handle:
     json.dump(settings, handle, indent=2)
     handle.write("\n")
+
+# Delete exactly what was registered, rather than guessing where an older
+# install put it. The registration is the only thing that knows for certain —
+# and it is what we just rewrote, so nothing points at these any more.
+for old_path in sorted(retired):
+    if not old_path.endswith("/cc-notify") or old_path == command:
+        continue
+    try:
+        os.remove(old_path)
+        print("Removed the emitter it used to call: " + old_path)
+        os.rmdir(os.path.dirname(old_path))
+    except OSError:
+        pass
 
 if moved:
     print("Moved to the new location on: " + ", ".join(moved))
