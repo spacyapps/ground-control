@@ -18,6 +18,12 @@ import Foundation
 /// If any of this stops being accurate, this file is wrong and must change with
 /// the code. It is the one place in the project where a stale comment is a
 /// false statement to a user rather than a note to a developer.
+///
+/// Two things belong here that are easy to leave out because no line of code
+/// says them: the Apple Events permission macOS prompts for, and every place
+/// the app can open something. Both were missing from the first draft — the
+/// text was true and still left someone surprised, which for a page whose job
+/// is trust is the same as being wrong.
 enum LegalText {
     static let privacyTitle = "What this app does, and does not do"
 
@@ -43,9 +49,15 @@ enum LegalText {
         terminal, never answers a prompt for you, and never runs a command \
         your agent proposed. Clicking a row brings that terminal or editor to \
         the front — that is the whole of it.
-        - **The only other things it can open** are your themes folder, the \
-        SpacyApps website, and the hook installer, each only when you choose \
-        it from a menu.
+        - **macOS will ask once for permission to control your terminal.** \
+        That prompt is how a click reaches the right tab: a short script that \
+        selects the tab and raises the window. It does those two things and \
+        nothing else — it cannot type, and it only ever runs when you click a \
+        row. Decline it and clicking still raises the application, just not \
+        the exact tab.
+        - **The only other things it can open** are your themes folder, a \
+        session's folder in Finder when you ask for it, the SpacyApps website, \
+        and the hook installer — each only when you choose it from a menu.
         - **You can check every line of this.** The app is open source, and \
         the script it installs is a few hundred lines of readable Python at \
         ~/.groundcontrol/bin/cc-notify.
