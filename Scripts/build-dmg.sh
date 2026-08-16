@@ -19,7 +19,7 @@ DMG="build/GroundControl-${VERSION}.dmg"
 PROFILE="${NOTARY_PROFILE:-notary}"
 STAGE="build/dmg-stage"
 
-EXTRA_THEMES=1 bash Scripts/build-app.sh
+bash Scripts/build-app.sh
 
 # A dmg that is not signed with Developer ID can never be notarised, and a
 # cheerful "done" at the end would be a lie.

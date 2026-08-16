@@ -63,8 +63,12 @@ What to look at
 
 - Right-click a row, or use the ☰ mark above the status dot, for the menu.
 
-- Settings > Theme has two demo skins. Both are shaped windows; drag the
-  bottom-right corner to resize.
+- Settings > Theme has the SpacyApps Lunar Avatar skin — a shaped window with
+  a nine-grid station frame. Drag the bottom-right corner to resize it.
+
+- More themes ship separately, as their own zips. Unzip one, then use
+  Theme > Open Themes Folder… and drag the folder in. They are plain folders
+  of JSON and images, so they cost nothing to try and nothing to remove.
 
 - Settings > Panel > "Show the analyser" turns off the moving bars.
 

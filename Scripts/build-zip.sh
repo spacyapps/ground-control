@@ -26,9 +26,10 @@ UPLOAD="build/GroundControl-${VERSION}-upload.zip"
 STAGE="build/zip-stage/GroundControl-${VERSION}"
 DEST="$HOME/Desktop/GroundControl-${VERSION}.zip"
 
-# Testers get the demo themes: an alpha is judged on what it looks like,
-# and the unicorn skin is what exercises overlay and a long animation.
-EXTRA_THEMES=1 bash Scripts/build-app.sh
+# No EXTRA_THEMES: the release carries the lunar station and nothing else.
+# Extra themes are packaged separately by Scripts/package-theme.sh, which is
+# what lets a 3.6MB demo skin exist without every download paying for it.
+bash Scripts/build-app.sh
 
 # Notarisation is only possible for Developer ID signing, so say so here rather
 # than after a round trip to Apple.
