@@ -152,7 +152,16 @@ final class SettingsView: NSView {
         themeDetail.font = .systemFont(ofSize: 11)
         themeDetail.textColor = SettingsChrome.dim
         themeDetail.lineBreakMode = .byWordWrapping
-        themeDetail.maximumNumberOfLines = 2
+        // Three, and truncating at the end when even that is not enough: two
+        // clipped a theme's own description mid-word with nothing to say it
+        // had been cut.
+        themeDetail.maximumNumberOfLines = 3
+        // Wrapping and an ellipsis together: the line break mode alone turns
+        // the field single-line, and a cut description then loses two thirds of
+        // itself rather than its tail.
+        themeDetail.lineBreakMode = .byTruncatingTail
+        themeDetail.cell?.wraps = true
+        themeDetail.cell?.isScrollable = false
         themeDetail.preferredMaxLayoutWidth = Self.contentWidth
         stack.addArrangedSubview(themeDetail)
 

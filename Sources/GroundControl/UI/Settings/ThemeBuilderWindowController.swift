@@ -35,6 +35,9 @@ final class ThemeBuilderWindowController: NSWindowController {
             defer: false
         )
         window.title = "Create a Theme"
+        // The prompt is the point of this window, and shrinking it below this
+        // squeezed that box down to two visible lines.
+        window.minSize = NSSize(width: 620, height: 560)
         window.isReleasedWhenClosed = false
         window.center()
 
