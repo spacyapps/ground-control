@@ -48,6 +48,13 @@ BACKUP="${SETTINGS}.bak-$(date +%Y%m%d-%H%M%S)"
 cp "$SETTINGS" "$BACKUP"
 echo "Backed up settings -> $BACKUP"
 
+# Keep the three most recent. A backup per run is right; thirty-five of them,
+# which is what developing this produced, is a mess in someone else's folder.
+prune() {
+  ls -t "$1".bak-* 2>/dev/null | tail -n +4 | while read -r old; do rm -f "$old"; done
+}
+prune "$SETTINGS"
+
 /usr/bin/python3 - "$SETTINGS" "$BIN_DIR/cc-notify" <<'PY'
 import json, sys
 
@@ -114,6 +121,7 @@ if [ -d "$HOME/.cursor" ]; then
   CURSOR_HOOKS="$HOME/.cursor/hooks.json"
   if [ -f "$CURSOR_HOOKS" ]; then
     cp "$CURSOR_HOOKS" "${CURSOR_HOOKS}.bak-$(date +%Y%m%d-%H%M%S)"
+    prune "$CURSOR_HOOKS"
   fi
   /usr/bin/python3 - "$CURSOR_HOOKS" "$BIN_DIR/cc-notify" <<'CURSOR'
 import json, os, sys
