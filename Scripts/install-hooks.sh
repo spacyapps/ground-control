@@ -11,13 +11,21 @@
 # to re-run — an existing cc-notify registration is not duplicated.
 set -euo pipefail
 
-# Beside the themes, in the folder this app already owns. Not inside the bundle:
-# a hook registration is an absolute path, and app bundles move — someone drags
-# the app from Downloads to Applications and every hook silently stops. Not
-# ~/bin either: that folder belongs to the user, is not on PATH here, and mixing
-# an executable in beside their own scripts makes uninstalling ambiguous.
-BIN_DIR="${HOME}/Library/Application Support/GroundControl/bin"
+# ~/.groundcontrol/bin, beside ~/.claude and ~/.cursor — the company it keeps.
+#
+# **No spaces, and that is the whole reason.** Claude Code runs a hook command
+# through /bin/sh, which word-splits: an emitter in "Application Support" was
+# executed as /Users/you/Library/Application and failed on every single event.
+# Quoting the registration would fix Claude and might break Cursor, which may
+# exec the command directly and would then look for a path containing quote
+# characters. One file, several runners, different rules — so the path simply
+# has no spaces in it.
+#
+# Not inside the bundle either: a registration is an absolute path and bundles
+# move. Not ~/bin, which belongs to the user.
+BIN_DIR="${HOME}/.groundcontrol/bin"
 LEGACY="${HOME}/bin/cc-notify"
+LEGACY_SUPPORT="${HOME}/Library/Application Support/GroundControl/bin"
 SETTINGS="${HOME}/.claude/settings.json"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SRC="${HERE}/cc-notify"
@@ -159,6 +167,10 @@ if [ -f "$LEGACY" ]; then
   rm -f "$LEGACY"
   echo "Removed the previous copy at $LEGACY"
   rmdir "${HOME}/bin" 2>/dev/null || true
+fi
+if [ -d "$LEGACY_SUPPORT" ]; then
+  rm -rf "$LEGACY_SUPPORT"
+  echo "Removed the previous copy at $LEGACY_SUPPORT"
 fi
 
 echo

@@ -15,7 +15,7 @@ Ground Control — alpha
       /Applications/GroundControl.app/Contents/Resources/install-hooks.sh
 
    Either one installs the `cc-notify` emitter to
-   ~/Library/Application Support/GroundControl/bin/ and registers it in
+   ~/.groundcontrol/bin/ and registers it in
    ~/.claude/settings.json — and ~/.cursor/hooks.json if Cursor is installed.
    It MERGES: hooks you already have keep working, and each file is backed up
    first. Safe to run again at any time.
@@ -42,7 +42,7 @@ Menu-bar icon > "Remove Hooks…", then quit and drag the app to the Trash.
 Order does not matter: a copy of the uninstaller is kept beside the emitter, so
 if the app is already gone you can still run
 
-   ~/Library/Application\ Support/GroundControl/bin/uninstall-hooks.sh
+   ~/.groundcontrol/bin/uninstall-hooks.sh
 
 It unregisters only Ground Control. Hooks belonging to anything else are left
 alone, and your themes are not touched — they stay in
