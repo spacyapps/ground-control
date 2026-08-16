@@ -15,8 +15,9 @@
 set -euo pipefail
 
 SUPPORT="${HOME}/Library/Application Support/GroundControl"
-BIN_DIR="${SUPPORT}/bin"
+BIN_DIR="${HOME}/.groundcontrol"
 LEGACY="${HOME}/bin/cc-notify"
+LEGACY_SUPPORT="${SUPPORT}/bin"
 
 unregister() {
   local path="$1" label="$2"
@@ -82,6 +83,7 @@ unregister "${HOME}/.cursor/hooks.json" "Cursor"
 echo "==> Removing the emitter"
 rm -rf "$BIN_DIR"
 [ -f "$LEGACY" ] && rm -f "$LEGACY" && echo "  also removed the old ${LEGACY}"
+[ -d "$LEGACY_SUPPORT" ] && rm -rf "$LEGACY_SUPPORT" && echo "  also removed ${LEGACY_SUPPORT}"
 
 echo
 echo "Done. Hooks stop at your next agent session — a CLI already running keeps"

@@ -295,7 +295,7 @@ and a monitor that cries wolf is worse than one that stays silent. See the
 ## What is not an agent, as far as this app is concerned
 
 Ground Control is **hook-driven**. Its entire input is what an agent CLI reports
-by running `~/Library/Application Support/GroundControl/bin/cc-notify` on its lifecycle events. An assistant that does not
+by running `~/.groundcontrol/bin/cc-notify` on its lifecycle events. An assistant that does not
 invoke a user-installable hook cannot appear, however busy it is.
 
 **VS Code's own chat (Copilot) does not appear**, and this was tested rather
