@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (c) 2026 Walter Mak
 
 import Foundation
@@ -54,15 +54,19 @@ enum LegalText {
     static let licenceTitle = "Licence"
 
     static let licence = """
-        - Ground Control is free software, licensed under the **GNU General \
-        Public License, version 3 or later**.
+        - Ground Control is free software, licensed under the **GNU Affero \
+        General Public License, version 3 or later**.
         - You may use it for anything, study how it works, change it, and \
         share it — including commercially.
         - The condition is reciprocal: if you distribute the app or a modified \
         version, you must pass on the same freedoms and make your source \
         available under the same licence.
+        - **Affero adds one thing to that:** if you run a modified version as \
+        a network service, the people using it over the network must be \
+        offered its source too. Ordinary use of this app on your own Mac is \
+        unaffected — it makes no network connections at all.
         - The full text ships inside the app and is also at \
-        gnu.org/licenses/gpl-3.0.html.
+        gnu.org/licenses/agpl-3.0.html.
         - **Themes are not covered by it.** Artwork carries whatever licence \
         its author gives it, which is not necessarily this one — check with \
         whoever made a theme before redistributing it.
@@ -75,7 +79,7 @@ enum LegalText {
         - **There is no warranty.** This program is distributed in the hope \
         that it will be useful, but WITHOUT ANY WARRANTY — without even the \
         implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR \
-        PURPOSE. See the GNU General Public License for more detail.
+        PURPOSE. See the GNU Affero General Public License for more detail.
         - **It is a monitor, not a safety system.** Ground Control reports \
         what your coding assistant tells it, when it tells it. A row may be \
         wrong, late, or missing.

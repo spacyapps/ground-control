@@ -151,11 +151,14 @@ in `~/.groundcontrol/`, themes in
 
 ## License
 
-GPL-3.0-or-later — see `LICENSE`.
+AGPL-3.0-or-later — see `LICENSE`.
 
 - Use it, study it, change it, share it — including commercially.
 - Distribute it and you must pass on the same freedoms, with source, under the
   same licence.
+- **Affero adds the network case:** run a modified version as a service and its
+  users must be offered the source. The app itself makes no network connections,
+  so this only ever applies to something built on top of it.
 - **Themes are not covered.** They are plain folders of images and JSON, not a
   derivative of the code. Artwork carries whatever licence its author gives it —
   ask whoever made a theme before redistributing it.

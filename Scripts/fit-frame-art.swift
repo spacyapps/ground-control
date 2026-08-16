@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (c) 2026 Walter Mak
 //
 // Resizes frame artwork — animated or still — to the size a nine-slice theme

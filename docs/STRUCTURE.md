@@ -11,7 +11,7 @@ GroundControl/
 ├── .swiftlint.yml                # lint rules (root; nested configs allowed later)
 ├── .gitignore                    # excludes build/, DerivedData/, secrets, xcuserdata
 ├── README.md                     # landing page: what it is, build, screenshots
-├── LICENSE                       # GPL-3.0-or-later
+├── LICENSE                       # AGPL-3.0-or-later
 │
 ├── Sources/GroundControl/
 │   ├── App/                      # lifecycle & wiring

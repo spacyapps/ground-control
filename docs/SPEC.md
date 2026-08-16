@@ -30,7 +30,7 @@ depends on.
 - **No embedded terminals.** The app is a pure monitor + launcher. It watches
   external session files and jumps to real Terminal/iTerm tabs. (SwiftTerm was
   considered and dropped.)
-- **Distribution:** open-source (**GPL-3.0-or-later**) on GitHub; a `.dmg`
+- **Distribution:** open-source (**AGPL-3.0-or-later**) on GitHub; a `.dmg`
   signed with a Developer ID, **notarised and stapled** (`Scripts/build-dmg.sh`),
   so it opens on a double-click with no warning. The app bundle carries
   `cc-notify` and `install-hooks.sh` in `Resources/`, so a download needs no
