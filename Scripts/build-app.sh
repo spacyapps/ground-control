@@ -47,6 +47,10 @@ cp Packaging/Info.plist "$APP/Contents/Info.plist"
 # beside itself, so keeping the pair together is all it needs.
 install -m 0755 Scripts/cc-notify "$APP/Contents/Resources/cc-notify"
 install -m 0755 Scripts/install-hooks.sh "$APP/Contents/Resources/install-hooks.sh"
+# The uninstaller ships too, so removing the hooks never depends on having
+# the repo. The installer also copies it next to the emitter, which is what
+# makes it survive the app being dragged to the Trash first.
+install -m 0755 Scripts/uninstall-hooks.sh "$APP/Contents/Resources/uninstall-hooks.sh"
 
 # The example themes ship inside the app and are copied to Application Support
 # on first launch — a theme has to be editable and hot-reloadable, which one

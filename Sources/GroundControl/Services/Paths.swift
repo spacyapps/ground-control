@@ -33,6 +33,17 @@ enum Paths {
         applicationSupport.appendingPathComponent("Themes", isDirectory: true)
     }
 
+    /// The emitter and the uninstaller, kept apart from the artwork beside them.
+    ///
+    /// Not inside the app: a hook registration is an absolute path, and bundles
+    /// move — dragging the app from Downloads to Applications would silently
+    /// stop every hook. Not `~/bin` either, which belongs to the user. In its
+    /// own `bin/` rather than loose beside `Themes/`, so "delete ours, leave
+    /// theirs" is a rule you can state in one line.
+    static var binRoot: URL {
+        applicationSupport.appendingPathComponent("bin", isDirectory: true)
+    }
+
     /// Creates the folders the app expects to read. Safe to call repeatedly.
     static func ensureFoldersExist() {
         for url in [sessionsRoot, agentsRoot, userThemes] {

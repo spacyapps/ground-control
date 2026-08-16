@@ -92,8 +92,11 @@ something, which is what the hooks are for. One command:
 /Applications/GroundControl.app/Contents/Resources/install-hooks.sh
 ```
 
-That installs `cc-notify` to `~/bin` and registers it in
-`~/.claude/settings.json`, backing up the file first. **You only run it once** —
+Or click the menu-bar icon and choose **Set Up Hooks…**, which runs the same
+thing without a terminal.
+
+It installs `cc-notify` to `~/Library/Application Support/GroundControl/bin/`
+and registers it in `~/.claude/settings.json`, backing up the file first. **You only run it once** —
 later versions of the app update the installed emitter themselves on launch, so
 the two halves cannot drift apart. It never installs one where you have not, and
 never touches your settings. It merges rather than
@@ -139,7 +142,9 @@ never calls the emitter. See `docs/LIMITATIONS.md`.
 
 ## Uninstall
 
-Delete the app, remove `~/bin/cc-notify`, and take the `cc-notify` entries out
+Click the menu-bar icon and choose **Remove Hooks…** — or run
+`~/Library/Application\ Support/GroundControl/bin/uninstall-hooks.sh`, which is
+kept there so it still works after the app is gone. It takes the `cc-notify` entries out
 of `~/.claude/settings.json` (a dated backup sits beside it). Session files live
 in `~/.groundcontrol/`, themes in
 `~/Library/Application Support/GroundControl/Themes/`.

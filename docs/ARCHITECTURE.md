@@ -8,7 +8,7 @@ of the design.
 flowchart TB
     subgraph terminal["Your terminal — iTerm, Terminal, VS Code, Warp…"]
         cli["Agent CLI<br/><i>Claude Code or Grok</i>"]
-        hook["~/bin/cc-notify<br/><i>python3, ~350 lines</i>"]
+        hook["cc-notify<br/><i>python3, ~350 lines</i>"]
     end
 
     subgraph disk["${TMPDIR}/groundcontrol/ — plain JSON lines"]
@@ -45,7 +45,7 @@ even while running commands in a terminal of its own. Claude Code inside that
 same editor appears normally, because the hook fires wherever the CLI runs.
 
 **1. The CLI fires a hook.** `~/.claude/settings.json` registers one command —
-`~/bin/cc-notify` — against eight events: `SessionStart`, `UserPromptSubmit`,
+`~/Library/Application Support/GroundControl/bin/cc-notify` — against eight events: `SessionStart`, `UserPromptSubmit`,
 `PreToolUse`, `Notification`, `Stop`, `SubagentStart`, `SubagentStop`,
 `SessionEnd`. The CLI runs it and hands it a JSON payload on stdin. Grok reads
 the same settings file and sends the same events in camelCase, so one script
