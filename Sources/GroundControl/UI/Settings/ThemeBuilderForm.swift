@@ -66,7 +66,12 @@ extension ThemeBuilderWindowController {
         NSLayoutConstraint.activate([
             form.topAnchor.constraint(equalTo: root.topAnchor, constant: 16),
             form.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 18),
-            form.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -18),
+            // Capped rather than pinned to the window. Widening the window used
+            // to stretch every field with it, so "Avatar size" became a box a
+            // thousand points wide holding the number 48. Extra width goes to
+            // the prompt below, which is the only thing here that wants it.
+            form.widthAnchor.constraint(equalToConstant: 584),
+            form.trailingAnchor.constraint(lessThanOrEqualTo: root.trailingAnchor, constant: -18),
 
             scroll.topAnchor.constraint(equalTo: form.bottomAnchor, constant: 12),
             scroll.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 18),
