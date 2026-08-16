@@ -33,7 +33,7 @@ final class ThemePromptBuilderTests: XCTestCase {
     }
 
     func testStarterManifestDecodesAsARealTheme() throws {
-        let json = ThemePromptBuilder.starterManifest(for: brief)
+        let json = ThemeStarterManifest.text(for: brief)
         let manifest = try JSONDecoder().decode(ThemeManifest.self, from: Data(json.utf8))
         XCTAssertEqual(manifest.name, "Neon Cat")
         XCTAssertEqual(manifest.avatar?.size, 56)
@@ -44,7 +44,7 @@ final class ThemePromptBuilderTests: XCTestCase {
     func testStillsInsteadOfAnimationChangeTheWorkingFilename() throws {
         var still = brief
         still.wantsAnimation = false
-        let json = ThemePromptBuilder.starterManifest(for: still)
+        let json = ThemeStarterManifest.text(for: still)
         let manifest = try JSONDecoder().decode(ThemeManifest.self, from: Data(json.utf8))
         XCTAssertEqual(manifest.avatar?.states?["working"]?.image, "working.png")
         // The artwork brief must not demand motion; the format notes may still
@@ -106,7 +106,7 @@ final class ThemePromptBuilderTests: XCTestCase {
     /// Alpha must survive into the manifest: the default divider is fully
     /// transparent, and a 6-digit value would make hairlines appear.
     func testTransparentDefaultsKeepTheirAlpha() throws {
-        let json = ThemePromptBuilder.starterManifest(for: brief)
+        let json = ThemeStarterManifest.text(for: brief)
         let manifest = try JSONDecoder().decode(ThemeManifest.self, from: Data(json.utf8))
         XCTAssertEqual(manifest.colors?["divider"]?.count, 9, "expected #rrggbbaa")
 
@@ -122,7 +122,7 @@ final class ThemePromptBuilderTests: XCTestCase {
         var awkward = brief
         awkward.name = #"The "Best" Theme"#
         awkward.subject = #"a cat with a \ backslash"#
-        let json = ThemePromptBuilder.starterManifest(for: awkward)
+        let json = ThemeStarterManifest.text(for: awkward)
         let manifest = try JSONDecoder().decode(ThemeManifest.self, from: Data(json.utf8))
         XCTAssertEqual(manifest.name, #"The "Best" Theme"#)
     }

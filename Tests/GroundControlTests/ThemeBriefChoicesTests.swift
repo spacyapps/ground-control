@@ -98,7 +98,7 @@ final class AnimatedStateTests: XCTestCase {
     /// The starter manifest has to name the same files the prompt asked for, or
     /// the author draws a GIF the theme never loads.
     func testTheManifestNamesTheAnimatedFiles() throws {
-        let json = ThemePromptBuilder.starterManifest(for: animated)
+        let json = ThemeStarterManifest.text(for: animated)
         let manifest = try JSONDecoder().decode(ThemeManifest.self, from: Data(json.utf8))
         XCTAssertEqual(manifest.avatar?.states?["working"]?.image, "working.gif")
         XCTAssertEqual(manifest.avatar?.states?["needsInput"]?.image, "needs-input.gif")
