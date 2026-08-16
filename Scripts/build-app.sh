@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (c) 2026 Walter Mak
 #
 # Builds GroundControl.app.
@@ -41,7 +41,7 @@ cp "$BIN/GroundControl" "$APP/Contents/MacOS/GroundControl"
 cp Packaging/Info.plist "$APP/Contents/Info.plist"
 [ -f Packaging/AppIcon.icns ] && cp Packaging/AppIcon.icns "$APP/Contents/Resources/"
 
-# The GPL asks that the licence travel with the binary, and the Settings window
+# The AGPL asks that the licence travel with the binary, and the Settings window
 # tells people the full text ships with the app. Both are only true if it does.
 cp LICENSE "$APP/Contents/Resources/LICENSE"
 
