@@ -67,13 +67,31 @@ and the Settings page matching what the code does.
    **Keep Issues on** — bug reports and theme submissions are the channel that
    is actually wanted.
 
-3. **Social preview image.** Settings → General → Social preview. It is what
-   appears whenever the link is shared. A screenshot of the panel wearing the
-   lunar theme does more work than the README.
+3. **Then flip it public.** The one step with no way back.
 
-4. **Branch protection on `main`.** Block force-pushes. Cheap insurance.
+## After it is public — not before
 
-5. **First release.** Tag `v0.5.0`. Attach both:
+Both of these are unavailable on a free private repo, which is confusing enough
+to be worth stating: the settings are missing rather than hidden.
+
+4. **Social preview image.** Settings → General → Social preview. A private
+   repo that has never had one does not offer the upload at all — GitHub only
+   allows it on a private repo *that already had an image*. PNG/JPG/GIF, under
+   1 MB, 1280x640 for best display. A screenshot of the panel wearing the lunar
+   theme does more work here than any amount of README polish, because this is
+   what renders wherever the link is posted.
+
+5. **Branch ruleset on `main`.** Settings → Rules → Rulesets → New ruleset,
+   target the default branch, tick **Block force pushes**. On a free personal
+   account this is not enforced while the repo is private — GitHub says so in
+   an amber banner. Check that banner is gone afterwards, or the rule exists
+   without doing anything.
+
+   It guards against one person: you. Nobody else can push. The realistic
+   accident is a `git push --force` overwriting history, which is not
+   hypothetical — this repo had its history rewritten on the day it was created.
+
+6. **First release.** Tag `v0.5.0`. Attach both:
    - the notarised app zip from `Scripts/build-zip.sh`
    - the theme zip from `Scripts/package-theme.sh ExtraThemes/spacyAppsUnicornOverlord`
 
@@ -82,16 +100,16 @@ and the Settings page matching what the code does.
 
 ## The website
 
-6. **Link to Releases, not to the repo.** The download button points at
+7. **Link to Releases, not to the repo.** The download button points at
    `/releases/latest`; a smaller "Source on GitHub" link points at the repo.
    Most visitors want the app. The source link is a trust signal, not a call to
    action.
 
-7. **One line about the licence**, on the page: *"Free and open source,
+8. **One line about the licence**, on the page: *"Free and open source,
    AGPL-3.0. Themes are sold separately."* That sentence carries the trust
    pitch, the donation pitch and the theme-shop setup at once.
 
-8. **Funding last.** `.github/FUNDING.yml` is committed with its entries
+9. **Funding last.** `.github/FUNDING.yml` is committed with its entries
    commented out. Fill it in once the site exists, so the Sponsor button and the
    website agree rather than contradicting each other. Reasoning and the
    Octobox numbers are in `~/github/md files/groundcontrol-monetisation.md`.
