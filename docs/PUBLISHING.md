@@ -27,16 +27,18 @@ These were finished on 2026-08-16 and need no repeating.
 
 ## Before pushing
 
-**Decide about the commit author.** Some commits carry
-`waltermak@WWW-MakBook-Air-2.local`. It is harmless and it is a machine name
-that becomes public. Cleaning it is another history rewrite — free now, never
-again after the first push. Skipping it is a perfectly reasonable choice; just
-make it deliberately.
+**The commit author is already dealt with.** Done 2026-08-16, after the first
+push but while the repo was still private and unforked — 178 commits rewritten
+from `walter.mak@gmail.com` and `waltermak@WWW-MakBook-Air-2.local` to
+`spacyapps@gmail.com`, then force-pushed. The working tree was diffed against a
+backup to prove only metadata moved.
 
-```bash
-git filter-repo --email-callback '
-  return b"spacyapps@gmail.com" if b"local" in email else email'
-```
+`user.email` is now set on this repo and on the private `ExtraThemes` one. It
+was unset globally, which is why 119 commits had an address git derived from
+the machine name — worth setting globally too, or the next new repo repeats it.
+
+**Do not rewrite history again once the repo is public.** A force-push then
+breaks every clone and fork, and looks like an incident.
 
 **Re-run the licence audit.** `/license-guru`, or by hand: `LICENSE` identical
 to the FSF text, every file carrying an SPDX header, no networking API anywhere,
