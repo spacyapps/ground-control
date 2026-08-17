@@ -35,7 +35,7 @@ make it deliberately.
 
 ```bash
 git filter-repo --email-callback '
-  return b"walter.mak@gmail.com" if b"local" in email else email'
+  return b"spacyapps@gmail.com" if b"local" in email else email'
 ```
 
 **Re-run the licence audit.** `/license-guru`, or by hand: `LICENSE` identical
