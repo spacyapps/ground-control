@@ -11,10 +11,10 @@ glance, which ones need your attention — with a WinAmp-style skinnable UI
 - **Click a session** to jump straight to its terminal tab.
 - **Skinnable** via drop-in theme folders (`Themes/<name>/theme.json`).
 
-> Status: early. This repo ships the **scaffold, spec, and a working
-> `cc-notify`** — the hook side is built and verified against live payloads.
-> The Swift app is not written yet. See `docs/SPEC.md` for the build plan and
-> `docs/STRUCTURE.md` for the code layout.
+> Status: alpha. The app is built and notarised, and the hook side is verified
+> against live payloads from Claude Code, Grok and Cursor. See `docs/SPEC.md`
+> for the event contract, `docs/STRUCTURE.md` for the code layout, and
+> `docs/LIMITATIONS.md` for what is proven versus merely believed.
 
 ## Build (from source)
 
