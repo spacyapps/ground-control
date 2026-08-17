@@ -44,10 +44,15 @@ and the Settings page matching what the code does.
 
 ## Creating the repo
 
-1. **Private first.**
+1. **Private first.** Under the personal account, which is already named
+   `spacyapps` — no organisation. An org would need that name freed up first,
+   which means renaming the personal account and breaking every link into it,
+   and it would buy nothing: there are no collaborators and the account name is
+   already the brand. A single repo can be transferred into an org later,
+   keeping its stars, issues and a redirect, so waiting costs nothing.
 
    ```bash
-   gh repo create waltermak/ground-control --private --source=. --remote=origin
+   gh repo create spacyapps/ground-control --private --source=. --remote=origin
    git push -u origin main
    ```
 
