@@ -60,25 +60,35 @@ final class ResizeModeTests: XCTestCase {
         XCTAssertEqual(try mode(##"{ "layout": { "resize": 7 } }"##), .content)
     }
 
-    /// Both demos now resize freely, which is a choice rather than a mistake:
-    /// the unicorn frame was moved off `aspect` so its panel could be dragged
-    /// to any shape. Its artwork is scaled whole rather than nine-sliced, so it
-    /// stretches when the panel stops matching the picture's proportions.
+    /// Both demos resize freely and both are nine-sliced, so neither distorts
+    /// at any shape.
     ///
-    /// Worth knowing: `aspect` now has no shipped example. This test says so
-    /// out loud so the gap is deliberate rather than discovered.
-    func testTheDemoThemesResizeFreely() {
+    /// The unicorn was scaled whole until its frame was redrawn: the old art
+    /// had a unicorn in the middle of the top edge and a wavy outline, and
+    /// nine-slicing it would have tiled the unicorn down the edge. The redraw
+    /// moved every ornament into a corner, which is what made the grid possible.
+    ///
+    /// Worth knowing: `aspect` and `lockAspect` now have **no shipped example**
+    /// between them. Said out loud here so the gap is deliberate rather than
+    /// discovered by whoever next changes that code.
+    func testTheDemoThemesResizeFreely() throws {
         let lunar = ThemeLoader.loadTheme(from: URL(fileURLWithPath: "Themes/spacyAppsLunarAvatar"))
         XCTAssertEqual(lunar.layout.resize, .free, "the station should resize freely")
         XCTAssertFalse(lunar.window.locksAspect, "and nine-slice, so it does not distort")
 
-        let unicorn = ThemeLoader.loadTheme(
-            from: URL(fileURLWithPath: "ExtraThemes/spacyAppsUnicornOverlord")
+        // ExtraThemes is artwork that is licensed separately and kept out of the
+        // repository, so a clone does not have it. Skipping beats failing: the
+        // absence is expected everywhere except this machine.
+        let folder = URL(fileURLWithPath: "ExtraThemes/spacyAppsUnicornOverlord")
+        try XCTSkipUnless(
+            FileManager.default.fileExists(atPath: folder.appendingPathComponent("theme.json").path),
+            "ExtraThemes is not in the repository — nothing to check"
         )
+        let unicorn = ThemeLoader.loadTheme(from: folder)
         XCTAssertEqual(unicorn.layout.resize, .free)
-        XCTAssertTrue(
+        XCTAssertFalse(
             unicorn.window.locksAspect,
-            "scaled whole — nine-slicing this artwork would cut through its corners"
+            "nine-sliced since the frame was redrawn with its ornaments in the corners"
         )
     }
 }

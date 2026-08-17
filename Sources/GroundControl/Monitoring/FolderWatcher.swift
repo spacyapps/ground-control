@@ -20,7 +20,7 @@ final class FolderWatcher {
     private var source: DispatchSourceFileSystemObject?
     private var descriptor: CInt = -1
     private var pending: DispatchWorkItem?
-    private let queue = DispatchQueue(label: "app.groundcontrol.folderwatcher")
+    private let queue = DispatchQueue(label: "com.spacyapps.groundcontrol.folderwatcher")
 
     init(url: URL, debounce: TimeInterval = 0.15, onChange: @escaping () -> Void) {
         self.url = url
