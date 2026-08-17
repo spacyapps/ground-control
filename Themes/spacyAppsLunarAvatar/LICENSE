@@ -1,0 +1,24 @@
+Artwork licence — SpacyApps Lunar Avatar
+========================================
+
+The images in this folder (frame.gif, the avatar states, and any other
+artwork here) are:
+
+    Copyright (c) 2026 Walter Mak. All rights reserved.
+
+They are NOT covered by the AGPL that covers Ground Control's source code.
+Artwork is not a derivative of the program, and the program's licence does
+not travel to it.
+
+You may:
+
+  - use this theme in Ground Control, on any machine you like;
+  - open the files, read them, and change your own copy;
+  - use theme.json as a reference for writing your own manifest.
+
+You may not redistribute the images, in whole or in part, modified or
+unmodified, without written permission.
+
+theme.json itself is a configuration file, not artwork. Copy it freely.
+
+Ask: walter.mak@gmail.com

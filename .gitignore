@@ -30,3 +30,7 @@ Secrets.xcconfig
 # Editor
 .idea/
 *.swp
+
+# Sellable artwork — lives on disk, ships as its own zip, never in git.
+# Removed from history 2026-08-16 before the repo was first published.
+ExtraThemes/
