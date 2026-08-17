@@ -9,7 +9,7 @@
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>app.groundcontrol</string>
+	<string>com.spacyapps.groundcontrol</string>
 	<key>CFBundleName</key>
 	<string>Ground Control</string>
 	<key>CFBundlePackageType</key>

@@ -6,7 +6,7 @@ import os
 
 /// Thin `os.Logger` wrapper so call sites stay short and subsystem-consistent.
 enum Log {
-    private static let subsystem = "app.groundcontrol"
+    private static let subsystem = "com.spacyapps.groundcontrol"
 
     static let monitoring = Logger(subsystem: subsystem, category: "monitoring")
     static let theming = Logger(subsystem: subsystem, category: "theming")
