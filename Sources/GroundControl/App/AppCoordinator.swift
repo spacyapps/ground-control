@@ -34,7 +34,6 @@ final class AppCoordinator {
         HookUpdater.updateIfNeeded()
         wireMenu()
 
-        statusItem.onTogglePanel = { [weak self] in self?.panel.toggle() }
         statusItem.menuProvider = { [weak self] in
             guard let self else { return NSMenu() }
             return self.statusMenu?.build(
