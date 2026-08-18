@@ -14,6 +14,15 @@ private final class TopAlignedStackView: NSStackView {
 /// anchors at the bottom unless it, too, is flipped.
 private final class TopAlignedClipView: NSClipView {
     override var isFlipped: Bool { true }
+
+    /// A clip view fills itself with `controlBackgroundColor` unless told not
+    /// to, and that colour is **white** under a light system appearance. The
+    /// scroll view's own background was already off, which hid this on a dark
+    /// desktop and left a white slab under the rows on a light one.
+    override var drawsBackground: Bool {
+        get { false }
+        set { _ = newValue }
+    }
 }
 
 /// The scrolling stack of rows.
