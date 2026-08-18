@@ -111,6 +111,10 @@ final class AnimatedStateTests: XCTestCase {
     func testThePromptSaysHowToMakeStatesReadableWhenSmall() {
         let prompt = ThemePromptBuilder.prompt(for: animated)
         XCTAssertTrue(prompt.contains("stop and look"), "needsInput needs to be called out")
-        XCTAssertTrue(prompt.contains("Squint"), "the check an author can actually perform")
+        XCTAssertTrue(
+            prompt.contains("Check these before you show me anything"),
+            "the checks an author can actually perform, before anything is sent"
+        )
+        XCTAssertTrue(prompt.contains("shrunk to"), "and they have to be judged at real size")
     }
 }

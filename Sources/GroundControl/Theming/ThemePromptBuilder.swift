@@ -32,7 +32,7 @@ enum ThemePromptBuilder {
                 section.range(of: "## "))
         }
 
-        return ([ThemePromptText.preamble, request(for: brief)]
+        return ([ThemePromptText.preamble, request(for: brief), ThemePromptText.howWeWork]
                 + body
                 + [ThemePromptText.paletteReference])
             .joined(separator: "\n\n")
@@ -108,9 +108,28 @@ enum ThemePromptBuilder {
         room without reading anything. Give it the boldest silhouette, the
         brightest background, or a mark — anything that survives being small.
 
-        Squint at each image at \(brief.avatarSize)pt. If two of them look alike, the
-        difference is in detail I cannot see, and the colour or shape has to do
-        more work.\(animationNote)
+        \(avatarChecks(for: brief))\(animationNote)
+        """
+    }
+
+    /// What the model can verify without me, before it spends my time.
+    ///
+    /// An instruction that cannot be self-checked gets followed approximately.
+    /// A test gets followed exactly — which is why every one of these is a
+    /// question with a yes or no answer, judged at the size it will be seen at.
+    private static func avatarChecks(for brief: ThemeBrief) -> String {
+        """
+        ### Check these before you show me anything
+
+        - Shrunk to \(brief.avatarSize) pixels, can you still tell what each one is?
+        - Side by side at that size, are all four instantly different from each
+          other? If two look alike, the difference is in detail I cannot see.
+        - Is `needsInput` the one your eye goes to first?
+        - Are they square, the same size, and on a transparent or solid tile —
+          no white boxes?
+
+        Then show me all four together, shrunk to \(brief.avatarSize) pixels, and
+        wait.
         """
     }
 
@@ -193,6 +212,9 @@ enum ThemePromptBuilder {
         ```json
         \(ThemeStarterManifest.text(for: brief))
         ```
+
+        **Rules for the JSON:** no comments, no trailing commas, it must parse
+        as strict JSON, and only include keys you are actually setting.
 
         Notes:
 
