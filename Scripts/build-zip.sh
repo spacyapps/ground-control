@@ -24,7 +24,14 @@ VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Packag
 PROFILE="${NOTARY_PROFILE:-notary}"
 UPLOAD="build/GroundControl-${VERSION}-upload.zip"
 STAGE="build/zip-stage/GroundControl-${VERSION}"
-DEST="$HOME/Desktop/GroundControl-${VERSION}.zip"
+# An unnotarised build gets its own filename. Sharing DEST meant a pipeline
+# test with SKIP_NOTARIZE=1 silently replaced a notarised zip with one Gatekeeper
+# rejects — same name, same size, no way to tell by looking. Done that.
+if [ "${SKIP_NOTARIZE:-0}" = "1" ]; then
+  DEST="$HOME/Desktop/GroundControl-${VERSION}-unnotarized.zip"
+else
+  DEST="$HOME/Desktop/GroundControl-${VERSION}.zip"
+fi
 
 # No EXTRA_THEMES: the release carries the lunar station and nothing else.
 # Extra themes are packaged separately by Scripts/package-theme.sh, which is
