@@ -38,7 +38,8 @@ change stays changed.
 
 Copy whichever is closest to what you want.
 
-The unicorn theme lives in `ExtraThemes/` and ships only in alpha builds — it is
+The unicorn theme lives outside this repository, at
+`~/Documents/Projects/GroundControlThemes`, and ships only in alpha builds — it is
 3.6 MB, most of it one avatar, and a release should not make everyone download a
 theme they may never pick. It is still checked by the test suite, and still the
 worked example of `window.overlay`.

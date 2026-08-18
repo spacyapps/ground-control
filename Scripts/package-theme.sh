@@ -4,7 +4,7 @@
 #
 # Packages one theme folder as a zip anybody can install by hand.
 #
-#   ./Scripts/package-theme.sh ExtraThemes/spacyAppsUnicornOverlord
+#   ./Scripts/package-theme.sh ~/Documents/Projects/GroundControlThemes/spacyAppsUnicornOverlord
 #
 # Deliberately plain. A `.gcTheme` bundle with a document type, a UTI and an
 # in-app installer would be nicer to double-click and worse in every other way:

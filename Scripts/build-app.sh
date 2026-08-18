@@ -62,15 +62,21 @@ install -m 0755 Scripts/uninstall-hooks.sh "$APP/Contents/Resources/uninstall-ho
 mkdir -p "$APP/Contents/Resources/Themes"
 cp -R Themes/* "$APP/Contents/Resources/Themes/"
 
-# ExtraThemes/ is demo weight, not the product. The unicorn frame alone is
-# 3.6 MB — a third of the app — and most of that is one avatar. Bundling it
+# Extra themes are artwork licensed separately from this code, so they live
+# outside the repository entirely — see docs/THEME-DELIVERY.md. They are demo
+# weight rather than product: the unicorn alone is several MB, and bundling it
 # made every download pay for a theme most people will never pick.
 #
-# EXTRA_THEMES=1 puts it back, which is what an alpha wants: testers need
-# something that exercises overlay, a scaled-whole skin and a long animation.
-if [ "${EXTRA_THEMES:-0}" = "1" ] && [ -d ExtraThemes ]; then
-  cp -R ExtraThemes/* "$APP/Contents/Resources/Themes/"
-  echo "==> Included ExtraThemes ($(du -sh ExtraThemes | cut -f1))"
+# EXTRA_THEMES=1 puts them back, which is what an alpha wants: testers need
+# something that exercises overlay, nine-slice and a long animation.
+EXTRA_THEMES_DIR="${EXTRA_THEMES_DIR:-$HOME/Documents/Projects/GroundControlThemes}"
+if [ "${EXTRA_THEMES:-0}" = "1" ]; then
+  if [ -d "$EXTRA_THEMES_DIR" ]; then
+    cp -R "$EXTRA_THEMES_DIR"/* "$APP/Contents/Resources/Themes/"
+    echo "==> Included extra themes from $EXTRA_THEMES_DIR ($(du -sh "$EXTRA_THEMES_DIR" | cut -f1))"
+  else
+    echo "!! EXTRA_THEMES=1 but no themes at $EXTRA_THEMES_DIR — building without them."
+  fi
 fi
 
 # SwiftPM emits resources as a bundle beside the binary; it has to travel too

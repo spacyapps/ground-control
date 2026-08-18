@@ -1,6 +1,13 @@
 # Theme delivery
 
-> **Settled 2026-08-15.** `ExtraThemes/` exists; `spacyAppsUnicornOverlord`
+> **Moved 2026-08-18.** Extra themes left the repository altogether and now
+> live at `~/Documents/Projects/GroundControlThemes`, keeping their own git
+> history. Artwork is licensed separately from the code, and a public repo
+> carrying only an AGPL `LICENSE` reads as licensing everything inside it —
+> so the artwork is not inside it. `Scripts/build-app.sh` reads
+> `EXTRA_THEMES_DIR`, which defaults to that folder.
+>
+> **Settled 2026-08-15.** `spacyAppsUnicornOverlord`
 > lives there and is bundled only when `EXTRA_THEMES=1`, which the alpha zip and
 > the dmg both set. The release app went from 9.6 MB to **6.0 MB**.
 >

@@ -13,9 +13,11 @@ These were finished on 2026-08-16 and need no repeating.
   AGPL, which grants redistribution — and that artwork is meant to be sold.
   Removed with `git filter-repo --path ExtraThemes --invert-paths`, which took
   the repo from 174 commits to 172 and dropped 14 objects.
-- **`ExtraThemes/` is in `.gitignore`** and lives on disk untracked, with its
-  own private git repository inside it. `EXTRA_THEMES=1 ./Scripts/build-app.sh`
-  still finds it; `Scripts/package-theme.sh` still ships it.
+- **Extra themes live outside the repository**, at
+  `~/Documents/Projects/GroundControlThemes`, with their own private git
+  history. `EXTRA_THEMES=1 ./Scripts/build-app.sh` finds them there via
+  `EXTRA_THEMES_DIR`; `Scripts/package-theme.sh` packages one for sale.
+  `ExtraThemes/` stays in `.gitignore` as a guard against it coming back.
 - **`Themes/spacyAppsLunarAvatar/LICENSE`** reserves the artwork while leaving
   `theme.json` free to copy. README and the Settings page had claimed for weeks
   that themes are licensed separately; this made it true where someone checks.
@@ -33,7 +35,7 @@ from `walter.mak@gmail.com` and `waltermak@WWW-MakBook-Air-2.local` to
 `spacyapps@gmail.com`, then force-pushed. The working tree was diffed against a
 backup to prove only metadata moved.
 
-`user.email` is now set on this repo and on the private `ExtraThemes` one. It
+`user.email` is now set on this repo and on the private themes one. It
 was unset globally, which is why 119 commits had an address git derived from
 the machine name — worth setting globally too, or the next new repo repeats it.
 
@@ -95,7 +97,8 @@ to be worth stating: the settings are missing rather than hidden.
 
 6. **First release.** Tag `v0.5.0`. Attach both:
    - the notarised app zip from `Scripts/build-zip.sh`
-   - the theme zip from `Scripts/package-theme.sh ExtraThemes/spacyAppsUnicornOverlord`
+   - the theme zip from
+     `Scripts/package-theme.sh ~/Documents/Projects/GroundControlThemes/spacyAppsUnicornOverlord`
 
    The theme being a release asset rather than a repo file is the whole point of
    the separation above.
