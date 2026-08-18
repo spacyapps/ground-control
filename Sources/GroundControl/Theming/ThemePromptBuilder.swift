@@ -62,20 +62,7 @@ enum ThemePromptBuilder {
         let needsInput = brief.needsInputFile
         let motion = brief.wantsAnimation ? "animated" : "still"
 
-        let animationNote = brief.wantsAnimation
-            ? """
-
-
-            `\(working)` and `\(needsInput)` must be **animated GIFs** (or APNG):
-            8–16 frames, looping seamlessly, roughly 10fps. `.mov` / `.mp4`
-            (H.264 or HEVC) also work if you would rather make real video. Do
-            **not** produce `.webm` — macOS cannot decode it and the app will
-            refuse the file.
-
-            **`idle` and `done` must be still images.** They are the resting
-            states, and motion there competes with the two that mean something.
-            """
-            : ""
+        let animationNote = motionRules(for: brief)
 
         return """
         ## Four avatar images
@@ -128,6 +115,42 @@ enum ThemePromptBuilder {
     /// gorgeous detailed portrait that turns to grey mush at avatar size — the
     /// image is generated large and drawn tiny, and detail that cannot be seen
     /// does not politely disappear.
+    /// The motion half of the avatar brief, and only when motion was asked for.
+    ///
+    /// Split out because it is long and conditional, and because the staging
+    /// advice at the end is the part that saves an author the most work: the
+    /// mistakes all live in the still, and animating first means paying for
+    /// every one of them twice.
+    private static func motionRules(for brief: ThemeBrief) -> String {
+        guard brief.wantsAnimation else { return "" }
+        let working = "working.gif"
+        let needsInput = brief.needsInputFile
+        return """
+
+
+
+
+
+            `\(working)` and `\(needsInput)` must be **animated GIFs** (or APNG):
+            8–16 frames, looping seamlessly, roughly 10fps. `.mov` / `.mp4`
+            (H.264 or HEVC) also work if you would rather make real video. Do
+            **not** produce `.webm` — macOS cannot decode it and the app will
+            refuse the file.
+
+            **`idle` and `done` must be still images.** They are the resting
+            states, and motion there competes with the two that mean something.
+
+            **Work in two passes, and stop between them.** First draw all four as
+            **stills** and show me them together, shrunk to \(brief.avatarSize)
+            pixels so we are judging what I will actually see. Wait for me to say
+            they are right. Only then animate the two that move.
+
+            Animation is the expensive half and it is the half that cannot be
+            repaired: a silhouette or a colour that reads wrong costs one still to
+            fix now, and every frame to fix later.
+        """
+    }
+
     private static func sizeRules(for brief: ThemeBrief) -> String {
         """
         ### Draw for the size — do not shrink a detailed picture

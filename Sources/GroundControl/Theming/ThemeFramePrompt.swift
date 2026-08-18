@@ -132,5 +132,14 @@ enum ThemeFramePrompt {
         travelling along a panel — on a cycle that returns exactly to its
         starting values. 24–30 frames is plenty; more frames is more drift and a
         far larger file.
+
+        **Draw the still frame first and show it to me.** One static image, the
+        full composition, before a single animated frame exists. Wait for me to
+        confirm the corners, the edges and the opening are right. Only then
+        animate it.
+
+        Everything that goes wrong here goes wrong in the composition, not in the
+        motion — an ornament in the wrong place or an edge that will not tile is
+        one drawing to redo before it is animated, and thirty afterwards.
         """
 }
