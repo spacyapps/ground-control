@@ -8,7 +8,6 @@ import AppKit
 /// Left-click toggles the panel; right-click opens the menu — the usual macOS
 /// idiom for a status item that has a primary action.
 final class StatusItemController {
-    var onTogglePanel: (() -> Void)?
     var menuProvider: (() -> NSMenu)?
 
     private let statusItem: NSStatusItem
@@ -47,14 +46,18 @@ final class StatusItemController {
         button.toolTip = needsAction ? "A session needs your input" : "Ground Control"
     }
 
+    /// Either button opens the menu, which is what a menu-bar icon does
+    /// everywhere else on the system.
+    ///
+    /// It used to toggle the panel on a left click and show the menu only on a
+    /// right click. That saved a click on the most common action and cost the
+    /// convention: people click a menu-bar icon expecting a menu, and got a
+    /// window appearing and disappearing instead. Showing and hiding the panel
+    /// is the menu's first item, so the action is still one keystroke away.
     @objc private func buttonClicked() {
-        let isRightClick = NSApp.currentEvent?.type == .rightMouseUp
-        if isRightClick, let menu = menuProvider?() {
-            statusItem.menu = menu
-            statusItem.button?.performClick(nil)
-            statusItem.menu = nil
-            return
-        }
-        onTogglePanel?()
+        guard let menu = menuProvider?() else { return }
+        statusItem.menu = menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
     }
 }
