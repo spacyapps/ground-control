@@ -93,10 +93,16 @@ enum ThemePromptBuilder {
 
         | state | read it as | carry it with |
         |---|---|---|
-        | idle | resting, nothing wanted | dim, cool, low contrast — it should recede |
-        | working | busy, leave it alone | motion, and a cool blue or cyan cast |
-        | needsInput | **stop and look** | warm alarm colour, highest contrast of the four, plus a symbol |
-        | done | finished well | a settled green, calm but bright |
+        | idle | asleep, nothing wanted | **blue**, dim and low contrast — it should recede |
+        | working | busy, leave it alone | **motion.** Any colour but the other three |
+        | needsInput | **stop and look** | **red**, highest contrast of the four, plus a symbol |
+        | done | finished well | **green**, calm but bright |
+
+        Red, green and blue are spoken for, and they are the three anyone reads
+        instantly. There is no obvious fourth, so do not go looking for one:
+        `working` is the state that moves, and motion carries it better than any
+        hue could. Both existing themes landed on a neutral violet there and it
+        reads perfectly.
 
         The one that matters is `needsInput`: I should notice it from across the
         room without reading anything. Give it the boldest silhouette, the
