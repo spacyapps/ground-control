@@ -19,10 +19,36 @@ enum ThemePromptText {
 
     A theme is one folder: a `theme.json` manifest plus the images it names.
     Every key is optional — anything omitted falls back to a built-in default.
+    """
 
-    **Rules for the JSON you give me:**
-    - No comments. No trailing commas. It must parse as strict JSON.
-    - Only include keys you are actually setting.
+    /// Stated before the first section, because the top of a prompt is where the
+    /// working method gets decided. Buried at the bottom it arrives after the
+    /// model has already planned to do everything at once.
+    static let howWeWork = """
+    ## How I want to work
+
+    **In stages, and stop at the end of each one.** The parts below are ordered
+    easiest first, and each is finished and checked before the next begins:
+
+    1. **The avatars** — four small square images. Self-contained, and the place
+       to settle the character and the palette.
+    2. **The frame** — the panel's own artwork. Harder, and it depends on
+       decisions made in stage 1.
+    3. **The manifest** — the JSON tying it together. Last, once the filenames
+       are actually known.
+
+    At the end of each stage, show me what you have and wait. Do not run ahead
+    into the next one.
+
+    **Stills before motion, always.** Anything animated gets drawn as a single
+    still first and approved before it becomes frames. A silhouette that reads
+    wrong costs one drawing to fix now and every frame to fix later.
+
+    **Ask before you start if anything is ambiguous** enough to change what you
+    would draw. One question now beats a round of revisions.
+
+    **Expect two or three rounds.** I will have notes. That is the process
+    working, not a failure of it.
     """
 
     static func backgroundSection(key: String, ninegrid: Bool) -> String {
