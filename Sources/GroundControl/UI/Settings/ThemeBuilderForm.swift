@@ -19,7 +19,7 @@ extension ThemeBuilderWindowController {
         form.spacing = 8
         form.translatesAutoresizingMaskIntoConstraints = false
 
-        form.addArrangedSubview(caption("Answer these, then paste the prompt into any image-capable LLM."))
+        addIntroduction(to: form)
         form.addArrangedSubview(field(nameField, label: "Theme name"))
         form.addArrangedSubview(field(subjectField, label: "Character or mascot"))
         form.addArrangedSubview(field(styleField, label: "Visual style"))
@@ -70,7 +70,7 @@ extension ThemeBuilderWindowController {
             // to stretch every field with it, so "Avatar size" became a box a
             // thousand points wide holding the number 48. Extra width goes to
             // the prompt below, which is the only thing here that wants it.
-            form.widthAnchor.constraint(equalToConstant: 584),
+            form.widthAnchor.constraint(equalToConstant: Self.formWidth),
             form.trailingAnchor.constraint(lessThanOrEqualTo: root.trailingAnchor, constant: -18),
 
             scroll.topAnchor.constraint(equalTo: form.bottomAnchor, constant: 12),
@@ -86,6 +86,24 @@ extension ThemeBuilderWindowController {
             buttons.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -16)
         ])
         return root
+    }
+
+    /// What to expect before they spend an hour on it.
+    ///
+    /// Someone whose first images come back not quite right will conclude the
+    /// feature is broken. They are supposed to come back not quite right — the
+    /// prompt asks for drafts on purpose — and saying so here costs two lines.
+    func addIntroduction(to form: NSStackView) {
+        form.addArrangedSubview(caption("Answer these, then paste the prompt into any image-capable LLM."))
+        // Said before they start, because the alternative is someone deciding
+        // the feature is broken when the first images come back not quite right.
+        // They are supposed to come back not quite right.
+        form.addArrangedSubview(caption(
+            "Expect a conversation rather than one shot. The prompt asks for still "
+            + "drafts first so you can say what to change — colours, pose, how bold "
+            + "the alarm state reads — before anything is animated. Two or three "
+            + "rounds is normal."
+        ))
     }
 
     /// The one part of a theme nobody discovers on their own.
@@ -273,8 +291,18 @@ extension ThemeBuilderWindowController {
         let label = NSTextField(labelWithString: text)
         label.font = .systemFont(ofSize: 11)
         label.textColor = .secondaryLabelColor
+        // A label does not wrap on its own, so every caption here was one long
+        // line running the width of the window and beyond it. They wrap to the
+        // form now, which is what let this one be more than a sentence.
+        label.lineBreakMode = .byWordWrapping
+        label.maximumNumberOfLines = 0
+        label.preferredMaxLayoutWidth = Self.formWidth
         return label
     }
+
+    /// The form's measure. Capped rather than following the window, so widening
+    /// the window gives the prompt the extra room instead of stretching fields.
+    static let formWidth: CGFloat = 584
 
     /// Placeholders double as a worked example, so the window is never a blank
     /// form staring back at you.
