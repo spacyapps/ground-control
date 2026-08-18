@@ -34,8 +34,8 @@ final class ResizeGripView: CornerMarkView {
     // panel, so it has to be findable.
     //
     // swiftlint:disable static_over_final_class
-    override class var size: NSSize { NSSize(width: 20, height: 20) }
-    override class var glyphPointSize: CGFloat { 15 }
+    override class var size: NSSize { NSSize(width: 26, height: 26) }
+    override class var glyphPointSize: CGFloat { 19 }
     // swiftlint:enable static_over_final_class
 
     override var hint: String { "Resize" }
