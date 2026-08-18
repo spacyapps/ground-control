@@ -118,6 +118,24 @@ final class SessionListView: NSView {
         rebuild()
     }
 
+    /// The mark is a fixed pale image, so on a light theme it disappears into
+    /// the background — everything else on this screen is themed and it is not.
+    ///
+    /// On a dark panel, which is every theme that ships, the artwork is drawn as
+    /// it was made, teal and all. On a light one it falls back to a tinted
+    /// silhouette in the same colour as the text beneath it, which is legible on
+    /// anything. Better a plainer mark that can be seen than a pretty one that
+    /// cannot.
+    private func styleEmptyMark(for theme: Theme) {
+        let background = theme.colors.windowBackground.usingColorSpace(.sRGB)
+        let isLight = (background?.brightnessComponent ?? 0) > 0.5
+        guard let lockup = Brand.lockup?.copy() as? NSImage else { return }
+        lockup.isTemplate = isLight
+        emptyMark.image = lockup
+        emptyMark.contentTintColor = isLight ? theme.colors.messageDim : nil
+        emptyMark.alphaValue = isLight ? 0.75 : 0.5
+    }
+
     func apply(sessions: [Session], renames: [String: String]) {
         self.sessions = sessions
         self.renames = renames
@@ -137,6 +155,7 @@ final class SessionListView: NSView {
         emptyLabel.stringValue = "No active sessions.\nStart an agent CLI in a terminal and a row appears here."
         emptyLabel.font = theme.typography.messageFont()
         emptyLabel.textColor = theme.colors.messageDim
+        styleEmptyMark(for: theme)
         emptyLabel.maximumNumberOfLines = 2
 
         stack.arrangedSubviews.forEach { view in
