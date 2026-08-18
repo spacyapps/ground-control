@@ -229,9 +229,33 @@ final class SettingsView: NSView {
 
         // A theme that quietly does something other than what it asked for is
         // the hardest kind of bug to find, so it says so here.
-        let warnings = theme.warnings.map { $0.replacingOccurrences(of: "\n", with: " ") }
+        var warnings = theme.warnings.map { $0.replacingOccurrences(of: "\n", with: " ") }
+        if let short = capWarning(for: theme) { warnings.append(short) }
         themeWarning.stringValue = warnings.joined(separator: " ")
         themeWarning.isHidden = warnings.isEmpty
+    }
+
+    /// The one number a theme author cannot see, checked and reported.
+    ///
+    /// Caps that stop short of the corner artwork leave the rest of it in the
+    /// tiled strip, which then repeats it along the edge. The failure looks like
+    /// bad artwork rather than a wrong number, so nobody thinks to check the
+    /// manifest — and the tool that measures it lived in the repo, where a theme
+    /// author was never going to find it.
+    private func capWarning(for theme: Theme) -> String? {
+        guard let shape = theme.window.shape, shape.capInsets.left > 0,
+              let measured = CapMeasure.measure(contentsOf: shape.url) else { return nil }
+
+        let caps = shape.capInsets
+        let short = [
+            ("left", Int(caps.left), measured.left), ("right", Int(caps.right), measured.right),
+            ("top", Int(caps.top), measured.top), ("bottom", Int(caps.bottom), measured.bottom)
+        ].filter { $0.1 < $0.2 }
+        guard !short.isEmpty else { return nil }
+
+        let detail = short.map { "\($0.0) \($0.1) → \($0.2)" }.joined(separator: ", ")
+        return "Caps stop short of the corner artwork (\(detail)); the remainder will "
+            + "repeat along the edge."
     }
 
     /// Called when the theme hot-reloads underneath us.
