@@ -486,9 +486,59 @@ nobody can see.
 `.gif` / `.apng`. Avoid `.webm` — not natively supported. Prefer GIF/APNG for
 lightweight looping; reserve real video for richer motion.
 
+## Making a light theme
+
+Every shipped theme is dark, so the defaults are dark, and a light theme has to
+say so in more places than you would expect. Four keys default to a dark value
+that does not follow the rest of the palette:
+
+| Key | Default | Why it matters |
+|---|---|---|
+| `colors.footerBackground` | `#16161d` | Fills the analyser strip. Leave it and you get a black band across a pale panel. |
+| `matrix.text` | near-white | The letters the display spells. Invisible on a light strip. |
+| `matrix.peak` | near-white | The mark above a falling bar. Same. |
+| `matrix.unlit` | `divider` at 10% | The dim grid. Needs to be a dark tint on light, not a light one. |
+
+The empty-state mark looks after itself: it draws as artwork on a dark panel and
+as a tinted silhouette on a light one, decided from `windowBackground`.
+
+A complete light palette that works, if you want somewhere to start:
+
+```json
+{
+  "colors": {
+    "windowBackground": "#f4f2ee",
+    "titleBarBackground": "#e8e5df",
+    "footerBackground": "#e8e5df",
+    "rowBackground": "#ffffff",
+    "rowBackgroundAlt": "#faf8f4",
+    "rowBackgroundHover": "#eeece6",
+    "titleBarText": "#20201c",
+    "sessionName": "#20201c",
+    "message": "#3a3a34",
+    "messageDim": "#6a6a60",
+    "divider": "#c9c5bc",
+    "needsAction": "#c81e3c",
+    "working": "#1d6fa5",
+    "idle": "#9a968c",
+    "accent": "#2e7d32"
+  },
+  "matrix": { "text": "#20201c", "peak": "#20201c", "unlit": "#00000014" }
+}
+```
+
+Note the state colours were darkened too. `#ff2d55` on white is legible but
+shrill; the alarm should still be the loudest thing on the panel without being
+the only thing you can look at.
+
+
 ### `matrix`
-The five-row LED analyser in the title bar. Every key is optional and falls
-back to the row palette, so a recolour restyles the meter for free.
+The five-row LED analyser in the title bar. Every key is optional. The bar
+colours follow the palette — `low`, `high` and `alarm` fall back to `accent`,
+`working` and `needsAction` — but **`text`, `peak` and the strip's own
+background do not**: the letters default to a near-white and the strip is filled
+with `footerBackground`. On a dark theme that is free. On a light one it is a
+black band with invisible writing, so see "Making a light theme" below.
 
 ```json
 "matrix": {
