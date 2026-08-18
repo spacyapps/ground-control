@@ -96,6 +96,8 @@ enum ThemePromptBuilder {
         - PNG with transparency, unless the design wants a solid tile.
         - They sit on a dark panel, so avoid dark-on-dark and thin outlines.
 
+        \(sizeRules(for: brief))
+
         ### Each state must be obvious at \(brief.avatarSize)pt
 
         This is the whole job of these images. At that size a face is a few dozen
@@ -116,6 +118,39 @@ enum ThemePromptBuilder {
         Squint at each image at \(brief.avatarSize)pt. If two of them look alike, the
         difference is in detail I cannot see, and the colour or shape has to do
         more work.\(animationNote)
+        """
+    }
+
+    /// Why the artwork has to be simple, not merely distinguishable.
+    ///
+    /// The rest of this prompt tells a model how to make the four states differ
+    /// from one another. It never said "draw plainly", so a model would return a
+    /// gorgeous detailed portrait that turns to grey mush at avatar size — the
+    /// image is generated large and drawn tiny, and detail that cannot be seen
+    /// does not politely disappear.
+    private static func sizeRules(for brief: ThemeBrief) -> String {
+        """
+        ### Draw for the size — do not shrink a detailed picture
+
+        These are generated large and drawn at **\(brief.avatarSize)pt**, roughly a
+        favicon. Detail that cannot be seen there does not politely disappear; it
+        turns to grey mush. Fine linework, small facial features, texture,
+        gradients spanning a few pixels and thin outlines all read as dirt at
+        display size, and no amount of resolution fixes it.
+
+        So design at the small size and render it large, rather than illustrating
+        at full size and hoping it survives the trip down. In practice:
+
+        - **Few shapes, and big ones.** A silhouette someone can name at a glance
+          beats an accurate portrait every time.
+        - **Flat colour over gradient**, with strong contrast between neighbouring
+          areas.
+        - **No text, no fine pattern, no jewellery-scale detail.**
+        - **A readable outline** — it should still be recognisable as a solid
+          black shape.
+
+        Test it before you send it: shrink the image to \(brief.avatarSize) pixels
+        and look. If you cannot tell what it is, it is too busy.
         """
     }
 

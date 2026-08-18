@@ -447,6 +447,17 @@ The per-state face/mascot. Each state can be an **image** *or* a **video**
 - `states.done` — shown briefly on completion.
 - `size`, `position` (`left` | `right`), `cornerRadius` — layout of the avatar.
 
+**Draw for the size, do not shrink a detailed picture.** Avatars are generated
+large and drawn at `size` points — around 48, roughly a favicon. Detail that
+cannot be seen there does not politely disappear, it turns to mud: fine
+linework, small facial features, texture, gradients spanning a few pixels and
+thin outlines all read as dirt at display size. Few shapes and big ones, flat
+colour over gradient, no text, and a silhouette still recognisable as a solid
+black shape. The check is to shrink the image to `size` pixels and look at it —
+if you cannot tell what it is, it is too busy, and more resolution will not save
+it. The generated prompt says all of this to the model; it is repeated here for
+anyone drawing by hand.
+
 **Animate only what is asking for you.** `working` and `needsInput` are the two
 states with something to say, and motion is how they say it. `idle` and `done`
 are resting states — animating them means four looping avatars on screen at once
