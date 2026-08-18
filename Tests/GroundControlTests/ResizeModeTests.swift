@@ -72,18 +72,16 @@ final class ResizeModeTests: XCTestCase {
     /// between them. Said out loud here so the gap is deliberate rather than
     /// discovered by whoever next changes that code.
     func testTheDemoThemesResizeFreely() throws {
-        let lunar = ThemeLoader.loadTheme(from: URL(fileURLWithPath: "Themes/spacyAppsLunarAvatar"))
+        let lunar = ThemeLoader.loadTheme(
+            from: ThemeLocations.shipped.appendingPathComponent("spacyAppsLunarAvatar")
+        )
         XCTAssertEqual(lunar.layout.resize, .free, "the station should resize freely")
         XCTAssertFalse(lunar.window.locksAspect, "and nine-slice, so it does not distort")
 
-        // ExtraThemes is artwork that is licensed separately and kept out of the
-        // repository, so a clone does not have it. Skipping beats failing: the
-        // absence is expected everywhere except this machine.
-        let folder = URL(fileURLWithPath: "ExtraThemes/spacyAppsUnicornOverlord")
-        try XCTSkipUnless(
-            FileManager.default.fileExists(atPath: folder.appendingPathComponent("theme.json").path),
-            "ExtraThemes is not in the repository — nothing to check"
-        )
+        // Artwork licensed separately and kept outside the repository, so a
+        // clone does not have it. Skipping beats failing: absence is the normal
+        // case everywhere except the machine that draws it.
+        let folder = try requiredThemeFolder(named: "spacyAppsUnicornOverlord")
         let unicorn = ThemeLoader.loadTheme(from: folder)
         XCTAssertEqual(unicorn.layout.resize, .free)
         XCTAssertFalse(

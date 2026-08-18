@@ -23,16 +23,11 @@ import ImageIO
 /// A manifest and its artwork drift apart silently: the theme still loads, the
 /// panel still draws, and it simply looks wrong. Nothing else notices.
 final class ThemeIntegrityTests: XCTestCase {
-    /// Both roots. `Themes/` ships inside the app; `ExtraThemes/` is demo
+    /// Both roots. `Themes/` ships inside the app; the other is demo
     /// weight included only in alpha builds — but an unchecked theme rots, and
     /// the whole point of these tests is that nothing else notices when it does.
     private static var themeRoots: [URL] {
-        let repo = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()      // GroundControlTests
-            .deletingLastPathComponent()      // Tests
-            .deletingLastPathComponent()      // repo root
-        return [repo.appendingPathComponent("Themes"),
-                repo.appendingPathComponent("ExtraThemes")]
+        ThemeLocations.roots
     }
 
     private struct Shipped {

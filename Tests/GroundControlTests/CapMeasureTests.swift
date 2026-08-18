@@ -10,9 +10,8 @@ final class CapMeasureTests: XCTestCase {
     /// ornament sits top-right, and a left-half scan reported 69 where the
     /// true answer is 100.
     func testItFindsOrnamentOnTheFarSideToo() throws {
-        let url = URL(fileURLWithPath: "ExtraThemes/spacyAppsUnicornOverlord/frame.gif")
-        try XCTSkipUnless(FileManager.default.fileExists(atPath: url.path),
-                          "ExtraThemes is licensed separately and not in the repository")
+        let folder = try requiredThemeFolder(named: "spacyAppsUnicornOverlord")
+        let url = folder.appendingPathComponent("frame.gif")
         let caps = try XCTUnwrap(CapMeasure.measure(contentsOf: url))
         XCTAssertGreaterThanOrEqual(caps.right, 90, "the unicorn and its chain sit on the right")
         XCTAssertLessThanOrEqual(caps.right, 110)
@@ -22,9 +21,12 @@ final class CapMeasureTests: XCTestCase {
     /// The shipped theme, whose caps are known good, must not measure larger
     /// than the caps it actually ships with.
     func testTheShippedFrameAgreesWithItsManifest() throws {
-        let theme = ThemeLoader.loadTheme(from: URL(fileURLWithPath: "Themes/spacyAppsLunarAvatar"))
+        let theme = ThemeLoader.loadTheme(
+            from: ThemeLocations.shipped.appendingPathComponent("spacyAppsLunarAvatar")
+        )
         let shipped = try XCTUnwrap(theme.window.shape?.capInsets)
-        let url = URL(fileURLWithPath: "Themes/spacyAppsLunarAvatar/frame.gif")
+        let url = ThemeLocations.shipped
+            .appendingPathComponent("spacyAppsLunarAvatar/frame.gif")
         let caps = try XCTUnwrap(CapMeasure.measure(contentsOf: url))
         XCTAssertLessThanOrEqual(caps.left, Int(shipped.left), "shipped caps should clear the ornament")
         XCTAssertLessThanOrEqual(caps.right, Int(shipped.right))

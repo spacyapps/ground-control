@@ -105,7 +105,6 @@ GroundControl/
 │   ├── example-avatars/          # working avatar theme: 3 stills + a GIF
 │   └── spacyAppsLunarAvatar/     # the full set: avatars + shaped skin
 │
-├── ExtraThemes/                 # demo weight, bundled only with EXTRA_THEMES=1
 │   └── spacyAppsUnicornOverlord/ # a frame drawn in front of the rows
 │
 ├── Scripts/                     # cc-notify and install-hooks.sh are also copied
@@ -141,6 +140,10 @@ GroundControl/
 └── .github/workflows/
     └── ci.yml                    # build + swiftlint on push/PR
 ```
+
+> Themes licensed separately from the code live **outside this repository**, at
+> `~/Documents/Projects/GroundControlThemes`, and are bundled only with
+> `EXTRA_THEMES=1`. See `docs/THEME-DELIVERY.md`.
 
 ## Layering rules (keep dependencies pointing one way)
 
