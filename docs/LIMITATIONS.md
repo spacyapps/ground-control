@@ -39,6 +39,48 @@ failing. Pipe the JSON instead. And headless `opencode run` blocks on a
 permission prompt rather than declining it, so a probe that triggers one never
 exits.
 
+## Xcode's Claude Agent — measured 2026-08-19, does not report
+
+Xcode 26 embeds a Claude agent ("Message Claude Agent"). It **is** Claude Code —
+not a lookalike — and every ingredient for reporting is present. It still
+reports nothing, and nothing on this side can fix that.
+
+What its own environment says, read from inside a live session:
+
+```
+CLAUDE_CODE_ENTRYPOINT = sdk-cli
+CLAUDECODE             = 1
+CLAUDE_CODE_CHILD_SESSION = 1
+__CFBundleIdentifier   = com.apple.dt.Xcode
+```
+
+- It can see `~/.claude/settings.json`, and counted our 8 `cc-notify`
+  registrations in it.
+- It can reach `~/.groundcontrol/bin/cc-notify`, executable.
+- It runs shell commands happily.
+
+And across the ninety minutes of a real session, **nothing was written** — no
+session file, no subagent file, nothing attributed to `com.apple.dt.Xcode`. Only
+Terminal.app rows appeared in that window.
+
+So: **the `sdk-cli` entrypoint does not execute hooks.** Hooks are Claude Code's
+to run, and this variant does not run them. There is no switch, no plugin and no
+registration that changes it, which is what makes it different from the other
+two gaps:
+
+| | Has hooks? | Reports? | Answer |
+|---|---|---|---|
+| Cursor's Composer | yes | not while waiting for you | none available; stated in the UI |
+| opencode | no hook commands | yes, via a plugin | plugin shipped, rows turn red |
+| **Xcode's Claude Agent** | **yes, and configured** | **no** | **nothing we can do** |
+
+Expect this to hold for **any** editor embedding the Agent SDK rather than
+spawning the CLI. The same generalisation the Cursor entry makes about editors'
+own chats.
+
+Claude Code running in Xcode's *terminal* is unaffected and fully supported, as
+in every other editor.
+
 ## Verified (measured, not assumed)
 
 | Thing | How it was proven | When |
@@ -54,6 +96,15 @@ exits.
 | Nine-slice cap insets | the frame holds its corners while the panel resizes | 2026-08-11 |
 | Jumping to a host app | VS Code session with no tty at all; clicking raised the editor | 2026-08-12 |
 | **The red alarm, end to end** | a blocked session turned the row red, the click landed on its tab, and the alarm cleared — watched, not derived | 2026-08-12 |
+| opencode plugin API and events | probe plugin logged a real turn; 4 of >100 events matter | 2026-08-19 |
+| **opencode's alarm, end to end** | row turned red carrying "List files with details in current directory", and cleared on reply | 2026-08-19 |
+| opencode respects `XDG_CONFIG_HOME` | probed in a scratch config; the user's own was never touched | 2026-08-19 |
+| A plugin's shell has no writable stdin | `.stdin(json)` hung twice for five minutes; piping works | 2026-08-19 |
+| Only `session.created` carries the directory | later events gave an id alone, and rows arrived named `/` | 2026-08-19 |
+| Xcode's Claude Agent never reports | 90 minutes of a live session wrote nothing; `sdk-cli` entrypoint | 2026-08-19 |
+| Install/uninstall touch only our own entries | scripts run against a sandboxed `HOME`, foreign hooks survive | 2026-08-18 |
+| Uninstall clears any older install's path | a registration under `~/bin` is still recognised as ours | 2026-08-18 |
+| Cap insets measured from artwork | agreed with both shipped frames independently (100, 129) | 2026-08-18 |
 | iTerm2 jump-to-pane | three sessions in two panes and a tab; every row landed on its own | 2026-08-12 |
 | Cursor as a host app | Claude Code in Cursor's terminal: the row appeared, went red for a permission prompt, and clicking it raised Cursor | 2026-08-14 |
 | Cursor's **own** agent | probed a live Composer turn, then ran two: rows appeared, named after the workspace, attributed to `/Applications/Cursor.app` with no tty | 2026-08-14 |
