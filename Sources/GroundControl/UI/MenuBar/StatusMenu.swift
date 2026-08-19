@@ -15,8 +15,10 @@ final class StatusMenu: NSObject {
         var selectTheme: (String?) -> Void
         var openThemesFolder: () -> Void
         var openSettings: () -> Void
-        var setUpHooks: () -> Void
-        var removeHooks: () -> Void
+        /// Opens Settings at the Hooks section. The menu used to carry
+        /// "Set Up Hooks…" and "Remove Hooks…", which could only speak for every
+        /// agent at once and said nothing about whether any of it was working.
+        var openHooks: () -> Void
         var quit: () -> Void
     }
 
@@ -57,8 +59,7 @@ final class StatusMenu: NSObject {
         // bundle in Terminal, which is the least friendly step in the product.
         // Offering it here is an invitation rather than the app installing
         // itself uninvited — the distinction HookUpdater is careful about.
-        menu.addItem(item(title: "Set Up Hooks…", action: #selector(setUpHooks)))
-        menu.addItem(item(title: "Remove Hooks…", action: #selector(removeHooks)))
+        menu.addItem(item(title: "Hooks…", action: #selector(openHooks)))
         menu.addItem(.separator())
 
         menu.addItem(item(title: "Quit Ground Control", action: #selector(quit), key: "q"))
@@ -108,8 +109,7 @@ final class StatusMenu: NSObject {
     @objc private func toggleAllSpaces() { actions.toggleAllSpaces() }
     @objc private func openThemesFolder() { actions.openThemesFolder() }
     @objc private func openSettings() { actions.openSettings() }
-    @objc private func setUpHooks() { actions.setUpHooks() }
-    @objc private func removeHooks() { actions.removeHooks() }
+    @objc private func openHooks() { actions.openHooks() }
     @objc private func quit() { actions.quit() }
     @objc private func selectDefaultTheme() { actions.selectTheme(nil) }
 

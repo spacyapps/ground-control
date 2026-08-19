@@ -23,6 +23,11 @@ set -euo pipefail
 #
 # Not inside the bundle either: a registration is an absolute path and bundles
 # move. Not ~/bin, which belongs to the user.
+# One integration at a time, or everything. Settings offers a switch per
+# integration; the menu and the README still call this with no argument, which
+# means "all" and behaves exactly as it always has.
+TARGET="${1:-all}"
+
 BIN_DIR="${HOME}/.groundcontrol/bin"
 LEGACY="${HOME}/bin/cc-notify"
 LEGACY_SUPPORT="${HOME}/Library/Application Support/GroundControl/bin"
@@ -41,6 +46,7 @@ if [ -f "${HERE}/uninstall-hooks.sh" ]; then
   install -m 0755 "${HERE}/uninstall-hooks.sh" "$BIN_DIR/uninstall-hooks.sh"
 fi
 
+if [ "$TARGET" = "claude" ] || [ "$TARGET" = "all" ]; then
 mkdir -p "$(dirname "$SETTINGS")"
 [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
 
@@ -121,6 +127,7 @@ if moved:
     print("Moved to the new location on: " + ", ".join(moved))
 print("Registered on: " + (", ".join(added) if added else "(already registered, no change)"))
 PY
+fi
 
 # --- Cursor's own agent -------------------------------------------------
 #
@@ -131,7 +138,7 @@ PY
 #
 # Skipped silently where Cursor is not installed. Claude Code running *inside*
 # Cursor's terminal is covered by the block above and needs none of this.
-if [ -d "$HOME/.cursor" ]; then
+if { [ "$TARGET" = "cursor" ] || [ "$TARGET" = "all" ]; } && [ -d "$HOME/.cursor" ]; then
   CURSOR_HOOKS="$HOME/.cursor/hooks.json"
   if [ -f "$CURSOR_HOOKS" ]; then
     cp "$CURSOR_HOOKS" "${CURSOR_HOOKS}.bak-$(date +%Y%m%d-%H%M%S)"

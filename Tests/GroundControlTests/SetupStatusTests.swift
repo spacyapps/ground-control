@@ -26,22 +26,24 @@ final class SetupStatusTests: XCTestCase {
     func testAnArrivedEventIsAttributedToItsOwnAgent() throws {
         let sessions = [try session(source: "cursor", at: 1_000)]
         XCTAssertNotNil(agent("Cursor", sessions: sessions)?.lastEvent)
-        XCTAssertNil(agent("Claude Code", sessions: sessions)?.lastEvent,
+        XCTAssertNil(agent("Claude Code & Grok", sessions: sessions)?.lastEvent,
                      "one agent's traffic must never vouch for another's")
     }
 
-    /// Grok reports as its own source but rides Claude Code's settings file, so
-    /// the two share a registration and must not share a heartbeat.
-    func testGrokAndClaudeAreCountedSeparately() throws {
-        let sessions = [try session(source: "grok", at: 2_000)]
-        XCTAssertNotNil(agent("Grok", sessions: sessions)?.lastEvent)
-        XCTAssertNil(agent("Claude Code", sessions: sessions)?.lastEvent)
+    /// Grok rides Claude Code's settings file, so one registration serves both
+    /// and they share a row. Two switches would imply they could be turned on
+    /// separately, and one of them would be a lie.
+    func testGrokAndClaudeShareOneRow() throws {
+        XCTAssertNil(agent("Grok", sessions: []), "Grok should not have a row of its own")
+        let viaGrok = [try session(source: "grok", at: 2_000)]
+        XCTAssertNotNil(agent("Claude Code & Grok", sessions: viaGrok)?.lastEvent,
+                        "traffic from either one counts for the pair")
     }
 
     func testTheMostRecentEventWins() throws {
         let sessions = [try session(source: "claude", at: 10),
                         try session(source: "claude", at: 900)]
-        let seen = try XCTUnwrap(agent("Claude Code", sessions: sessions)?.lastEvent)
+        let seen = try XCTUnwrap(agent("Claude Code & Grok", sessions: sessions)?.lastEvent)
         XCTAssertEqual(seen.timeIntervalSince1970, 900, accuracy: 1)
     }
 
@@ -59,7 +61,7 @@ final class SetupStatusTests: XCTestCase {
         let agents = SetupStatus.agents(sessions: [])
         XCTAssertNotNil(agents.first { $0.name == "Cursor" }?.caveat)
         XCTAssertNotNil(agents.first { $0.name == "opencode" }?.caveat)
-        XCTAssertNil(agents.first { $0.name == "Claude Code" }?.caveat,
+        XCTAssertNil(agents.first { $0.name == "Claude Code & Grok" }?.caveat,
                      "the fully supported one should claim no excuses")
     }
 }

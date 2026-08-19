@@ -76,14 +76,29 @@ print("  %s: removed %d registration(s)" % (label, removed))
 PY
 }
 
-echo "==> Unregistering"
-unregister "${HOME}/.claude/settings.json" "Claude Code / Grok"
-unregister "${HOME}/.cursor/hooks.json" "Cursor"
+# One agent at a time, or everything. Settings offers a switch per integration,
+# and turning Cursor off must not take Claude Code's emitter with it.
+TARGET="${1:-all}"
 
-echo "==> Removing the emitter"
-rm -rf "$BIN_DIR"
-[ -f "$LEGACY" ] && rm -f "$LEGACY" && echo "  also removed the old ${LEGACY}"
-[ -d "$LEGACY_SUPPORT" ] && rm -rf "$LEGACY_SUPPORT" && echo "  also removed ${LEGACY_SUPPORT}"
+echo "==> Unregistering"
+case "$TARGET" in
+  claude|all) unregister "${HOME}/.claude/settings.json" "Claude Code / Grok" ;;
+esac
+case "$TARGET" in
+  cursor|all) unregister "${HOME}/.cursor/hooks.json" "Cursor" ;;
+esac
+
+# The emitter is shared, so it only goes when everything does. Removing it while
+# another agent is still registered would leave that registration pointing at a
+# file that is not there — the failure looks like the app is broken.
+if [ "$TARGET" = "all" ]; then
+  echo "==> Removing the emitter"
+  rm -rf "$BIN_DIR"
+  [ -f "$LEGACY" ] && rm -f "$LEGACY" && echo "  also removed the old ${LEGACY}"
+  [ -d "$LEGACY_SUPPORT" ] && rm -rf "$LEGACY_SUPPORT" && echo "  also removed ${LEGACY_SUPPORT}"
+else
+  echo "==> Leaving the emitter in place; other integrations may still use it"
+fi
 
 echo
 echo "Done. Hooks stop at your next agent session — a CLI already running keeps"
