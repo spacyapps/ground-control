@@ -155,6 +155,32 @@ Theming ─────────────┘
 Services ◄─ everyone (leaf utilities, depend on nothing app-specific)
 ```
 
+## What must be tested, and how it is trusted
+
+Three rules, each written after the thing it prevents actually happened.
+
+**Anything that edits a file the user did not ask us to edit gets tested for
+real.** `install-hooks.sh` and `uninstall-hooks.sh` merge into
+`~/.claude/settings.json` and `~/.cursor/hooks.json`. A bad merge takes
+somebody's own hooks with it; a bad uninstall leaves a registration pointing at
+a command that no longer exists, which then fails on every tool use.
+`HookScriptTests` runs both scripts against a sandboxed `HOME` and checks that
+foreign hooks survive, that ours are added once, that ours are removed, and that
+a registration from *any* older install is still recognised as ours — testers
+carry hooks pointing at `~/bin` from before the emitter moved.
+
+**A test is not finished until it has been seen to fail.** The one above was
+verified by breaking what it guards — matching on the emitter's path instead of
+its name — and confirming it went red, then green again. Script tests are
+especially easy to write in a way that passes whatever happens, because the
+script exits zero either way.
+
+**Anything drawn is rendered and looked at.** Artwork has been upside-down, caps
+have swallowed ornaments, a menu row has drawn nothing at all with the right
+height, and offscreen renders have twice shown text as missing when it was
+present. Assert geometry, not appearance, and open the app when the question is
+whether something *looks* right.
+
 - **Models** import nothing app-specific (no AppKit). Pure, testable.
 - **Monitoring / Theming** depend on Models + Services only. No UI imports.
 - **UI** depends on everything below it, never the reverse.
