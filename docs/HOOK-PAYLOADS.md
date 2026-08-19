@@ -125,6 +125,54 @@ cannot. It arrives with the command in it:
 So the row says *"Echo hello to terminal"* rather than "needs your permission".
 `permission.replied` clears it.
 
+### How the plugin works
+
+**Why a plugin and not a hook**
+
+| Agent | How it is told to report | Configured in |
+|---|---|---|
+| Claude Code, Grok | a shell command per event | `~/.claude/settings.json` |
+| Cursor | a shell command per event | `~/.cursor/hooks.json` |
+| **opencode** | **no shell commands exist** | **a TypeScript plugin** |
+
+**What the installer puts where**
+
+| What | Where | Why |
+|---|---|---|
+| `opencode-plugin.ts` → `groundcontrol.ts` | `~/.config/opencode/plugin/` | the plugin itself |
+| one entry in the `"plugin"` array | `~/.config/opencode/opencode.json` | tells opencode to load it |
+| `cc-notify` | `~/.groundcontrol/bin/` | the same emitter every agent uses |
+
+**What it listens for** — seven events; everything else is ignored, and a turn
+emits well over a hundred.
+
+| Event | The row | What it says |
+|---|---|---|
+| `session.created` | appears, idle | the session title |
+| `session.idle` | done | — |
+| `permission.asked` | **red** | the command, e.g. "List files with details…" |
+| `question.asked` | **red** | the question |
+| `permission.replied` · `question.replied` · `question.rejected` | clears | — |
+
+**The chain, end to end**
+
+1. opencode fires an event, in its own process
+2. the plugin ignores it unless it is one of the seven
+3. it builds one line of JSON — source, event, session id, folder, message, needs_action
+4. it pipes that line to `cc-notify`
+5. `cc-notify` appends to `${TMPDIR}/groundcontrol/<session-id>.jsonl`
+6. Ground Control's folder watcher notices the file changed
+7. the row updates — **file exists ⇔ row exists**, exactly as for every other agent
+
+**Two details that are not obvious**
+
+- **It remembers each session's folder.** Only `session.created` carries the
+  directory; later events are an id and nothing else. Without the memory, rows
+  arrive named `/`.
+- **It can never throw.** The send is wrapped and `.nothrow()`, because a
+  monitor that breaks the agent it watches is worse than no monitor. A failure
+  costs one row.
+
 ### Verified end to end
 
 A real turn through the real plugin, on 2026-08-19, produced exactly two rows:
