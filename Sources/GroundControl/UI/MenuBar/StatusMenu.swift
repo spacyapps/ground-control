@@ -85,6 +85,10 @@ final class StatusMenu: NSObject {
         )
         let submenu = NSMenu()
         let width: CGFloat = 340
+        // A menu disables anything without an action, and an item carrying a
+        // view has none — its view is the action. Left alone, the switches
+        // inside drew in their disabled grey and looked permanently off.
+        submenu.autoenablesItems = false
 
         for agent in SetupStatus.agents(sessions: actions.currentSessions()) {
             let entry = NSMenuItem()
@@ -92,6 +96,7 @@ final class StatusMenu: NSObject {
                 guard let target = agent.target else { return }
                 actions.toggleHook(target, on)
             }
+            entry.isEnabled = true
             submenu.addItem(entry)
         }
 
