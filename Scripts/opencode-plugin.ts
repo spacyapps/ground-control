@@ -33,7 +33,10 @@ export const GroundControl: Plugin = async ({ $, directory, worktree }) => {
     // Fire and forget, and never let a monitor break the agent it watches: a
     // hook that throws would surface as an error in somebody's coding session.
     try {
-      await $`${EMITTER}`.stdin(JSON.stringify(payload)).quiet().nothrow()
+      // Piped rather than written to stdin: the shell's `stdin` is a readonly
+      // stream with no way to hand it a string, and interpolation escapes the
+      // JSON into a single argument safely.
+      await $`echo ${JSON.stringify(payload)} | ${EMITTER}`.quiet().nothrow()
     } catch {
       /* the panel simply misses a row */
     }
