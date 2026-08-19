@@ -1,84 +1,86 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Walter Mak
+// Copyright (c) 2026 Walter Mak
 
 import XCTest
 @testable import GroundControl
 
-/// Themes are read only from Application Support, so the ones that ship inside
-/// the app have to be copied out before they can appear in the picker at all.
+/// Updating a shipped theme is a choice between two failures: never delivering
+/// a fix, or deleting somebody's evening of recolouring. The seeder is allowed
+/// to do the first and must never do the second.
 final class ThemeSeederTests: XCTestCase {
-    private var source = FileManager.default.temporaryDirectory
-    private var destination = FileManager.default.temporaryDirectory
+    private var root = URL(fileURLWithPath: "/tmp")
+    private var source: URL { root.appendingPathComponent("bundled") }
+    private var destination: URL { root.appendingPathComponent("installed") }
 
     override func setUpWithError() throws {
-        let root = FileManager.default.temporaryDirectory
+        root = FileManager.default.temporaryDirectory
             .appendingPathComponent("seed-\(UUID().uuidString)")
-        source = root.appendingPathComponent("bundled")
-        destination = root.appendingPathComponent("installed")
-        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        try make(source.appendingPathComponent("demo"), manifest: ##"{"name":"Demo v1"}"##)
+        UserDefaults.standard.removeObject(forKey: "seededThemeFingerprints")
     }
 
     override func tearDownWithError() throws {
-        try? FileManager.default.removeItem(at: source.deletingLastPathComponent())
+        try? FileManager.default.removeItem(at: root)
+        UserDefaults.standard.removeObject(forKey: "seededThemeFingerprints")
     }
 
-    private func makeTheme(_ name: String, in folder: URL, manifest: String = "{}") throws {
-        let dir = folder.appendingPathComponent(name)
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let file = dir.appendingPathComponent("theme.json")
-        try manifest.write(to: file, atomically: true, encoding: .utf8)
-    }
-
-    private func manifest(of name: String) throws -> String {
-        try String(contentsOf: destination.appendingPathComponent(name)
-            .appendingPathComponent("theme.json"), encoding: .utf8)
-    }
-
-    func testShippedThemesAreInstalledOnFirstRun() throws {
-        try makeTheme("unicorns", in: source)
-        try makeTheme("hull", in: source)
-
-        let installed = ThemeSeeder.seed(from: source, into: destination)
-        XCTAssertEqual(Set(installed), ["unicorns", "hull"])
-        XCTAssertEqual(ThemeLoader.availableThemes(in: destination).count, 2)
-    }
-
-    /// The important one: an update must never take someone's edits with it.
-    func testAnEditedThemeIsNeverOverwritten() throws {
-        try makeTheme("unicorns", in: source, manifest: ##"{ "name": "Shipped" }"##)
-        try makeTheme("unicorns", in: destination, manifest: ##"{ "name": "Mine" }"##)
-
-        let installed = ThemeSeeder.seed(from: source, into: destination)
-        XCTAssertTrue(installed.isEmpty, "an existing theme was replaced")
-        XCTAssertTrue(try manifest(of: "unicorns").contains("Mine"))
-    }
-
-    /// Running twice must be as harmless as running once — every launch does.
-    func testSeedingTwiceChangesNothing() throws {
-        try makeTheme("unicorns", in: source)
-        ThemeSeeder.seed(from: source, into: destination)
-        try ##"{ "name": "Edited" }"##.write(
-            to: destination.appendingPathComponent("unicorns/theme.json"),
+    private func make(_ folder: URL, manifest: String) throws {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try manifest.write(
+            to: folder.appendingPathComponent("theme.json"),
             atomically: true,
             encoding: .utf8
         )
-
-        XCTAssertTrue(ThemeSeeder.seed(from: source, into: destination).isEmpty)
-        XCTAssertTrue(try manifest(of: "unicorns").contains("Edited"))
     }
 
-    func testFoldersWithoutAManifestAreNotThemes() throws {
-        try FileManager.default.createDirectory(
-            at: source.appendingPathComponent("not-a-theme"),
-            withIntermediateDirectories: true
+    private func installedManifest() throws -> String {
+        try String(
+            contentsOf: destination.appendingPathComponent("demo/theme.json"),
+            encoding: .utf8
         )
-        XCTAssertTrue(ThemeSeeder.seed(from: source, into: destination).isEmpty)
     }
 
-    /// Running from a checkout rather than a bundle: nothing to install, and
-    /// nothing to complain about either.
-    func testNoBundledThemesIsNotAnError() {
-        XCTAssertTrue(ThemeSeeder.seed(from: nil, into: destination).isEmpty)
+    func testItInstallsWhatIsNotThere() throws {
+        XCTAssertEqual(ThemeSeeder.seed(from: source, into: destination), ["demo"])
+        XCTAssertTrue(try installedManifest().contains("Demo v1"))
+    }
+
+    /// The whole point. A theme nobody has touched gets the fix.
+    func testItUpdatesAThemeNobodyHasTouched() throws {
+        ThemeSeeder.seed(from: source, into: destination)
+        try make(source.appendingPathComponent("demo"), manifest: ##"{"name":"Demo v2"}"##)
+
+        XCTAssertEqual(ThemeSeeder.seed(from: source, into: destination), ["demo"])
+        XCTAssertTrue(try installedManifest().contains("Demo v2"), "the update should have landed")
+    }
+
+    /// The line that must never be crossed, and the case a size-and-date check
+    /// would miss: a recolour is exactly as long as what it replaced.
+    func testItNeverTouchesAThemeSomebodyHasEdited() throws {
+        ThemeSeeder.seed(from: source, into: destination)
+        try make(destination.appendingPathComponent("demo"), manifest: ##"{"name":"Mine!!!!"}"##)
+        try make(source.appendingPathComponent("demo"), manifest: ##"{"name":"Demo v2"}"##)
+
+        XCTAssertEqual(
+            ThemeSeeder.seed(from: source, into: destination),
+            [],
+            "an edited theme is not ours to replace"
+        )
+        XCTAssertTrue(try installedManifest().contains("Mine!!!!"), "their work survived")
+    }
+
+    /// A folder seeded before any record existed could equally be pristine or a
+    /// weekend's work, so it is left alone.
+    func testItLeavesAThemeItDidNotRecordAlone() throws {
+        try make(destination.appendingPathComponent("demo"), manifest: ##"{"name":"From an old build"}"##)
+
+        XCTAssertEqual(ThemeSeeder.seed(from: source, into: destination), [])
+        XCTAssertTrue(try installedManifest().contains("old build"))
+    }
+
+    /// Running twice must not report an install it did not perform.
+    func testItSaysNothingWhenThereIsNothingToDo() throws {
+        ThemeSeeder.seed(from: source, into: destination)
+        XCTAssertEqual(ThemeSeeder.seed(from: source, into: destination), [])
     }
 }

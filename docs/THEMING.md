@@ -486,6 +486,13 @@ nobody can see.
 `.gif` / `.apng`. Avoid `.webm` — not natively supported. Prefer GIF/APNG for
 lightweight looping; reserve real video for richer motion.
 
+**Shipped themes update themselves, unless you have edited them.** The app
+records what it installed. On a later launch a folder whose contents still match
+is replaced with the newer version, so fixes reach you; a folder that differs by
+so much as one colour is left alone, permanently, and so is anything installed
+by a build from before this was recorded. If you want a theme to be yours,
+change anything in it and it stops being ours.
+
 ## Making a light theme
 
 Every shipped theme is dark, so the defaults are dark, and a light theme has to
