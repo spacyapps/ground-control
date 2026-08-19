@@ -94,46 +94,81 @@ extension SettingsView {
     }
 }
 
-/// "Does it work?", answered without a conversation.
+/// "Does it work?", answered without a conversation — and fixed in the same
+/// place it is answered.
 ///
-/// Every failed setup this project has seen was visible from outside the app:
-/// a registration written to a path with a space in it, an emitter left over
-/// from an older install, an agent that fires nothing at the moment it matters,
-/// a CLI that was never supported. Each cost an evening of questions.
+/// Every failed setup this project has seen was visible from outside the app: a
+/// registration written to a path with a space in it, an emitter left behind by
+/// an older install, an agent that fires nothing at the moment it matters, a CLI
+/// that was never supported. Each cost an evening of questions.
+///
+/// The menu used to offer "Set Up Hooks…" and "Remove Hooks…", which could only
+/// say yes or no to all of them at once. One switch per integration says which,
+/// and one integration can be turned off without disturbing the others.
 extension SettingsView {
     func setupSection(in stack: NSStackView) {
-        stack.addArrangedSubview(header("Setup", width: SettingsView.sideWidth))
-
-        for agent in SetupStatus.agents(sessions: actions.currentSessions()) {
-            stack.addArrangedSubview(agentRow(agent))
-        }
-
-        let emitter = SetupStatus.emitter()
-        stack.addArrangedSubview(caption(emitterLine(emitter)))
-        stack.setCustomSpacing(20, after: stack.arrangedSubviews.last ?? stack)
+        stack.addArrangedSubview(header("Hooks", width: SettingsView.sideWidth))
+        rebuildSetup()
     }
 
-    /// One agent, one line, and the line that matters is the last part of it:
+    /// Re-reads the world and redraws these rows in place.
+    ///
+    /// Called after a switch, because what the rows say is derived from files on
+    /// disk rather than from the switch itself — which is the point. If the
+    /// script failed, the switch goes back on its own.
+    func rebuildSetup() {
+        guard let column = setupColumn else { return }
+        for view in setupViews { column.removeArrangedSubview(view); view.removeFromSuperview() }
+        setupViews = []
+
+        var added: [NSView] = []
+        for agent in SetupStatus.agents(sessions: actions.currentSessions()) {
+            added.append(agentRow(agent))
+        }
+        added.append(caption(emitterLine(SetupStatus.emitter())))
+
+        // Straight after the Hooks header, which is the last thing in the column
+        // when this first runs and stays put on every rebuild after it.
+        let start = (column.arrangedSubviews.firstIndex { ($0 as? NSTextField) == nil
+            && $0.subviews.contains { ($0 as? NSTextField)?.stringValue == "HOOKS" } }).map { $0 + 1 }
+            ?? column.arrangedSubviews.count
+        for (offset, view) in added.enumerated() {
+            column.insertArrangedSubview(view, at: min(start + offset, column.arrangedSubviews.count))
+        }
+        setupViews = added
+        if let last = added.last { column.setCustomSpacing(20, after: last) }
+    }
+
+    /// One integration: a switch, its name, and the line that matters —
     /// **has anything arrived?** A registration only proves a file was written.
     private func agentRow(_ agent: SetupStatus.Agent) -> NSView {
-        let label = NSTextField(labelWithString: "\(mark(for: agent))  \(agent.name)")
-        label.font = .systemFont(ofSize: 11, weight: .medium)
-        label.textColor = agent.detected ? .labelColor : SettingsChrome.dim
+        let name = NSTextField(labelWithString: agent.name)
+        name.font = .systemFont(ofSize: 11, weight: .medium)
+        name.textColor = agent.detected ? .labelColor : SettingsChrome.dim
+
+        let toggle = NSSwitch()
+        toggle.state = agent.registered ? .on : .off
+        toggle.controlSize = .mini
+        toggle.target = self
+        toggle.action = #selector(hookToggled(_:))
+        toggle.identifier = agent.target.map { NSUserInterfaceItemIdentifier($0.rawValue) }
+        // Nothing to switch on for an agent that is not here, or not yet
+        // supported. Greyed out with the reason underneath beats a control that
+        // silently does nothing.
+        toggle.isEnabled = agent.detected && agent.target != nil
+
+        let heading = NSStackView(views: [toggle, name])
+        heading.orientation = .horizontal
+        heading.spacing = 8
 
         let detail = caption(state(of: agent))
         detail.maximumNumberOfLines = 3
 
-        let column = NSStackView(views: [label, detail])
+        let column = NSStackView(views: [heading, detail])
         column.orientation = .vertical
         column.alignment = .leading
-        column.spacing = 1
+        column.spacing = 2
         return column
-    }
-
-    private func mark(for agent: SetupStatus.Agent) -> String {
-        guard agent.detected else { return "○" }
-        if agent.lastEvent != nil { return "●" }
-        return agent.registered ? "◐" : "○"
     }
 
     private func state(of agent: SetupStatus.Agent) -> String {
@@ -141,11 +176,11 @@ extension SettingsView {
         if !agent.detected {
             parts.append("not installed on this Mac")
         } else if !agent.registered {
-            parts.append("installed, not registered")
+            parts.append("off")
         } else if let seen = agent.lastEvent {
             parts.append("working — last seen \(ElapsedFormatter.short(since: seen)) ago")
         } else {
-            parts.append("registered, nothing received yet")
+            parts.append("on, nothing received yet")
         }
         if let caveat = agent.caveat, agent.detected { parts.append(caveat) }
         return parts.joined(separator: ". ")
@@ -153,7 +188,7 @@ extension SettingsView {
 
     private func emitterLine(_ emitter: (installed: Bool, current: Bool?)) -> String {
         guard emitter.installed else {
-            return "The reporting script is not installed. Choose Set Up Hooks… from the menu."
+            return "The reporting script is not installed yet. Turn an agent on above."
         }
         switch emitter.current {
         case true: return "Reporting script installed and matching this version."

@@ -25,18 +25,34 @@ enum HookInstaller {
     /// settings and Cursor's hooks — so neither should ever run on a stray
     /// click. Both are safe to repeat, which is what makes a plain retry the
     /// right answer when something goes wrong.
-    static func run(_ script: Script) {
+    /// Which integration to act on. The scripts default to every one when no
+    /// target is given, which is what the menu and the README have always done.
+    enum Target: String {
+        case all
+        case claude
+        case cursor
+
+        var label: String {
+            switch self {
+            case .all: return "every agent"
+            case .claude: return "Claude Code and Grok"
+            case .cursor: return "Cursor"
+            }
+        }
+    }
+
+    static func run(_ script: Script, target: Target = .all, silent: Bool = false) {
         guard let url = script.url, FileManager.default.fileExists(atPath: url.path) else {
             report(title: "Script missing",
                    body: "\(script.rawValue) is not in this build. Reinstall the app.",
                    isError: true)
             return
         }
-        guard confirm(script) else { return }
+        guard silent || confirm(script) else { return }
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
-        process.arguments = [url.path]
+        process.arguments = [url.path, target.rawValue]
         let output = Pipe()
         process.standardOutput = output
         process.standardError = output
@@ -48,7 +64,7 @@ enum HookInstaller {
             let data = output.fileHandleForReading.readDataToEndOfFile()
             process.waitUntilExit()
             let text = String(data: data, encoding: .utf8) ?? ""
-            finish(script, code: process.terminationStatus, output: text)
+            if !silent { finish(script, code: process.terminationStatus, output: text) }
         } catch {
             report(title: "Could not run \(script.rawValue)",
                    body: error.localizedDescription,

@@ -28,6 +28,10 @@ enum SetupStatus {
         /// Said out loud where an agent cannot do something, so a missing alarm
         /// reads as a known limit rather than a broken install.
         let caveat: String?
+        /// What a switch would install or remove, or nil where there is nothing
+        /// to switch — Grok rides Claude Code's registration, and opencode has
+        /// no integration to turn on yet.
+        let target: HookInstaller.Target?
     }
 
     /// Everything the panel can currently speak to, in the order a person is
@@ -39,34 +43,33 @@ enum SetupStatus {
         let opencode = home.appendingPathComponent(".config/opencode")
 
         return [
+            // One switch, because one registration serves both: Grok reads
+            // Claude Code's settings file by design. Two switches would imply
+            // they could be turned on separately, and one of them would be a lie.
             Agent(
-                name: "Claude Code",
+                name: "Claude Code & Grok",
                 detected: exists(claude),
                 registered: mentionsEmitter(claude),
-                lastEvent: latest(in: sessions, source: "claude"),
-                caveat: nil
-            ),
-            Agent(
-                name: "Grok",
-                detected: exists(claude),
-                registered: mentionsEmitter(claude),
-                lastEvent: latest(in: sessions, source: "grok"),
-                caveat: "Reads Claude Code's settings, so one install covers both."
+                lastEvent: latest(in: sessions, sources: ["claude", "grok"]),
+                caveat: nil,
+                target: .claude
             ),
             Agent(
                 name: "Cursor",
                 detected: exists(cursor) || exists(home.appendingPathComponent(".cursor")),
                 registered: mentionsEmitter(cursor),
-                lastEvent: latest(in: sessions, source: "cursor"),
+                lastEvent: latest(in: sessions, sources: ["cursor"]),
                 caveat: "Its own agent fires no hook while waiting for approval, "
-                    + "so those rows never turn red."
+                    + "so those rows never turn red.",
+                target: .cursor
             ),
             Agent(
                 name: "opencode",
                 detected: exists(opencode),
                 registered: false,
-                lastEvent: latest(in: sessions, source: "opencode"),
-                caveat: "Not supported yet — it uses plugins rather than hook commands."
+                lastEvent: latest(in: sessions, sources: ["opencode"]),
+                caveat: "Not supported yet — it uses plugins rather than hook commands.",
+                target: nil
             )
         ]
     }
@@ -100,7 +103,7 @@ enum SetupStatus {
         return text.contains("cc-notify")
     }
 
-    private static func latest(in sessions: [Session], source: String) -> Date? {
-        sessions.filter { $0.source == source }.map(\.lastActivity).max()
+    private static func latest(in sessions: [Session], sources: [String]) -> Date? {
+        sessions.filter { sources.contains($0.source) }.map(\.lastActivity).max()
     }
 }
