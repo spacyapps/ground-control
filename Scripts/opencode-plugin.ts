@@ -28,9 +28,22 @@ const FORWARD = new Set([
   "session.idle",
   "permission.asked",
   "permission.replied",
+  // Asking a question is the other way an agent stops and waits for you, and it
+  // is the one people actually mind missing — "which database?" rather than
+  // "may I run this". Present in the SDK; not yet seen fired, because a model
+  // that asks in prose instead never reaches it.
+  "question.asked",
+  "question.replied",
+  "question.rejected",
 ])
 
 export const GroundControl = async ({ $, directory, worktree }: any) => {
+  // Only session.created carries the directory. Every later event for that
+  // session gives just an id, and a row with no working directory is named
+  // after nothing — one turned up in the panel called "/". So it is remembered
+  // here, per session, and sent with everything.
+  const folders = new Map<string, string>()
+  const fallback = worktree || directory || process.cwd()
   const send = async (payload: Record<string, unknown>) => {
     // Fire and forget, and never let a monitor break the agent it watches: a
     // hook that throws would surface as an error in somebody's coding session.
@@ -53,18 +66,24 @@ export const GroundControl = async ({ $, directory, worktree }: any) => {
 
       // opencode splits "waiting for you" into asked and replied, which is
       // exactly our alarm going up and coming down.
-      const asking = event.type === "permission.asked"
+      const asking = event.type === "permission.asked" || event.type === "question.asked"
       const metadata = properties.metadata ?? {}
+
+      const folder = properties.info?.directory
+      if (folder) folders.set(sessionID, folder)
 
       await send({
         source: "opencode",
         hook_event_name: event.type,
         session_id: sessionID,
-        cwd: properties.info?.directory ?? worktree ?? directory,
+        cwd: folders.get(sessionID) || fallback,
         // The command it wants to run is the truest thing a red row can say,
         // and it is right there in the payload.
         message: asking
-          ? metadata.description || metadata.command || properties.permission
+          ? metadata.description
+            || metadata.command
+            || properties.question
+            || properties.permission
           : properties.info?.title,
         needs_action: asking,
       })
