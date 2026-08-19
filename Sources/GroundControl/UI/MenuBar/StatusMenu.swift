@@ -84,31 +84,23 @@ final class StatusMenu: NSObject {
             keyEquivalent: ""
         )
         let submenu = NSMenu()
-        let width: CGFloat = 340
         // A menu disables anything without an action, and an item carrying a
-        // view has none — its view is the action. Left alone, the switches
-        // inside drew in their disabled grey and looked permanently off.
+        // view has none — its view is the action.
         submenu.autoenablesItems = false
 
-        for agent in SetupStatus.agents(sessions: actions.currentSessions()) {
-            let entry = NSMenuItem()
-            entry.view = HookMenuRow(agent: agent, width: width) { [actions] on in
-                guard let target = agent.target else { return }
-                actions.toggleHook(target, on)
-            }
-            entry.isEnabled = true
-            submenu.addItem(entry)
+        let entry = NSMenuItem()
+        entry.view = HookMenuRow(
+            agent: SetupStatus.summary(sessions: actions.currentSessions()),
+            width: 340
+        ) { [actions] on in
+            actions.toggleHook(.all, on)
         }
+        entry.isEnabled = true
+        submenu.addItem(entry)
 
         submenu.addItem(.separator())
-        // Terminals need no integration of their own: an agent running inside
-        // one is already covered by the switch for that agent. Worth saying,
-        // because the absence of a VS Code row otherwise reads as "not
-        // supported" when it is the opposite — verified there, and in Warp,
-        // Ghostty, WezTerm, iTerm2 and Terminal.app.
-        submenu.addItem(note("Agents in any terminal are covered above —"))
-        submenu.addItem(note("VS Code, Cursor, Warp, Ghostty, iTerm2, Terminal."))
-        submenu.addItem(note("Only an editor's own chat needs more."))
+        for line in SetupStatus.facts() { submenu.addItem(note(line)) }
+
         if let trouble = emitterTrouble() {
             submenu.addItem(.separator())
             submenu.addItem(note(trouble))
@@ -117,16 +109,9 @@ final class StatusMenu: NSObject {
         return parent
     }
 
-    /// The reporting script is plumbing the switches manage on your behalf, so
-    /// it is only worth a line when something is wrong with it.
-    ///
-    /// It said "Reporting script installed" whatever the state, which invited
-    /// exactly the right question — install and uninstall are what the switches
-    /// do, so what was this? A status that is always fine trains people to stop
-    /// reading it, and then it cannot warn them.
     private func emitterTrouble() -> String? {
         let emitter = SetupStatus.emitter()
-        let anyOn = SetupStatus.agents(sessions: []).contains { $0.registered }
+        let anyOn = SetupStatus.summary(sessions: []).registered
         if !emitter.installed && anyOn {
             return "An agent is switched on but the reporting script is missing"
         }

@@ -36,50 +36,49 @@ enum SetupStatus {
 
     /// Everything the panel can currently speak to, in the order a person is
     /// likely to care about.
-    static func agents(sessions: [Session], now: Date = Date()) -> [Agent] {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        let claude = home.appendingPathComponent(".claude/settings.json")
-        let cursor = home.appendingPathComponent(".cursor/hooks.json")
-        let opencode = home.appendingPathComponent(".config/opencode")
-
-        return [
-            // One switch, because one registration serves both: Grok reads
-            // Claude Code's settings file by design. Two switches would imply
-            // they could be turned on separately, and one of them would be a lie.
-            Agent(
-                name: "Claude Code & Grok",
-                detected: exists(claude),
-                registered: mentionsEmitter(claude),
-                lastEvent: latest(in: sessions, sources: ["claude", "grok"]),
-                caveat: nil,
-                target: .claude
-            ),
-            // Named for what it actually switches. Called "Cursor" it read as
-            // "Cursor support", and someone running Claude Code inside Cursor's
-            // terminal — which needs nothing here and works already — saw an
-            // off switch and reasonably assumed something was broken.
-            Agent(
-                name: "Cursor's own agent",
-                detected: exists(cursor) || exists(home.appendingPathComponent(".cursor")),
-                registered: mentionsEmitter(cursor),
-                lastEvent: latest(in: sessions, sources: ["cursor"]),
-                caveat: "Composer only. Claude Code running in Cursor's terminal "
-                    + "needs nothing here — it is covered above, alarm included. "
-                    + "Composer rows appear but never turn red: it reports "
-                    + "nothing while waiting for approval, as any editor's own "
-                    + "chat does.",
-                target: .cursor
-            ),
-            Agent(
-                name: "opencode",
-                detected: exists(opencode),
-                registered: false,
-                lastEvent: latest(in: sessions, sources: ["opencode"]),
-                caveat: "Not supported yet — it uses plugins rather than hook commands.",
-                target: nil
-            )
-        ]
+    /// One switch, because there is one thing to decide: whether Ground
+    /// Control is listening at all.
+    ///
+    /// It was a switch per integration for a while. Two of the three could
+    /// never be anything but off — opencode has nothing to turn on, and
+    /// Cursor's own agent is an extra almost nobody wants to think about — so
+    /// the row that mattered was surrounded by rows that looked broken.
+    /// Everything else is now stated underneath as a fact rather than offered
+    /// as a control.
+    static func summary(sessions: [Session], now: Date = Date()) -> Agent {
+        Agent(
+            name: "Hooks",
+            detected: true,
+            registered: mentionsEmitter(claudeSettings),
+            lastEvent: latest(in: sessions, sources: ["claude", "grok", "cursor", "opencode"]),
+            caveat: nil,
+            target: .all
+        )
     }
+
+    /// What the switch covers, what it also picks up, and what it cannot reach.
+    /// Facts, in the order someone wants them: what works, then the surprises.
+    static func facts() -> [String] {
+        var lines = [
+            "Covers Claude Code, Grok, and any agent running in a terminal —",
+            "VS Code, Cursor, Warp, Ghostty, iTerm2, Terminal."
+        ]
+        if exists(cursorHooks) || exists(home.appendingPathComponent(".cursor")) {
+            lines.append(mentionsEmitter(cursorHooks)
+                ? "Also watching Cursor's Composer chats — they never turn red."
+                : "Cursor's Composer chats are not being watched.")
+        }
+        if exists(home.appendingPathComponent(".config/opencode")) {
+            lines.append("Not covered: opencode, and editors' own chats.")
+        } else {
+            lines.append("Not covered: an editor's own chat.")
+        }
+        return lines
+    }
+
+    private static var home: URL { FileManager.default.homeDirectoryForCurrentUser }
+    private static var claudeSettings: URL { home.appendingPathComponent(".claude/settings.json") }
+    private static var cursorHooks: URL { home.appendingPathComponent(".cursor/hooks.json") }
 
     /// The emitter the app installed, and whether it still matches the app.
     ///

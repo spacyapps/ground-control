@@ -4,8 +4,8 @@
 import XCTest
 @testable import GroundControl
 
-/// "It doesn't work" is the commonest report this project gets, and the Setup
-/// section exists to answer it without a conversation. What it must never do is
+/// "It doesn't work" is the commonest report this project gets, and the Hooks
+/// menu exists to answer it without a conversation. What it must never do is
 /// answer it wrongly.
 final class SetupStatusTests: XCTestCase {
     private func session(source: String, at seconds: Int) throws -> Session {
@@ -17,51 +17,41 @@ final class SetupStatusTests: XCTestCase {
         return Session(id: event.sessionID, latest: event, children: [], acknowledgedAt: nil)
     }
 
-    private func agent(_ name: String, sessions: [Session]) -> SetupStatus.Agent? {
-        SetupStatus.agents(sessions: sessions).first { $0.name == name }
-    }
-
     /// The load-bearing claim. A registration only proves a file was written;
     /// this is the line that proves the file is being run.
-    func testAnArrivedEventIsAttributedToItsOwnAgent() throws {
-        let sessions = [try session(source: "cursor", at: 1_000)]
-        XCTAssertNotNil(agent("Cursor's own agent", sessions: sessions)?.lastEvent)
-        XCTAssertNil(agent("Claude Code & Grok", sessions: sessions)?.lastEvent,
-                     "one agent's traffic must never vouch for another's")
-    }
-
-    /// Grok rides Claude Code's settings file, so one registration serves both
-    /// and they share a row. Two switches would imply they could be turned on
-    /// separately, and one of them would be a lie.
-    func testGrokAndClaudeShareOneRow() throws {
-        XCTAssertNil(agent("Grok", sessions: []), "Grok should not have a row of its own")
-        let viaGrok = [try session(source: "grok", at: 2_000)]
-        XCTAssertNotNil(agent("Claude Code & Grok", sessions: viaGrok)?.lastEvent,
-                        "traffic from either one counts for the pair")
+    func testTrafficFromAnySupportedAgentCounts() throws {
+        for source in ["claude", "grok", "cursor", "opencode"] {
+            let seen = SetupStatus.summary(sessions: [try session(source: source, at: 500)]).lastEvent
+            XCTAssertNotNil(seen, "\(source) should count as something arriving")
+        }
     }
 
     func testTheMostRecentEventWins() throws {
         let sessions = [try session(source: "claude", at: 10),
-                        try session(source: "claude", at: 900)]
-        let seen = try XCTUnwrap(agent("Claude Code & Grok", sessions: sessions)?.lastEvent)
+                        try session(source: "cursor", at: 900)]
+        let seen = try XCTUnwrap(SetupStatus.summary(sessions: sessions).lastEvent)
         XCTAssertEqual(seen.timeIntervalSince1970, 900, accuracy: 1)
     }
 
-    /// Silence is the normal state for a CLI nobody runs, and it must not read
-    /// as breakage.
+    /// Silence is the normal state for a machine nobody is running agents on,
+    /// and it must not read as breakage.
     func testNothingHeardIsNotAnError() {
-        for agent in SetupStatus.agents(sessions: []) {
-            XCTAssertNil(agent.lastEvent, "\(agent.name) invented an event")
-        }
+        XCTAssertNil(SetupStatus.summary(sessions: []).lastEvent)
     }
 
-    /// The two agents that cannot do everything say so, so a missing alarm
-    /// reads as a known limit rather than a broken install.
-    func testTheLimitedAgentsCarryTheirCaveat() {
-        let agents = SetupStatus.agents(sessions: [])
-        XCTAssertNotNil(agents.first { $0.name == "Cursor's own agent" }?.caveat)
-        XCTAssertNotNil(agents.first { $0.name == "opencode" }?.caveat)
-        XCTAssertNil(agents.first { $0.name == "Claude Code & Grok" }?.caveat,
-                     "the fully supported one should claim no excuses")
+    /// One switch, and it speaks for everything — the per-integration switches
+    /// were rows that could never be anything but off, surrounding the one row
+    /// that mattered.
+    func testThereIsOneSwitchAndItCoversEverything() {
+        XCTAssertEqual(SetupStatus.summary(sessions: []).target, .all)
+    }
+
+    /// The facts underneath must name what is covered and what is not, since
+    /// nothing else on screen says so now.
+    func testTheFactsSayWhatIsCoveredAndWhatIsNot() {
+        let facts = SetupStatus.facts().joined(separator: " ")
+        XCTAssertTrue(facts.contains("Claude Code"), facts)
+        XCTAssertTrue(facts.contains("terminal"), "the terminal case is the one people doubt")
+        XCTAssertTrue(facts.contains("Not covered"), "and the limits have to be stated")
     }
 }
