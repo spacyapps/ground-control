@@ -24,6 +24,9 @@ final class SettingsView: NSView {
         var openThemesFolder: () -> Void
         var resetPanelPosition: () -> Void
         var createTheme: () -> Void
+        /// What the panel is showing right now, so Setup can say whether
+        /// anything has actually arrived from each agent.
+        var currentSessions: () -> [Session]
     }
 
     private let preferences: Preferences
@@ -116,6 +119,7 @@ final class SettingsView: NSView {
 
         themeSection(in: left)
         panelSection(in: right)
+        setupSection(in: right)
         advancedSection(in: right)
 
         let row = NSStackView(views: [left, right])
