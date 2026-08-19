@@ -72,41 +72,33 @@ final class StatusMenu: NSObject {
     /// Each integration, whether it is on, and whether anything has ever
     /// arrived from it.
     ///
-    /// The last part is the one that matters. A tick only proves a registration
-    /// was written; "last seen 1m ago" proves it is being run, and those two
-    /// came apart once and cost an evening.
+    /// Real switches rather than ticks: a menu item can carry a view, and a
+    /// switch says "this is a thing you can turn off" where a tick only says
+    /// "registered". The title spells out what the submenu does, because
+    /// "Hooks" alone tells you nothing about whether it is a status display or
+    /// a control.
     private func hooksMenu() -> NSMenuItem {
-        let parent = NSMenuItem(title: "Hooks", action: nil, keyEquivalent: "")
+        let parent = NSMenuItem(
+            title: "Hooks (install, uninstall, status)",
+            action: nil,
+            keyEquivalent: ""
+        )
         let submenu = NSMenu()
+        let width: CGFloat = 340
 
         for agent in SetupStatus.agents(sessions: actions.currentSessions()) {
-            let entry = item(
-                title: agent.name,
-                action: #selector(toggleHook(_:)),
-                isOn: agent.registered
-            )
-            entry.representedObject = agent.target?.rawValue
-            // Nothing to switch for an agent that is not installed or not yet
-            // supported. Shown anyway, with the reason under it: absent is a
-            // fact worth stating, and "why is opencode missing" is the question
-            // this section exists to answer.
-            entry.isEnabled = agent.detected && agent.target != nil
+            let entry = NSMenuItem()
+            entry.view = HookMenuRow(agent: agent, width: width) { [actions] on in
+                guard let target = agent.target else { return }
+                actions.toggleHook(target, on)
+            }
             submenu.addItem(entry)
-            submenu.addItem(note(status(of: agent)))
-            if let caveat = agent.caveat, agent.detected { submenu.addItem(note(caveat)) }
         }
 
         submenu.addItem(.separator())
         submenu.addItem(note(emitterNote()))
         parent.submenu = submenu
         return parent
-    }
-
-    private func status(of agent: SetupStatus.Agent) -> String {
-        guard agent.detected else { return "not installed on this Mac" }
-        guard agent.registered else { return "off" }
-        guard let seen = agent.lastEvent else { return "on, nothing received yet" }
-        return "working — last seen \(ElapsedFormatter.short(since: seen)) ago"
     }
 
     private func emitterNote() -> String {
@@ -172,11 +164,6 @@ final class StatusMenu: NSObject {
     @objc private func toggleAllSpaces() { actions.toggleAllSpaces() }
     @objc private func openThemesFolder() { actions.openThemesFolder() }
     @objc private func openSettings() { actions.openSettings() }
-    @objc private func toggleHook(_ sender: NSMenuItem) {
-        guard let raw = sender.representedObject as? String,
-              let target = HookInstaller.Target(rawValue: raw) else { return }
-        actions.toggleHook(target, sender.state != .on)
-    }
     @objc private func quit() { actions.quit() }
     @objc private func selectDefaultTheme() { actions.selectTheme(nil) }
 
