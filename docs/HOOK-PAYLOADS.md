@@ -83,6 +83,71 @@ unresolved — see SPEC §10.
 
 ---
 
+## opencode — measured 2026-08-19 against 1.17.8
+
+opencode has **no hook commands**. Nothing in its configuration runs a script on
+an event the way `~/.claude/settings.json` and `~/.cursor/hooks.json` do. What it
+has is plugins: TypeScript loaded into the agent, handed a shell. So the
+integration is `Scripts/opencode-plugin.ts`, which does the same job a hook
+registration does elsewhere.
+
+Captured by loading a probe plugin that logged every event, with
+`XDG_CONFIG_HOME` pointed at a scratch directory so nothing of the user's was
+touched. A single turn emits well over a hundred events; all but four are noise
+(`catalog.updated` and `plugin.added` dozens of times at startup).
+
+| opencode | ours | carries |
+|---|---|---|
+| `session.created` | `sessionstart` | `sessionID`, `info.directory`, `info.title` |
+| `session.idle` | `stop` | `sessionID` |
+| `permission.asked` | `notification` | `sessionID`, `permission`, `metadata.command`, `metadata.description` |
+| `permission.replied` | `stop` | `sessionID`, `reply` (`accept` / `reject`) |
+
+`session.status` also arrives with `{"type": "busy"}` and `{"type": "idle"}`, and
+is not used: `session.created` and `session.idle` already bracket the work.
+
+### The one that matters
+
+`permission.asked` is the event **Cursor does not have** — it fires while the
+agent waits for a human, so an opencode row can turn red where a Composer row
+cannot. It arrives with the command in it:
+
+```json
+{ "type": "permission.asked",
+  "properties": {
+    "sessionID": "ses_fe79bbc66ffeBcuSfuQtubmt1E",
+    "permission": "bash",
+    "patterns": ["echo hello"],
+    "metadata": { "command": "echo hello", "description": "Echo hello to terminal" },
+    "always": ["echo *"] } }
+```
+
+So the row says *"Echo hello to terminal"* rather than "needs your permission".
+`permission.replied` clears it.
+
+### Verified end to end
+
+A real turn through the real plugin, on 2026-08-19, produced exactly two rows:
+
+```
+session.created    state=idle    Session started
+session.idle       state=done    Done
+```
+
+with `tty`, `host_app` and `host_id` resolved from the process tree as for any
+other agent — so clicking the row jumps to the terminal running opencode.
+
+### Two things that cost time
+
+**A plugin's `$` has no writable stdin.** `BunShell`'s `stdin` is a readonly
+stream, so `$\`cmd\`.stdin(json)` hangs rather than failing. Pipe instead:
+``$\`echo ${JSON.stringify(payload)} | ${EMITTER}\```, where interpolation
+escapes the JSON into a single argument.
+
+**Headless `opencode run` blocks on a permission prompt** rather than declining,
+so a probe that triggers one never exits. Run it in the background and read the
+log rather than waiting on the process.
+
 ## Two findings that changed the design
 
 **1. `tty` is not in any payload, and `tty` fails inside a hook.**
