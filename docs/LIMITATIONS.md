@@ -107,6 +107,7 @@ in every other editor.
 | Only `session.created` carries the directory | later events gave an id alone, and rows arrived named `/` | 2026-08-19 |
 | Xcode's Claude Agent never reports | 90 minutes of a live session wrote nothing; `sdk-cli` entrypoint | 2026-08-19 |
 | opencode uninstall is clean | plugin file, config entry and rows all gone; model and permission settings untouched | 2026-08-19 |
+| **Gatekeeper stays silent on another Mac** | 0.6.0 AirDropped to a second machine — quarantine flag set, opened without a warning | 2026-08-19 |
 | Install/uninstall touch only our own entries | scripts run against a sandboxed `HOME`, foreign hooks survive | 2026-08-18 |
 | Uninstall clears any older install's path | a registration under `~/bin` is still recognised as ours | 2026-08-18 |
 | Cap insets measured from artwork | agreed with both shipped frames independently (100, 129) | 2026-08-18 |
