@@ -92,9 +92,8 @@ something, which is what the hooks are for. One command:
 /Applications/GroundControl.app/Contents/Resources/install-hooks.sh
 ```
 
-Or click the menu-bar icon and choose **Hooks…**, which opens Settings with a
-switch per agent — and a line under each saying whether anything has actually
-arrived from it.
+Or click the menu-bar icon and open the **Hooks** submenu, which has a switch per
+agent and a line under each saying whether anything has actually arrived from it.
 
 It installs `cc-notify` to `~/.groundcontrol/bin/`
 and registers it in `~/.claude/settings.json`, backing up the file first. **You only run it once** —
@@ -143,7 +142,7 @@ never calls the emitter. See `docs/LIMITATIONS.md`.
 
 ## Uninstall
 
-Click the menu-bar icon, choose **Hooks…**, and turn the agents off — or run
+Click the menu-bar icon, open **Hooks**, and turn the agents off — or run
 `~/.groundcontrol/bin/uninstall-hooks.sh`, which is
 kept there so it still works after the app is gone. It takes the `cc-notify` entries out
 of `~/.claude/settings.json` (a dated backup sits beside it). Session files live

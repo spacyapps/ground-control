@@ -57,10 +57,6 @@ final class SettingsView: NSView {
 
     /// Folder names in picker order; `nil` is the built-in default.
     private var themeNames: [String?] = [nil]
-    /// Held so the Hooks rows can be rebuilt in place when a switch changes
-    /// what they have to say.
-    weak var setupColumn: NSStackView?
-    var setupViews: [NSView] = []
 
     init(preferences: Preferences = .shared, actions: Actions) {
         self.preferences = preferences
@@ -123,8 +119,6 @@ final class SettingsView: NSView {
 
         themeSection(in: left)
         panelSection(in: right)
-        setupColumn = right
-        setupSection(in: right)
         advancedSection(in: right)
 
         let row = NSStackView(views: [left, right])
@@ -295,22 +289,6 @@ final class SettingsView: NSView {
     @objc func analyserColourChanged() {
         preferences.analyserTint = analyserWell.color.hexString
         actions.reloadTheme()
-    }
-
-    /// Turning an integration on or off, one at a time.
-    ///
-    /// Runs without a confirmation sheet: the switch *is* the confirmation, and
-    /// a dialog asking "are you sure" after a deliberate flick is noise. The
-    /// scripts back up any file they touch, and the row rereads its own state
-    /// afterwards, so a failure shows as the switch going back rather than as a
-    /// claim that something happened.
-    @objc func hookToggled(_ sender: NSSwitch) {
-        guard let raw = sender.identifier?.rawValue,
-              let target = HookInstaller.Target(rawValue: raw) else { return }
-        HookInstaller.run(sender.state == .on ? .install : .uninstall,
-                          target: target,
-                          silent: true)
-        rebuildSetup()
     }
 
     @objc func openLegal() {
