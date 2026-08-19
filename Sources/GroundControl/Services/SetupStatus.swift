@@ -59,8 +59,10 @@ enum SetupStatus {
                 detected: exists(cursor) || exists(home.appendingPathComponent(".cursor")),
                 registered: mentionsEmitter(cursor),
                 lastEvent: latest(in: sessions, sources: ["cursor"]),
-                caveat: "Its own agent fires no hook while waiting for approval, "
-                    + "so those rows never turn red.",
+                caveat: "Claude Code in Cursor's terminal is fully supported. "
+                    + "Cursor's own agent appears but never turns red — it "
+                    + "reports nothing while waiting for approval. The same "
+                    + "holds for any editor's built-in chat.",
                 target: .cursor
             ),
             Agent(
