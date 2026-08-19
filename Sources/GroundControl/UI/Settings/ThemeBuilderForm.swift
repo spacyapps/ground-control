@@ -22,13 +22,8 @@ extension ThemeBuilderWindowController {
         addIntroduction(to: form)
         form.addArrangedSubview(field(nameField, label: "Theme name"))
         form.addArrangedSubview(field(subjectField, label: "Character or mascot"))
-        form.addArrangedSubview(field(styleField, label: "Visual style"))
-        form.addArrangedSubview(field(moodField, label: "Mood and colours"))
-        form.addArrangedSubview(field(backgroundField, label: "Panel background"))
-        form.addArrangedSubview(caption(
-            "Leave the background blank for colours only. The panel resizes, so anything here "
-            + "is described to the model as nine-slice art: detail in the corners, tiling centre."
-        ))
+        addReferenceQuestion(to: form)
+        addLookQuestions(to: form)
         addWordsQuestion(to: form)
 
         animateBox.setButtonType(.switch)
@@ -103,6 +98,38 @@ extension ThemeBuilderWindowController {
             + "drafts first so you can say what to change — colours, pose, how bold "
             + "the alarm state reads — before anything is animated. Two or three "
             + "rounds is normal."
+        ))
+    }
+
+    /// How it should look, in words — the part an attached picture makes easier
+    /// but never quite replaces.
+    private func addLookQuestions(to form: NSStackView) {
+        form.addArrangedSubview(field(styleField, label: "Visual style"))
+        form.addArrangedSubview(field(moodField, label: "Mood and colours"))
+        form.addArrangedSubview(field(backgroundField, label: "Panel background"))
+        form.addArrangedSubview(caption(
+            "Leave the background blank for colours only. The panel resizes, so anything here "
+            + "is described to the model as nine-slice art: detail in the corners, tiling centre."
+        ))
+    }
+
+    /// Whether they have a picture of the character.
+    ///
+    /// The hardest part of this form is describing a face in words, and it is
+    /// where the second round usually comes from. An image skips it — and one
+    /// image for all four moods is also what keeps them looking like the same
+    /// character rather than four cousins.
+    private func addReferenceQuestion(to form: NSStackView) {
+        referenceBox.setButtonType(.switch)
+        referenceBox.title = "I have a picture of them to attach"
+        referenceBox.target = self
+        referenceBox.action = #selector(regenerate)
+        form.addArrangedSubview(referenceBox)
+        form.addArrangedSubview(caption(
+            "Describing a face in words is the hardest part of this. If you have an image, "
+            + "attach it to your first message and the prompt will tell the model to work "
+            + "from it — and to derive all four moods from that one picture, so they look "
+            + "like the same character rather than four cousins."
         ))
     }
 
@@ -251,16 +278,28 @@ extension ThemeBuilderWindowController {
         row.orientation = .horizontal
         row.spacing = 8
 
-        let regenerateButton = NSButton(title: "Update Prompt", target: self, action: #selector(regenerate))
-        let copyButton = NSButton(title: "Copy Prompt", target: self, action: #selector(copyPrompt))
+        let regenerateButton = NSButton(title: "Update", target: self, action: #selector(regenerate))
+        // Two pastes, two buttons. Part one is the moods and is often all
+        // anybody needs; part two is the frame, and goes into the same
+        // conversation once the moods are right.
+        let copyButton = NSButton(
+            title: "Copy Part 1 — Moods",
+            target: self,
+            action: #selector(copyPrompt)
+        )
+        let copyFrameButton = NSButton(
+            title: "Copy Part 2 — Frame",
+            target: self,
+            action: #selector(copyFramePrompt)
+        )
         let createButton = NSButton(
-            title: "Create Folder & Copy",
+            title: "Create Folder",
             target: self,
             action: #selector(createFolder)
         )
         createButton.keyEquivalent = "\r"
 
-        for button in [regenerateButton, copyButton, createButton] {
+        for button in [regenerateButton, copyButton, copyFrameButton, createButton] {
             button.bezelStyle = .rounded
             row.addArrangedSubview(button)
         }

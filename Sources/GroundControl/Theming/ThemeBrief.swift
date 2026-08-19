@@ -48,6 +48,14 @@ struct ThemeBrief: Equatable {
     var background: String
     var avatarSize: Int
     var position: String
+    /// Whether the author has a picture of their character to hand the model.
+    ///
+    /// Describing a face in words is the worst way to convey one, and it is
+    /// where the second round usually comes from. One image, with all four
+    /// moods derived from it, also keeps them consistent — which is the thing
+    /// four separately-imagined faces always get wrong.
+    var hasReferenceImage: Bool = false
+
     /// What the analyser spells while the panel is quiet. Empty means the model
     /// is asked to invent them in the theme's voice, which is the more likely
     /// path: most authors do not know the display can speak until they see it.
@@ -67,6 +75,7 @@ struct ThemeBrief: Equatable {
         background: "brushed dark metal with a faint scanline texture",
         avatarSize: 48,
         position: "right",
+        hasReferenceImage: false,
         words: ["BEEP BOOP", "STILL AWAKE"]
     )
 

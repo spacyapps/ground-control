@@ -176,8 +176,10 @@ final class ThemePromptBuilderTests: XCTestCase {
 }
 
 extension ThemePromptBuilderTests {
+    /// Numbering applies within part two, which is where the numbered
+    /// sections live now.
     private func headings(_ brief: ThemeBrief) -> [String] {
-        ThemePromptBuilder.prompt(for: brief)
+        ThemePromptBuilder.partTwo(for: brief)
             .split(separator: "\n")
             .filter { $0.hasPrefix("## ") && $0.contains(". ") }
             .map(String.init)
@@ -195,7 +197,7 @@ extension ThemePromptBuilderTests {
                 Int(line.dropFirst(3).prefix(while: \.isNumber))
             }
             XCTAssertEqual(numbers, Array(1...numbers.count), "headings out of sequence")
-            XCTAssertGreaterThan(numbers.count, 2)
+            XCTAssertGreaterThanOrEqual(numbers.count, 2)
         }
     }
 

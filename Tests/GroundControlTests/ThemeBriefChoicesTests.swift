@@ -47,13 +47,23 @@ final class ThemeBriefChoicesTests: XCTestCase {
         }
     }
 
+    /// The two choices that govern the frame come before the frame is described.
+    /// They live in part two now — the moods need neither a key colour nor a
+    /// resize mode, which is half the reason the prompt was split.
     func testTheChoicesAreStatedBeforeTheArtworkIsDescribed() {
-        let prompt = ThemePromptBuilder.prompt(for: brief(.ninegrid))
-        guard let choices = prompt.range(of: "Two things that govern everything below"),
-              let drawing = prompt.range(of: "capInsets") else {
-            return XCTFail("prompt lost its sections")
+        let frame = ThemePromptBuilder.partTwo(for: brief(.ninegrid))
+        guard let choices = frame.range(of: "Two things that govern everything below"),
+              let drawing = frame.range(of: "capInsets") else {
+            return XCTFail("part two lost its sections")
         }
         XCTAssertLessThan(choices.lowerBound, drawing.lowerBound)
+    }
+
+    /// And part one does not mention them at all, or the split achieves nothing.
+    func testPartOneDoesNotTalkAboutTheFrame() {
+        let moods = ThemePromptBuilder.partOne(for: brief(.ninegrid))
+        XCTAssertFalse(moods.contains("capInsets"), "the frame belongs to part two")
+        XCTAssertTrue(moods.contains("The four moods"), "and the moods to part one")
     }
 
     /// A theme with no background art asks neither question.

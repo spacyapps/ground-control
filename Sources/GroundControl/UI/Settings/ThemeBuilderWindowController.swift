@@ -12,6 +12,7 @@ final class ThemeBuilderWindowController: NSWindowController {
     let moodField = NSTextField(string: "")
     let backgroundField = NSTextField(string: "")
     let wordsField = NSTextField(string: "")
+    let referenceBox = NSButton()
     let animateBox = NSButton()
     let sizeField = NSTextField(string: "48")
     let framePicker = NSPopUpButton()
@@ -85,6 +86,7 @@ final class ThemeBuilderWindowController: NSWindowController {
             position: positionPicker.titleOfSelectedItem ?? "right",
             // Filtered by the same rule the loader uses, so what the field
             // accepts and what the display can draw cannot disagree.
+            hasReferenceImage: referenceBox.state == .on,
             words: MatrixMessages.usable(
                 wordsField.stringValue.split(separator: ",").map(String.init)
             )
@@ -97,6 +99,13 @@ final class ThemeBuilderWindowController: NSWindowController {
         updateMotionCells()
         promptView.string = ThemePromptBuilder.prompt(for: brief)
         statusLabel.stringValue = ""
+    }
+
+    /// Part two, for when the moods are settled and the frame is next.
+    @objc func copyFramePrompt() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(ThemePromptBuilder.partTwo(for: brief), forType: .string)
+        statusLabel.stringValue = "Part 2 copied — paste it into the same conversation."
     }
 
     @objc func copyPrompt() {

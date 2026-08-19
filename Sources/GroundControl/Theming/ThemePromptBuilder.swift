@@ -10,10 +10,32 @@ import AppKit
 /// filenames, the four states and the format rules is what makes the result
 /// drop straight into the folder and work.
 enum ThemePromptBuilder {
+    /// The whole thing, for the folder's own PROMPT.md — where it is a record
+    /// rather than something anyone pastes.
     static func prompt(for brief: ThemeBrief) -> String {
+        [partOne(for: brief), "---", partTwo(for: brief)].joined(separator: "\n\n")
+    }
+
+    /// **Part one: the four moods.** What gets pasted first, and often all
+    /// somebody needs — a theme is perfectly good with faces and no frame.
+    ///
+    /// Split from the frame because a model reading the frame instructions in
+    /// the same paste is a model thinking about the frame, however firmly it has
+    /// been told to work in stages. A shorter first paste is also less
+    /// intimidating: the whole prompt is long enough to look like homework.
+    static func partOne(for brief: ThemeBrief) -> String {
+        let body = [artwork(for: brief), handBackMoods(for: brief)]
+            .filter { !$0.isEmpty }
+        return ([ThemePromptText.preamble, request(for: brief), ThemePromptText.howWeWork] + body)
+            .joined(separator: "\n\n")
+    }
+
+    /// **Part two: the frame and the manifest.** Pasted once the moods are
+    /// settled, into the same conversation, so the model already knows the
+    /// character it is framing.
+    static func partTwo(for brief: ThemeBrief) -> String {
         let numbered = [
             brief.wantsBackgroundArt ? choices(for: brief) : "",
-            artwork(for: brief),
             brief.wantsBackgroundArt
                 ? ThemePromptText.backgroundSection(
                     key: brief.keyColour,
@@ -31,11 +53,21 @@ enum ThemePromptBuilder {
             section.replacingOccurrences(of: "## ", with: "## \(index + 1). ", options: [], range:
                 section.range(of: "## "))
         }
-
-        return ([ThemePromptText.preamble, request(for: brief), ThemePromptText.howWeWork]
+        return (["# Part two — the panel itself\n\nThe four moods are settled. "
+                 + "Now the frame they sit in, and the manifest that names everything."]
                 + body
-                + [ThemePromptText.paletteReference])
-            .joined(separator: "\n\n")
+                + [ThemePromptText.paletteReference]).joined(separator: "\n\n")
+    }
+
+    /// How part one ends: hand the images over and stop.
+    private static func handBackMoods(for brief: ThemeBrief) -> String {
+        """
+        ## Hand the moods back
+
+        Give me the four files, named exactly as above. Then stop — the panel's
+        own artwork is a separate conversation, and I will paste it when these
+        are right.
+        """
     }
 
     // MARK: - Sections
@@ -50,8 +82,20 @@ enum ThemePromptBuilder {
         - **Mood and colours:** \(brief.mood)
         - **Animation:** \(brief.wantsAnimation ? "yes, animate the working state" : "no, stills are fine")
         - **Background:** \(brief.wantsBackgroundArt ? brief.background : "none — colours only, skip section 2")
+        \(brief.hasReferenceImage ? referenceNote : "")
         """
     }
+
+    /// Said in the brief rather than further down, because it changes what the
+    /// model should do first: look, rather than imagine.
+    private static let referenceNote = """
+
+        **I am attaching a picture of the character.** Work from it rather than
+        from my description — the words above are only there to fill in what a
+        single image cannot say. Derive all four moods from that one source so
+        they look like the same character in four states, which is the thing
+        four separately-imagined faces always get wrong.
+        """
 
     private static func artwork(for brief: ThemeBrief) -> String {
         let pixels = brief.recommendedPixels
@@ -65,9 +109,10 @@ enum ThemePromptBuilder {
         let animationNote = motionRules(for: brief)
 
         return """
-        ## Four avatar images
+        ## The four moods
 
-        One per session state. Use exactly these filenames:
+        One per session state — idle, working, needs you, done. Use exactly
+        these filenames:
 
         | file | state | shown when | motion |
         |---|---|---|---|
