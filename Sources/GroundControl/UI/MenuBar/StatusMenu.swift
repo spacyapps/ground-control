@@ -101,6 +101,15 @@ final class StatusMenu: NSObject {
         }
 
         submenu.addItem(.separator())
+        // Terminals need no integration of their own: an agent running inside
+        // one is already covered by the switch for that agent. Worth saying,
+        // because the absence of a VS Code row otherwise reads as "not
+        // supported" when it is the opposite — verified there, and in Warp,
+        // Ghostty, WezTerm, iTerm2 and Terminal.app.
+        submenu.addItem(note("Agents in any terminal are covered above —"))
+        submenu.addItem(note("VS Code, Cursor, Warp, Ghostty, iTerm2, Terminal."))
+        submenu.addItem(note("Only an editor's own chat needs more."))
+        submenu.addItem(.separator())
         submenu.addItem(note(emitterNote()))
         parent.submenu = submenu
         return parent
