@@ -15,6 +15,10 @@ commands**: nothing in its configuration runs a script on an event. It has
 plugins, so the integration is `Scripts/opencode-plugin.ts`, installed into
 `~/.config/opencode/plugin/` with one line merged into its config.
 
+**Off by default, and a switch of its own** in the Hooks menu — it writes a file
+into somebody's opencode config, which is a bigger imposition than a hook
+registration and should be asked for rather than assumed.
+
 **Its rows turn red**, which makes it the second agent after Claude Code that can
 raise the alarm at all. `permission.asked` fires while the agent waits, and
 carries what it wants to do:
@@ -102,6 +106,7 @@ in every other editor.
 | A plugin's shell has no writable stdin | `.stdin(json)` hung twice for five minutes; piping works | 2026-08-19 |
 | Only `session.created` carries the directory | later events gave an id alone, and rows arrived named `/` | 2026-08-19 |
 | Xcode's Claude Agent never reports | 90 minutes of a live session wrote nothing; `sdk-cli` entrypoint | 2026-08-19 |
+| opencode uninstall is clean | plugin file, config entry and rows all gone; model and permission settings untouched | 2026-08-19 |
 | Install/uninstall touch only our own entries | scripts run against a sandboxed `HOME`, foreign hooks survive | 2026-08-18 |
 | Uninstall clears any older install's path | a registration under `~/bin` is still recognised as ours | 2026-08-18 |
 | Cap insets measured from artwork | agreed with both shipped frames independently (100, 129) | 2026-08-18 |
