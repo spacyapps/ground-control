@@ -180,4 +180,36 @@ final class HookScriptTests: XCTestCase {
             .filter { $0.contains("settings.json.bak-") }
         XCTAssertFalse(backups.isEmpty, "no backup was taken")
     }
+
+    /// Uninstalling twice must not leave two backups. Ten copies of an empty
+    /// hooks.json turned up in a real ~/.cursor after a few flicks of the
+    /// switch, because the uninstaller backed up whether or not it had anything
+    /// to remove.
+    func testItDoesNotBackUpWhenThereIsNothingOfOursToRemove() throws {
+        try write(##"""
+        {"hooks":{"Stop":[{"hooks":[{"type":"command","command":"say done"}]}]}}
+        """##, to: ".claude/settings.json")
+
+        for _ in 0..<3 { try run("uninstall-hooks.sh", "claude") }
+
+        let backups = try FileManager.default
+            .contentsOfDirectory(atPath: home.appendingPathComponent(".claude").path)
+            .filter { $0.contains("settings.json.bak-") }
+        XCTAssertTrue(backups.isEmpty, "nothing of ours was there, so nothing needed backing up")
+        XCTAssertEqual(mentions("say done", in: ".claude/settings.json"), 1)
+    }
+
+    /// And when there is something to remove, the backups are kept to three,
+    /// the same as the installer keeps them.
+    func testBackupsAreKeptToThree() throws {
+        for _ in 0..<5 {
+            try write("{}", to: ".claude/settings.json")
+            try run("install-hooks.sh", "claude")
+            try run("uninstall-hooks.sh", "claude")
+        }
+        let backups = try FileManager.default
+            .contentsOfDirectory(atPath: home.appendingPathComponent(".claude").path)
+            .filter { $0.contains("settings.json.bak-") }
+        XCTAssertLessThanOrEqual(backups.count, 3, "backups piled up: \(backups.count)")
+    }
 }

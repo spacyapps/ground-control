@@ -22,7 +22,19 @@ LEGACY_SUPPORT="${SUPPORT}/bin"
 unregister() {
   local path="$1" label="$2"
   [ -f "$path" ] || return 0
+
+  # Nothing of ours in there means nothing to undo. Backing up regardless left
+  # ten copies of an empty file in ~/.cursor after a few flicks of the switch —
+  # a backup of a file we are not about to change is just litter in somebody
+  # else's folder.
+  if ! grep -q "cc-notify" "$path"; then
+    echo "  $label: nothing of ours registered"
+    return 0
+  fi
+
   cp "$path" "${path}.bak-$(date +%Y%m%d-%H%M%S)"
+  # Keep the three most recent, as the installer does.
+  ls -t "$path".bak-* 2>/dev/null | tail -n +4 | while read -r old; do rm -f "$old"; done
   /usr/bin/python3 - "$path" "$label" <<'PY'
 import json, sys
 
