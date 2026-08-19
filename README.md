@@ -52,6 +52,12 @@ hook commands at all, so it gets a plugin instead — its own switch in the Hook
 menu, and its rows do turn red, because it reports while waiting for you. The app itself is CLI-agnostic; only the
 emitter script knows anything about a vendor.
 
+**Xcode's Claude Agent does not report.** Xcode 26 embeds Claude Code itself —
+`CLAUDE_CODE_ENTRYPOINT=sdk-cli` — and it can see both the hook registrations and
+the emitter, but that entrypoint does not execute hooks. Nothing here can change
+that. Claude Code in Xcode's *terminal* is fully supported, as everywhere else.
+See `docs/LIMITATIONS.md`.
+
 **Cursor's own agent has limited support.** Composer chats appear as rows, named
 after the question they started from, and clicking one raises Cursor — the
 installer registers `~/.cursor/hooks.json` when Cursor is present. The alarm
