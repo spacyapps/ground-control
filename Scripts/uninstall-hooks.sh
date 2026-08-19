@@ -92,12 +92,53 @@ PY
 # and turning Cursor off must not take Claude Code's emitter with it.
 TARGET="${1:-all}"
 
+# opencode is a plugin rather than a command, so removing it means taking the
+# file away and taking our line out of its config — leaving either behind would
+# have opencode loading a plugin that is not there.
+unregister_opencode() {
+  local dir="${HOME}/.config/opencode"
+  [ -d "$dir" ] || return 0
+  rm -f "$dir/plugin/groundcontrol.ts"
+
+  local config="$dir/opencode.json"
+  [ -f "$config" ] || { [ -f "$dir/opencode.jsonc" ] && config="$dir/opencode.jsonc"; }
+  [ -f "$config" ] || return 0
+  grep -q "groundcontrol" "$config" || { echo "  opencode: nothing of ours registered"; return 0; }
+
+  cp "$config" "${config}.bak-$(date +%Y%m%d-%H%M%S)"
+  ls -t "$config".bak-* 2>/dev/null | tail -n +4 | while read -r old; do rm -f "$old"; done
+  /usr/bin/python3 - "$config" <<'OPENCODE'
+import json, sys
+path = sys.argv[1]
+try:
+    with open(path) as handle:
+        config = json.load(handle)
+except Exception:
+    print("  could not parse %s — remove the groundcontrol plugin line yourself" % path)
+    raise SystemExit(0)
+plugins = config.get("plugin")
+if isinstance(plugins, list):
+    kept = [p for p in plugins if not (isinstance(p, str) and "groundcontrol" in p)]
+    if kept:
+        config["plugin"] = kept
+    else:
+        config.pop("plugin", None)
+    with open(path, "w") as handle:
+        json.dump(config, handle, indent=2)
+        handle.write("\n")
+print("  opencode: removed the plugin")
+OPENCODE
+}
+
 echo "==> Unregistering"
 case "$TARGET" in
   claude|all) unregister "${HOME}/.claude/settings.json" "Claude Code / Grok" ;;
 esac
 case "$TARGET" in
   cursor|all) unregister "${HOME}/.cursor/hooks.json" "Cursor" ;;
+esac
+case "$TARGET" in
+  opencode|all) unregister_opencode ;;
 esac
 
 # The emitter is shared, so it only goes when everything does. Removing it while

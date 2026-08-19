@@ -56,6 +56,36 @@ enum SetupStatus {
         )
     }
 
+    /// opencode, when it is on the machine. It earns a switch of its own
+    /// because it is a genuinely separate decision — a plugin written into
+    /// somebody's opencode config — and because, unlike the rows this replaced,
+    /// it can actually be turned on.
+    static func opencode(sessions: [Session]) -> Agent? {
+        guard exists(home.appendingPathComponent(".config/opencode")) else { return nil }
+        return Agent(
+            name: "opencode",
+            detected: true,
+            registered: mentionsGroundControl(opencodeConfig),
+            lastEvent: latest(in: sessions, sources: ["opencode"]),
+            caveat: "Installs a plugin, since opencode has no hook commands. "
+                + "It does report while waiting for you, so its rows turn red.",
+            target: .opencode
+        )
+    }
+
+    private static var opencodeConfig: URL {
+        let dir = home.appendingPathComponent(".config/opencode")
+        let json = dir.appendingPathComponent("opencode.json")
+        return exists(json) ? json : dir.appendingPathComponent("opencode.jsonc")
+    }
+
+    /// The plugin is named in the config rather than the emitter, so this looks
+    /// for a different string than the hook-based agents do.
+    private static func mentionsGroundControl(_ url: URL) -> Bool {
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return false }
+        return text.contains("groundcontrol")
+    }
+
     /// What the switch covers, what it also picks up, and what it cannot reach.
     /// Facts, in the order someone wants them: what works, then the surprises.
     static func facts() -> [String] {
@@ -68,11 +98,7 @@ enum SetupStatus {
                 ? "Also watching Cursor's Composer chats — they never turn red."
                 : "Cursor's Composer chats are not being watched.")
         }
-        if exists(home.appendingPathComponent(".config/opencode")) {
-            lines.append("Not covered: opencode, and editors' own chats.")
-        } else {
-            lines.append("Not covered: an editor's own chat.")
-        }
+        lines.append("Not covered: an editor's own chat.")
         return lines
     }
 

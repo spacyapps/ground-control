@@ -46,6 +46,12 @@ if [ -f "${HERE}/uninstall-hooks.sh" ]; then
   install -m 0755 "${HERE}/uninstall-hooks.sh" "$BIN_DIR/uninstall-hooks.sh"
 fi
 
+# Keep the three most recent. A backup per run is right; thirty-five of them,
+# which is what developing this produced, is a mess in someone else's folder.
+prune() {
+  ls -t "$1".bak-* 2>/dev/null | tail -n +4 | while read -r old; do rm -f "$old"; done
+}
+
 if [ "$TARGET" = "claude" ] || [ "$TARGET" = "all" ]; then
 mkdir -p "$(dirname "$SETTINGS")"
 [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
@@ -54,11 +60,6 @@ BACKUP="${SETTINGS}.bak-$(date +%Y%m%d-%H%M%S)"
 cp "$SETTINGS" "$BACKUP"
 echo "Backed up settings -> $BACKUP"
 
-# Keep the three most recent. A backup per run is right; thirty-five of them,
-# which is what developing this produced, is a mess in someone else's folder.
-prune() {
-  ls -t "$1".bak-* 2>/dev/null | tail -n +4 | while read -r old; do rm -f "$old"; done
-}
 prune "$SETTINGS"
 
 /usr/bin/python3 - "$SETTINGS" "$BIN_DIR/cc-notify" <<'PY'
@@ -127,6 +128,65 @@ if moved:
     print("Moved to the new location on: " + ", ".join(moved))
 print("Registered on: " + (", ".join(added) if added else "(already registered, no change)"))
 PY
+fi
+
+# --- opencode ----------------------------------------------------------
+#
+# opencode has no hook commands. Nothing in its configuration runs a script on
+# an event, so the integration is a plugin: TypeScript loaded into the agent,
+# handed a shell, calling the same emitter everything else calls.
+#
+# Two steps, and the second is the delicate one — opencode.json is a file people
+# write by hand, with providers and permission tables in it, so it is merged
+# rather than rewritten and backed up first.
+if { [ "$TARGET" = "opencode" ] || [ "$TARGET" = "all" ]; } && [ -d "$HOME/.config/opencode" ]; then
+  OC_DIR="$HOME/.config/opencode"
+  install -d "$OC_DIR/plugin"
+  install -m 0644 "${HERE}/opencode-plugin.ts" "$OC_DIR/plugin/groundcontrol.ts"
+  echo "Installed opencode plugin -> $OC_DIR/plugin/groundcontrol.ts"
+
+  # Whichever config it actually uses. opencode reads both spellings.
+  OC_CONFIG="$OC_DIR/opencode.json"
+  [ -f "$OC_CONFIG" ] || { [ -f "$OC_DIR/opencode.jsonc" ] && OC_CONFIG="$OC_DIR/opencode.jsonc"; }
+  [ -f "$OC_CONFIG" ] || echo '{}' > "$OC_CONFIG"
+
+  cp "$OC_CONFIG" "${OC_CONFIG}.bak-$(date +%Y%m%d-%H%M%S)"
+  prune "$OC_CONFIG"
+
+  /usr/bin/python3 - "$OC_CONFIG" <<'OPENCODE'
+import json, sys
+
+path = sys.argv[1]
+entry = "./plugin/groundcontrol.ts"
+
+try:
+    with open(path) as handle:
+        config = json.load(handle)
+except Exception:
+    # A config with comments in it is not ours to rewrite. Say what to add and
+    # leave the file exactly as it was.
+    print("  could not parse %s — add this to its \"plugin\" array yourself:" % path)
+    print("    %s" % entry)
+    raise SystemExit(0)
+
+if not isinstance(config, dict):
+    print("  %s is not an object; leaving it alone" % path)
+    raise SystemExit(0)
+
+plugins = config.get("plugin")
+if not isinstance(plugins, list):
+    plugins = []
+
+# Anything of ours, however it was spelled by an older install.
+plugins = [p for p in plugins if not (isinstance(p, str) and "groundcontrol" in p)]
+plugins.append(entry)
+config["plugin"] = plugins
+
+with open(path, "w") as handle:
+    json.dump(config, handle, indent=2)
+    handle.write("\n")
+print("  registered the plugin in %s" % path)
+OPENCODE
 fi
 
 # --- Cursor's own agent -------------------------------------------------
