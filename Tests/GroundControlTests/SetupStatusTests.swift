@@ -89,4 +89,19 @@ final class SetupStatusTests: XCTestCase {
         let sessions = [try session(source: "opencode", at: 700)]
         XCTAssertNotNil(SetupStatus.opencode(sessions: sessions)?.lastEvent)
     }
+
+    /// Xcode's assistant is the one that looks like it should work — it is
+    /// Claude Code, it can read the registrations, and its entrypoint runs no
+    /// hooks. Named on the machines where it exists, so the menu warns rather
+    /// than leaving somebody to discover it.
+    func testXcodeIsNamedWhereItIsInstalled() throws {
+        let installed = FileManager.default.fileExists(atPath: "/Applications/Xcode.app")
+        let facts = SetupStatus.facts().joined(separator: " ")
+        if installed {
+            XCTAssertTrue(facts.contains("Xcode"), facts)
+        } else {
+            XCTAssertFalse(facts.contains("Xcode"), "no point naming what is not there")
+        }
+        XCTAssertTrue(facts.contains("Not covered"), "the limits are always stated")
+    }
 }
