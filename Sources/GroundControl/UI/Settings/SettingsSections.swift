@@ -93,3 +93,72 @@ extension SettingsView {
         return label
     }
 }
+
+/// "Does it work?", answered without a conversation.
+///
+/// Every failed setup this project has seen was visible from outside the app:
+/// a registration written to a path with a space in it, an emitter left over
+/// from an older install, an agent that fires nothing at the moment it matters,
+/// a CLI that was never supported. Each cost an evening of questions.
+extension SettingsView {
+    func setupSection(in stack: NSStackView) {
+        stack.addArrangedSubview(header("Setup", width: SettingsView.sideWidth))
+
+        for agent in SetupStatus.agents(sessions: actions.currentSessions()) {
+            stack.addArrangedSubview(agentRow(agent))
+        }
+
+        let emitter = SetupStatus.emitter()
+        stack.addArrangedSubview(caption(emitterLine(emitter)))
+        stack.setCustomSpacing(20, after: stack.arrangedSubviews.last ?? stack)
+    }
+
+    /// One agent, one line, and the line that matters is the last part of it:
+    /// **has anything arrived?** A registration only proves a file was written.
+    private func agentRow(_ agent: SetupStatus.Agent) -> NSView {
+        let label = NSTextField(labelWithString: "\(mark(for: agent))  \(agent.name)")
+        label.font = .systemFont(ofSize: 11, weight: .medium)
+        label.textColor = agent.detected ? .labelColor : SettingsChrome.dim
+
+        let detail = caption(state(of: agent))
+        detail.maximumNumberOfLines = 3
+
+        let column = NSStackView(views: [label, detail])
+        column.orientation = .vertical
+        column.alignment = .leading
+        column.spacing = 1
+        return column
+    }
+
+    private func mark(for agent: SetupStatus.Agent) -> String {
+        guard agent.detected else { return "○" }
+        if agent.lastEvent != nil { return "●" }
+        return agent.registered ? "◐" : "○"
+    }
+
+    private func state(of agent: SetupStatus.Agent) -> String {
+        var parts: [String] = []
+        if !agent.detected {
+            parts.append("not installed on this Mac")
+        } else if !agent.registered {
+            parts.append("installed, not registered")
+        } else if let seen = agent.lastEvent {
+            parts.append("working — last seen \(ElapsedFormatter.short(since: seen)) ago")
+        } else {
+            parts.append("registered, nothing received yet")
+        }
+        if let caveat = agent.caveat, agent.detected { parts.append(caveat) }
+        return parts.joined(separator: ". ")
+    }
+
+    private func emitterLine(_ emitter: (installed: Bool, current: Bool?)) -> String {
+        guard emitter.installed else {
+            return "The reporting script is not installed. Choose Set Up Hooks… from the menu."
+        }
+        switch emitter.current {
+        case true: return "Reporting script installed and matching this version."
+        case false: return "Reporting script is older than this app — relaunching updates it."
+        case nil: return "Reporting script installed."
+        }
+    }
+}

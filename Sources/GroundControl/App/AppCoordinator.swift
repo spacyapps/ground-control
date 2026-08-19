@@ -251,7 +251,8 @@ final class AppCoordinator {
                 openLegal: { [weak self] in self?.showLegal() },
                 openThemesFolder: { [weak self] in self?.openThemesFolder() },
                 resetPanelPosition: { [weak self] in self?.panel.resetPosition() },
-                createTheme: { [weak self] in self?.showThemeBuilder() }
+                createTheme: { [weak self] in self?.showThemeBuilder() },
+                currentSessions: { [weak self] in self?.store.sessions ?? [] }
             ))
         }
         settings?.present()
