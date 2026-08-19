@@ -46,25 +46,38 @@ hands over the full assistant message, and `Notification` carries the real
 It **merges** — existing hooks on the same events keep working — and backs up
 your settings first. Hooks take effect immediately; no restart.
 
-Works with **Claude Code**, **Grok** and **opencode** today. Grok reads
-`~/.claude/settings.json` by design, so one install covers both; opencode has no
-hook commands at all, so it gets a plugin instead — its own switch in the Hooks
-menu, and its rows do turn red, because it reports while waiting for you. The app itself is CLI-agnostic; only the
-emitter script knows anything about a vendor.
+## What it works with
 
-**Xcode's Claude Agent does not report.** Xcode 26 embeds Claude Code itself —
-`CLAUDE_CODE_ENTRYPOINT=sdk-cli` — and it can see both the hook registrations and
-the emitter, but that entrypoint does not execute hooks. Nothing here can change
-that. Claude Code in Xcode's *terminal* is fully supported, as everywhere else.
-See `docs/LIMITATIONS.md`.
+Every row below was tested on a real session, not inferred. Dates are when, and
+`docs/LIMITATIONS.md` says how.
 
-**Cursor's own agent has limited support.** Composer chats appear as rows, named
-after the question they started from, and clicking one raises Cursor — the
-installer registers `~/.cursor/hooks.json` when Cursor is present. The alarm
-cannot work there: Cursor fires no hook while its agent waits for approval, so a
-blocked chat looks like a busy one. Measured, and confirmed against Cursor's own
-docs and an open feature request — see `docs/LIMITATIONS.md`. Claude Code running
-in Cursor's *terminal* is fully supported, alarm included.
+### Agents
+
+| Agent | Rows | Turns red | How we know |
+|---|---|---|---|
+| **Claude Code** | yes | **yes** | a blocked session turned red, the click landed on its tab, the alarm cleared · 2026-08-12 |
+| **Grok** | yes | yes | probe in `~/.grok/hooks/`, 4 events captured; it reads `~/.claude/settings.json` by design, so one install covers both · 2026-08-11 |
+| **opencode** | yes | **yes** | `permission.asked` carried "List files with details in current directory"; row went red and cleared on reply · 2026-08-19 |
+| **Cursor's own agent** (Composer) | yes | **no** | fires no hook while waiting for approval, so a blocked chat looks busy · 2026-08-14 |
+| **Xcode's Claude Agent** | **no** | no | it *is* Claude Code (`sdk-cli`) and can see both the config and the emitter, but that entrypoint does not run hooks · 2026-08-19 |
+
+### Terminals
+
+Any agent running in a terminal is covered by that agent's row — the terminal
+needs no integration of its own. Clicking a row jumps to the exact tab where the
+terminal can be scripted, and raises the app otherwise.
+
+| Terminal | Jump lands on | How we know |
+|---|---|---|
+| **Terminal.app** | the exact tab | clicked a row, landed on the right tab · 2026-08-10 |
+| **iTerm2** | the exact tab | tty resolved across three sessions in two panes · 2026-08-12 |
+| **VS Code** | the app | session with no tty at all; clicking raised the editor · 2026-08-12 |
+| **Cursor** (its terminal) | the app | row appeared, went red for a permission prompt, click raised Cursor · 2026-08-14 |
+| **Warp · Ghostty · WezTerm** | the app | same path as VS Code — outermost `.app` from the process tree |
+
+**The pattern, for anything not listed.** An agent that runs a command on its own
+events can be supported; one that does not, cannot. An editor's built-in chat is
+usually the second kind — Composer and Xcode's agent both are, in different ways.
 
 See `docs/SPEC.md` §3 for the event contract, `docs/HOOK-PAYLOADS.md` for the
 measured payloads it is built on, `docs/ARCHITECTURE.md` for how a hook event
