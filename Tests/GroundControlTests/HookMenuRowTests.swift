@@ -11,7 +11,8 @@ import AppKit
 /// looking empty. It shipped that way once.
 @MainActor
 final class HookMenuRowTests: XCTestCase {
-    func testEveryRowCarriesAResolvedFrame() {
+    func testEveryRowCarriesAResolvedFrame() throws {
+        try requiresWindowServer()
         for agent in SetupStatus.agents(sessions: []) {
             let row = HookMenuRow(agent: agent, width: 340) { _ in }
             XCTAssertEqual(row.frame.width, 340, "\(agent.name)")
@@ -27,7 +28,8 @@ final class HookMenuRowTests: XCTestCase {
 
     /// The row grows for an agent that has a limitation to explain, so the
     /// caveat is never clipped.
-    func testARowWithACaveatIsTaller() {
+    func testARowWithACaveatIsTaller() throws {
+        try requiresWindowServer()
         let rows = SetupStatus.agents(sessions: []).map { agent in
             (agent, HookMenuRow(agent: agent, width: 340) { _ in })
         }
@@ -40,6 +42,7 @@ final class HookMenuRowTests: XCTestCase {
     /// Flicking the switch reports which way it went, so the caller can install
     /// or uninstall rather than guess.
     func testTheSwitchReportsItsNewState() throws {
+        try requiresWindowServer()
         let agent = try XCTUnwrap(SetupStatus.agents(sessions: []).first { $0.target != nil })
         var reported: [Bool] = []
         let row = HookMenuRow(agent: agent, width: 340) { reported.append($0) }

@@ -3,6 +3,7 @@
 
 import Foundation
 import XCTest
+import AppKit
 
 /// Where themes live, for tests that need real artwork.
 ///
@@ -59,4 +60,20 @@ func requiredThemeFolder(named name: String) throws -> URL {
         throw XCTSkip("\(name) is artwork licensed separately; not on this machine")
     }
     return folder
+}
+
+/// Stands a test down where AppKit cannot lay text out.
+///
+/// CI runs on a hosted macOS runner with no logged-in GUI session, and there
+/// `NSTextField` reports no useful size — so any assertion about a measured
+/// height fails for a reason that has nothing to do with the code. The same
+/// shape as skipping when artwork is absent: the environment is not wrong, it
+/// simply cannot answer the question.
+func requiresWindowServer() throws {
+    if ProcessInfo.processInfo.environment["CI"] != nil {
+        throw XCTSkip("no GUI session on CI; text cannot be laid out")
+    }
+    if NSScreen.screens.isEmpty {
+        throw XCTSkip("no screen attached; text cannot be laid out")
+    }
 }
