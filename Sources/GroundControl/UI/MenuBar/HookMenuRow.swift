@@ -14,7 +14,7 @@ import AppKit
 /// file was written — "last seen 1m ago" proves it is being run, and those two
 /// came apart once and cost an evening.
 final class HookMenuRow: NSView {
-    private let toggle = NSSwitch()
+    private let toggle: HookSwitch
     private let name = NSTextField(labelWithString: "")
     private let detail = NSTextField(labelWithString: "")
     private let onToggle: (Bool) -> Void
@@ -23,16 +23,15 @@ final class HookMenuRow: NSView {
     /// nothing and simply lays text out on top of it.
     init(agent: SetupStatus.Agent, width: CGFloat, onToggle: @escaping (Bool) -> Void) {
         self.onToggle = onToggle
-        super.init(frame: .zero)
-
-        toggle.state = agent.registered ? .on : .off
-        toggle.controlSize = .mini
-        toggle.target = self
-        toggle.action = #selector(flipped)
         // Nothing to switch for an agent that is absent or unsupported. Shown
         // anyway with the reason beneath: "why is opencode missing" is the
         // question this menu exists to answer.
-        toggle.isEnabled = agent.detected && agent.target != nil
+        toggle = HookSwitch(
+            isOn: agent.registered,
+            isEnabled: agent.detected && agent.target != nil,
+            onToggle: onToggle
+        )
+        super.init(frame: .zero)
 
         name.font = .menuFont(ofSize: 13)
         name.textColor = toggle.isEnabled ? .labelColor : .secondaryLabelColor
@@ -73,10 +72,6 @@ final class HookMenuRow: NSView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("HookMenuRow is created in code only")
-    }
-
-    @objc private func flipped() {
-        onToggle(toggle.state == .on)
     }
 
     /// State first, then the limitation, because the limitation is permanent and

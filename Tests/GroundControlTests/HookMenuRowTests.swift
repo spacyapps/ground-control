@@ -43,9 +43,10 @@ final class HookMenuRowTests: XCTestCase {
         let agent = try XCTUnwrap(SetupStatus.agents(sessions: []).first { $0.target != nil })
         var reported: [Bool] = []
         let row = HookMenuRow(agent: agent, width: 340) { reported.append($0) }
-        let toggle = try XCTUnwrap(row.subviews.compactMap { $0 as? NSSwitch }.first)
-        toggle.state = toggle.state == .on ? .off : .on
-        toggle.performClick(nil)
-        XCTAssertEqual(reported.count, 1)
+        let toggle = try XCTUnwrap(row.subviews.compactMap { $0 as? HookSwitch }.first)
+        let before = toggle.isOn
+        toggle.mouseDown(with: NSEvent())
+        XCTAssertEqual(reported, [!before], "the switch reports its new state, not its old one")
+        XCTAssertEqual(toggle.isOn, !before)
     }
 }
