@@ -109,18 +109,31 @@ final class StatusMenu: NSObject {
         submenu.addItem(note("Agents in any terminal are covered above —"))
         submenu.addItem(note("VS Code, Cursor, Warp, Ghostty, iTerm2, Terminal."))
         submenu.addItem(note("Only an editor's own chat needs more."))
-        submenu.addItem(.separator())
-        submenu.addItem(note(emitterNote()))
+        if let trouble = emitterTrouble() {
+            submenu.addItem(.separator())
+            submenu.addItem(note(trouble))
+        }
         parent.submenu = submenu
         return parent
     }
 
-    private func emitterNote() -> String {
+    /// The reporting script is plumbing the switches manage on your behalf, so
+    /// it is only worth a line when something is wrong with it.
+    ///
+    /// It said "Reporting script installed" whatever the state, which invited
+    /// exactly the right question — install and uninstall are what the switches
+    /// do, so what was this? A status that is always fine trains people to stop
+    /// reading it, and then it cannot warn them.
+    private func emitterTrouble() -> String? {
         let emitter = SetupStatus.emitter()
-        guard emitter.installed else { return "Reporting script not installed yet" }
-        return emitter.current == false
-            ? "Reporting script is older than this app"
-            : "Reporting script installed"
+        let anyOn = SetupStatus.agents(sessions: []).contains { $0.registered }
+        if !emitter.installed && anyOn {
+            return "An agent is switched on but the reporting script is missing"
+        }
+        if emitter.current == false {
+            return "Reporting script is older than this app — relaunch to update it"
+        }
+        return nil
     }
 
     /// A line that explains rather than does — smaller and grey, so it never
