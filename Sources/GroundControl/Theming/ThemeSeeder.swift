@@ -10,11 +10,17 @@ import AppKit
 /// could be neither. So the shipped ones are copied out on first launch and
 /// then belong to whoever installed them.
 ///
-/// **Never overwrites.** A folder that already exists is left exactly as it is,
-/// including one the user has since edited. The cost is that a theme improved
-/// in a later release will not reach anyone who already has that folder, which
-/// is the right way round: losing someone's work to an update is worse than
-/// them keeping an older starting point.
+/// **Never overwrites anything anyone has touched.** For years this meant never
+/// overwriting at all, which was the right way round — losing someone's evening
+/// of recolouring to an update is far worse than them keeping an older starting
+/// point — but it also meant a theme fixed in a later release reached nobody who
+/// already had the folder.
+///
+/// So the app remembers what it installed. On a later launch, a folder whose
+/// contents still match what was written is replaced with the newer version; a
+/// folder that differs by so much as a colour is left alone, permanently. A
+/// folder seeded before this was recorded is also left alone, because there is
+/// no way to tell an untouched copy from an edited one without a record.
 enum ThemeSeeder {
     /// Where the shipped copies live inside `GroundControl.app`.
     static var bundled: URL? {
@@ -39,13 +45,21 @@ enum ThemeSeeder {
                 atPath: folder.appendingPathComponent("theme.json").path
             ) else { continue }
 
-            let target = destination.appendingPathComponent(folder.lastPathComponent)
-            guard !manager.fileExists(atPath: target.path) else { continue }
+            let name = folder.lastPathComponent
+            let target = destination.appendingPathComponent(name)
+            let present = manager.fileExists(atPath: target.path)
+
+            if present && !isUntouched(target, named: name) { continue }
+            // Already the version we would install; nothing to do and nothing
+            // to say about it.
+            if present && ThemeFingerprint.of(target) == ThemeFingerprint.of(folder) { continue }
 
             do {
                 try manager.createDirectory(at: destination, withIntermediateDirectories: true)
+                if present { try manager.removeItem(at: target) }
                 try manager.copyItem(at: folder, to: target)
-                installed.append(folder.lastPathComponent)
+                remember(target, named: name)
+                installed.append(name)
             } catch {
                 // A theme that fails to install is a missing option, not a
                 // reason to stop launching.
@@ -60,4 +74,30 @@ enum ThemeSeeder {
         }
         return installed
     }
+
+    /// Whether the folder still holds exactly what was installed there.
+    ///
+    /// No record means no answer, and no answer means hands off: a theme seeded
+    /// by a build from before this existed could equally be pristine or a
+    /// weekend's work.
+    private static func isUntouched(_ folder: URL, named name: String) -> Bool {
+        guard let installed = seeded[name] else { return false }
+        return ThemeFingerprint.of(folder) == installed
+    }
+
+    private static func remember(_ folder: URL, named name: String) {
+        guard let print = ThemeFingerprint.of(folder) else { return }
+        var record = seeded
+        record[name] = print
+        UserDefaults.standard.set(record, forKey: seededKey)
+    }
+
+    private static var seeded: [String: String] {
+        UserDefaults.standard.dictionary(forKey: seededKey) as? [String: String] ?? [:]
+    }
+
+    /// Kept in preferences rather than beside the themes: a stray dotfile in a
+    /// folder people are invited to open and edit is one more thing to explain,
+    /// and one more thing for somebody to delete.
+    private static let seededKey = "seededThemeFingerprints"
 }
