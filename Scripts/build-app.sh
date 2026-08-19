@@ -55,6 +55,9 @@ install -m 0755 Scripts/install-hooks.sh "$APP/Contents/Resources/install-hooks.
 # the repo. The installer also copies it next to the emitter, which is what
 # makes it survive the app being dragged to the Trash first.
 install -m 0755 Scripts/uninstall-hooks.sh "$APP/Contents/Resources/uninstall-hooks.sh"
+# opencode's integration is a plugin rather than a registration, so the file
+# itself has to travel with the app for the installer to have anything to place.
+install -m 0644 Scripts/opencode-plugin.ts "$APP/Contents/Resources/opencode-plugin.ts"
 
 # The example themes ship inside the app and are copied to Application Support
 # on first launch — a theme has to be editable and hot-reloadable, which one

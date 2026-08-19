@@ -212,4 +212,73 @@ final class HookScriptTests: XCTestCase {
             .filter { $0.contains("settings.json.bak-") }
         XCTAssertLessThanOrEqual(backups.count, 3, "backups piled up: \(backups.count)")
     }
+
+    // MARK: - opencode
+
+    /// opencode's config is a file people write by hand — providers, permission
+    /// tables — so the installer merges rather than rewrites. Losing somebody's
+    /// provider config to install a monitor would be unforgivable.
+    func testItAddsThePluginWithoutDisturbingTheirConfig() throws {
+        try FileManager.default.createDirectory(
+            at: home.appendingPathComponent(".config/opencode"),
+            withIntermediateDirectories: true
+        )
+        try write(##"""
+        {"model":"gpt-5.5","plugin":["./plugin/theirs.ts"],
+         "permission":{"bash":{"*":"ask"}}}
+        """##, to: ".config/opencode/opencode.json")
+
+        try run("install-hooks.sh", "opencode")
+
+        let config = read(".config/opencode/opencode.json")
+        XCTAssertTrue(config.contains("groundcontrol"), "ours should be registered")
+        XCTAssertTrue(config.contains("theirs.ts"), "and theirs should survive")
+        XCTAssertTrue(config.contains("gpt-5.5"), "as should everything else")
+        XCTAssertTrue(
+            FileManager.default.fileExists(
+                atPath: home.appendingPathComponent(".config/opencode/plugin/groundcontrol.ts").path
+            ),
+            "the plugin file itself must be written"
+        )
+    }
+
+    func testUninstallingOpencodeTakesBothHalves() throws {
+        try FileManager.default.createDirectory(
+            at: home.appendingPathComponent(".config/opencode"),
+            withIntermediateDirectories: true
+        )
+        try write(##"{"plugin":["./plugin/theirs.ts"]}"##, to: ".config/opencode/opencode.json")
+        try run("install-hooks.sh", "opencode")
+        try run("uninstall-hooks.sh", "opencode")
+
+        let config = read(".config/opencode/opencode.json")
+        XCTAssertFalse(config.contains("groundcontrol"), "our line should be gone")
+        XCTAssertTrue(config.contains("theirs.ts"), "theirs should not be")
+        XCTAssertFalse(
+            FileManager.default.fileExists(
+                atPath: home.appendingPathComponent(".config/opencode/plugin/groundcontrol.ts").path
+            ),
+            "a plugin file left behind would be loaded by a config that no longer lists it"
+        )
+    }
+
+    /// A config with comments in it is not ours to rewrite — opencode accepts
+    /// them, json.load does not, and silently mangling somebody's file is worse
+    /// than not installing.
+    func testItLeavesAConfigItCannotParseAlone() throws {
+        try FileManager.default.createDirectory(
+            at: home.appendingPathComponent(".config/opencode"),
+            withIntermediateDirectories: true
+        )
+        let original = "{\n  // my notes\n  \"model\": \"gpt-5.5\"\n}\n"
+        try write(original, to: ".config/opencode/opencode.json")
+
+        try run("install-hooks.sh", "opencode")
+
+        XCTAssertEqual(
+            read(".config/opencode/opencode.json"),
+            original,
+            "a file it cannot parse must come back untouched"
+        )
+    }
 }

@@ -13,7 +13,9 @@
 // 2026-08-19 by logging a real session, not read from documentation. The record
 // is in docs/HOOK-PAYLOADS.md.
 
-import type { Plugin } from "@opencode-ai/plugin"
+// No import. The type would come from @opencode-ai/plugin, and requiring a
+// package to be installed before a monitor can watch you is a poor trade — this
+// file has to work in a config folder that has never seen npm.
 
 const EMITTER = `${process.env.HOME}/.groundcontrol/bin/cc-notify`
 
@@ -28,7 +30,7 @@ const FORWARD = new Set([
   "permission.replied",
 ])
 
-export const GroundControl: Plugin = async ({ $, directory, worktree }) => {
+export const GroundControl = async ({ $, directory, worktree }: any) => {
   const send = async (payload: Record<string, unknown>) => {
     // Fire and forget, and never let a monitor break the agent it watches: a
     // hook that throws would surface as an error in somebody's coding session.
@@ -43,9 +45,9 @@ export const GroundControl: Plugin = async ({ $, directory, worktree }) => {
   }
 
   return {
-    event: async ({ event }) => {
+    event: async ({ event }: any) => {
       if (!FORWARD.has(event.type)) return
-      const properties = (event.properties ?? {}) as Record<string, any>
+      const properties = event.properties ?? {}
       const sessionID: string | undefined = properties.sessionID
       if (!sessionID) return
 

@@ -31,12 +31,14 @@ enum HookInstaller {
         case all
         case claude
         case cursor
+        case opencode
 
         var label: String {
             switch self {
             case .all: return "every agent"
             case .claude: return "Claude Code and Grok"
             case .cursor: return "Cursor"
+            case .opencode: return "opencode"
             }
         }
     }

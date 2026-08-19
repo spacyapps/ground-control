@@ -88,15 +88,19 @@ final class StatusMenu: NSObject {
         // view has none — its view is the action.
         submenu.autoenablesItems = false
 
-        let entry = NSMenuItem()
-        entry.view = HookMenuRow(
-            agent: SetupStatus.summary(sessions: actions.currentSessions()),
-            width: 340
-        ) { [actions] on in
-            actions.toggleHook(.all, on)
+        let sessions = actions.currentSessions()
+        var rows = [SetupStatus.summary(sessions: sessions)]
+        // A second switch only when there is a second decision to make.
+        if let opencode = SetupStatus.opencode(sessions: sessions) { rows.append(opencode) }
+
+        for agent in rows {
+            let entry = NSMenuItem()
+            entry.view = HookMenuRow(agent: agent, width: 340) { [actions] on in
+                actions.toggleHook(agent.target ?? .all, on)
+            }
+            entry.isEnabled = true
+            submenu.addItem(entry)
         }
-        entry.isEnabled = true
-        submenu.addItem(entry)
 
         submenu.addItem(.separator())
         for line in SetupStatus.facts() { submenu.addItem(note(line)) }

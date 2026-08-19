@@ -46,8 +46,10 @@ hands over the full assistant message, and `Notification` carries the real
 It **merges** — existing hooks on the same events keep working — and backs up
 your settings first. Hooks take effect immediately; no restart.
 
-Works with **Claude Code** and **Grok** today — Grok reads `~/.claude/settings.json`
-by design, so one install covers both. The app itself is CLI-agnostic; only the
+Works with **Claude Code**, **Grok** and **opencode** today. Grok reads
+`~/.claude/settings.json` by design, so one install covers both; opencode has no
+hook commands at all, so it gets a plugin instead — its own switch in the Hooks
+menu, and its rows do turn red, because it reports while waiting for you. The app itself is CLI-agnostic; only the
 emitter script knows anything about a vendor.
 
 **Cursor's own agent has limited support.** Composer chats appear as rows, named
