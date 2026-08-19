@@ -8,6 +8,37 @@ Every claim here is dated. When something is verified, move it up and say how.
 
 ---
 
+## opencode — supported since 2026-08-19
+
+Measured against 1.17.8, end to end, on a real session. opencode has **no hook
+commands**: nothing in its configuration runs a script on an event. It has
+plugins, so the integration is `Scripts/opencode-plugin.ts`, installed into
+`~/.config/opencode/plugin/` with one line merged into its config.
+
+**Its rows turn red**, which makes it the second agent after Claude Code that can
+raise the alarm at all. `permission.asked` fires while the agent waits, and
+carries what it wants to do:
+
+```
+permission.asked    "List files with details in current directory"
+permission.replied  "Done"
+```
+
+`question.asked` is forwarded too — "which database?" rather than "may I run
+this" — though nothing has been seen to fire it yet: a model that asks in prose
+never reaches it.
+
+**What is not covered.** Only the four lifecycle events are forwarded; opencode
+emits well over a hundred per turn and the rest is noise. A session started
+before the plugin was installed reports nothing until it restarts, as with any
+agent.
+
+**One trap for anyone changing the plugin.** A plugin's shell has no writable
+stdin — `BunShell`'s is readonly, so `$\`cmd\`.stdin(json)` hangs rather than
+failing. Pipe the JSON instead. And headless `opencode run` blocks on a
+permission prompt rather than declining it, so a probe that triggers one never
+exits.
+
 ## Verified (measured, not assumed)
 
 | Thing | How it was proven | When |

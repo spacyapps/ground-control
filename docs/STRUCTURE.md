@@ -115,7 +115,11 @@ GroundControl/
 │   ├── theme-preview.sh          # one fake row per state, for theming
 │   ├── make-icon.sh              # logo -> AppIcon.icns
 │   ├── build-app.sh              # assembles + signs GroundControl.app
-│   └── build-dmg.sh              # dmg: signed, notarised, stapled
+│   ├── build-dmg.sh              # dmg: signed, notarised, stapled
+│   └── opencode-plugin.ts        # opencode has no hook commands, so its
+│                                 # integration is a plugin — installed into
+│                                 # ~/.config/opencode/plugin/ and shipped
+│                                 # inside the app
 │
 ├── Tests/GroundControlTests/     # unit tests mirror the source tree; the
 │                                 # theming ones render offscreen and inspect

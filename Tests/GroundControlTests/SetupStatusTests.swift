@@ -54,4 +54,39 @@ final class SetupStatusTests: XCTestCase {
         XCTAssertTrue(facts.contains("terminal"), "the terminal case is the one people doubt")
         XCTAssertTrue(facts.contains("Not covered"), "and the limits have to be stated")
     }
+
+    // MARK: - opencode
+
+    /// opencode earns a switch of its own because it is a separate decision —
+    /// a plugin written into somebody's config — and, unlike the per-agent rows
+    /// this replaced, it can actually be turned on.
+    func testOpencodeIsItsOwnSwitchWhenPresent() throws {
+        guard let opencode = SetupStatus.opencode(sessions: []) else {
+            throw XCTSkip("opencode is not installed on this machine")
+        }
+        XCTAssertEqual(opencode.target, .opencode, "it must not act on everything")
+        XCTAssertNotEqual(opencode.target, SetupStatus.summary(sessions: []).target)
+    }
+
+    /// Its rows do turn red, which is the whole reason it was worth supporting,
+    /// so the line underneath must not imply otherwise.
+    func testOpencodeSaysItsRowsTurnRed() throws {
+        guard let opencode = SetupStatus.opencode(sessions: []) else {
+            throw XCTSkip("opencode is not installed on this machine")
+        }
+        let caveat = try XCTUnwrap(opencode.caveat)
+        XCTAssertTrue(caveat.contains("red"), caveat)
+        XCTAssertTrue(caveat.contains("plugin"), "and why it is installed differently: \(caveat)")
+    }
+
+    /// Traffic from opencode belongs to opencode's row, not to the main switch's
+    /// heartbeat — otherwise a working opencode would make an unregistered
+    /// Claude Code look alive.
+    func testOpencodeTrafficIsAttributedToItsOwnRow() throws {
+        guard SetupStatus.opencode(sessions: []) != nil else {
+            throw XCTSkip("opencode is not installed on this machine")
+        }
+        let sessions = [try session(source: "opencode", at: 700)]
+        XCTAssertNotNil(SetupStatus.opencode(sessions: sessions)?.lastEvent)
+    }
 }
