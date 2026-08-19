@@ -61,6 +61,13 @@ final class HookMenuRow: NSView {
             detail.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -7),
             widthAnchor.constraint(equalToConstant: width)
         ])
+
+        // A menu sizes an item from its view's *frame*, and never runs a layout
+        // pass to work one out. Left at zero the row is present but empty: the
+        // switch draws, because it sizes itself, and every label lands outside
+        // the box. So the frame is resolved here, once, and handed over solid.
+        layoutSubtreeIfNeeded()
+        frame = NSRect(origin: .zero, size: NSSize(width: width, height: fittingSize.height))
     }
 
     @available(*, unavailable)
