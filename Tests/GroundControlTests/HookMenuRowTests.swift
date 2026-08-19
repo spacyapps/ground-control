@@ -52,4 +52,36 @@ final class HookMenuRowTests: XCTestCase {
         XCTAssertEqual(reported, [!before], "the switch reports its new state, not its old one")
         XCTAssertEqual(toggle.isOn, !before)
     }
+
+    /// The state that looked like a bug: switched off, and still reporting.
+    /// An agent reads its hook configuration when it starts, so a session that
+    /// was already running keeps calling us until it restarts. A row that says
+    /// only "off" while events arrive from it reads as broken.
+    func testItSaysWhenSomethingIsOffButStillReporting() {
+        let stillGoing = SetupStatus.Agent(
+            name: "Cursor's own agent",
+            detected: true,
+            registered: false,
+            lastEvent: Date().addingTimeInterval(-36),
+            caveat: nil,
+            target: .cursor
+        )
+        let summary = HookMenuRow.summary(of: stillGoing)
+        XCTAssertTrue(summary.contains("still"), summary)
+        XCTAssertTrue(summary.contains("restarts"), "and how to make it stop: \(summary)")
+
+        let quiet = SetupStatus.Agent(
+            name: "Cursor's own agent",
+            detected: true,
+            registered: false,
+            lastEvent: nil,
+            caveat: nil,
+            target: .cursor
+        )
+        XCTAssertEqual(
+            HookMenuRow.summary(of: quiet),
+            "off",
+            "with nothing arriving, off is the whole story"
+        )
+    }
 }

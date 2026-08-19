@@ -78,13 +78,22 @@ final class HookMenuRow: NSView {
     /// the state is what changed since you last looked.
     static func summary(of agent: SetupStatus.Agent) -> String {
         var parts: [String] = []
-        if !agent.detected {
+        switch (agent.detected, agent.registered, agent.lastEvent) {
+        case (false, _, _):
             parts.append("not installed on this Mac")
-        } else if !agent.registered {
+        // Switched off, yet still reporting. An agent reads its hook
+        // configuration once, when it starts, so a session that was already
+        // running keeps calling us until it is restarted. Saying only "off"
+        // here reads as a lie to anyone watching a row arrive from it.
+        case (true, false, .some(let seen)):
+            parts.append("off — but a session started earlier is still "
+                + "reporting (last seen \(ElapsedFormatter.short(since: seen)) ago). "
+                + "It stops when that agent restarts")
+        case (true, false, .none):
             parts.append("off")
-        } else if let seen = agent.lastEvent {
+        case (true, true, .some(let seen)):
             parts.append("working — last seen \(ElapsedFormatter.short(since: seen)) ago")
-        } else {
+        case (true, true, .none):
             parts.append("on, nothing received yet")
         }
         if let caveat = agent.caveat, agent.detected { parts.append(caveat) }
