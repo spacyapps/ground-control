@@ -25,7 +25,7 @@ final class SetupStatusTests: XCTestCase {
     /// this is the line that proves the file is being run.
     func testAnArrivedEventIsAttributedToItsOwnAgent() throws {
         let sessions = [try session(source: "cursor", at: 1_000)]
-        XCTAssertNotNil(agent("Cursor", sessions: sessions)?.lastEvent)
+        XCTAssertNotNil(agent("Cursor's own agent", sessions: sessions)?.lastEvent)
         XCTAssertNil(agent("Claude Code & Grok", sessions: sessions)?.lastEvent,
                      "one agent's traffic must never vouch for another's")
     }
@@ -59,7 +59,7 @@ final class SetupStatusTests: XCTestCase {
     /// reads as a known limit rather than a broken install.
     func testTheLimitedAgentsCarryTheirCaveat() {
         let agents = SetupStatus.agents(sessions: [])
-        XCTAssertNotNil(agents.first { $0.name == "Cursor" }?.caveat)
+        XCTAssertNotNil(agents.first { $0.name == "Cursor's own agent" }?.caveat)
         XCTAssertNotNil(agents.first { $0.name == "opencode" }?.caveat)
         XCTAssertNil(agents.first { $0.name == "Claude Code & Grok" }?.caveat,
                      "the fully supported one should claim no excuses")

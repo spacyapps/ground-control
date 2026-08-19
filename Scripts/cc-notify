@@ -64,6 +64,11 @@ def get(payload, *names):
 def source_of(payload):
     """Which CLI produced this. Session ids are only unique per tool, and rows
     from different tools are worth telling apart."""
+    # opencode has no hook commands at all — a plugin calls us and says so,
+    # because nothing in its own event shape would let us guess. Measured
+    # 2026-08-19 against opencode 1.17.8; see docs/HOOK-PAYLOADS.md.
+    if payload.get("source") == "opencode":
+        return "opencode"
     # Checked before Claude: Cursor uses snake_case fields and the same
     # `hook_event_name` key, so the two are indistinguishable without this.
     if "cursor_version" in payload:
@@ -80,6 +85,12 @@ def source_of(payload):
 # preToolUse and stop — already normalise to our spelling and need nothing here.
 ALIASES = {
     "beforesubmitprompt": "userpromptsubmit",   # Cursor: carries `prompt`, as ours does
+    # opencode names its lifecycle differently and splits "waiting for you" into
+    # asked/replied, which maps onto our notification/stop pair exactly.
+    "session.created": "sessionstart",
+    "session.idle": "stop",
+    "permission.asked": "notification",
+    "permission.replied": "stop",
 }
 
 

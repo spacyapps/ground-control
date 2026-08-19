@@ -54,15 +54,20 @@ enum SetupStatus {
                 caveat: nil,
                 target: .claude
             ),
+            // Named for what it actually switches. Called "Cursor" it read as
+            // "Cursor support", and someone running Claude Code inside Cursor's
+            // terminal — which needs nothing here and works already — saw an
+            // off switch and reasonably assumed something was broken.
             Agent(
-                name: "Cursor",
+                name: "Cursor's own agent",
                 detected: exists(cursor) || exists(home.appendingPathComponent(".cursor")),
                 registered: mentionsEmitter(cursor),
                 lastEvent: latest(in: sessions, sources: ["cursor"]),
-                caveat: "Claude Code in Cursor's terminal is fully supported. "
-                    + "Cursor's own agent appears but never turns red — it "
-                    + "reports nothing while waiting for approval. The same "
-                    + "holds for any editor's built-in chat.",
+                caveat: "Composer only. Claude Code running in Cursor's terminal "
+                    + "needs nothing here — it is covered above, alarm included. "
+                    + "Composer rows appear but never turn red: it reports "
+                    + "nothing while waiting for approval, as any editor's own "
+                    + "chat does.",
                 target: .cursor
             ),
             Agent(
