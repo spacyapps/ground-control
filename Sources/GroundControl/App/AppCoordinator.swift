@@ -288,7 +288,10 @@ final class AppCoordinator {
             selectTheme: { [weak self] name in self?.themeStore.select(name: name) },
             openThemesFolder: { [weak self] in self?.openThemesFolder() },
             openSettings: { [weak self] in self?.showSettings() },
-            openHooks: { [weak self] in self?.showSettings() },
+            toggleHook: { target, on in
+                HookInstaller.run(on ? .install : .uninstall, target: target, silent: true)
+            },
+            currentSessions: { [weak self] in self?.store.sessions ?? [] },
             quit: { NSApp.terminate(nil) }
         ))
     }
