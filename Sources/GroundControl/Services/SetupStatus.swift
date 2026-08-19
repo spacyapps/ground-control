@@ -98,7 +98,15 @@ enum SetupStatus {
                 ? "Also watching Cursor's Composer chats — they never turn red."
                 : "Cursor's Composer chats are not being watched.")
         }
-        lines.append("Not covered: an editor's own chat.")
+        // Named rather than implied, because Xcode's is the one that looks
+        // like it should work: it *is* Claude Code, it can read the hook
+        // registrations and reach the emitter, and its entrypoint runs none of
+        // them. "An editor's own chat" would not have warned anybody.
+        if exists(URL(fileURLWithPath: "/Applications/Xcode.app")) {
+            lines.append("Not covered: Xcode's coding assistant, or any editor's own chat.")
+        } else {
+            lines.append("Not covered: an editor's own chat.")
+        }
         return lines
     }
 
