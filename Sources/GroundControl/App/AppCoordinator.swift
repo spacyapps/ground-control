@@ -290,13 +290,6 @@ final class AppCoordinator {
             openSettings: { [weak self] in self?.showSettings() },
             toggleHook: { target, on in
                 HookInstaller.run(on ? .install : .uninstall, target: target, silent: true)
-                // The reporting script is shared, so a targeted uninstall leaves
-                // it behind for whoever else is still registered. When that is
-                // nobody, switching the last agent off should mean off — not a
-                // script left in a folder with nothing to call it.
-                if !on, !SetupStatus.agents(sessions: []).contains(where: { $0.registered }) {
-                    HookInstaller.run(.uninstall, target: .all, silent: true)
-                }
             },
             currentSessions: { [weak self] in self?.store.sessions ?? [] },
             quit: { NSApp.terminate(nil) }

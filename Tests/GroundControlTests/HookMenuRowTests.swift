@@ -13,37 +13,40 @@ import AppKit
 final class HookMenuRowTests: XCTestCase {
     func testEveryRowCarriesAResolvedFrame() throws {
         try requiresWindowServer()
-        for agent in SetupStatus.agents(sessions: []) {
-            let row = HookMenuRow(agent: agent, width: 340) { _ in }
-            XCTAssertEqual(row.frame.width, 340, "\(agent.name)")
-            XCTAssertGreaterThan(row.frame.height, 20, "\(agent.name) would collapse in a menu")
-            for view in row.subviews {
-                XCTAssertTrue(
-                    row.bounds.contains(view.frame),
-                    "\(agent.name): a subview escapes the row and will not be drawn"
-                )
-            }
+        let row = HookMenuRow(agent: SetupStatus.summary(sessions: []), width: 340) { _ in }
+        XCTAssertEqual(row.frame.width, 340)
+        XCTAssertGreaterThan(row.frame.height, 20, "it would collapse in a menu")
+        for view in row.subviews {
+            XCTAssertTrue(
+                row.bounds.contains(view.frame),
+                "a subview escapes the row and will not be drawn"
+            )
         }
     }
 
-    /// The row grows for an agent that has a limitation to explain, so the
-    /// caveat is never clipped.
-    func testARowWithACaveatIsTaller() throws {
+    /// A row grows for anything it has to explain, so a longer line is never
+    /// clipped.
+    func testARowGrowsForALongerLine() throws {
         try requiresWindowServer()
-        let rows = SetupStatus.agents(sessions: []).map { agent in
-            (agent, HookMenuRow(agent: agent, width: 340) { _ in })
-        }
-        let plain = rows.first { $0.0.caveat == nil }?.1
-        let explained = rows.first { $0.0.caveat != nil }?.1
-        guard let plain, let explained else { return XCTFail("expected one of each") }
-        XCTAssertGreaterThan(explained.frame.height, plain.frame.height)
+        let plain = SetupStatus.summary(sessions: [])
+        let wordy = SetupStatus.Agent(
+            name: plain.name,
+            detected: true,
+            registered: false,
+            lastEvent: Date(),
+            caveat: nil,
+            target: .all
+        )
+        let short = HookMenuRow(agent: plain, width: 340) { _ in }
+        let tall = HookMenuRow(agent: wordy, width: 340) { _ in }
+        XCTAssertGreaterThan(tall.frame.height, short.frame.height)
     }
 
     /// Flicking the switch reports which way it went, so the caller can install
     /// or uninstall rather than guess.
     func testTheSwitchReportsItsNewState() throws {
         try requiresWindowServer()
-        let agent = try XCTUnwrap(SetupStatus.agents(sessions: []).first { $0.target != nil })
+        let agent = SetupStatus.summary(sessions: [])
         var reported: [Bool] = []
         let row = HookMenuRow(agent: agent, width: 340) { reported.append($0) }
         let toggle = try XCTUnwrap(row.subviews.compactMap { $0 as? HookSwitch }.first)
