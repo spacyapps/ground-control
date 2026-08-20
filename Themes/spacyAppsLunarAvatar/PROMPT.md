@@ -14,7 +14,7 @@ default, so the manifest only needs the keys we actually want to change.
 - **Character / mascot:** Demon AI Character
 - **Visual style:** Realistic character
 - **Mood and colours:** Purple theme
-- **Animation:** yes, animate the working state
+- **Animation:** yes, animate working and needs-input
 
 ## 1. Four avatar images
 
@@ -24,7 +24,7 @@ One per session state. Use exactly these filenames:
 |---|---|---|
 | `idle.png` | idle | the session is quiet |
 | `working.gif` | working | Claude is actively running tools |
-| `needs-input.png` | needsInput | Claude is blocked and needs me |
+| `needs-input.gif` | needsInput | Claude is blocked and needs me |
 | `done.png` | done | Claude just finished its turn |
 
 Requirements:
@@ -37,7 +37,7 @@ Requirements:
   that work — fine detail disappears at this size.
 - They sit on a dark panel, so avoid dark-on-dark and thin outlines.
 
-`working` must be an **animated GIF** (or APNG): 8–16 frames, looping
+`working` must be an **animated GIF** (or APNG): 8–24 frames, looping
 seamlessly, roughly 10fps. `.mov` / `.mp4` (H.264 or HEVC) also work if
 you would rather make real video. Do **not** produce `.webm` — macOS
 cannot decode it and the app will refuse the file.
@@ -122,7 +122,7 @@ artwork. Keep the filenames consistent with the images above.
     "states": {
       "idle":       { "image": "idle.png" },
       "working":    { "image": "working.gif" },
-      "needsInput": { "image": "needs-input.png" },
+      "needsInput": { "image": "needs-input.gif" },
       "done":       { "image": "done.png" }
     }
   },

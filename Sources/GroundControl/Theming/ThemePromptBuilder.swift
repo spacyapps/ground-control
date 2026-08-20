@@ -100,34 +100,6 @@ enum ThemePromptBuilder {
         four separately-imagined faces always get wrong.
         """
 
-    /// What each state has to look like, and what happens when one of the four
-    /// colours is overruled — which is where the system fell over in practice:
-    /// a yellow needsInput sat next to a gold working and nothing forbade it.
-    private static let moodColours = """
-        | state | read it as | carry it with |
-        |---|---|---|
-        | idle | asleep, nothing wanted | **blue**, dim and low contrast — it should recede |
-        | working | busy, leave it alone | **motion.** Any colour but the other three |
-        | needsInput | **stop and look** | **red**, highest contrast of the four, plus a symbol |
-        | done | finished well | **green**, calm but bright |
-
-        **If I overrule one of these, the others have to move too.** The system
-        is that all four are instantly distinguishable, not that the colours are
-        sacred — so if I ask for a yellow needsInput, working cannot stay gold.
-        Say so and propose what working becomes.
-
-        Red, green and blue are spoken for, and they are the three anyone reads
-        instantly. There is no obvious fourth, so do not go looking for one:
-        `working` is the state that moves, and motion carries it better than any
-        hue could. Both existing themes landed on a neutral violet there and it
-        reads perfectly.
-
-        **The same character in all four.** Whatever it is appears in every
-        state; only its pose, colour and surroundings change. Props may come and
-        go, the character may not — four tiles that each star something different
-        read as four themes.
-        """
-
     private static func artwork(for brief: ThemeBrief) -> String {
         let pixels = brief.recommendedPixels
         // Motion is reserved for the two states that are asking for attention.
@@ -154,8 +126,11 @@ enum ThemePromptBuilder {
 
         Requirements:
 
-        - Square, **\(pixels)×\(pixels)px**. They display at \(brief.avatarSize)pt, so this
-          stays crisp on Retina and if I scale the avatar up later.
+        - Square. **\(brief.avatarSize * 2)px is the floor** — that is one image
+          pixel per screen pixel at \(brief.avatarSize)pt on Retina, and the
+          shipped station theme is drawn at exactly that. **\(pixels)px** gives
+          headroom if I scale the avatar up later. More than that is weight for
+          nothing.
         - PNG. **Decide once, for all four: transparent, or a solid tile.**
           Transparent lets the panel's own colour show through and suits a
           character with a clear outline; a tile lets each mood carry its own
@@ -172,7 +147,13 @@ enum ThemePromptBuilder {
         pixels and its expression is unreadable, so **the state has to be carried
         by colour and shape, not by acting**:
 
-        \(moodColours)
+        \(ThemePromptText.moodColours)
+
+        **`needsInput` red is the one thing not to negotiate.** Every other
+        choice here is yours to argue with; this one carries the entire point of
+        the app. If a theme's palette really cannot hold red, say so before you
+        draw rather than quietly substituting orange — and expect me to move the
+        other three to make room.
 
         The one that matters is `needsInput`: I should notice it from across the
         room without reading anything. Give it the boldest silhouette, the
@@ -227,7 +208,9 @@ enum ThemePromptBuilder {
 
 
         `\(working)` and `\(needsInput)` must be **animated GIFs** (or APNG):
-        8–16 frames, looping seamlessly, roughly 10fps. `.mov` / `.mp4`
+        8–24 frames, looping seamlessly, roughly 10fps — a guide, not a cap.
+        The shipped station theme uses 20 on its alarm. More frames is more
+        drift and a larger file, which is the only reason the number matters. `.mov` / `.mp4`
         (H.264 or HEVC) also work if you would rather make real video. Do
         **not** produce `.webm` — macOS cannot decode it and the app will
         refuse the file.
@@ -272,11 +255,17 @@ enum ThemePromptBuilder {
         to \(brief.avatarSize) pixels and look, before you show me anything, and
         redraw whatever turns to mud.** In practice that means:
 
-        - **Few shapes, and big ones.** A silhouette someone can name at a glance
-          beats an accurate portrait every time.
+        - **The state lives in a colour wash and one big mark** — not in acting,
+          and not in detail. A fully rendered character is fine, as long as
+          nothing about the *state* depends on features nobody can see. The
+          shipped station theme is a detailed portrait that works for exactly
+          this reason: each tile is a colour field plus one unmissable mark.
         - **Flat colour over gradient**, with strong contrast between neighbouring
           areas.
-        - **No text, no fine pattern, no jewellery-scale detail.**
+        - **No fine pattern, no jewellery-scale detail.** A single large glyph is
+          not detail — the station's idle tile is three enormous Zs, and they are
+          the thing you read at \(brief.avatarSize)pt. Small lettering is what to
+          avoid, not lettering.
         - **A readable silhouette** — filled in solid black, it should still be
           recognisable. This is about shape, not about drawing an outline; a
           style with no outlines can still have a strong silhouette.
