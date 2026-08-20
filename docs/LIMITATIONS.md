@@ -106,9 +106,24 @@ otherwise never been seen in ordinary use.
 The empty log before 2026-08-19 is therefore evidence of nothing at all: Grok
 simply had not chosen to ask.
 
-Also measured while checking: across 71 tool events Grok has never once reported
-`ask_user_question` through `PreToolUse`, so the tool route is not an
-alternative signal — the `Notification` is the only way it reaches us.
+**A question fires two events, and neither one ends.** `PreToolUse` carries the
+question text, then `Notification` raises the alarm about a second later. An
+earlier draft here said `ask_user_question` never reached us through
+`PreToolUse` — that was read off an aggregate taken before any question had been
+asked, and it is wrong.
+
+What genuinely has no event is **the answer**. Replying emits nothing: no
+`Stop`, no second notification, no prompt. The row therefore stayed red from the
+question until the agent's next tool call — measured at **147 seconds** on
+2026-08-20, the whole of it spent thinking, with the panel demanding attention
+that had already been given.
+
+Fixed by registering `PostToolUse` with a matcher for the question tools alone
+(`ask_user_question|AskUserQuestion`). A completed tool always means work
+resumed, so the mapping is unconditional; the matcher is what keeps it from
+firing after every tool and repeating `PreToolUse` at twice the writes. It is
+the only registration in the installer that carries a matcher, and a test pins
+that.
 
 ## Xcode's Claude Agent — measured 2026-08-19, does not report
 

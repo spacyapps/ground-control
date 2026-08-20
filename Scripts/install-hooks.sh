@@ -73,9 +73,17 @@ with open(settings_path) as handle:
 hooks = settings.setdefault("hooks", {})
 # SessionStart/SessionEnd/SubagentStart are Grok's; harmless where unsupported,
 # and SessionEnd is what lets a row vanish on quit instead of ageing out.
+#
+# PostToolUse carries a matcher, and is the only one that does. It exists to
+# clear the alarm: answering a question emits no other event, so without it a
+# row stays red from the question until the agent's next tool call. Matched to
+# the question tools alone — on every tool it would merely repeat PreToolUse at
+# twice the write volume.
+QUESTION_TOOLS = "ask_user_question|AskUserQuestion"
 events = [
-    "SessionStart", "UserPromptSubmit", "PreToolUse", "Notification",
-    "Stop", "SubagentStart", "SubagentStop", "SessionEnd",
+    ("SessionStart", ""), ("UserPromptSubmit", ""), ("PreToolUse", ""),
+    ("PostToolUse", QUESTION_TOOLS), ("Notification", ""), ("Stop", ""),
+    ("SubagentStart", ""), ("SubagentStop", ""), ("SessionEnd", ""),
 ]
 added, moved, retired = [], [], set()
 
@@ -84,7 +92,7 @@ def ours(hook):
     return isinstance(hook, dict) and "cc-notify" in (hook.get("command") or "")
 
 
-for event in events:
+for event, matcher in events:
     entries = hooks.setdefault(event, [])
 
     # Repoint rather than add. An earlier install put the emitter in ~/bin, and
@@ -102,7 +110,7 @@ for event in events:
         continue
 
     entries.append({
-        "matcher": "",
+        "matcher": matcher,
         "hooks": [{"type": "command", "command": command}],
     })
     added.append(event)

@@ -44,7 +44,10 @@ MAX_MESSAGE = 240
 
 # Events that map to a row state. Anything else is ignored rather than written,
 # so a future or unrecognised event can never blank out a row's message.
-SESSION_EVENTS = ("userpromptsubmit", "pretooluse", "notification", "stop", "sessionstart")
+SESSION_EVENTS = (
+    "userpromptsubmit", "pretooluse", "posttooluse", "notification", "stop",
+    "sessionstart",
+)
 
 
 def get(payload, *names):
@@ -378,6 +381,19 @@ def interpret(payload):
 
     if event == "pretooluse":
         return "working", describe_tool(payload), False
+
+    if event == "posttooluse":
+        # The event that ends an alarm. A question raises one, and answering it
+        # produces nothing at all: no Stop, no notification, no prompt. The row
+        # stayed red until the agent happened to call its next tool — measured
+        # at 147 seconds on a real Grok session, all of it spent thinking, with
+        # the panel insisting it needed attention it did not need.
+        #
+        # A tool completing always means work resumed, whatever the tool, so
+        # this is safe to state unconditionally. It is registered with a matcher
+        # for the question tools alone, because firing on every tool would
+        # double the write volume to say what PreToolUse already said.
+        return "working", "Working…", False
 
     if event == "sessionstart":
         # Grok announces sessions before any work happens, so the row can exist

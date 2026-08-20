@@ -312,10 +312,21 @@ which is the failure mode this whole file exists to prevent.
 Note that `notificationType` is the camelCase spelling; `get()` already reads
 both.
 
+A question actually fires **two** events, roughly a second apart:
+
+```
+pre_tool_use   working      "How should the frame sit on the panel? Overlay is …"
+notification   needsInput   "How should the frame sit on the panel? Overlay is …"
+```
+
+**Answering fires none.** That is the asymmetry worth remembering: there is no
+"question answered" event anywhere in the vocabulary, so the alarm outlived the
+answer until `PostToolUse` was registered for the question tools. See
+LIMITATIONS.md; it cost 147 seconds of false red before anyone noticed.
+
 **No event covers the other case.** Grok also asks in prose and ends the turn,
-which arrives as an ordinary `stop` — same shape as a finished task. Across 71
-Grok tool events, `ask_user_question` has never appeared in a `PreToolUse`, so
-there is no tool-side signal to fall back on either.
+which arrives as an ordinary `stop` — same shape as a finished task, with
+nothing to distinguish them.
 
 ## Fields the script adds itself
 

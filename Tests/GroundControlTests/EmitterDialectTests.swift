@@ -262,6 +262,27 @@ final class EmitterDialectTests: XCTestCase {
         )
     }
 
+    /// Answering a question emits nothing — not a `Stop`, not a second
+    /// notification, not a prompt. Without this event the row stays red from the
+    /// question until the agent's next tool call: 147 seconds on the session that
+    /// found it, spent entirely on thinking.
+    ///
+    /// Registered with a matcher for the question tools alone, so in practice
+    /// this event *is* "the question was answered".
+    func testAnsweringAQuestionClearsTheAlarm() throws {
+        try emit("""
+        {"sessionId":"g4","hookEventName":"notification","notificationType":"elicitation_dialog",\
+        "message":"Overlay or background?","cwd":"/Users/waltermak/github/avaterm"}
+        """)
+        let cleared = try emit("""
+        {"sessionId":"g4","hookEventName":"PostToolUse","toolName":"ask_user_question",\
+        "cwd":"/Users/waltermak/github/avaterm"}
+        """)
+        XCTAssertEqual(cleared["state"] as? String, "working")
+        XCTAssertEqual(cleared["needs_action"] as? Bool, false, "the alarm must not outlive the answer")
+        XCTAssertEqual(cleared["message"] as? String, "Working…", "the answered question is stale text")
+    }
+
     /// The one exception, and the reason the rule is worth stating: `idle_prompt`
     /// means the turn ended, which `Stop` already reports with better wording.
     /// Alarming on it turned every finished session red.
