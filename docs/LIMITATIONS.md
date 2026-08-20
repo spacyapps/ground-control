@@ -86,14 +86,29 @@ recover the difference.
 | elicitation dialog (`normal` mode) | the question text | **yes, red** |
 | prose at the end of a turn | "done" | no — indistinguishable from finishing |
 
-**Mode is the whole difference.** In `auto` nothing elicits, so no notification
-ever fires; the log held zero from Grok across every session until a `normal`
-one was run. Read that alongside §1 below: the alarm is not weak, the author's
-own configuration removes the moment that triggers it.
+**This one is not silenced by `auto`, and that makes Grok unusual.** An earlier
+draft of this section claimed it was, reasoning from a log with no notifications
+in it — the precise mistake §1 warns about, made while writing up §1.
+
+The mechanism is different from a permission prompt. `ask_user_question` is a
+**tool** (`[toolset.ask_user_question]`, with its own timeout setting), and
+Grok's question card is a separate UI from its permission dialog. Permission
+modes govern whether *tool calls* need approving; they do not stop the agent
+choosing to ask you something. So `auto` reduces permission prompts and leaves
+elicitation alone.
+
+That makes Grok the **only** agent here that can turn a row red on a machine
+running auto-approve — Claude's `permission_prompt` and opencode's
+`permission.asked` are both gates, and both go quiet in `auto`. Worth knowing on
+this machine specifically, where everything is set to auto and the alarm has
+otherwise never been seen in ordinary use.
+
+The empty log before 2026-08-19 is therefore evidence of nothing at all: Grok
+simply had not chosen to ask.
 
 Also measured while checking: across 71 tool events Grok has never once reported
 `ask_user_question` through `PreToolUse`, so the tool route is not an
-alternative signal.
+alternative signal — the `Notification` is the only way it reaches us.
 
 ## Xcode's Claude Agent — measured 2026-08-19, does not report
 
