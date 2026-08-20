@@ -81,6 +81,48 @@ the old artwork forever. To see changed art yourself, copy the files into
 emitter with the one inside the app at launch, so running a stale build quietly
 reinstalls an older `cc-notify`.
 
+**`EXTRA_THEMES=1` sweeps the whole folder, including work in progress.** It
+was one unicorn when this flag was written; the themes directory now holds
+half-finished drafts too, and a plain `EXTRA_THEMES=1` ships them. Stage instead
+— copy only the themes meant to travel into a temp folder and point
+`EXTRA_THEMES_DIR` at it:
+
+```bash
+STAGE=$(mktemp -d)/themes; mkdir -p "$STAGE"
+cp -R ~/Documents/Projects/GroundControlThemes/spacyAppsUnicornOverlord "$STAGE/"
+EXTRA_THEMES=1 EXTRA_THEMES_DIR="$STAGE" ./Scripts/build-zip.sh
+```
+
+**Stapler can fail with Error 73 on `build/` while the notarisation is fine.**
+Seen 2026-08-20 on 0.7.0: Apple returned `Accepted`, then
+
+```
+Could not remove existing ticket from …/Contents/CodeResources … No such file
+or directory
+The staple and validate action failed! Error 73.
+```
+
+It is stale state in the build directory, not a rejected build — `spctl` already
+said `accepted, source=Notarized Developer ID`. The ticket is keyed to the
+cdhash, not the path, so stapling a clean copy works and is still the same
+notarised binary:
+
+```bash
+W=$(mktemp -d); ditto build/GroundControl.app "$W/GroundControl.app"
+xcrun stapler staple "$W/GroundControl.app"     # works
+rm -rf build/GroundControl.app
+ditto "$W/GroundControl.app" build/GroundControl.app
+```
+
+Then finish the script's remaining steps by hand: stage with `INSTALL.txt`,
+`ditto -c -k --sequesterRsrc --keepParent`, and verify. **Do not re-sign** to
+fix this — re-signing changes the cdhash and throws away a notarisation Apple
+has already granted.
+
+How to tell the difference in one command: `xcrun stapler validate` on the app
+inside the finished zip. A staple that survives the round trip is the only
+proof that matters, because an unstapled app fails on a machine that is offline.
+
 **Notarisation needs the keychain profile.** `NOTARY_PROFILE` defaults to
 `notary`; if it is missing, create it with `xcrun notarytool store-credentials`.
 Apple answers in 2–15 minutes, so run it in the background rather than blocking.
@@ -98,5 +140,12 @@ way to see what a tester sees. Still outstanding as of 2026-08-18.
 
 - Tell testers whether hooks need reinstalling. They usually do not — the
   installer repoints existing registrations — but say which it is.
+
+  **0.7.0 is the first time the answer is yes.** `HookUpdater` replaces the
+  installed `cc-notify` on launch, so the emitter half self-heals; the
+  registration in `~/.claude/settings.json` is the installer's job alone and is
+  deliberately never touched. A release that adds an *event* therefore does not
+  reach anyone who only replaces the app. Whenever the installer's event list
+  changes, say so explicitly.
 - A release goes on GitHub Releases with the notarised zip attached; the theme
   zip is a separate asset. See `docs/PUBLISHING.md`.
