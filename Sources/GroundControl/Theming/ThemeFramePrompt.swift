@@ -124,9 +124,10 @@ enum ThemeFramePrompt {
           Do not generate each frame from the previous one — that drifts. One
           attempt varied 17px in height across its frames and read on screen as
           the panel changing size while it played.
-        - **Close the loop.** The last frame must flow into the first. The same
-          attempt ended heavier than it started, growing steadily and then
-          snapping back at the wrap.
+        - **Close the loop.** The last frame must be a legal step *into* the first —
+          not merely similar to it. Play frames 28, 1, 2 in sequence and the
+          motion should be indistinguishable from 1, 2, 3. Ping-ponged poses
+          fail this: they look alike at the wrap and still jump.
 
         Animate surface detail only — window lights, indicator lamps, a glint
         travelling along a panel — on a cycle that returns exactly to its
