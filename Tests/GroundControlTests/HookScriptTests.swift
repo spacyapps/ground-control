@@ -95,6 +95,33 @@ final class HookScriptTests: XCTestCase {
         )
     }
 
+    /// `PostToolUse` is the one registration that carries a matcher, and the
+    /// matcher is the point: it fires only for the question tools, where it
+    /// clears an alarm no other event clears. Registered bare, it would run the
+    /// emitter after every single tool and say nothing `PreToolUse` had not
+    /// already said, at twice the writes.
+    func testTheQuestionToolIsMatchedRatherThanEveryTool() throws {
+        try write("{}", to: ".claude/settings.json")
+        try run("install-hooks.sh", "claude")
+
+        let settings = read(".claude/settings.json")
+        let json = try JSONSerialization.jsonObject(with: Data(settings.utf8)) as? [String: Any]
+        let hooks = json?["hooks"] as? [String: Any]
+        let entries = hooks?["PostToolUse"] as? [[String: Any]]
+
+        XCTAssertNotNil(entries, "PostToolUse must be registered, or answers never clear the alarm")
+        XCTAssertEqual(
+            entries?.first?["matcher"] as? String,
+            "ask_user_question|AskUserQuestion",
+            "a bare matcher here fires on every tool call"
+        )
+        XCTAssertEqual(
+            (hooks?["PreToolUse"] as? [[String: Any]])?.first?["matcher"] as? String,
+            "",
+            "and PreToolUse must stay unmatched, so it still reports every tool"
+        )
+    }
+
     func testInstallingOneAgentLeavesTheOtherAlone() throws {
         try write("{}", to: ".claude/settings.json")
         try run("install-hooks.sh", "cursor")
