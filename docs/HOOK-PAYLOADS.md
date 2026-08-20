@@ -290,9 +290,32 @@ convention works with no changes at all.
   there.
 
 Grok additionally offers `PostToolUse`, `PostToolUseFailure`, `PermissionDenied`,
-`StopFailure`, `PreCompact` and `PostCompact`. `PermissionDenied` is the most
-interesting unused one: it would be a genuine blocking alarm, which the Claude
-side still lacks.
+`StopFailure`, `PreCompact` and `PostCompact`, none of them wired up.
+
+### `Notification` — and an undocumented type (2026-08-19)
+
+Grok's docs list `idle_prompt`, `permission_prompt` and `task_complete`. A live
+`normal`-mode session sent a fourth:
+
+```json
+{"hookEventName":"notification","notificationType":"elicitation_dialog",
+ "message":"Approve input (test) — enter 1, 2, or 3.",
+ "cwd":"/Users/waltermak/Documents/Projects/GroundControlThemes"}
+```
+
+`needs_action=true`, `state=needsInput`, and the row carried the question rather
+than a generic phrase. Nothing had to change to receive it: `interpret()` alarms
+on every notification type **except** `idle_prompt`, named explicitly. Keep that
+polarity. A whitelist of known types would have dropped this one in silence,
+which is the failure mode this whole file exists to prevent.
+
+Note that `notificationType` is the camelCase spelling; `get()` already reads
+both.
+
+**No event covers the other case.** Grok also asks in prose and ends the turn,
+which arrives as an ordinary `stop` — same shape as a finished task. Across 71
+Grok tool events, `ask_user_question` has never appeared in a `PreToolUse`, so
+there is no tool-side signal to fall back on either.
 
 ## Fields the script adds itself
 

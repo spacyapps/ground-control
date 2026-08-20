@@ -43,6 +43,58 @@ failing. Pipe the JSON instead. And headless `opencode run` blocks on a
 permission prompt rather than declining it, so a probe that triggers one never
 exits.
 
+## Grok asks two different ways, and only one of them reaches us — 2026-08-19
+
+Grok can raise the alarm. It was under-claimed here until a live session was
+watched in `normal` mode, which produced the **first `Notification` this project
+has ever recorded from Grok**:
+
+```
+event=notification  notification_type=elicitation_dialog  needs_action=true
+message="Approve input (test) — enter 1, 2, or 3."
+cwd=/Users/waltermak/Documents/Projects/GroundControlThemes
+```
+
+The row went red and carried **the question itself**, not a generic phrase. That
+is better than Claude Code manages: Claude asks through an `AskUserQuestion`
+*tool*, so its row reads "Working… (AskUserQuestion)" and never turns red.
+
+`elicitation_dialog` **is not in Grok's own documentation**, which lists
+`idle_prompt`, `permission_prompt` and `task_complete`. It worked on first
+contact because `cc-notify` treats *every* notification type as an alarm except
+the single one it excludes by name. Defaulting to red and naming the exception
+is why an undocumented type cost nothing. A whitelist would have dropped it
+silently, and nobody would have known.
+
+**The half that does not work, and cannot be fixed here.** Grok also asks
+questions in plain prose and ends the turn. Two minutes before the probe above,
+in the same session:
+
+```
+event=stop  state=done  needs_action=false
+message="Avatars look settled. Next is the manifest."
+```
+
+Green, "done", while it sat waiting to be answered. `Stop` fires identically
+whether a turn ended in a finished task or a question, and no other event
+distinguishes them — so which behaviour you get depends on whether the model
+reaches for the elicitation tool or just types. Nothing in the emitter can
+recover the difference.
+
+| Grok asks by | Row shows | Alarm |
+|---|---|---|
+| elicitation dialog (`normal` mode) | the question text | **yes, red** |
+| prose at the end of a turn | "done" | no — indistinguishable from finishing |
+
+**Mode is the whole difference.** In `auto` nothing elicits, so no notification
+ever fires; the log held zero from Grok across every session until a `normal`
+one was run. Read that alongside §1 below: the alarm is not weak, the author's
+own configuration removes the moment that triggers it.
+
+Also measured while checking: across 71 tool events Grok has never once reported
+`ask_user_question` through `PreToolUse`, so the tool route is not an
+alternative signal.
+
 ## Xcode's Claude Agent — measured 2026-08-19, does not report
 
 Xcode 26 embeds a Claude agent ("Message Claude Agent"). It **is** Claude Code —
@@ -95,6 +147,8 @@ in every other editor.
 | Grok hook payloads | probe in `~/.grok/hooks/`, 4 events captured | 2026-08-11 |
 | Grok reads `~/.claude/settings.json` | `/hooks` shows `Custom: ~/.claude (9 hooks)` | 2026-08-11 |
 | Grok `SessionEnd` removes a row | replayed the real payload; file deleted | 2026-08-11 |
+| Grok turns a row red | live `normal`-mode session; `elicitation_dialog` carried the question text | 2026-08-19 |
+| Grok prose questions read as "done" | same session: a question ended the turn as a plain `Stop` | 2026-08-19 |
 | Real subagents carry `agent_type` | spawned two Explore agents; both `type="Explore"` while every internal one was `""` | 2026-08-11 |
 | Background images render | a real theme with a starfield frame, on screen — and it was broken three ways until it was tried | 2026-08-11 |
 | Nine-slice cap insets | the frame holds its corners while the panel resizes | 2026-08-11 |
@@ -156,7 +210,9 @@ will essentially never see an alarm, so the feature is largely untested by its
 own author in ordinary use. A machine with prompting left on is the better test
 bed.
 
-Grok's `PermissionDenied` event remains a second candidate trigger, unmeasured.
+Grok's `PermissionDenied` remains a candidate trigger, still unmeasured — but
+Grok is no longer alarm-less: see "Grok asks two different ways" above, where
+`elicitation_dialog` turned a row red in `normal` mode on 2026-08-19.
 
 ### 2. Internal-agent filtering — **now verified** (2026-08-11)
 

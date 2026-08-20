@@ -56,7 +56,7 @@ Every row below was tested on a real session, not inferred. Dates are when, and
 | Agent | Rows | Turns red | How we know |
 |---|---|---|---|
 | **Claude Code** | yes | **yes** | a blocked session turned red, the click landed on its tab, the alarm cleared · 2026-08-12 |
-| **Grok** | yes | yes | probe in `~/.grok/hooks/`, 4 events captured; it reads `~/.claude/settings.json` by design, so one install covers both · 2026-08-11 |
+| **Grok** | yes | **yes**, partly | `elicitation_dialog` turned a row red carrying the question itself; a question asked in prose still reads as "done" · 2026-08-19. It reads `~/.claude/settings.json` by design, so one install covers both · 2026-08-11 |
 | **opencode** | yes | **yes** | `permission.asked` carried "List files with details in current directory"; row went red and cleared on reply · 2026-08-19 |
 | **Cursor's own agent** (Composer) | yes | **no** | fires no hook while waiting for approval, so a blocked chat looks busy · 2026-08-14 |
 | **Xcode's Claude Agent** | **no** | no | it *is* Claude Code (`sdk-cli`) and can see both the config and the emitter, but that entrypoint does not run hooks · 2026-08-19 |
