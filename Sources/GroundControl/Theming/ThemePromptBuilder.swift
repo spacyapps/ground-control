@@ -10,8 +10,9 @@ import AppKit
 /// filenames, the four states and the format rules is what makes the result
 /// drop straight into the folder and work.
 enum ThemePromptBuilder {
-    /// The whole thing, for the folder's own PROMPT.md — where it is a record
-    /// rather than something anyone pastes.
+    /// Both parts joined, for anywhere that wants the whole brief as one
+    /// document. Not what the theme folder gets — that gets two files, because
+    /// one file gets pasted whole.
     static func prompt(for brief: ThemeBrief) -> String {
         [partOne(for: brief), "---", partTwo(for: brief)].joined(separator: "\n\n")
     }
@@ -80,7 +81,9 @@ enum ThemePromptBuilder {
         - **Character / mascot:** \(brief.subject)
         - **Visual style:** \(brief.style)
         - **Mood and colours:** \(brief.mood)
-        - **Animation:** \(brief.wantsAnimation ? "yes, animate the working state" : "no, stills are fine")
+        - **Animation:** \(brief.wantsAnimation
+            ? "yes — working and needs-input both move; idle and done stay still"
+            : "no, stills are fine")
         - **Background:** \(brief.wantsBackgroundArt ? brief.background : "none — colours only, skip section 2")
         \(brief.hasReferenceImage ? referenceNote : "")
         """
@@ -95,6 +98,34 @@ enum ThemePromptBuilder {
         single image cannot say. Derive all four moods from that one source so
         they look like the same character in four states, which is the thing
         four separately-imagined faces always get wrong.
+        """
+
+    /// What each state has to look like, and what happens when one of the four
+    /// colours is overruled — which is where the system fell over in practice:
+    /// a yellow needsInput sat next to a gold working and nothing forbade it.
+    private static let moodColours = """
+        | state | read it as | carry it with |
+        |---|---|---|
+        | idle | asleep, nothing wanted | **blue**, dim and low contrast — it should recede |
+        | working | busy, leave it alone | **motion.** Any colour but the other three |
+        | needsInput | **stop and look** | **red**, highest contrast of the four, plus a symbol |
+        | done | finished well | **green**, calm but bright |
+
+        **If I overrule one of these, the others have to move too.** The system
+        is that all four are instantly distinguishable, not that the colours are
+        sacred — so if I ask for a yellow needsInput, working cannot stay gold.
+        Say so and propose what working becomes.
+
+        Red, green and blue are spoken for, and they are the three anyone reads
+        instantly. There is no obvious fourth, so do not go looking for one:
+        `working` is the state that moves, and motion carries it better than any
+        hue could. Both existing themes landed on a neutral violet there and it
+        reads perfectly.
+
+        **The same character in all four.** Whatever it is appears in every
+        state; only its pose, colour and surroundings change. Props may come and
+        go, the character may not — four tiles that each star something different
+        read as four themes.
         """
 
     private static func artwork(for brief: ThemeBrief) -> String {
@@ -125,7 +156,12 @@ enum ThemePromptBuilder {
 
         - Square, **\(pixels)×\(pixels)px**. They display at \(brief.avatarSize)pt, so this
           stays crisp on Retina and if I scale the avatar up later.
-        - PNG with transparency, unless the design wants a solid tile.
+        - PNG. **Decide once, for all four: transparent, or a solid tile.**
+          Transparent lets the panel's own colour show through and suits a
+          character with a clear outline; a tile lets each mood carry its own
+          background colour, which is often the easiest way to make the four
+          differ at a glance. Mixing them makes the set look broken. Say which
+          you chose.
         - They sit on a dark panel, so avoid dark-on-dark and thin outlines.
 
         \(sizeRules(for: brief))
@@ -136,18 +172,7 @@ enum ThemePromptBuilder {
         pixels and its expression is unreadable, so **the state has to be carried
         by colour and shape, not by acting**:
 
-        | state | read it as | carry it with |
-        |---|---|---|
-        | idle | asleep, nothing wanted | **blue**, dim and low contrast — it should recede |
-        | working | busy, leave it alone | **motion.** Any colour but the other three |
-        | needsInput | **stop and look** | **red**, highest contrast of the four, plus a symbol |
-        | done | finished well | **green**, calm but bright |
-
-        Red, green and blue are spoken for, and they are the three anyone reads
-        instantly. There is no obvious fourth, so do not go looking for one:
-        `working` is the state that moves, and motion carries it better than any
-        hue could. Both existing themes landed on a neutral violet there and it
-        reads perfectly.
+        \(moodColours)
 
         The one that matters is `needsInput`: I should notice it from across the
         room without reading anything. Give it the boldest silhouette, the
@@ -231,19 +256,27 @@ enum ThemePromptBuilder {
         gradients spanning a few pixels and thin outlines all read as dirt at
         display size, and no amount of resolution fixes it.
 
-        So design at the small size and render it large, rather than illustrating
-        at full size and hoping it survives the trip down. In practice:
+        You will draw large — that is how these are generated. So the rule is not
+        "compose at 48 pixels", which nothing can actually do; it is **shrink it
+        to \(brief.avatarSize) pixels and look, before you show me anything, and
+        redraw whatever turns to mud.** In practice that means: 
 
         - **Few shapes, and big ones.** A silhouette someone can name at a glance
           beats an accurate portrait every time.
         - **Flat colour over gradient**, with strong contrast between neighbouring
           areas.
         - **No text, no fine pattern, no jewellery-scale detail.**
-        - **A readable outline** — it should still be recognisable as a solid
-          black shape.
+        - **A readable silhouette** — filled in solid black, it should still be
+          recognisable. This is about shape, not about drawing an outline; a
+          style with no outlines can still have a strong silhouette.
 
         Test it before you send it: shrink the image to \(brief.avatarSize) pixels
         and look. If you cannot tell what it is, it is too busy.
+
+        **If something I asked for cannot survive that size, drop it and tell me
+        you dropped it.** A desk, a texture, a small prop — better gone than
+        rendered as three grey pixels. Silently omitting it is the only wrong
+        answer.
         """
     }
 

@@ -38,7 +38,7 @@ in **three places**, and they drift apart the moment one is updated alone:
 |---|---|
 | `docs/THEMING.md` | the explanation, with the numbers that made it obvious |
 | `Sources/GroundControl/Theming/ThemeFramePrompt.swift` | the instruction, phrased for whoever generates the artwork |
-| `Themes/<theme>/PROMPT.md` | the brief, so regenerating that theme repeats the fix |
+| `<theme>/PROMPT-1-moods.md` and `PROMPT-2-frame.md` | the brief in two stages, so regenerating repeats the fix rather than rediscovering it |
 
 Rules learned this way so far: caps are points and must be re-measured after any
 redraw; corner ornaments point *outward*, away from the opening; an animation's

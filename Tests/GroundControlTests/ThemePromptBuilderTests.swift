@@ -144,7 +144,20 @@ final class ThemePromptBuilderTests: XCTestCase {
     func testScaffoldCreatesALoadableTheme() throws {
         let folder = try ThemeScaffold.create(from: brief, in: directory)
         XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent("theme.json").path))
-        XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent("PROMPT.md").path))
+        // Two files, not one: a single file gets pasted whole, which hands the
+        // model the frame instructions in the same breath as "do the moods and
+        // stop".
+        for stage in ["PROMPT-1-moods.md", "PROMPT-2-frame.md"] {
+            XCTAssertTrue(
+                FileManager.default.fileExists(atPath: folder.appendingPathComponent(stage).path),
+                "\(stage) should be written into the theme folder"
+            )
+        }
+        let moods = try String(
+            contentsOf: folder.appendingPathComponent("PROMPT-1-moods.md"),
+            encoding: .utf8
+        )
+        XCTAssertFalse(moods.contains("capInsets"), "stage one must not leak the frame")
 
         let theme = ThemeLoader.loadTheme(from: folder)
         XCTAssertEqual(theme.name, "Neon Cat")

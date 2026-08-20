@@ -34,8 +34,21 @@ enum ThemeScaffold {
 
         // The prompt goes in beside it: the folder becomes self-describing, and
         // the author can re-open it later to iterate without rebuilding the brief.
-        try ThemePromptBuilder.prompt(for: brief)
-            .write(to: folder.appendingPathComponent("PROMPT.md"), atomically: true, encoding: .utf8)
+        // Two files, because one file gets pasted whole. The prompt tells the
+        // model to do the moods and stop, and then — in the same paste — showed
+        // it the nine-grid, the manifest and a set of example colours. It
+        // reported the contradiction rather than falling for it, and was right
+        // to: staging that only exists in the text is not staging.
+        try ThemePromptBuilder.partOne(for: brief).write(
+            to: folder.appendingPathComponent("PROMPT-1-moods.md"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try ThemePromptBuilder.partTwo(for: brief).write(
+            to: folder.appendingPathComponent("PROMPT-2-frame.md"),
+            atomically: true,
+            encoding: .utf8
+        )
 
         return folder
     }
