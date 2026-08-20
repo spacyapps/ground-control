@@ -108,9 +108,11 @@ struct ThemeBrief: Equatable {
         !background.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    /// Rendered at `avatarSize` points on a Retina display, so art wants to be
-    /// at least 2x that. 192 is a comfortable round number that stays crisp if
-    /// the author later scales the avatar up.
+    /// Rendered at `avatarSize` points on a Retina display, so **2x is the
+    /// floor** — 96px for a 48pt avatar is exactly one pixel per screen pixel,
+    /// and the shipped station theme is drawn at precisely that and looks
+    /// perfect. 4x is headroom for scaling the avatar up later, not a
+    /// requirement; asking for it as a minimum was overreach.
     ///
     /// Capped: an avatar size of 9999 would otherwise ask a model for a
     /// 39996px square, which no generator will produce and no panel can use.

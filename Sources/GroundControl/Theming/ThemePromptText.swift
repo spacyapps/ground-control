@@ -219,4 +219,37 @@ enum ThemePromptText {
     Contrast matters more than prettiness: `needsAction` has to be visible
     across a room, and `messageDim` still has to be readable.
     """
+
+    /// What each state has to look like, and what happens when one of the four
+    /// colours is overruled — which is where the system fell over in practice:
+    /// a yellow needsInput sat next to a gold working and nothing forbade it.
+    static let moodColours = """
+        | state | read it as | carry it with |
+        |---|---|---|
+        | idle | asleep, nothing wanted | **blue**, quiet — see below |
+        | working | busy, leave it alone | **motion.** Any colour but the other three |
+        | needsInput | **stop and look** | **red**, highest contrast of the four, plus a symbol |
+        | done | finished well | **green**, calm but bright |
+
+        **On idle: the tile recedes, the mark does not.** Taken as "make it all
+        dim" you get a tile with nothing to see on a dark panel. The shipped
+        station theme is a deep blue field with one huge bright sleep-mark on
+        it — quiet overall, unmistakable at a glance.
+
+        **If I overrule one of these, the others have to move too.** The system
+        is that all four are instantly distinguishable, not that the colours are
+        sacred — so if I ask for a yellow needsInput, working cannot stay gold.
+        Say so and propose what working becomes.
+
+        Red, green and blue are spoken for, and they are the three anyone reads
+        instantly. There is no obvious fourth, so do not go looking for one:
+        `working` is the state that moves, and motion carries it better than any
+        hue could. Both existing themes landed on a neutral violet there and it
+        reads perfectly.
+
+        **The same character in all four.** Whatever it is appears in every
+        state; only its pose, colour and surroundings change. Props may come and
+        go, the character may not — four tiles that each star something different
+        read as four themes.
+        """
 }
