@@ -238,4 +238,42 @@ final class EmitterDialectTests: XCTestCase {
         XCTAssertEqual(line["source"] as? String, "grok")
         XCTAssertEqual(line["state"] as? String, "idle")
     }
+
+    // MARK: - Notifications alarm by default
+
+    /// Captured from a live Grok session on 2026-08-19, in `normal` mode.
+    ///
+    /// `elicitation_dialog` appears nowhere in Grok's documentation, which lists
+    /// `idle_prompt`, `permission_prompt` and `task_complete`. It reached the
+    /// app anyway, red and carrying the real question, because `interpret()`
+    /// alarms on everything it is not told to skip.
+    func testAnUndocumentedNotificationTypeStillAlarms() throws {
+        let line = try emit("""
+        {"sessionId":"g2","hookEventName":"notification","notificationType":"elicitation_dialog",\
+        "message":"Approve input (test) — enter 1, 2, or 3.",\
+        "cwd":"/Users/waltermak/github/avaterm"}
+        """)
+        XCTAssertEqual(line["state"] as? String, "needsInput")
+        XCTAssertEqual(line["needs_action"] as? Bool, true)
+        XCTAssertEqual(
+            line["message"] as? String,
+            "Approve input (test) — enter 1, 2, or 3.",
+            "the row should carry the question, not a generic phrase"
+        )
+    }
+
+    /// The one exception, and the reason the rule is worth stating: `idle_prompt`
+    /// means the turn ended, which `Stop` already reports with better wording.
+    /// Alarming on it turned every finished session red.
+    ///
+    /// These two tests are a pair. Inverting the emitter to a whitelist of known
+    /// types keeps this one passing and silently breaks the one above — which is
+    /// exactly how an undocumented type would be lost.
+    func testIdlePromptIsTheOnlyTypeSkipped() throws {
+        let line = try emit("""
+        {"sessionId":"g3","hookEventName":"notification","notificationType":"idle_prompt",\
+        "message":"Grok is waiting for your input","cwd":"/Users/waltermak/github/avaterm"}
+        """)
+        XCTAssertTrue(line.isEmpty, "an idle_prompt should write no line at all")
+    }
 }

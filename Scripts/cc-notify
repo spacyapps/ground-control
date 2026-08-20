@@ -352,9 +352,17 @@ def interpret(payload):
         # it overwrote the Stop line's real text with a generic phrase.
         #
         # Stop already says "your turn", with a better message. So skip it, and
-        # keep the alarm for notifications that genuinely block — a permission
-        # request. (Unconfirmed: permission prompts do not fire under
-        # permission_mode "auto", so that type string is still unobserved.)
+        # keep the alarm for every other type — the ones that genuinely block.
+        #
+        # Note the polarity: alarm by default, and name the exception. Two types
+        # have since arrived that were never coded for. Claude's
+        # "permission_prompt" (2026-08-12) and Grok's "elicitation_dialog"
+        # (2026-08-19), the latter absent from Grok's own documentation, both
+        # worked on first contact and carried the real question text. A
+        # whitelist would have dropped them without a sound. Do not invert this.
+        #
+        # Neither fires under permission_mode "auto", which is why the log held
+        # none of them for so long.
         if (get(payload, "notification_type", "notificationType") or "") == "idle_prompt":
             return None
         return "needsInput", condense(get(payload, "message")) or "Needs your input", True
