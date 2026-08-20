@@ -361,8 +361,10 @@ def interpret(payload):
         # worked on first contact and carried the real question text. A
         # whitelist would have dropped them without a sound. Do not invert this.
         #
-        # Neither fires under permission_mode "auto", which is why the log held
-        # none of them for so long.
+        # The two permission gates stay quiet under permission_mode "auto",
+        # which is why the log held none of them for so long. Grok's
+        # elicitation does not: asking a question is a tool it chooses, not a
+        # gate, so it fires in auto too. Do not reason from an empty log.
         if (get(payload, "notification_type", "notificationType") or "") == "idle_prompt":
             return None
         return "needsInput", condense(get(payload, "message")) or "Needs your input", True
