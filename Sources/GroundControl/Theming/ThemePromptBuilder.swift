@@ -226,23 +226,34 @@ enum ThemePromptBuilder {
 
 
 
-            `\(working)` and `\(needsInput)` must be **animated GIFs** (or APNG):
-            8–16 frames, looping seamlessly, roughly 10fps. `.mov` / `.mp4`
-            (H.264 or HEVC) also work if you would rather make real video. Do
-            **not** produce `.webm` — macOS cannot decode it and the app will
-            refuse the file.
+        `\(working)` and `\(needsInput)` must be **animated GIFs** (or APNG):
+        8–16 frames, looping seamlessly, roughly 10fps. `.mov` / `.mp4`
+        (H.264 or HEVC) also work if you would rather make real video. Do
+        **not** produce `.webm` — macOS cannot decode it and the app will
+        refuse the file.
 
-            **`idle` and `done` must be still images.** They are the resting
-            states, and motion there competes with the two that mean something.
+        **`idle` and `done` must be still images.** They are the resting
+        states, and motion there competes with the two that mean something.
 
-            **Work in two passes, and stop between them.** First draw all four as
-            **stills** and show me them together, shrunk to \(brief.avatarSize)
-            pixels so we are judging what I will actually see. Wait for me to say
-            they are right. Only then animate the two that move.
+        **Work in two passes, and stop between them.** First draw all four as
+        **stills** and show me them together, shrunk to \(brief.avatarSize)
+        pixels so we are judging what I will actually see. Wait for me to say
+        they are right. Only then animate the two that move.
 
-            Animation is the expensive half and it is the half that cannot be
-            repaired: a silhouette or a colour that reads wrong costs one still to
-            fix now, and every frame to fix later.
+        Animation is the expensive half and it is the half that cannot be
+        repaired: a silhouette or a colour that reads wrong costs one still to
+        fix now, and every frame to fix later.
+
+        **Two rules for the frames themselves, and both have gone wrong before:**
+
+        - **Lock the silhouette.** Every frame has identical outer bounds. Do not
+          generate each frame from the previous one — that drifts, and on screen
+          it reads as the avatar changing size while it plays.
+        - **Close the loop.** The last frame must be a legal *step* into the
+          first, not merely similar to it: play the last, the first and the
+          second in sequence and it should look no different from any other
+          three. Ping-ponged poses fail this — they look alike at the wrap and
+          still jump.
         """
     }
 
@@ -259,7 +270,7 @@ enum ThemePromptBuilder {
         You will draw large — that is how these are generated. So the rule is not
         "compose at 48 pixels", which nothing can actually do; it is **shrink it
         to \(brief.avatarSize) pixels and look, before you show me anything, and
-        redraw whatever turns to mud.** In practice that means: 
+        redraw whatever turns to mud.** In practice that means:
 
         - **Few shapes, and big ones.** A silhouette someone can name at a glance
           beats an accurate portrait every time.
