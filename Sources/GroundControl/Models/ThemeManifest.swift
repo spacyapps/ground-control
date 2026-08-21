@@ -12,6 +12,11 @@ import Foundation
 /// "absent" and "explicitly set" must stay distinguishable so merging works.
 struct ThemeManifest: Decodable, Equatable {
     var manifestVersion: Int?
+    /// Marks a manifest as documentation rather than a theme, which keeps it
+    /// out of the picker. `Themes/default` sets it: every key is present at its
+    /// built-in value, so selecting it could not change anything, and offering
+    /// it as a choice is a menu entry that does nothing.
+    var reference: Bool?
     var name: String?
     var author: String?
     var description: String?

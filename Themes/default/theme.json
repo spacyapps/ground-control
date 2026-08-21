@@ -2,24 +2,42 @@
   "$schema": "https://groundcontrol.app/theme.schema.json",
   "manifestVersion": 1,
 
+  // ---------------------------------------------------------------------
+  // This file is the reference: EVERY key a theme may set, with the value
+  // the app uses when you leave it out. It is documentation, not a look —
+  // "reference": true keeps it out of the theme picker, because choosing it
+  // could not change anything.
+  //
+  // To make a theme: copy a folder that already works (example-avatars for
+  // avatars, spacyAppsLunarAvatar for a full nine-slice frame) and change
+  // what you want. Come here to find out what a key is called and what it
+  // does. Delete any key to get the value shown below.
+  //
+  // `//` comments and trailing commas are tolerated by the loader, so you
+  // may annotate your own manifest the same way.
+  // ---------------------------------------------------------------------
+
+  "reference": true,
+
   "name": "Default",
   "author": "GroundControl",
-  "description": "Built-in theme. Copy this folder to make your own — delete any key to use the app's default.",
+  "description": "Every key a theme may set, with the app's own default beside it.",
 
+  // Any colour may be "#rgb", "#rrggbb" or "#rrggbbaa".
   "colors": {
-    "windowBackground":  "#0e0e12",
+    "windowBackground":  "#0e0e12",  // behind everything
     "titleBarBackground":"#16161d",
     "titleBarText":      "#e6e6ec",
 
-    "rowBackground":     "#14141c",
-    "rowBackgroundAlt":  "#181820",
+    "rowBackground":     "#14141c",  // give these alpha if artwork is behind
+    "rowBackgroundAlt":  "#181820",  // alternating rows
     "rowBackgroundHover":"#1f1f2b",
 
     "sessionName":       "#e6e6ec",
     "message":           "#b9b9c6",
-    "messageDim":        "#7a7a8a",
+    "messageDim":        "#7a7a8a",  // stale or idle text
 
-    "needsAction":       "#ff2d55",
+    "needsAction":       "#ff2d55",  // the alarm. Red for a reason.
     "working":           "#39c5ff",
     "idle":              "#5a5a6a",
 
@@ -29,35 +47,86 @@
     "divider":           "#26263200"
   },
 
+  // Images drawn as backgrounds. Each may be null, a bare filename, or an
+  // object as shown. Nine-slicing here works exactly as it does for `window`.
   "assets": {
-    "windowBackground":  null,
-    "titleBarBackground":null,
-    "footerBackground":  null,
-    "needsActionDot":    null
+    "windowBackground": {
+      "image":            null,   // filename beside this theme.json
+      "mode":             null,   // "tile" | "stretch"
+      "capInsets":        null,   // { top, left, bottom, right } — see `window`
+      "removeBackground": null    // "auto" | "checkerboard" | a hex to key out
+    },
+    "titleBarBackground": null,   // same shape as above
+    "footerBackground":   null,
+    "needsActionDot":     null,   // replaces the drawn alarm dot
+    "brandMark":          null    // replaces the logo shown when no sessions exist
   },
 
+  // The face on each row. This is where most themes spend their effort.
   "avatar": {
-    "size":       48,
-    "position":   "right",
+    "size":         36,           // points. 0 hides avatars entirely.
+    "position":     "right",      // "left" | "right"
     "cornerRadius": 8,
     "states": {
-      "idle":       { "image": null },
-      "working":    { "video": null, "loop": true, "muted": true },
-      "needsInput": { "image": null },
-      "done":       { "image": null }
+      // Each state takes an image (png/gif) or a video. A GIF animates.
+      // Draw at 2x the avatar size at minimum: 72px for a 36pt avatar, and
+      // most themes set a larger size than this default.
+      "idle":       { "image": null, "video": null, "loop": true, "muted": true },
+      "working":    { "image": null, "video": null, "loop": true, "muted": true },
+      "needsInput": { "image": null, "video": null, "loop": true, "muted": true },
+      "done":       { "image": null, "video": null, "loop": true, "muted": true }
     }
   },
 
+  // The panel's own shape and frame. Absent, the panel is a plain rectangle.
+  "window": {
+    "image":            null,     // the skin ("shape" is an older spelling)
+    "shape":            null,
+    "overlay":          false,    // true draws the skin IN FRONT of the rows,
+                                  // so the frame covers what it overlaps
+    "lockAspect":       false,    // superseded by layout.resize; still read
+    "removeBackground": null,     // "auto" | "checkerboard" | hex, e.g. "#00FF00"
+    "mode":             null,     // "tile" | "stretch" for the sliced edges
+    // Where your corner artwork ends, in the image's own pixels. Set these and
+    // the image is nine-sliced: corners fixed, edges repeated, centre filled.
+    // Measure them off the drawing you actually made — a cap that stops short
+    // leaves part of an ornament in the tiled strip, which then repeats it
+    // along the edge.
+    // All four zero means "do not slice", which is the same as leaving it out.
+    "capInsets": { "top": 0, "left": 0, "bottom": 0, "right": 0 }
+  },
+
+  // The title-bar analyser: its palette, and what it says.
+  "matrix": {
+    "low":      null,             // defaults to colors.accent
+    "high":     null,             // defaults to colors.working
+    "alarm":    null,             // defaults to colors.needsAction
+    "unlit":    null,             // defaults to colors.divider at 10% alpha
+    "text":     null,             // defaults to colors.titleBarText
+    "peak":     null,             // defaults to colors.titleBarText at 70%
+    "messages": []                // replaces the built-in phrases. A theme is a
+                                  // character; this is how it speaks.
+  },
+
   "layout": {
-    "rowMaxHeight":     100,
-    "rowPadding":       10,
-    "marqueeOnOverflow": true,
-    "marqueeSpeed":     40,
-    "density":          "comfortable"
+    "resize":              "content",  // "content" grows with the rows
+                                       // "aspect"  keeps the artwork's shape
+                                       // "free"    any size (needs capInsets)
+    // Pads the ROWS away from your frame. A bare number means all four sides.
+    // Not to be confused with window.capInsets, which cuts the ARTWORK — they
+    // have been swapped before, and the result looks like a corrupt image
+    // rather than a wrong number.
+    "contentInset": { "top": 0, "left": 0, "bottom": 0, "right": 0 },
+    "contentCornerRadius": 0,
+    "rowMaxHeight":        100,
+    "rowPadding":          10,
+    "marqueeOnOverflow":   true,       // scroll a message too long to fit
+    "marqueeSpeed":        40,
+    "density":             "comfortable"  // "comfortable" | "compact"
   },
 
   "typography": {
-    "fontFamily":  null,
+    "fontFamily":  null,          // null uses the system font
     "nameSize":    13,
     "messageSize": 11,
     "nameWeight":  "semibold"
