@@ -118,7 +118,7 @@ final class ThemePreviewView: NSView {
 
     /// A panel of this reference width is what `contentInset` is written
     /// against; the preview is that panel, smaller.
-    private static let referencePanelWidth: CGFloat = 400
+    static let referencePanelWidth: CGFloat = 400
 
     /// Where the rows go once the skin's frame is accounted for.
     ///

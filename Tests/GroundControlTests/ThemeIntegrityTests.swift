@@ -112,10 +112,24 @@ final class ThemeIntegrityTests: XCTestCase {
                     + "the remainder will tile down the edge"
             )
             // And not so far past it that the frame swallows the panel.
+            //
+            // The narrowest a nine-slice can be drawn is left + right: the two
+            // corners are fixed and the strip between them goes to zero. This
+            // used to double the *left* cap, which is only the same number on a
+            // symmetric frame — an asymmetric one failed on arithmetic rather
+            // than on anything wrong with it. The garden theme, 248 left and
+            // 148 right, was reported as needing 496pt when it needs 396.
+            let narrowest = caps.left + caps.right
             XCTAssertLessThanOrEqual(
-                caps.left * 2,
-                400,
-                "\(name): \(Int(caps.left))pt caps need a \(Int(caps.left * 2))pt panel to draw in"
+                narrowest,
+                ThemePreviewView.referencePanelWidth,
+                "\(name): corners of \(Int(caps.left)) and \(Int(caps.right)) need a "
+                    + "\(Int(narrowest))pt panel before the edges have any room left"
+            )
+            XCTAssertLessThanOrEqual(
+                caps.top + caps.bottom,
+                ThemePreviewView.referencePanelWidth,
+                "\(name): the top and bottom corners together are taller than a usable panel"
             )
         }
     }
