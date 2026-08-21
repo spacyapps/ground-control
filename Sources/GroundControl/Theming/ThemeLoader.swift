@@ -20,10 +20,23 @@ enum ThemeLoader {
             .filter { url in
                 FileManager.default.fileExists(atPath: url.appendingPathComponent("theme.json").path)
             }
+            .filter { !isReference($0) }
             .sorted { lhs, rhs in
                 lhs.lastPathComponent
                     .localizedCaseInsensitiveCompare(rhs.lastPathComponent) == .orderedAscending
             }
+    }
+
+    /// A manifest that documents the format rather than describing a look.
+    ///
+    /// Read from the raw JSON rather than a resolved `Theme`, because the whole
+    /// point of such a file is that resolving it produces the built-in theme —
+    /// by the time it is a `Theme` there is nothing left to tell it apart.
+    static func isReference(_ folder: URL) -> Bool {
+        guard let data = try? Data(contentsOf: folder.appendingPathComponent("theme.json")),
+              let manifest = try? JSONDecoder().decode(ThemeManifest.self, from: forgiving(data))
+        else { return false }
+        return manifest.reference == true
     }
 
     static func loadTheme(named name: String?, in directory: URL = Paths.userThemes) -> Theme {
@@ -198,7 +211,7 @@ enum ThemeLoader {
     /// fallback to the default theme — the author sees "my theme did nothing"
     /// with no clue why. Being lenient here costs a pass over the text and
     /// removes a whole class of invisible failure.
-    private static func forgiving(_ data: Data) -> Data {
+    static func forgiving(_ data: Data) -> Data {
         guard var text = String(data: data, encoding: .utf8) else { return data }
 
         // Line comments, but not `//` inside a string such as a URL.

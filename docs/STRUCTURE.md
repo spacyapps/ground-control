@@ -101,7 +101,8 @@ GroundControl/
 │       └── logo-lockup.png       # Themes/ is copied in by build-app.sh too
 │
 ├── Themes/
-│   ├── default/theme.json        # reference palette (ships in-repo, copyable)
+│   ├── default/theme.json        # THE key reference: every key, annotated,
+│   │                             # pinned to the code by ManifestReferenceTests
 │   ├── example-avatars/          # working avatar theme: 3 stills + a GIF
 │   └── spacyAppsLunarAvatar/     # the full set: avatars + shaped skin
 │

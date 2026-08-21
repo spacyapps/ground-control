@@ -31,7 +31,7 @@ change stays changed.
 
 | Theme | Shows |
 |---|---|
-| `default/` | every colour key, no artwork |
+| `default/` | **the reference** — every key that exists, annotated, at its built-in value. Not selectable; it is documentation. |
 | `example-avatars/` | the avatar system — three stills and an animated GIF |
 | `spacyAppsLunarAvatar/` | a shaped window: nine-grid frame, an animated skin, chroma keying, art past the panel edge |
 | `spacyAppsUnicornOverlord/` | a frame drawn *in front* of the rows — `window.overlay`, four-sided insets, an animated loop |
