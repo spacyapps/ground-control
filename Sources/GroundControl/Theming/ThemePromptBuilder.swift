@@ -237,16 +237,7 @@ enum ThemePromptBuilder {
         separate yes. Four good stills are a complete theme, and if I say keep
         them, write the manifest against them without arguing.
 
-        **Two rules for the frames themselves, and both have gone wrong before:**
-
-        - **Lock the silhouette.** Every frame has identical outer bounds. Do not
-          generate each frame from the previous one — that drifts, and on screen
-          it reads as the avatar changing size while it plays.
-        - **Close the loop.** The last frame must be a legal *step* into the
-          first, not merely similar to it: play the last, the first and the
-          second in sequence and it should look no different from any other
-          three. Ping-ponged poses fail this — they look alike at the wrap and
-          still jump.
+        \(ThemePromptText.frameCraft(size: brief.avatarSize))
         """
     }
 

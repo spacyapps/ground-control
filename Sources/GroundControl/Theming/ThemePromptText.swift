@@ -104,6 +104,38 @@ enum ThemePromptText {
         """
     }
 
+    /// How the frames themselves are made, once something is being animated.
+    ///
+    /// The last two rules are Walter's, from making the themes that shipped:
+    /// locking the *size* is not enough if the subject slides around inside it,
+    /// and generating a video to convert into a GIF costs more than generating
+    /// the frames directly while giving away control of count and timing.
+    static func frameCraft(size: Int) -> String {
+        """
+        **Three rules for the frames themselves, and every one has gone wrong
+        before:**
+
+        - **Lock the silhouette.** Every frame has identical outer bounds. Do not
+          generate each frame from the previous one — that drifts, and on screen
+          it reads as the avatar changing size while it plays.
+        - **Lock the position, not just the size.** The character has to sit in
+          exactly the same place in every frame, and only the part that actually
+          moves may move. A face that drifts two or three pixels between frames
+          does not read as animation — it reads as a bounce, and at
+          \(size)pt a bounce is the only thing anyone will see.
+        - **Close the loop.** The last frame must be a legal *step* into the
+          first, not merely similar to it: play the last, the first and the
+          second in sequence and it should look no different from any other
+          three. Ping-ponged poses fail this — they look alike at the wrap and
+          still jump.
+
+        **Make them from stills, not from video.** Generate each frame as its own
+        image and assemble those into the GIF. Do not produce a video and convert
+        it — that costs more for the same result, and the conversion takes the
+        frame count and the timing out of your hands.
+        """
+    }
+
     static let paletteReference = """
     ## Keys
 
