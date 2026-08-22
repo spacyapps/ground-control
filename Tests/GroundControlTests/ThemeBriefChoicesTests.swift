@@ -109,16 +109,16 @@ final class ThemeBriefChoicesTests: XCTestCase {
     /// long enough to contain a newline.
     func testBothPartsPriceTheAnimationAndWaitForAYes() {
         let frame = ThemePromptBuilder.partTwo(for: brief())
-        XCTAssertTrue(frame.contains("Every frame is a separately generated image"))
-        XCTAssertTrue(frame.contains("48 images, not three"), "the arithmetic persuades")
+        XCTAssertTrue(frame.contains("Every moving thing is its own video generation"))
+        XCTAssertTrue(frame.contains("three clips, not one"), "the arithmetic persuades")
         XCTAssertTrue(frame.contains("or keep the still frame?"), "it has to be a question")
         XCTAssertTrue(frame.contains("a third,"), "and a distinct one from the earlier yeses")
 
         var animated = brief()
         animated.wantsAnimation = true
         let moods = ThemePromptBuilder.partOne(for: animated)
-        XCTAssertTrue(moods.contains("Every frame is a separate generated"))
-        XCTAssertTrue(moods.contains("is 32 images, not two"))
+        XCTAssertTrue(moods.contains("a video generation and"))
+        XCTAssertTrue(moods.contains("two clips here"))
         XCTAssertTrue(moods.contains("or keep the stills?"))
         XCTAssertTrue(moods.contains("separate yes"))
     }
@@ -263,8 +263,12 @@ final class ThemeBriefChoicesTests: XCTestCase {
 
             // Video-then-convert costs more and gives away frame count and
             // timing, which are the two things that have to be controlled.
-            XCTAssertTrue(prompt.contains("not from video"))
-            XCTAssertTrue(prompt.contains("takes the"), "say what the conversion costs you")
+            // Reversed 2026-08-22 against real use: frame-by-frame drifts,
+            // because every frame is an independent generation. One continuous
+            // generation holds the subject still, which is the rule above.
+            XCTAssertTrue(prompt.contains("do not redraw it frame by frame"))
+            XCTAssertTrue(prompt.contains("Fixed camera"), "video models add motion nobody asked for")
+            XCTAssertTrue(prompt.contains("close the loop yourself"), "a clip ends where it ends")
         }
     }
 

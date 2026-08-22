@@ -223,15 +223,14 @@ enum ThemePromptBuilder {
         repaired: a silhouette or a colour that reads wrong costs one still to
         fix now, and every frame to fix later.
 
-        **And it is expensive literally.** Every frame is a separate generated
-        image. A 16-frame loop for two states is 32 images, not two — an order
-        of magnitude more than the four stills I have just approved, in both
-        time and tokens.
+        **And it is expensive literally.** Animating means a video generation and
+        a conversion for each state that moves — two clips here, both slower and
+        dearer than the four stills I have just approved.
 
         So once the stills are right, do not start animating. Tell me **the
-        number** — frames × the two states — and ask me:
+        count** — one clip per moving state — and ask me:
 
-        > **Generate N images for the animation, or keep the stills?**
+        > **Generate 2 clips for the animation, or keep the stills?**
 
         Then wait. Approving the stills was not permission to animate; this is a
         separate yes. Four good stills are a complete theme, and if I say keep

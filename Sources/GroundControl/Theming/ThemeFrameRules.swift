@@ -159,24 +159,24 @@ enum ThemeFrameRules {
 
         ### Then stop, price it, and ask me whether to go ahead
 
-        Every frame is a separately generated image. Three corners at 16 frames
-        is 48 images, not three — far slower and far more
-        expensive than the still I have already approved, and a heavier theme
-        afterwards.
+        Every moving thing is its own video generation and its own conversion.
+        Three corners is three clips, not one adjustment to a drawing — each far
+        slower and more expensive than the still I have already approved, and a
+        heavier theme afterwards.
 
-        So before you generate anything, tell me **the actual number** for what
-        I just chose. Count it: things that move × frames each. Not "this may
-        take a while" — the number.
+        So before you generate anything, tell me **the actual count** for what I
+        just chose: one clip per thing that moves. Not "this may take a while" —
+        the number.
 
         | What I picked | What it costs |
         |---|---|
         | Keep the still | nothing more; the theme is finished |
-        | One corner blinking, 8 frames | 8 images |
-        | Three corners at 16 frames | 48 images |
+        | One corner moving | one clip |
+        | Three corners and an edge | four clips, and a heavy theme |
 
         Then ask me, as a plain question and nothing else in the message:
 
-        > **Generate N images for the animation, or keep the still frame?**
+        > **Generate N clips for the animation, or keep the still frame?**
 
         And wait. **My yes to the still was not permission to animate, and
         choosing what moves was not permission either — this is a third,
@@ -211,11 +211,31 @@ enum ThemeFrameRules {
           the motion should be indistinguishable from 1, 2, 3. Ping-ponged poses
           fail this: they look alike at the wrap and still jump.
 
-        **Make it from stills, not from video.** Generate each frame as its own
-        image and assemble them into the GIF. Do not produce a video and convert
-        it — that costs more for the same result, and the conversion takes the
-        frame count and the timing out of your hands. Measured the hard way, so
-        do not treat it as a preference.
+        **Animate the approved still, do not redraw it frame by frame.** Feed the
+        still you and I already agreed on into an image-to-video model, then
+        convert the result to a GIF. Frame-by-frame was tried and it is the
+        worse route: each frame is an independent generation, so the subject
+        shifts between them, and that shifting is exactly the bounce the rule
+        above forbids. One continuous generation holds it still for free.
+
+        **The strict instructions are the whole job.** A video model will add
+        motion nobody asked for, so say all of this:
+
+        - **Fixed camera.** No pan, no zoom, no dolly, no parallax.
+        - **The subject does not move, travel, or change size.** Only the one
+          thing that is meant to move, moves.
+        - **The background stays exactly as drawn.**
+        - **No new elements**, no lighting changes, nothing entering frame.
+
+        **Then close the loop yourself, because video will not.** This is what
+        the route costs: a clip ends where it ends. Trim it to a point where the
+        last frame steps cleanly into the first, or ask for a cycle that returns
+        to its starting state.
+
+        **And choose the conversion deliberately.** Pick the frame count and the
+        rate — 8-24 frames at roughly 10fps — rather than accepting whatever the
+        converter emits. Three seconds at 30fps is 90 frames and an enormous
+        file, for motion nobody can see at this size.
 
         Animate surface detail only — lights, lamps, a glint travelling along a
         panel — on a cycle returning exactly to its starting values. The
