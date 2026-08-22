@@ -50,8 +50,7 @@ enum ThemePromptBuilder {
             section.replacingOccurrences(of: "## ", with: "## \(index + 1). ", options: [], range:
                 section.range(of: "## "))
         }
-        return (["# Part two — the panel itself\n\nThe four moods are settled. "
-                 + "Now the frame they sit in, and the manifest that names everything."]
+        return ([ThemeFramePrompt.header]
                 + body
                 + [ThemePromptText.paletteReference]).joined(separator: "\n\n")
     }
