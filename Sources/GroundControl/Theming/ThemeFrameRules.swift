@@ -159,24 +159,24 @@ enum ThemeFrameRules {
 
         ### Then stop, price it, and ask me whether to go ahead
 
-        Every moving thing is its own video generation and its own conversion.
-        Three corners is three clips, not one adjustment to a drawing — each far
-        slower and more expensive than the still I have already approved, and a
-        heavier theme afterwards.
+        Whichever way I picked, animating costs far more than the still I have
+        already approved, and leaves a heavier theme behind.
 
         So before you generate anything, tell me **the actual count** for what I
-        just chose: one clip per thing that moves. Not "this may take a while" —
+        chose — one clip per moving thing if we are using video, or the total
+        number of frames if we are drawing them. Not "this may take a while":
         the number.
 
         | What I picked | What it costs |
         |---|---|
         | Keep the still | nothing more; the theme is finished |
-        | One corner moving | one clip |
-        | Three corners and an edge | four clips, and a heavy theme |
+        | One corner, drawn | a handful of images |
+        | One corner, video | one clip |
+        | Three corners and an edge | four of whichever, and a heavy theme |
 
         Then ask me, as a plain question and nothing else in the message:
 
-        > **Generate N clips for the animation, or keep the still frame?**
+        > **Generate N for the animation, or keep the still frame?**
 
         And wait. **My yes to the still was not permission to animate, and
         choosing what moves was not permission either — this is a third,
@@ -189,56 +189,20 @@ enum ThemeFrameRules {
 
     /// The two technical rules, once something has actually been chosen to
     /// move. The staging that used to live here moved into `confirmStill`,
-    /// where it is a gate rather than a footnote.
+    /// where it is a gate rather than a footnote, and the two ways of making
+    /// frames are shared with part one — an avatar and a frame are animated
+    /// identically.
     static let animation = """
         ### Making the frames themselves
 
-        Three things matter more than the animation does, and every one of them
-        has gone wrong before:
-
-        - **Lock the silhouette.** Every frame must have identical outer bounds.
-          Do not generate each frame from the previous one — that drifts. One
-          attempt varied 17px in height across its frames and read on screen as
-          the panel changing size while it played.
-        - **Lock the position, not just the size.** Identical outer bounds are
-          not enough — the subject has to sit in exactly the same place in every
-          frame, and only the part that actually moves may move. A whole subject
-          drifting two or three pixels between frames does not read as
-          animation. It reads as a bounce, or a twitch, and at the size these
-          are seen that is the only thing anyone notices.
-        - **Close the loop.** The last frame must be a legal step *into* the
-          first, not merely similar to it. Play frames 28, 1, 2 in sequence and
-          the motion should be indistinguishable from 1, 2, 3. Ping-ponged poses
-          fail this: they look alike at the wrap and still jump.
-
-        **Animate the approved still, do not redraw it frame by frame.** Feed the
-        still you and I already agreed on into an image-to-video model, then
-        convert the result to a GIF. Frame-by-frame was tried and it is the
-        worse route: each frame is an independent generation, so the subject
-        shifts between them, and that shifting is exactly the bounce the rule
-        above forbids. One continuous generation holds it still for free.
-
-        **The strict instructions are the whole job.** A video model will add
-        motion nobody asked for, so say all of this:
-
-        - **Fixed camera.** No pan, no zoom, no dolly, no parallax.
-        - **The subject does not move, travel, or change size.** Only the one
-          thing that is meant to move, moves.
-        - **The background stays exactly as drawn.**
-        - **No new elements**, no lighting changes, nothing entering frame.
-
-        **Then close the loop yourself, because video will not.** This is what
-        the route costs: a clip ends where it ends. Trim it to a point where the
-        last frame steps cleanly into the first, or ask for a cycle that returns
-        to its starting state.
-
-        **And choose the conversion deliberately.** Pick the frame count and the
-        rate — 8-24 frames at roughly 10fps — rather than accepting whatever the
-        converter emits. Three seconds at 30fps is 90 frames and an enormous
-        file, for motion nobody can see at this size.
+        Whichever way you make them, both of these have gone wrong before:
+        every frame must have identical outer bounds, and whatever is *not*
+        moving must sit in exactly the same place in each. A frame that drifts
+        two or three pixels reads as the panel twitching, not as animation.
 
         Animate surface detail only — lights, lamps, a glint travelling along a
-        panel — on a cycle returning exactly to its starting values. The
-        silhouette is settled by now and must not move again.
+        panel. The silhouette is settled by now and must not move again.
+
+        \(ThemePromptText.motionRoutes)
         """
 }

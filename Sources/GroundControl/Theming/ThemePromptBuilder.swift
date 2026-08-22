@@ -223,14 +223,14 @@ enum ThemePromptBuilder {
         repaired: a silhouette or a colour that reads wrong costs one still to
         fix now, and every frame to fix later.
 
-        **And it is expensive literally.** Animating means a video generation and
-        a conversion for each state that moves — two clips here, both slower and
-        dearer than the four stills I have just approved.
+        **And it is expensive literally.** Two states move, so that is two video
+        generations or two sets of drawn frames — either way, far more than the
+        four stills I have just approved.
 
         So once the stills are right, do not start animating. Tell me **the
-        count** — one clip per moving state — and ask me:
+        count** for the route I chose, and ask me:
 
-        > **Generate 2 clips for the animation, or keep the stills?**
+        > **Generate these 2 animations, or keep the stills?**
 
         Then wait. Approving the stills was not permission to animate; this is a
         separate yes. Four good stills are a complete theme, and if I say keep
