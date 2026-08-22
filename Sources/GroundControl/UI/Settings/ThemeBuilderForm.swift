@@ -89,7 +89,9 @@ extension ThemeBuilderWindowController {
     /// feature is broken. They are supposed to come back not quite right — the
     /// prompt asks for drafts on purpose — and saying so here costs two lines.
     func addIntroduction(to form: NSStackView) {
-        form.addArrangedSubview(caption("Answer these, then paste the prompt into any image-capable LLM."))
+        form.addArrangedSubview(caption("A sketch, not a specification — the model asks you to confirm each "
+                + "of these before it draws. Answer roughly, then paste part one "
+                + "into any image-capable LLM."))
         // Said before they start, because the alternative is someone deciding
         // the feature is broken when the first images come back not quite right.
         // They are supposed to come back not quite right.
