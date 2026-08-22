@@ -99,12 +99,89 @@ enum ThemeFrameRules {
         scale themselves, and stale ones land inside the ornament.
         """
 
-    /// Only reaches an author who asked for movement. Both rules come from
-    /// animations that shipped and had to be redone.
-    static let animation = """
-        ### If the frame animates
+    /// The gate between drawing and animating, and the only place the corner
+    /// overhang gets checked.
+    ///
+    /// Overhang is encouraged elsewhere — the frame is in front and ornaments
+    /// hanging over the opening is the look. But an ornament that runs *along*
+    /// an edge, past where the cap will cut, lands inside the repeating strip
+    /// and is tiled down the side. Inward overhang is fine; sideways overhang
+    /// is the unicorn-head problem. Nothing else in the prompt separates those
+    /// two, and they are one pixel apart.
+    static let confirmStill = """
+        ## Show me the still and wait
 
-        Two things matter more than the animation itself, and both have gone
+        One static image of the whole frame, before anything moves. Show it at
+        the size it will actually be used, not enlarged.
+
+        Then check these with me, and wait for a yes:
+
+        - **Does anything from a corner run too far along an edge?** Corners are
+          fixed; edges repeat. An ornament that reaches sideways past where the
+          cap cuts is not drawn once — it is tiled the whole length of that side
+          and sliced where the tile ends. Hanging *inward* over the opening is
+          fine and looks right. Spreading *sideways* into the edge is the one
+          that breaks.
+        - **Will each edge tile without a seam?** Say plainly whether its two
+          ends meet, rather than assuming.
+        - **Is the opening clear enough** that the title and my ✕ and ↔ marks
+          are still readable under the top-left corner?
+        - **Is the silhouette irregular**, inside and out, rather than a
+          rectangle with a rectangular hole?
+
+        If any answer is no, fix it now. Every one of these costs one drawing to
+        repair at this point and every frame to repair after it is animated.
+        """
+
+    /// Asked per corner and per edge, because that is the granularity the
+    /// nine-grid already has — and because "animate the frame" gets the whole
+    /// thing moving, which is exactly what a panel behind text must not do.
+    static let animationChoices = """
+        ## Once I confirm the still, ask what should move
+
+        Do not decide this for me, and do not animate anything before asking.
+
+        - **Which corners move, and how?** One at a time: a lamp that pulses, a
+          dish that turns a few degrees, steam, a slow blink. Any corner may
+          stay completely still — most should.
+        - **Which edges move, if any?** Remember an edge repeats, so whatever
+          moves there moves identically along the whole side at once. A travelling
+          glint works; a single event does not.
+        - **Or nothing at all.** A still frame is a perfectly good answer and
+          the one I should probably pick.
+
+        **Keep it quiet.** This sits behind text I am trying to read, so it must
+        never compete with the avatars — they are the part carrying meaning. The
+        shipped station theme is the level to aim at: surface lights only, on a
+        slow cycle. Nothing that changes shape, nothing that sweeps across the
+        whole frame, nothing that pulls the eye away from a row that has just
+        turned red.
+
+        ### Then tell me what it costs, before you make it
+
+        Every frame is a separately generated image. Sixteen frames is sixteen
+        images — far slower and far more expensive than one still, and a bigger
+        file in the finished theme.
+
+        So say which of these I am choosing, and let me answer:
+
+        | | Cost |
+        |---|---|
+        | A still frame | one image |
+        | A few lights blinking in one corner | a small loop, cheap |
+        | Several corners and an edge moving | many images, and a heavy theme |
+
+        Once I have said yes to a still, to what moves, and to the cost, go
+        ahead.
+        """
+
+    /// The two technical rules, once something has actually been chosen to
+    /// move. The staging that used to live here moved into `confirmStill`,
+    /// where it is a gate rather than a footnote.
+    static let animation = """
+        ### Making the frames themselves
+
+        Two things matter more than the animation does, and both have gone
         wrong before:
 
         - **Lock the silhouette.** Every frame must have identical outer bounds.
@@ -117,12 +194,7 @@ enum ThemeFrameRules {
           fail this: they look alike at the wrap and still jump.
 
         Animate surface detail only — lights, lamps, a glint travelling along a
-        panel — on a cycle returning exactly to its starting values.
-
-        **Draw the still frame first and show it to me.** One static image, the
-        full composition, before a single animated frame exists. Everything that
-        goes wrong here goes wrong in the composition, not the motion: an
-        ornament in the wrong place is one drawing to redo before it is
-        animated, and thirty afterwards.
+        panel — on a cycle returning exactly to its starting values. The
+        silhouette is settled by now and must not move again.
         """
 }

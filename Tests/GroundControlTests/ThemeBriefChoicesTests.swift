@@ -63,6 +63,55 @@ final class ThemeBriefChoicesTests: XCTestCase {
         XCTAssertTrue(frame.contains("do not spend a question on"))
     }
 
+    /// Nothing is animated until two separate yeses: the still is right, and
+    /// these specific things move. Both gates were missing — the frame brief
+    /// said "draw the still first" as a footnote under the animation rules,
+    /// which is where a model looks *after* deciding to animate.
+    func testNothingAnimatesBeforeTwoConfirmations() {
+        let frame = ThemePromptBuilder.partTwo(for: brief())
+        guard let still = frame.range(of: "Show me the still and wait"),
+              let choose = frame.range(of: "ask what should move"),
+              let make = frame.range(of: "Making the frames themselves") else {
+            return XCTFail("part two lost its staging")
+        }
+        XCTAssertLessThan(still.lowerBound, choose.lowerBound, "confirm the still first")
+        XCTAssertLessThan(choose.lowerBound, make.lowerBound, "then choose, then draw frames")
+        XCTAssertTrue(frame.contains("do not animate anything before asking"))
+    }
+
+    /// The overhang distinction that nothing else in the prompt makes: inward
+    /// over the opening is the look; sideways into an edge gets tiled.
+    func testTheStillCheckAsksAboutCornersBleedingIntoEdges() {
+        let frame = ThemePromptBuilder.partTwo(for: brief())
+        XCTAssertTrue(frame.contains("run too far along an edge"))
+        XCTAssertTrue(frame.contains("Hanging *inward* over the opening is"))
+    }
+
+    /// Motion is chosen per corner and per edge, which is the granularity the
+    /// grid already has. "Animate the frame" gets the whole thing moving.
+    func testMotionIsChosenPerCornerAndPerEdge() {
+        let frame = ThemePromptBuilder.partTwo(for: brief())
+        XCTAssertTrue(frame.contains("Which corners move"))
+        XCTAssertTrue(frame.contains("Which edges move"))
+        XCTAssertTrue(frame.contains("A still frame is a perfectly good answer"))
+    }
+
+    /// An author cannot weigh a cost nobody mentioned. Both parts say it now,
+    /// because both can spend an afternoon of image generation.
+    func testBothPartsWarnThatFramesAreGeneratedImages() {
+        let frame = ThemePromptBuilder.partTwo(for: brief())
+        XCTAssertTrue(frame.contains("Every frame is a separately generated image"))
+
+        var animated = brief()
+        animated.wantsAnimation = true
+        let moods = ThemePromptBuilder.partOne(for: animated)
+        // Matched in fragments that cannot span a wrap: these strings are
+        // hand-wrapped source, so a phrase long enough to be unambiguous is
+        // also long enough to contain a newline.
+        XCTAssertTrue(moods.contains("Every frame is a separate generated"))
+        XCTAssertTrue(moods.contains("is 32 images, not two"), "the arithmetic persuades")
+    }
+
     /// The bug this prevents: a magenta-keyed theme handed a prompt that says
     /// green everywhere, so the model fills green and the frame keeps it.
     func testTheChosenKeyColourReplacesEveryMention() {
