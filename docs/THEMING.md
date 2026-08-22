@@ -3,7 +3,7 @@
 A theme is a **folder** containing one `theme.json` manifest plus any images or
 videos it references. That's it.
 
-## Two choices before you draw anything
+## The one choice before you draw anything
 
 **Create a Theme…** in Settings asks this first, because it cannot be recovered
 afterwards:
@@ -13,8 +13,42 @@ which the app keys out on load. It must be a colour the art never uses: a green
 frame keyed on green erases itself. Green, magenta and blue are offered; pick
 the one furthest from your palette.
 
-Both go into the generated prompt as instructions rather than suggestions, and
-the starter `theme.json` is written to match.
+It goes into the generated prompt as an instruction rather than a suggestion,
+and the starter `theme.json` is written to match. Everything else in that form
+is a sketch — the model reads it back and asks you to confirm rather than
+treating it as a specification.
+
+## What the prompt actually does
+
+It is two pastes, and both of them ask before they draw. That is the whole
+design: an image model given a description produces something plausible and
+unasked-for, and the expensive part is not drawing it but discovering, four
+images later, that nobody chose it.
+
+**Part one — the four moods.** Four questions first: a reference picture, the
+character, what each state *does*, how it is rendered. Then four stills, shown
+at the size they will really be seen. Then your notes.
+
+**Part two — the frame.** Four questions: what the frame is made of, its
+colours, what sits in each of the four corners, what texture runs along the
+edges. The corner-and-edge split is the nine-grid restated as something
+answerable — corners are the only place a distinct object survives, and
+anything on an edge repeats. Then one still, then two gates:
+
+1. **Confirm the still.** Corners bleeding sideways into an edge, edges that
+   will tile, the opening clear, the silhouette irregular.
+2. **Choose what moves** — per corner and per edge, or nothing — then how to
+   make it, then whether the cost is worth it.
+
+**Animation is offered two ways, not prescribed.** Drawing each frame can
+jitter, because every frame is an independent generation and the subject drifts
+between them. A video model holds it still and costs tokens. Both sets of rules
+are in the prompt; the choice is yours, and "keep the still" is named as a
+finished theme rather than a failure to try.
+
+**Expect two or three rounds.** The prompt says so in both parts. The questions
+remove the rounds that were nobody's decision; the ones that remain are taste,
+and those are the interesting part.
 
 ## Quick start
 

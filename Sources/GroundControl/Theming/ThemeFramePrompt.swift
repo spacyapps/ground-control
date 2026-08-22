@@ -42,6 +42,10 @@ enum ThemeFramePrompt {
         Stages 3 and 4 are the two places you stop and wait for me. Nothing is
         animated before both are done. Stage 1 is written out below — ask it
         from there, not from this table.
+
+        **Expect two or three rounds at stage 3.** I will have notes, and the
+        notes are the good part — they are where the thing stops being generic.
+        A revisit is the process working, not a failure of it.
         """
 
     /// Returned as separate sections rather than one block, because part two

@@ -40,8 +40,11 @@ enum ThemePromptText {
     | 5 | You hand the four files back, and stop | — |
 
     Stage 1 is written out below — do not answer it from this table. Do not run
-    ahead into the next stage either. Stage 3 is where two or three rounds of
-    notes happen; that is the process working, not a failure of it.
+    ahead into the next stage either.
+
+    **Expect two or three rounds at stage 3.** I will have notes, and the notes
+    are the good part — they are where the thing stops looking like everybody
+    else's. A revisit is the process working, not a failure of it.
 
     **Stills before motion, always.** Anything animated gets drawn as a single
     still first and approved before it becomes frames. A silhouette that reads
