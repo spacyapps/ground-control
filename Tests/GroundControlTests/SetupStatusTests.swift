@@ -90,6 +90,24 @@ final class SetupStatusTests: XCTestCase {
         XCTAssertNotNil(SetupStatus.opencode(sessions: sessions)?.lastEvent)
     }
 
+    /// The two embedded Claude Codes say opposite things, and the list has to
+    /// get both right on the same machine: the desktop app spawns the CLI and
+    /// reports everything, Xcode drives it in-process and reports nothing.
+    /// Naming only one of them would read as a guess about embedded agents.
+    func testClaudeForDesktopIsNamedWhereItIsInstalled() throws {
+        let installed = FileManager.default.fileExists(atPath: "/Applications/Claude.app")
+        let facts = SetupStatus.facts().joined(separator: " ")
+        if installed {
+            XCTAssertTrue(facts.contains("Claude for Desktop"), facts)
+            XCTAssertTrue(
+                facts.contains("Also covers"),
+                "it belongs with what works, not with the limits"
+            )
+        } else {
+            XCTAssertFalse(facts.contains("for Desktop"), "no point naming what is not there")
+        }
+    }
+
     /// Xcode's assistant is the one that looks like it should work — it is
     /// Claude Code, it can read the registrations, and its entrypoint runs no
     /// hooks. Named on the machines where it exists, so the menu warns rather
