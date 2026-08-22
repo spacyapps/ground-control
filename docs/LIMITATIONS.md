@@ -125,6 +125,45 @@ firing after every tool and repeating `PreToolUse` at twice the writes. It is
 the only registration in the installer that carries a matcher, and a test pins
 that.
 
+## Claude for Desktop — reports fully, measured 2026-08-22
+
+The desktop app **bundles its own Claude Code** — a 317MB binary at
+`~/Library/Application Support/Claude/claude-code/<version>/claude.app` — and
+that agent reads `~/.claude/settings.json` and runs our hooks like any other.
+One session produced the full sequence:
+
+```
+SessionStart · UserPromptSubmit · PreToolUse · Notification · PreToolUse · Stop
+```
+
+with `Notification` carrying "Claude needs your permission to use Bash",
+`needs_action=true`, and the row going red.
+
+**This is the opposite of Xcode's embedded agent**, below, which is also real
+Claude Code and reports nothing. The difference is the entrypoint: Xcode drives
+it as `sdk-cli`, in-process; the desktop app spawns the ordinary CLI as a child,
+so the hook machinery is intact.
+
+**Notable: that notification carried no `notification_type` at all** — an empty
+string, not `permission_prompt`. It alarmed anyway, because `interpret()` treats
+every type except `idle_prompt` as an alarm. That is the third unanticipated
+notification shape this polarity has caught (see also Grok's undocumented
+`elicitation_dialog`), and the first with no type to whitelist even if we wanted
+to.
+
+**Two caveats.**
+
+- **No tty.** There is no terminal, so there is no tab to jump to; the click
+  raises the application instead.
+- **The click used to land in Finder**, fixed the same day. `resolve_host_app`
+  returned the *first* app in the ancestry, which is that inner
+  `claude.app` — a real bundle, and one nobody can switch to. It never runs in
+  the foreground, so `isBundleRunning` was false and the destination fell
+  through to Finder. The emitter now takes the **topmost** app in the ancestry.
+  Terminal, Xcode and VS Code name the same app either way; only this host
+  differed. A session that was already open keeps the old value, since the
+  emitter carries the last known host forward — start a new one to see it.
+
 ## Xcode's Claude Agent — measured 2026-08-19, does not report
 
 Xcode 26 embeds a Claude agent ("Message Claude Agent"). It **is** Claude Code —
@@ -179,6 +218,7 @@ in every other editor.
 | Grok `SessionEnd` removes a row | replayed the real payload; file deleted | 2026-08-11 |
 | Grok turns a row red | live `normal`-mode session; `elicitation_dialog` carried the question text | 2026-08-19 |
 | Grok prose questions read as "done" | same session: a question ended the turn as a plain `Stop` | 2026-08-19 |
+| Claude for Desktop reports and alarms | live session; permission notification turned the row red | 2026-08-22 |
 | Real subagents carry `agent_type` | spawned two Explore agents; both `type="Explore"` while every internal one was `""` | 2026-08-11 |
 | Background images render | a real theme with a starfield frame, on screen — and it was broken three ways until it was tried | 2026-08-11 |
 | Nine-slice cap insets | the frame holds its corners while the panel resizes | 2026-08-11 |

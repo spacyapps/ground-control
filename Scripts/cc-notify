@@ -210,8 +210,27 @@ def resolve_host_app(tree):
     binary. /usr/bin/python3 with the developer tools installed is really
     "/Applications/Xcode.app/.../Python.app/Contents/MacOS/Python" — measured,
     and it reported Xcode as the terminal for every session on the machine.
+
+    Takes the **topmost** app in the ancestry, not the first one found. An
+    agent can be hosted by an app that ships its own copy of the CLI as a
+    separate bundle: Claude for Desktop runs
+    "~/Library/Application Support/Claude/claude-code/<v>/claude.app", which is
+    a real .app and therefore the first match, but is not an app anyone can
+    switch to — it never appears in the Dock and never runs in the foreground.
+    A row for it fell straight past `isBundleRunning` and landed the click in
+    Finder.
+
+    Measured on the three hosts present here. Terminal and Xcode name the same
+    app either way; only the desktop app differs, where the first is that inner
+    bundle and the topmost is /Applications/Claude.app. Nested helpers inside a
+    real app — VS Code's renderers — were already handled by `outermost_app`,
+    which climbs out of the bundle it is given; this climbs out of the process
+    tree, which is the case that one cannot see.
     """
-    return walk_up(tree, os.getppid(), lambda entry: outermost_app(entry[2]))
+    found = []
+    walk_up(tree, os.getppid(), lambda entry: found.append(outermost_app(entry[2])) or None)
+    apps = [app for app in found if app]
+    return apps[-1] if apps else None
 
 
 def outermost_app(path):
