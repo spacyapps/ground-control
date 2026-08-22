@@ -248,6 +248,26 @@ final class ThemeBriefChoicesTests: XCTestCase {
         }
     }
 
+    /// Two production findings, both from making the shipped themes, and both
+    /// invisible until you have animated something badly.
+    func testBothPartsSayHowToActuallyMakeTheFrames() {
+        var animated = brief()
+        animated.wantsAnimation = true
+
+        for prompt in [ThemePromptBuilder.partOne(for: animated),
+                       ThemePromptBuilder.partTwo(for: animated)] {
+            // Locking the outer bounds is not enough if the subject slides
+            // around inside them — that reads as a bounce, not as motion.
+            XCTAssertTrue(prompt.contains("Lock the position, not just the size"))
+            XCTAssertTrue(prompt.contains("only the part that actually"))
+
+            // Video-then-convert costs more and gives away frame count and
+            // timing, which are the two things that have to be controlled.
+            XCTAssertTrue(prompt.contains("not from video"))
+            XCTAssertTrue(prompt.contains("takes the"), "say what the conversion costs you")
+        }
+    }
+
     /// The bug this prevents: a magenta-keyed theme handed a prompt that says
     /// green everywhere, so the model fills green and the frame keeps it.
     func testTheChosenKeyColourReplacesEveryMention() {

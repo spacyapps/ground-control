@@ -193,17 +193,29 @@ enum ThemeFrameRules {
     static let animation = """
         ### Making the frames themselves
 
-        Two things matter more than the animation does, and both have gone
-        wrong before:
+        Three things matter more than the animation does, and every one of them
+        has gone wrong before:
 
         - **Lock the silhouette.** Every frame must have identical outer bounds.
           Do not generate each frame from the previous one — that drifts. One
           attempt varied 17px in height across its frames and read on screen as
           the panel changing size while it played.
+        - **Lock the position, not just the size.** Identical outer bounds are
+          not enough — the subject has to sit in exactly the same place in every
+          frame, and only the part that actually moves may move. A whole subject
+          drifting two or three pixels between frames does not read as
+          animation. It reads as a bounce, or a twitch, and at the size these
+          are seen that is the only thing anyone notices.
         - **Close the loop.** The last frame must be a legal step *into* the
           first, not merely similar to it. Play frames 28, 1, 2 in sequence and
           the motion should be indistinguishable from 1, 2, 3. Ping-ponged poses
           fail this: they look alike at the wrap and still jump.
+
+        **Make it from stills, not from video.** Generate each frame as its own
+        image and assemble them into the GIF. Do not produce a video and convert
+        it — that costs more for the same result, and the conversion takes the
+        frame count and the timing out of your hands. Measured the hard way, so
+        do not treat it as a preference.
 
         Animate surface detail only — lights, lamps, a glint travelling along a
         panel — on a cycle returning exactly to its starting values. The
