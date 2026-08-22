@@ -123,7 +123,10 @@ later versions of the app update the installed emitter themselves on launch, so
 the two halves cannot drift apart. It never installs one where you have not, and
 never touches your settings. It merges rather than
 overwrites, so hooks you already have are kept, and it is safe to re-run.
-Claude Code and Grok both read that file and both are covered.
+Claude Code and Grok both read that file and both are covered — and so does
+Claude for Desktop, which bundles its own Claude Code and spawns it as an
+ordinary child process, so one install covers the terminal and the desktop app
+together.
 
 If Cursor is installed it also registers `~/.cursor/hooks.json`, which is what
 its own agent reads — merging there too, and backing up anything already in it.

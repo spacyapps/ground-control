@@ -93,6 +93,14 @@ enum SetupStatus {
             "Covers Claude Code, Grok, and any agent running in a terminal —",
             "VS Code, Cursor, Warp, Ghostty, iTerm2, Terminal."
         ]
+        // Worth naming because nobody would guess it: the desktop app bundles
+        // its own Claude Code and spawns it as an ordinary child process, so
+        // the hooks run untouched and its rows go red like any other. Measured
+        // 2026-08-22. Only mentioned when it is installed, so the list stays
+        // about this machine rather than about every product that exists.
+        if exists(URL(fileURLWithPath: "/Applications/Claude.app")) {
+            lines.append("Also covers Claude for Desktop — its Code tab reports like the CLI.")
+        }
         if exists(cursorHooks) || exists(home.appendingPathComponent(".cursor")) {
             lines.append(mentionsEmitter(cursorHooks)
                 ? "Also watching Cursor's Composer chats — they never turn red."
