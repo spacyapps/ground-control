@@ -27,7 +27,8 @@ enum ThemePromptBuilder {
     static func partOne(for brief: ThemeBrief) -> String {
         let body = [artwork(for: brief), handBackMoods(for: brief)]
             .filter { !$0.isEmpty }
-        return ([ThemePromptText.preamble, request(for: brief), ThemePromptText.howWeWork] + body)
+        return ([ThemePromptText.preamble, request(for: brief), ThemePromptText.howWeWork,
+                 ThemePromptText.questions(for: brief)] + body)
             .joined(separator: "\n\n")
     }
 
