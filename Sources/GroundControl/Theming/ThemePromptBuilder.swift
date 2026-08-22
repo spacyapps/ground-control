@@ -223,6 +223,12 @@ enum ThemePromptBuilder {
         repaired: a silhouette or a colour that reads wrong costs one still to
         fix now, and every frame to fix later.
 
+        **And it is expensive literally.** Every frame is a separate generated
+        image. A 16-frame loop for two states is 32 images, not two — so an
+        animated pair can cost an order of magnitude more than four stills, in
+        both time and tokens. Say so before you start if that matters to me,
+        and treat a rejected animation as a real cost rather than a retry.
+
         **Two rules for the frames themselves, and both have gone wrong before:**
 
         - **Lock the silhouette.** Every frame has identical outer bounds. Do not

@@ -26,8 +26,10 @@ enum ThemeFramePrompt {
             questions,
             defaults(for: brief),
             [ThemeFrameRules.grid, ThemeFrameRules.drawing,
-             ThemeFrameRules.measuring, manifestBlock(for: brief),
-             ThemeFrameRules.animation]
+             ThemeFrameRules.measuring, manifestBlock(for: brief)]
+                .joined(separator: "\n\n"),
+            ThemeFrameRules.confirmStill,
+            [ThemeFrameRules.animationChoices, ThemeFrameRules.animation]
                 .joined(separator: "\n\n")
         ]
     }
