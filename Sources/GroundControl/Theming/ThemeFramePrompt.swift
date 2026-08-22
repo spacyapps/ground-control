@@ -76,6 +76,12 @@ enum ThemeFramePrompt {
         If I say "you choose" to any of them, choose something that belongs with
         the moods you have already drawn, and tell me what you chose.
 
+        **Anything I have already answered above, do not ask again.** Read my
+        answer back in one line and ask me to confirm it. The form I filled in
+        was a sketch made before I was thinking about this properly, so it is
+        worth checking — but being asked a question I have visibly answered
+        reads as not having been listened to.
+
         1. **What is this frame made of?** A few words. For example: a spaceship
            hull, a bakery counter, a carved wooden picture frame, a forest
            floor, a circuit board, a coral reef, stacked books.

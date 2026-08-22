@@ -79,6 +79,12 @@ enum ThemePromptText {
         Ask them all at once, then wait. Do not draw anything until I answer.
         If I say "you choose" to any of them, choose and tell me what you chose.
 
+        **Anything I have already answered above, do not ask again.** Read my
+        answer back in one line and ask me to confirm it. The form I filled in
+        was a sketch made before I was thinking about this properly, so it is
+        worth checking — but being asked a question I have visibly answered
+        reads as not having been listened to.
+
         \(reference)\(brief.hasReferenceImage ? "1" : "2"). **Is this the character?**
            Describe it back to me in one line before you draw it four times —
            species or object, what it is wearing or made of, what it is doing.

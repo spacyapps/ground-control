@@ -212,6 +212,20 @@ final class ThemeBriefChoicesTests: XCTestCase {
         }
     }
 
+    /// Four form fields are now also prompt questions — character, style, mood
+    /// and background. Asked cold, they read as not having been listened to, so
+    /// both parts are told to confirm rather than re-ask.
+    func testNeitherPartReAsksWhatTheFormAlreadyAnswered() {
+        for prompt in [ThemePromptBuilder.partOne(for: brief()),
+                       ThemePromptBuilder.partTwo(for: brief())] {
+            XCTAssertTrue(
+                prompt.contains("do not ask again"),
+                "a question already answered in the brief must be confirmed, not repeated"
+            )
+            XCTAssertTrue(prompt.contains("ask me to confirm it"))
+        }
+    }
+
     /// The bug this prevents: a magenta-keyed theme handed a prompt that says
     /// green everywhere, so the model fills green and the frame keeps it.
     func testTheChosenKeyColourReplacesEveryMention() {
