@@ -148,14 +148,17 @@ extension ThemeBuilderWindowController {
         ))
     }
 
-    /// The two choices that govern every image the author is about to draw, so
-    /// they belong in the questions rather than buried in the prompt.
+    /// The key colour, which is the one frame decision the author must make
+    /// here: it depends on the artwork, which only they can see coming.
+    ///
+    /// There used to be a frame-kind picker beside it. Every frame is a
+    /// nine-grid now, so the choice was between one option and a worse one.
     func addFrameQuestion(to form: NSStackView) {
         form.addArrangedSubview(frameRow())
         form.addArrangedSubview(caption(
-            "Simple scales the whole picture and suits any artwork. Nine-grid holds "
-            + "the corners and repeats the edges, so the panel can be dragged to any "
-            + "shape — it asks more of the art, and it is how spacyAppsLunarAvatar works."
+            "Pick a colour your artwork never uses. Everything that is not frame is "
+            + "filled with it and removed on load, so a green frame keyed on green "
+            + "erases itself."
         ))
     }
 
@@ -222,12 +225,6 @@ extension ThemeBuilderWindowController {
         row.orientation = .horizontal
         row.spacing = 8
 
-        for style in ThemeBrief.Frame.allCases {
-            framePicker.addItem(withTitle: style.title)
-        }
-        framePicker.target = self
-        framePicker.action = #selector(regenerate)
-
         // Named by colour rather than hex: the point is picking one the art
         // never uses, which is a question about the art, not about notation.
         for (title, _) in Self.keyColours {
@@ -236,8 +233,6 @@ extension ThemeBuilderWindowController {
         keyPicker.target = self
         keyPicker.action = #selector(regenerate)
 
-        row.addArrangedSubview(NSTextField(labelWithString: "Frame"))
-        row.addArrangedSubview(framePicker)
         row.addArrangedSubview(NSTextField(labelWithString: "Transparent"))
         row.addArrangedSubview(keyPicker)
         return row

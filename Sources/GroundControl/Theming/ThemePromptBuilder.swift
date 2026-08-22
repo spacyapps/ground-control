@@ -35,18 +35,14 @@ enum ThemePromptBuilder {
     /// settled, into the same conversation, so the model already knows the
     /// character it is framing.
     static func partTwo(for brief: ThemeBrief) -> String {
-        let numbered = [
-            brief.wantsBackgroundArt ? choices(for: brief) : "",
-            brief.wantsBackgroundArt
-                ? ThemePromptText.backgroundSection(
-                    key: brief.keyColour,
-                    ninegrid: brief.frame == .ninegrid
-                )
-                : "",
-            brief.wantsBackgroundArt ? ThemePromptText.shapeSection(key: brief.keyColour) : "",
+        // The frame comes before the manifest: the questions must be asked
+        // before anything is drawn, and a JSON block above them reads as
+        // permission to start.
+        let frame = brief.wantsBackgroundArt ? ThemeFramePrompt.sections(for: brief) : []
+        let numbered = (frame + [
             manifestSection(for: brief),
             installation(for: brief)
-        ].filter { !$0.isEmpty }
+        ]).filter { !$0.isEmpty }
 
         // Numbered here rather than written into each section: sections are
         // optional, and hand-numbered headings drift the moment one is skipped.
@@ -305,7 +301,6 @@ enum ThemePromptBuilder {
         - Omit any state you do not want to draw and the app's own drawn face is
           used for it, tinted from this palette.
         \(matrixNote(for: brief))
-        \(brief.wantsBackgroundArt ? ThemeFramePrompt.keys(for: brief) : "")
         """
     }
 
@@ -332,24 +327,6 @@ enum ThemePromptBuilder {
 
     /// Stated once, near the top, because both facts govern every image the
     /// author is about to draw.
-    static func choices(for brief: ThemeBrief) -> String {
-        let frame = brief.frame == .ninegrid
-            ? "**nine-grid** — corners hold their size, edges repeat, so the panel can be dragged to any shape"
-            : "**one picture, scaled** — the whole frame shrinks and grows together, keeping its proportions"
-
-        return """
-        ## Two things that govern everything below
-
-        **Frame:** \(frame).
-
-        **Key colour: `\(brief.keyColour)`.** Fill every pixel that is not
-        artwork with exactly this colour — the surround, and the middle too if
-        the frame is drawn in front. I remove it on load. Never use it, or
-        anything near it, inside the art itself: that is why it is chosen per
-        theme rather than fixed.
-        """
-    }
-
     private static func installation(for brief: ThemeBrief) -> String {
         """
         ## How to hand it back

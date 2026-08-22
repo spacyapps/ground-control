@@ -5,14 +5,8 @@ videos it references. That's it.
 
 ## Two choices before you draw anything
 
-**Create a Theme…** in Settings asks these first, because neither can be
-recovered afterwards:
-
-**Frame.** *Simple* draws one picture scaled to the panel — any artwork works,
-nothing to measure. *Nine-grid* holds the corners and repeats the edges, so the
-panel can be dragged to any shape. Nine-grid asks more of the art (ornaments in
-the corners, edges that tile) and is what the good themes will be, because it is
-the only kind that survives a resize intact.
+**Create a Theme…** in Settings asks this first, because it cannot be recovered
+afterwards:
 
 **Transparent colour.** Whatever is filled around — and behind — the artwork,
 which the app keys out on load. It must be a colour the art never uses: a green
@@ -34,6 +28,15 @@ change stays changed.
 | `default/` | **the reference** — every key that exists, annotated, at its built-in value. Not selectable; it is documentation. |
 | `example-avatars/` | the avatar system — three stills and an animated GIF |
 | `spacyAppsLunarAvatar/` | a shaped window: nine-grid frame, an animated skin, chroma keying, art past the panel edge |
+
+**The generated prompt only teaches the nine-grid.** Part two opens by asking
+four questions — the motif, the colours, what sits in each of the four corners,
+what texture runs along the edges — and tells the model to wait for answers
+before drawing. Overlay, an irregular silhouette and the keyed centre are stated
+as defaults rather than asked about; every one of them is a line in the manifest
+that can be changed afterwards. A scaled-whole frame still *loads* — the keys in
+this document are unchanged — it is simply no longer the thing we teach, because
+being the easy default meant most themes learnt nothing that survives a resize.
 | `spacyAppsUnicornOverlord/` | a frame drawn *in front* of the rows — `window.overlay`, four-sided insets, an animated loop |
 
 Copy whichever is closest to what you want.
