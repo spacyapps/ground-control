@@ -104,56 +104,78 @@ enum ThemePromptText {
         """
     }
 
-    /// How the frames themselves are made, once something is being animated.
+    /// The two ways to make the frames, offered rather than chosen.
     ///
-    /// The last two rules are Walter's, from making the themes that shipped:
-    /// locking the *size* is not enough if the subject slides around inside it,
-    /// and generating a video to convert into a GIF costs more than generating
-    /// the frames directly while giving away control of count and timing.
-    static func frameCraft(size: Int) -> String {
-        """
-        **Three rules for the frames themselves, and every one has gone wrong
-        before:**
+    /// This section has been written three ways in one evening: stills-only,
+    /// then video-only, now both. Each absolute came from one person's most
+    /// recent attempt, and neither survived the next one. They fail in
+    /// different currencies — jitter against tokens — so the choice belongs to
+    /// whoever is paying, and the honest thing is to say what each costs and
+    /// let them answer.
+    static let motionRoutes = """
+        ### Ask me how to make it
 
-        - **Lock the silhouette.** Every frame has identical outer bounds. Do not
-          generate each frame from the previous one — that drifts, and on screen
-          it reads as the avatar changing size while it plays.
-        - **Lock the position, not just the size.** The character has to sit in
-          exactly the same place in every frame, and only the part that actually
-          moves may move. A face that drifts two or three pixels between frames
-          does not read as animation — it reads as a bounce, and at
-          \(size)pt a bounce is the only thing anyone will see.
-        - **Close the loop.** The last frame must be a legal *step* into the
-          first, not merely similar to it: play the last, the first and the
-          second in sequence and it should look no different from any other
-          three. Ping-ponged poses fail this — they look alike at the wrap and
-          still jump.
+        There are two ways and they go wrong differently. Put this to me and
+        wait — do not pick for me:
 
-        **Animate the approved still, do not redraw it frame by frame.** Feed the
-        still you and I already agreed on into an image-to-video model, then
-        convert the result to a GIF. Frame-by-frame was tried and it is the
-        worse route: each frame is an independent generation, so the subject
-        shifts between them, and that shifting is exactly the bounce the rule
-        above forbids. One continuous generation holds it still for free.
+        | | How | What goes wrong |
+        |---|---|---|
+        | **Frame by frame** | each frame drawn separately | it can jitter |
+        | **Video, then convert** | animate the still, convert the clip | it costs tokens |
 
-        **The strict instructions are the whole job.** A video model will add
-        motion nobody asked for, so say all of this:
+        **Frame by frame jitters** because every frame is an independent
+        drawing, so the subject shifts a little between them. That is survivable
+        for a few frames of one small thing — a lamp blinking, a glint — and
+        obvious on anything larger.
+
+        **Video holds the subject still**, because it is one continuous
+        generation rather than many separate ones. What it costs is a video
+        generation, in real tokens, and a clip that does not loop by itself.
+
+        Say which you would use and why, then let me decide. If I have no
+        preference: video where a whole character or object moves,
+        frame-by-frame for a light, a glint, or a blink.
+
+        **If I choose frame by frame**, the danger is drift, so:
+
+        - **Lock the silhouette.** Identical outer bounds on every frame. Never
+          generate a frame from the previous one — that is what drifts.
+        - **Lock the position.** The subject sits in exactly the same place in
+          every frame; only the part that moves, moves. Two or three pixels of
+          travel reads as a bounce, and at this size a bounce is all anyone
+          sees.
+
+        **If I choose video**, the danger is a model adding motion nobody asked
+        for, so tell it all of this:
 
         - **Fixed camera.** No pan, no zoom, no dolly, no parallax.
-        - **The subject does not move, travel, or change size.** Only the one
-          thing that is meant to move, moves.
-        - **The background stays exactly as drawn.**
-        - **No new elements**, no lighting changes, nothing entering frame.
+        - **The subject does not travel or change size.** Only the one thing
+          meant to move.
+        - **The background stays exactly as drawn**, nothing new enters frame.
+        - **Then trim it to a loop yourself** — a clip ends where it ends.
 
-        **Then close the loop yourself, because video will not.** This is what
-        the route costs: a clip ends where it ends. Trim it to a point where the
-        last frame steps cleanly into the first, or ask for a cycle that returns
-        to its starting state.
+        **Either way:** the last frame must be a legal step *into* the first,
+        not merely similar to it. Play the last, the first and the second in
+        sequence and it should look no different from any other three.
+        Ping-ponged poses fail this — they look alike at the wrap and still
+        jump. Choose the frame count and rate deliberately, 8-24 frames at
+        roughly 10fps; three seconds at 30fps is 90 frames and an enormous file
+        for motion nobody can see at this size.
+        """
 
-        **And choose the conversion deliberately.** Pick the frame count and the
-        rate — 8-24 frames at roughly 10fps — rather than accepting whatever the
-        converter emits. Three seconds at 30fps is 90 frames and an enormous
-        file, for motion nobody can see at this size.
+    /// How the frames themselves are made, once something is being animated.
+    ///
+    /// Part one's copy: the same two routes as part two, since an avatar and a
+    /// frame are animated the same way and there is no second opinion to have.
+    static func frameCraft(size: Int) -> String {
+        """
+        **The two rules that hold whichever way you make them, and both have
+        gone wrong before:** every frame has identical outer bounds, and the
+        character sits in exactly the same place in each — a face that drifts
+        two or three pixels does not read as animation, it reads as a bounce,
+        and at \(size)pt a bounce is all anyone will see.
+
+        \(motionRoutes)
         """
     }
 

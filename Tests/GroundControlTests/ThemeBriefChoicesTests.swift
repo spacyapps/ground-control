@@ -6,6 +6,13 @@ import XCTest
 
 /// Part two asks before it draws.
 ///
+/// **Match short fragments that cannot contain a newline.** These prompts are
+/// hand-wrapped source, and a Swift multiline literal strips the common indent,
+/// so any phrase long enough to feel unambiguous is also long enough to span a
+/// wrap and never appear in the output. Three assertions have been written
+/// wrong that way; each looked like the prompt was missing text that was
+/// plainly there.
+///
 /// The frame used to be described at the author in one block, which produced
 /// frames nobody had chosen. It now opens with four questions — motif, colours,
 /// what is in each corner, what runs along the edges — and the model is told to
@@ -109,16 +116,16 @@ final class ThemeBriefChoicesTests: XCTestCase {
     /// long enough to contain a newline.
     func testBothPartsPriceTheAnimationAndWaitForAYes() {
         let frame = ThemePromptBuilder.partTwo(for: brief())
-        XCTAssertTrue(frame.contains("Every moving thing is its own video generation"))
-        XCTAssertTrue(frame.contains("three clips, not one"), "the arithmetic persuades")
+        XCTAssertTrue(frame.contains("animating costs far more than the still"))
+        XCTAssertTrue(frame.contains("the number"), "an adjective is not a price")
         XCTAssertTrue(frame.contains("or keep the still frame?"), "it has to be a question")
         XCTAssertTrue(frame.contains("a third,"), "and a distinct one from the earlier yeses")
 
         var animated = brief()
         animated.wantsAnimation = true
         let moods = ThemePromptBuilder.partOne(for: animated)
-        XCTAssertTrue(moods.contains("a video generation and"))
-        XCTAssertTrue(moods.contains("two clips here"))
+        XCTAssertTrue(moods.contains("generations or two sets"))
+        XCTAssertTrue(moods.contains("or keep the stills?"))
         XCTAssertTrue(moods.contains("or keep the stills?"))
         XCTAssertTrue(moods.contains("separate yes"))
     }
@@ -248,27 +255,32 @@ final class ThemeBriefChoicesTests: XCTestCase {
         }
     }
 
-    /// Two production findings, both from making the shipped themes, and both
-    /// invisible until you have animated something badly.
-    func testBothPartsSayHowToActuallyMakeTheFrames() {
+    /// How the frames get made is offered, not decided.
+    ///
+    /// This section was written three ways in one evening — stills only, then
+    /// video only, now both — because each absolute came from whichever attempt
+    /// was most recent, and neither survived the next one. They fail in
+    /// different currencies, jitter against tokens, so the choice belongs to
+    /// whoever is paying.
+    func testBothPartsOfferBothWaysToAnimate() {
         var animated = brief()
         animated.wantsAnimation = true
 
         for prompt in [ThemePromptBuilder.partOne(for: animated),
                        ThemePromptBuilder.partTwo(for: animated)] {
-            // Locking the outer bounds is not enough if the subject slides
-            // around inside them — that reads as a bounce, not as motion.
-            XCTAssertTrue(prompt.contains("Lock the position, not just the size"))
-            XCTAssertTrue(prompt.contains("only the part that actually"))
+            XCTAssertTrue(prompt.contains("Ask me how to make it"))
+            XCTAssertTrue(prompt.contains("do not pick for me"))
+            XCTAssertTrue(prompt.contains("it can jitter"), "what drawing frames costs")
+            XCTAssertTrue(prompt.contains("it costs tokens"), "what generating video costs")
 
-            // Video-then-convert costs more and gives away frame count and
-            // timing, which are the two things that have to be controlled.
-            // Reversed 2026-08-22 against real use: frame-by-frame drifts,
-            // because every frame is an independent generation. One continuous
-            // generation holds the subject still, which is the rule above.
-            XCTAssertTrue(prompt.contains("do not redraw it frame by frame"))
-            XCTAssertTrue(prompt.contains("Fixed camera"), "video models add motion nobody asked for")
-            XCTAssertTrue(prompt.contains("close the loop yourself"), "a clip ends where it ends")
+            // The dangers differ, so both sets of rules have to be present or
+            // whichever route is chosen is the unguarded one.
+            XCTAssertTrue(prompt.contains("Lock the position"), "the frame-by-frame danger")
+            XCTAssertTrue(prompt.contains("Fixed camera"), "the video danger")
+            XCTAssertTrue(prompt.contains("trim it to a loop yourself"), "a clip ends where it ends")
+
+            // And the one rule that holds either way.
+            XCTAssertTrue(prompt.contains("legal step *into* the first"))
         }
     }
 
