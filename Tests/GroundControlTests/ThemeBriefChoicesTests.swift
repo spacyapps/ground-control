@@ -100,20 +100,42 @@ final class ThemeBriefChoicesTests: XCTestCase {
         XCTAssertTrue(frame.contains("A still frame is a perfectly good answer"))
     }
 
-    /// An author cannot weigh a cost nobody mentioned. Both parts say it now,
-    /// because both can spend an afternoon of image generation.
-    func testBothPartsWarnThatFramesAreGeneratedImages() {
+    /// An author cannot weigh a cost nobody mentioned — and a cost mentioned
+    /// while the work is already running is not a choice. Both parts stop, give
+    /// a number, and ask a question that has to be answered.
+    ///
+    /// Matched in fragments that cannot span a wrap: these strings are
+    /// hand-wrapped source, so a phrase long enough to be unambiguous is also
+    /// long enough to contain a newline.
+    func testBothPartsPriceTheAnimationAndWaitForAYes() {
         let frame = ThemePromptBuilder.partTwo(for: brief())
         XCTAssertTrue(frame.contains("Every frame is a separately generated image"))
+        XCTAssertTrue(frame.contains("48 images, not three"), "the arithmetic persuades")
+        XCTAssertTrue(frame.contains("or keep the still frame?"), "it has to be a question")
+        XCTAssertTrue(frame.contains("a third,"), "and a distinct one from the earlier yeses")
 
         var animated = brief()
         animated.wantsAnimation = true
         let moods = ThemePromptBuilder.partOne(for: animated)
-        // Matched in fragments that cannot span a wrap: these strings are
-        // hand-wrapped source, so a phrase long enough to be unambiguous is
-        // also long enough to contain a newline.
         XCTAssertTrue(moods.contains("Every frame is a separate generated"))
-        XCTAssertTrue(moods.contains("is 32 images, not two"), "the arithmetic persuades")
+        XCTAssertTrue(moods.contains("is 32 images, not two"))
+        XCTAssertTrue(moods.contains("or keep the stills?"))
+        XCTAssertTrue(moods.contains("separate yes"))
+    }
+
+    /// Refusing the animation has to be a real answer, or the question is
+    /// theatre. Both parts say a still theme is finished rather than lacking.
+    func testDecliningTheAnimationIsATerminalAnswer() {
+        let frame = ThemePromptBuilder.partTwo(for: brief())
+        XCTAssertTrue(frame.contains("that is a finished theme and a good one"))
+        XCTAssertTrue(frame.contains("hand it back without arguing"))
+
+        var animated = brief()
+        animated.wantsAnimation = true
+        XCTAssertTrue(
+            ThemePromptBuilder.partOne(for: animated).contains("without arguing"),
+            "a model that argues here has turned a gate into a formality"
+        )
     }
 
     /// Both parts open with the whole job on one screen. The staging was

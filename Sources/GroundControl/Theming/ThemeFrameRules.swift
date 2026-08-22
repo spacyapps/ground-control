@@ -157,22 +157,34 @@ enum ThemeFrameRules {
         whole frame, nothing that pulls the eye away from a row that has just
         turned red.
 
-        ### Then tell me what it costs, before you make it
+        ### Then stop, price it, and ask me whether to go ahead
 
-        Every frame is a separately generated image. Sixteen frames is sixteen
-        images — far slower and far more expensive than one still, and a bigger
-        file in the finished theme.
+        Every frame is a separately generated image. Three corners at 16 frames
+        is 48 images, not three — far slower and far more
+        expensive than the still I have already approved, and a heavier theme
+        afterwards.
 
-        So say which of these I am choosing, and let me answer:
+        So before you generate anything, tell me **the actual number** for what
+        I just chose. Count it: things that move × frames each. Not "this may
+        take a while" — the number.
 
-        | | Cost |
+        | What I picked | What it costs |
         |---|---|
-        | A still frame | one image |
-        | A few lights blinking in one corner | a small loop, cheap |
-        | Several corners and an edge moving | many images, and a heavy theme |
+        | Keep the still | nothing more; the theme is finished |
+        | One corner blinking, 8 frames | 8 images |
+        | Three corners at 16 frames | 48 images |
 
-        Once I have said yes to a still, to what moves, and to the cost, go
-        ahead.
+        Then ask me, as a plain question and nothing else in the message:
+
+        > **Generate N images for the animation, or keep the still frame?**
+
+        And wait. **My yes to the still was not permission to animate, and
+        choosing what moves was not permission either — this is a third,
+        separate yes.** Generating first and showing me the bill afterwards is
+        the one outcome this section exists to prevent.
+
+        If I say keep the still, that is a finished theme and a good one. Write
+        the manifest against the still and hand it back without arguing.
         """
 
     /// The two technical rules, once something has actually been chosen to
