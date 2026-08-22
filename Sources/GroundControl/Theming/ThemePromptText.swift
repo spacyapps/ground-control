@@ -33,14 +33,15 @@ enum ThemePromptText {
 
     | Stage | What happens | Ends when |
     |---|---|---|
-    | 1 | You ask me the four questions below | I answer all four |
+    | 1 | **Four questions** — a reference picture · the character · each state's mark · the rendering | I answer |
     | 2 | You draw all four faces as **stills** and show them at real size | you show me |
-    | 3 | I confirm, or send notes | I say yes |
+    | 3 | I confirm, or send notes | **I say yes** |
     | 4 | *Only if I asked for motion:* you animate the two states that move | the loops close |
     | 5 | You hand the four files back, and stop | — |
 
-    Do not run ahead into the next stage. Stage 3 is where two or three rounds
-    of notes happen; that is the process working, not a failure of it.
+    Stage 1 is written out below — do not answer it from this table. Do not run
+    ahead into the next stage either. Stage 3 is where two or three rounds of
+    notes happen; that is the process working, not a failure of it.
 
     **Stills before motion, always.** Anything animated gets drawn as a single
     still first and approved before it becomes frames. A silhouette that reads

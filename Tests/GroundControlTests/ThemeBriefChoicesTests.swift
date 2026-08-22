@@ -179,6 +179,39 @@ final class ThemeBriefChoicesTests: XCTestCase {
         XCTAssertTrue(moods.contains("is already decided below and is not up for"))
     }
 
+    /// The tables name their questions rather than pointing at them, because
+    /// the author reads this file too — it is written into the theme folder as
+    /// PROMPT-1-moods.md — and a row saying "you ask me the four questions
+    /// below" tells them nothing about what they are about to be asked.
+    func testTheStageTablesNameTheQuestions() {
+        let moods = ThemePromptBuilder.partOne(for: brief())
+        XCTAssertTrue(moods.contains("a reference picture · the character"))
+        XCTAssertTrue(moods.contains("Stage 1 is written out below"))
+
+        let frame = ThemePromptBuilder.partTwo(for: brief())
+        XCTAssertTrue(frame.contains("the material · the colours · each corner · the edges"))
+        XCTAssertTrue(frame.contains("corner bleed · tiling · the opening · the silhouette"))
+        // Not matched with its indentation: a multiline literal strips the
+        // common leading whitespace, so the emitted text has none.
+        XCTAssertTrue(frame.contains("not from this table"))
+    }
+
+    /// A table row cannot wrap without ceasing to be a table row, so these are
+    /// the only lines in the prompts that must be short by construction rather
+    /// than by style. Lint enforces the source; this enforces the output.
+    func testNoTableRowIsTooLongToRead() {
+        for prompt in [ThemePromptBuilder.partOne(for: brief()),
+                       ThemePromptBuilder.partTwo(for: brief())] {
+            for line in prompt.split(separator: "\n") where line.hasPrefix("| ") {
+                XCTAssertLessThanOrEqual(
+                    line.count,
+                    120,
+                    "a table row this long wraps in the reader: \(line.prefix(60))…"
+                )
+            }
+        }
+    }
+
     /// The bug this prevents: a magenta-keyed theme handed a prompt that says
     /// green everywhere, so the model fills green and the frame keeps it.
     func testTheChosenKeyColourReplacesEveryMention() {
