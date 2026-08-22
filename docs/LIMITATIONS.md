@@ -139,6 +139,14 @@ SessionStart · UserPromptSubmit · PreToolUse · Notification · PreToolUse · 
 with `Notification` carrying "Claude needs your permission to use Bash",
 `needs_action=true`, and the row going red.
 
+**Its Code tab only.** The desktop app has two surfaces: **Home**, which is
+ordinary claude.ai chat rendered in Electron, and **Code**, which is Claude Code
+with a GUI instead of a terminal. Only Code spawns a process, so only Code
+reports — a Home conversation produces no row and never will. There is nothing
+to want there either: a chat window is turn-based and in front of you, so the
+state this app exists to surface, an agent blocked in a window you have buried,
+cannot occur in it.
+
 **This is the opposite of Xcode's embedded agent**, below, which is also real
 Claude Code and reports nothing. The difference is the entrypoint: Xcode drives
 it as `sdk-cli`, in-process; the desktop app spawns the ordinary CLI as a child,
@@ -219,6 +227,9 @@ in every other editor.
 | Grok turns a row red | live `normal`-mode session; `elicitation_dialog` carried the question text | 2026-08-19 |
 | Grok prose questions read as "done" | same session: a question ended the turn as a plain `Stop` | 2026-08-19 |
 | Claude for Desktop reports and alarms | live session; permission notification turned the row red | 2026-08-22 |
+| Its Home tab reports nothing | a chat there produced no row; only the Code tab spawns a process | 2026-08-22 |
+| Four hosts told apart in one panel | Terminal, Cursor, VS Code and Claude for Desktop on screen together, each row naming its host | 2026-08-22 |
+| Cursor's two agents differ, side by side | Claude Code in its terminal went red while Composer sat "done" in the same panel | 2026-08-22 |
 | Real subagents carry `agent_type` | spawned two Explore agents; both `type="Explore"` while every internal one was `""` | 2026-08-11 |
 | Background images render | a real theme with a starfield frame, on screen — and it was broken three ways until it was tried | 2026-08-11 |
 | Nine-slice cap insets | the frame holds its corners while the panel resizes | 2026-08-11 |
@@ -419,6 +430,20 @@ attributed to `/Applications/Cursor.app` / `com.todesktop.230313mzl4w4u92` with
 **no tty** — Composer is not a shell. That is the right shape: the destination
 logic sends a host-without-tty row to the application, so clicking raises
 Cursor.
+
+**Both Cursor surfaces, in one panel, 2026-08-22.** The distinction stopped
+being a claim in two documents and became two rows on screen at once:
+
+```
+Cursor -> cursorem        source=claude    needsInput   (red)
+Cursor -> it was a tes    source=cursor    done
+```
+
+Same host, same editor, two different agents. Claude Code running in Cursor's
+integrated terminal alarms exactly like Claude Code anywhere else; Cursor's own
+Composer reports its rows and never goes red. Anyone who says "Cursor works" or
+"Cursor does not work" is answering a question that has two answers, which is
+why the compatibility table lists them as separate products.
 
 **No alarm for Composer — measured, then confirmed against the docs.**
 
