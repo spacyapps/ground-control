@@ -284,6 +284,21 @@ final class ThemeBriefChoicesTests: XCTestCase {
         }
     }
 
+    /// Both parts say revisits are expected, because a model that thinks it has
+    /// failed starts apologising and rewriting things nobody objected to. The
+    /// questions removed the rounds that were nobody's decision; the ones left
+    /// are taste, and taste takes a couple of passes.
+    func testBothPartsExpectRevisits() {
+        for prompt in [ThemePromptBuilder.partOne(for: brief()),
+                       ThemePromptBuilder.partTwo(for: brief())] {
+            XCTAssertTrue(prompt.contains("Expect two or three rounds"))
+            XCTAssertTrue(
+                prompt.contains("the process working, not a failure of it"),
+                "a revisit has to be named as normal, or it reads as a mistake"
+            )
+        }
+    }
+
     /// The bug this prevents: a magenta-keyed theme handed a prompt that says
     /// green everywhere, so the model fills green and the frame keeps it.
     func testTheChosenKeyColourReplacesEveryMention() {
