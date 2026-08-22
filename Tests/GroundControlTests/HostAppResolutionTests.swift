@@ -95,6 +95,34 @@ final class HostAppResolutionTests: XCTestCase {
         XCTAssertEqual(resolved, code)
     }
 
+    /// The short name a row shows. Claude for Desktop groups its sessions by
+    /// folder, so three conversations under ~/xcode all arrive called "xcode";
+    /// the host is the only thing separating them from a terminal session in
+    /// the same place.
+    func testTheHostNameIsShortEnoughForARow() {
+        XCTAssertEqual(host("/Applications/Claude.app"), "Claude")
+        XCTAssertEqual(host("/System/Applications/Utilities/Terminal.app"), "Terminal")
+        XCTAssertEqual(host("/Applications/iTerm.app"), "iTerm")
+        XCTAssertEqual(
+            host("/Applications/Visual Studio Code.app"),
+            "VS Code",
+            "the full bundle name crowds out the folder it is labelling"
+        )
+        XCTAssertNil(host(nil), "no host is not a host called nothing")
+        XCTAssertNil(host(""))
+    }
+
+    /// Built by decoding, like the app does — the row only ever sees a host
+    /// that arrived as JSON from the emitter.
+    private func host(_ path: String?) -> String? {
+        let field = path.map { "\"host_app\":\"\($0)\"," } ?? ""
+        let json = "{\"session_id\":\"s\",\"source\":\"claude\",\(field)\"ts\":1}"
+        guard let event = try? JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8)) else {
+            return nil
+        }
+        return Session(id: "s", latest: event, children: [], acknowledgedAt: nil).hostName
+    }
+
     /// No app in the ancestry at all is the normal case under tmux or a daemon,
     /// and must stay empty rather than inventing a host.
     func testAnAncestryWithNoAppNamesNothing() throws {

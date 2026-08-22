@@ -166,6 +166,12 @@ final class SessionListView: NSView {
         // A single-CLI user never sees a source tag; two or more and every row
         // gets one, so the comparison is obvious rather than implied.
         let showsSource = Set(sessions.map(\.source)).count > 1
+
+        // Same rule for the host, on its own axis. Everything in Terminal reads
+        // as "Terminal → …" on every row, which is noise; a terminal session
+        // beside one living in Claude for Desktop is the case worth spending
+        // the width on, and the folder alone cannot tell them apart.
+        let showsHost = Set(sessions.compactMap(\.hostName)).count > 1
         let rowHeight = SessionRowView.height(for: theme)
         let childHeight = GroupRowView.height(for: theme)
         var total: CGFloat = 0
@@ -178,7 +184,8 @@ final class SessionListView: NSView {
                 renames: renames,
                 isExpanded: expanded.contains(session.id),
                 isAlternate: index.isMultiple(of: 2),
-                showsSource: showsSource
+                showsSource: showsSource,
+                showsHost: showsHost
             ))
             // Only whether there is anywhere to go, not where: naming the app
             // meant a display-name lookup per row on every list update, to
