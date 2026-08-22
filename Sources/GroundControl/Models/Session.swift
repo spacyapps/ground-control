@@ -27,6 +27,27 @@ struct Session: Identifiable, Equatable {
         return String(id.prefix(8))
     }
 
+    /// Where this session is running, short enough for a row: "Terminal",
+    /// "Claude", "iTerm", "VS Code".
+    ///
+    /// Two sessions in the same folder are the same row otherwise, which is
+    /// exactly what Claude for Desktop produces — it groups its sessions by
+    /// folder, so three conversations under `~/xcode` all arrive named
+    /// "xcode". The host is the one thing that tells a desktop session from a
+    /// terminal one, and it is already in every event.
+    var hostName: String? {
+        guard let path = hostApp, !path.isEmpty else { return nil }
+        let bundle = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+        return Session.shortHostNames[bundle] ?? bundle
+    }
+
+    /// Bundle names long enough to crowd out the thing they are labelling.
+    private static let shortHostNames = [
+        "Visual Studio Code": "VS Code",
+        "Claude": "Claude",
+        "Electron": "VS Code"
+    ]
+
     var message: String { latest.message }
 
     /// The state as it should read *now*, which is not always the state that
