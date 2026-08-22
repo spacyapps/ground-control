@@ -35,7 +35,7 @@ enum ThemeFramePrompt {
         | 1 | **Four questions** — the material · the colours · each corner · the edges | I answer all four |
         | 2 | You draw **one still** of the whole frame | you show it at real size |
         | 3 | **We check it** — corner bleed · tiling · the opening · the silhouette | **I say yes** |
-        | 4 | **What should move?** — corners, edges, or nothing — and the cost | **I choose** |
+        | 4 | **What should move?** — then the image count, then ask | **I say go ahead** |
         | 5 | You make the frames, if I asked for any | the loop closes |
         | 6 | You write `theme.json` and hand back the folder | — |
 

@@ -36,7 +36,7 @@ enum ThemePromptText {
     | 1 | **Four questions** — a reference picture · the character · each state's mark · the rendering | I answer |
     | 2 | You draw all four faces as **stills** and show them at real size | you show me |
     | 3 | I confirm, or send notes | **I say yes** |
-    | 4 | *Only if I asked for motion:* you animate the two states that move | the loops close |
+    | 4 | You price the animation and ask; *only then* animate the two that move | **I say go ahead** |
     | 5 | You hand the four files back, and stop | — |
 
     Stage 1 is written out below — do not answer it from this table. Do not run
