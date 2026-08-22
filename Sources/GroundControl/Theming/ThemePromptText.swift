@@ -27,18 +27,20 @@ enum ThemePromptText {
     static let howWeWork = """
     ## How I want to work
 
-    **In stages, and stop at the end of each one.** The parts below are ordered
-    easiest first, and each is finished and checked before the next begins:
+    **In stages, and stop at the end of each one.** This paste covers the
+    avatars only — the four faces. The panel's frame and the manifest are a
+    second paste, sent once these are right.
 
-    1. **The avatars** — four small square images. Self-contained, and the place
-       to settle the character and the palette.
-    2. **The frame** — the panel's own artwork. Harder, and it depends on
-       decisions made in stage 1.
-    3. **The manifest** — the JSON tying it together. Last, once the filenames
-       are actually known.
+    | Stage | What happens | Ends when |
+    |---|---|---|
+    | 1 | You ask me anything ambiguous enough to change what you draw | I answer |
+    | 2 | You draw all four faces as **stills** and show them at real size | you show me |
+    | 3 | I confirm, or send notes | I say yes |
+    | 4 | *Only if I asked for motion:* you animate the two states that move | the loops close |
+    | 5 | You hand the four files back, and stop | — |
 
-    At the end of each stage, show me what you have and wait. Do not run ahead
-    into the next one.
+    Do not run ahead into the next stage. Stage 3 is where two or three rounds
+    of notes happen; that is the process working, not a failure of it.
 
     **Stills before motion, always.** Anything animated gets drawn as a single
     still first and approved before it becomes frames. A silhouette that reads
@@ -47,8 +49,6 @@ enum ThemePromptText {
     **Ask before you start if anything is ambiguous** enough to change what you
     would draw. One question now beats a round of revisions.
 
-    **Expect two or three rounds.** I will have notes. That is the process
-    working, not a failure of it.
     """
 
     static let paletteReference = """

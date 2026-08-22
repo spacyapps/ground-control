@@ -69,8 +69,12 @@ final class ThemeBriefChoicesTests: XCTestCase {
     /// which is where a model looks *after* deciding to animate.
     func testNothingAnimatesBeforeTwoConfirmations() {
         let frame = ThemePromptBuilder.partTwo(for: brief())
+        // Phrases unique to the headings, but without their `##` — part two
+        // numbers headings as it assembles them, so the literal `## Show me`
+        // never appears. They still have to be specific enough to miss the
+        // stage table at the top, which paraphrases all three.
         guard let still = frame.range(of: "Show me the still and wait"),
-              let choose = frame.range(of: "ask what should move"),
+              let choose = frame.range(of: "Once I confirm the still"),
               let make = frame.range(of: "Making the frames themselves") else {
             return XCTFail("part two lost its staging")
         }
@@ -110,6 +114,27 @@ final class ThemeBriefChoicesTests: XCTestCase {
         // also long enough to contain a newline.
         XCTAssertTrue(moods.contains("Every frame is a separate generated"))
         XCTAssertTrue(moods.contains("is 32 images, not two"), "the arithmetic persuades")
+    }
+
+    /// Both parts open with the whole job on one screen. The staging was
+    /// already written down, but scattered through the sections, where it reads
+    /// as advice rather than as the shape of the work — and got walked past.
+    func testBothPartsOpenWithTheirStages() {
+        let moods = ThemePromptBuilder.partOne(for: brief())
+        XCTAssertTrue(moods.contains("| Stage | What happens | Ends when |"))
+        XCTAssertTrue(moods.contains("You hand the four files back"))
+
+        let frame = ThemePromptBuilder.partTwo(for: brief())
+        XCTAssertTrue(frame.contains("| Stage | What happens | Ends when |"))
+        XCTAssertTrue(frame.contains("the two places you stop and wait"))
+
+        // The table has to arrive before the work it describes, or it is a
+        // summary rather than a plan.
+        guard let table = frame.range(of: "| Stage |"),
+              let first = frame.range(of: "Ask me these four questions") else {
+            return XCTFail("part two lost its header")
+        }
+        XCTAssertLessThan(table.lowerBound, first.lowerBound)
     }
 
     /// The bug this prevents: a magenta-keyed theme handed a prompt that says

@@ -18,6 +18,31 @@ import Foundation
 /// resize. The manifest still loads those themes; we simply stopped teaching a
 /// second way to do it.
 enum ThemeFramePrompt {
+    /// The whole of part two on one screen, before any of it starts.
+    ///
+    /// Two gates sit in the middle of this and both were being walked past —
+    /// the staging read as advice scattered through the sections rather than as
+    /// the shape of the job. A model that can see stage 4 coming does not start
+    /// animating in stage 2.
+    static let header = """
+        # Part two — the panel itself
+
+        The four moods are settled. Now the frame they sit in, and the manifest
+        that names everything.
+
+        | Stage | What happens | Ends when |
+        |---|---|---|
+        | 1 | You ask me the four questions below | I answer all four |
+        | 2 | You draw **one still** of the whole frame | you show it at real size |
+        | 3 | We check it together — corners, tiling, the opening | **I say yes** |
+        | 4 | You ask what should move, and tell me what that costs | **I choose** |
+        | 5 | You make the frames, if I asked for any | the loop closes |
+        | 6 | You write `theme.json` and hand back the folder | — |
+
+        Stages 3 and 4 are the two places you stop and wait for me. Nothing is
+        animated before both are done.
+        """
+
     /// Returned as separate sections rather than one block, because part two
     /// numbers its headings and a frame folded into the manifest section would
     /// be read as a footnote to the JSON rather than as the work itself.
