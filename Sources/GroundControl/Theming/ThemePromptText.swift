@@ -33,7 +33,7 @@ enum ThemePromptText {
 
     | Stage | What happens | Ends when |
     |---|---|---|
-    | 1 | You ask me anything ambiguous enough to change what you draw | I answer |
+    | 1 | You ask me the four questions below | I answer all four |
     | 2 | You draw all four faces as **stills** and show them at real size | you show me |
     | 3 | I confirm, or send notes | I say yes |
     | 4 | *Only if I asked for motion:* you animate the two states that move | the loops close |
@@ -46,10 +46,56 @@ enum ThemePromptText {
     still first and approved before it becomes frames. A silhouette that reads
     wrong costs one drawing to fix now and every frame to fix later.
 
-    **Ask before you start if anything is ambiguous** enough to change what you
-    would draw. One question now beats a round of revisions.
-
     """
+
+    /// Part one's opening questions.
+    ///
+    /// It used to have one line — *"ask before you start if anything is
+    /// ambiguous"* — which a model satisfies by deciding nothing is. Measured:
+    /// a real session asked nothing at all in part one, drew straight from the
+    /// form text, and only started asking when part two arrived with four
+    /// questions written out.
+    ///
+    /// So these are the four decisions a form field cannot carry: a reference
+    /// beats any description, the character has to be agreed before it is drawn
+    /// four times, each state needs a *mark* chosen by the person who will read
+    /// it, and the rendering decides whether any of it survives 48px.
+    ///
+    /// Deliberately absent: the mood palette, and which states animate. Both
+    /// are already fixed by rules that were expensive to learn, and reopening
+    /// them invites back the yellow-needsInput problem.
+    static func questions(for brief: ThemeBrief) -> String {
+        let reference = brief.hasReferenceImage ? "" : """
+            1. **Do you have a picture of this character?** Attach it if so —
+               working from one image beats any description, and it is the only
+               reliable way all four faces end up the same character rather than
+               four cousins. If not, say so and I will design one.
+
+            """
+        return """
+        ## Ask me these questions first
+
+        Ask them all at once, then wait. Do not draw anything until I answer.
+        If I say "you choose" to any of them, choose and tell me what you chose.
+
+        \(reference)\(brief.hasReferenceImage ? "1" : "2"). **Is this the character?**
+           Describe it back to me in one line before you draw it four times —
+           species or object, what it is wearing or made of, what it is doing.
+           A wrong guess here costs all four faces.
+
+        \(brief.hasReferenceImage ? "2" : "3"). **What does each state do?**
+           The colour of each is already decided below and is not up for
+           discussion. What I need from you is the **mark** — the one big thing
+           that changes. For example: asleep with Zs, hunched over and busy, an
+           arm raised waiting for me, a checkmark or a thumbs-up when finished.
+           Name one per state, or say "you choose".
+
+        \(brief.hasReferenceImage ? "3" : "4"). **How should it be drawn?**
+           Flat vector, painted, pixel art, cel-shaded, 3D render, ink. This
+           decides whether it survives being shrunk to \(brief.avatarSize)pt
+           more than any other answer.
+        """
+    }
 
     static let paletteReference = """
     ## Keys

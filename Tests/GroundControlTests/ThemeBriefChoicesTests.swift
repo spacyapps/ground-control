@@ -137,6 +137,48 @@ final class ThemeBriefChoicesTests: XCTestCase {
         XCTAssertLessThan(table.lowerBound, first.lowerBound)
     }
 
+    /// Part one asks too, and for the same reason part two does: a catch-all
+    /// "ask if anything is ambiguous" is satisfied by deciding nothing is. A
+    /// real session asked nothing at all until part two arrived.
+    func testPartOneAsksBeforeItDraws() {
+        var noPicture = brief()
+        noPicture.hasReferenceImage = false
+        let moods = ThemePromptBuilder.partOne(for: noPicture)
+
+        XCTAssertTrue(moods.contains("Ask me these questions first"))
+        XCTAssertTrue(moods.contains("Do you have a picture of this character?"))
+        XCTAssertTrue(moods.contains("Is this the character?"))
+        XCTAssertTrue(moods.contains("What does each state do?"))
+        XCTAssertTrue(moods.contains("How should it be drawn?"))
+        XCTAssertTrue(moods.contains("Do not draw anything until I answer"))
+
+        guard let ask = moods.range(of: "Ask me these questions first"),
+              let draw = moods.range(of: "## The four moods") else {
+            return XCTFail("part one lost a section")
+        }
+        XCTAssertLessThan(ask.lowerBound, draw.lowerBound, "asking comes before describing")
+    }
+
+    /// Do not ask for a picture that is already attached.
+    func testTheReferenceQuestionDisappearsOnceThereIsOne() {
+        var attached = brief()
+        attached.hasReferenceImage = true
+        let moods = ThemePromptBuilder.partOne(for: attached)
+
+        XCTAssertFalse(moods.contains("Do you have a picture"), "it is already here")
+        XCTAssertTrue(moods.contains("I am attaching a picture"))
+        XCTAssertTrue(moods.contains("Is this the character?"), "the others still apply")
+    }
+
+    /// The two things part one must not reopen. Both were settled by expensive
+    /// mistakes: a yellow needsInput forced a fourth colour to be invented
+    /// twice, and four animated faces mean nothing stands out.
+    func testPartOneDoesNotReopenSettledDecisions() {
+        let moods = ThemePromptBuilder.partOne(for: brief())
+        XCTAssertFalse(moods.contains("What colours"), "the palette is not a question")
+        XCTAssertTrue(moods.contains("is already decided below and is not up for"))
+    }
+
     /// The bug this prevents: a magenta-keyed theme handed a prompt that says
     /// green everywhere, so the model fills green and the frame keeps it.
     func testTheChosenKeyColourReplacesEveryMention() {
@@ -150,7 +192,10 @@ final class ThemeBriefChoicesTests: XCTestCase {
     func testPartOneDoesNotTalkAboutTheFrame() {
         let moods = ThemePromptBuilder.partOne(for: brief())
         XCTAssertFalse(moods.contains("capInsets"), "the frame belongs to part two")
-        XCTAssertFalse(moods.contains("four questions"), "and so do its questions")
+        // Part one has four questions of its own now, so the guard has to name
+        // part two's rather than count them.
+        XCTAssertFalse(moods.contains("What runs along the edges?"), "and so do its questions")
+        XCTAssertFalse(moods.contains("in each of the four corners"))
         XCTAssertTrue(moods.contains("The four moods"), "and the moods to part one")
     }
 
