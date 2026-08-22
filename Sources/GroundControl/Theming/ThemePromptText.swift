@@ -129,10 +129,31 @@ enum ThemePromptText {
           three. Ping-ponged poses fail this — they look alike at the wrap and
           still jump.
 
-        **Make them from stills, not from video.** Generate each frame as its own
-        image and assemble those into the GIF. Do not produce a video and convert
-        it — that costs more for the same result, and the conversion takes the
-        frame count and the timing out of your hands.
+        **Animate the approved still, do not redraw it frame by frame.** Feed the
+        still you and I already agreed on into an image-to-video model, then
+        convert the result to a GIF. Frame-by-frame was tried and it is the
+        worse route: each frame is an independent generation, so the subject
+        shifts between them, and that shifting is exactly the bounce the rule
+        above forbids. One continuous generation holds it still for free.
+
+        **The strict instructions are the whole job.** A video model will add
+        motion nobody asked for, so say all of this:
+
+        - **Fixed camera.** No pan, no zoom, no dolly, no parallax.
+        - **The subject does not move, travel, or change size.** Only the one
+          thing that is meant to move, moves.
+        - **The background stays exactly as drawn.**
+        - **No new elements**, no lighting changes, nothing entering frame.
+
+        **Then close the loop yourself, because video will not.** This is what
+        the route costs: a clip ends where it ends. Trim it to a point where the
+        last frame steps cleanly into the first, or ask for a cycle that returns
+        to its starting state.
+
+        **And choose the conversion deliberately.** Pick the frame count and the
+        rate — 8-24 frames at roughly 10fps — rather than accepting whatever the
+        converter emits. Three seconds at 30fps is 90 frames and an enormous
+        file, for motion nobody can see at this size.
         """
     }
 
