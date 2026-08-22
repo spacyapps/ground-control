@@ -4,74 +4,88 @@
 import XCTest
 @testable import GroundControl
 
-/// The two questions that govern every image an author is about to draw: how
-/// the frame meets a resize, and which colour is being keyed out.
+/// Part two asks before it draws.
 ///
-/// Neither can be deduced from the artwork afterwards. A nine-grid needs
-/// corners drawn as corners and edges that tile, decided before a pixel exists;
-/// and a key colour has to be one the art never uses, so a fixed green erases
-/// any theme that happens to be green.
+/// The frame used to be described at the author in one block, which produced
+/// frames nobody had chosen. It now opens with four questions — motif, colours,
+/// what is in each corner, what runs along the edges — and the model is told to
+/// wait. These tests pin the order, because a prompt that describes the artwork
+/// before asking about it is a prompt the model starts drawing from.
 final class ThemeBriefChoicesTests: XCTestCase {
-    private func brief(_ frame: ThemeBrief.Frame, key: String = "#00FF00") -> ThemeBrief {
+    private func brief(key: String = "#00FF00") -> ThemeBrief {
         var brief = ThemeBrief.placeholder
         brief.background = "an ornate carved frame"
-        brief.frame = frame
         brief.keyColour = key
         return brief
     }
 
-    func testSimpleAsksForOneScaledPicture() {
-        let prompt = ThemePromptBuilder.prompt(for: brief(.simple))
-        XCTAssertTrue(prompt.contains("\"lockAspect\": true"))
-        XCTAssertTrue(prompt.contains("\"resize\": \"aspect\""))
-        XCTAssertFalse(prompt.contains("corner │"), "simple frames get no slicing diagram")
-        XCTAssertTrue(prompt.contains("The whole picture scales"))
-    }
-
-    func testNinegridAsksForCornersAndTilingEdges() {
-        let prompt = ThemePromptBuilder.prompt(for: brief(.ninegrid))
-        XCTAssertTrue(prompt.contains("\"lockAspect\": false"))
+    /// Every frame is a nine-grid now. The scaled-whole option was the default,
+    /// so the easy path taught nothing that survives a resize.
+    func testEveryFrameIsANineGrid() {
+        let prompt = ThemePromptBuilder.prompt(for: brief())
+        XCTAssertTrue(prompt.contains("corner │"), "the slicing diagram is not optional")
         XCTAssertTrue(prompt.contains("capInsets"))
-        XCTAssertTrue(prompt.contains("\"resize\": \"free\""))
         XCTAssertTrue(prompt.contains("450px"), "the size trap has to be stated")
         XCTAssertTrue(prompt.contains("seamless"), "edges must be told to tile")
+        XCTAssertFalse(prompt.contains("The whole picture scales"), "the other branch is gone")
+    }
+
+    /// The questions come first, and the model is told not to start.
+    func testTheQuestionsComeBeforeAnythingIsDrawn() {
+        let frame = ThemePromptBuilder.partTwo(for: brief())
+        guard let questions = frame.range(of: "Ask me these four questions first"),
+              let defaults = frame.range(of: "do not ask me about these"),
+              let grid = frame.range(of: "corner │"),
+              let json = frame.range(of: "Produce it in exactly this shape") else {
+            return XCTFail("part two lost its sections")
+        }
+        XCTAssertLessThan(questions.lowerBound, defaults.lowerBound)
+        XCTAssertLessThan(defaults.lowerBound, grid.lowerBound)
+        XCTAssertLessThan(grid.lowerBound, json.lowerBound, "a JSON block reads as permission to start")
+        XCTAssertTrue(frame.contains("Do not draw anything until I answer"))
+    }
+
+    /// All four, or the model asks one and starts on a guess for the rest.
+    func testAllFourQuestionsAreThere() {
+        let frame = ThemePromptBuilder.partTwo(for: brief())
+        XCTAssertTrue(frame.contains("What is this frame made of?"))
+        XCTAssertTrue(frame.contains("What colours?"))
+        XCTAssertTrue(frame.contains("What is in each of the four corners?"))
+        XCTAssertTrue(frame.contains("What runs along the edges?"))
+    }
+
+    /// The defaults exist to stop the model asking about them. Naming them is
+    /// the whole point: unstated, they come back as questions.
+    func testTheDefaultsAreStatedRatherThanAsked() {
+        let frame = ThemePromptBuilder.partTwo(for: brief())
+        XCTAssertTrue(frame.contains("Overlay is on"))
+        XCTAssertTrue(frame.contains("irregular, inside and out"))
+        XCTAssertTrue(frame.contains("do not spend a question on"))
     }
 
     /// The bug this prevents: a magenta-keyed theme handed a prompt that says
     /// green everywhere, so the model fills green and the frame keeps it.
     func testTheChosenKeyColourReplacesEveryMention() {
-        for frame in ThemeBrief.Frame.allCases {
-            let prompt = ThemePromptBuilder.prompt(for: brief(frame, key: "#FF00FF"))
-            XCTAssertTrue(prompt.contains("#FF00FF"), "\(frame) never names the chosen colour")
-            XCTAssertFalse(prompt.contains("#00FF00"), "\(frame) still names green")
-        }
+        let prompt = ThemePromptBuilder.prompt(for: brief(key: "#FF00FF"))
+        XCTAssertTrue(prompt.contains("#FF00FF"), "the chosen colour is never named")
+        XCTAssertFalse(prompt.contains("#00FF00"), "green is still named")
     }
 
-    /// The two choices that govern the frame come before the frame is described.
-    /// They live in part two now — the moods need neither a key colour nor a
-    /// resize mode, which is half the reason the prompt was split.
-    func testTheChoicesAreStatedBeforeTheArtworkIsDescribed() {
-        let frame = ThemePromptBuilder.partTwo(for: brief(.ninegrid))
-        guard let choices = frame.range(of: "Two things that govern everything below"),
-              let drawing = frame.range(of: "capInsets") else {
-            return XCTFail("part two lost its sections")
-        }
-        XCTAssertLessThan(choices.lowerBound, drawing.lowerBound)
-    }
-
-    /// And part one does not mention them at all, or the split achieves nothing.
+    /// And part one does not mention the frame at all, or the split achieves
+    /// nothing.
     func testPartOneDoesNotTalkAboutTheFrame() {
-        let moods = ThemePromptBuilder.partOne(for: brief(.ninegrid))
+        let moods = ThemePromptBuilder.partOne(for: brief())
         XCTAssertFalse(moods.contains("capInsets"), "the frame belongs to part two")
+        XCTAssertFalse(moods.contains("four questions"), "and so do its questions")
         XCTAssertTrue(moods.contains("The four moods"), "and the moods to part one")
     }
 
-    /// A theme with no background art asks neither question.
+    /// A theme with no background art is asked nothing about frames.
     func testNoBackgroundMeansNoFrameSection() {
         var plain = ThemeBrief.placeholder
         plain.background = ""
         let prompt = ThemePromptBuilder.prompt(for: plain)
-        XCTAssertFalse(prompt.contains("Two things that govern"))
+        XCTAssertFalse(prompt.contains("Ask me these four questions"))
         XCTAssertFalse(prompt.contains("corner │"), "no artwork, no frame instructions")
     }
 }

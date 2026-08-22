@@ -15,7 +15,6 @@ final class ThemeBuilderWindowController: NSWindowController {
     let referenceBox = NSButton()
     let animateBox = NSButton()
     let sizeField = NSTextField(string: "48")
-    let framePicker = NSPopUpButton()
     /// The motion cells, kept so the table can answer the animation checkbox
     /// rather than describing a fixed arrangement.
     var motionCells: [NSTextField] = []
@@ -73,9 +72,6 @@ final class ThemeBuilderWindowController: NSWindowController {
             style: value(styleField, fallback: example.style),
             mood: value(moodField, fallback: example.mood),
             wantsAnimation: animateBox.state == .on,
-            frame: ThemeBrief.Frame.allCases[
-                max(0, min(ThemeBrief.Frame.allCases.count - 1, framePicker.indexOfSelectedItem))
-            ],
             keyColour: Self.keyColours[
                 max(0, min(Self.keyColours.count - 1, keyPicker.indexOfSelectedItem))
             ].1,
