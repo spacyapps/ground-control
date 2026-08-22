@@ -32,15 +32,16 @@ enum ThemeFramePrompt {
 
         | Stage | What happens | Ends when |
         |---|---|---|
-        | 1 | You ask me the four questions below | I answer all four |
+        | 1 | **Four questions** — the material · the colours · each corner · the edges | I answer all four |
         | 2 | You draw **one still** of the whole frame | you show it at real size |
-        | 3 | We check it together — corners, tiling, the opening | **I say yes** |
-        | 4 | You ask what should move, and tell me what that costs | **I choose** |
+        | 3 | **We check it** — corner bleed · tiling · the opening · the silhouette | **I say yes** |
+        | 4 | **What should move?** — corners, edges, or nothing — and the cost | **I choose** |
         | 5 | You make the frames, if I asked for any | the loop closes |
         | 6 | You write `theme.json` and hand back the folder | — |
 
         Stages 3 and 4 are the two places you stop and wait for me. Nothing is
-        animated before both are done.
+        animated before both are done. Stage 1 is written out below — ask it
+        from there, not from this table.
         """
 
     /// Returned as separate sections rather than one block, because part two
