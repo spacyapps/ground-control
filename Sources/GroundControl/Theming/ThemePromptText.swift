@@ -118,22 +118,37 @@ enum ThemePromptText {
     static let motionRoutes = """
         ### Ask me how to make it
 
-        There are two ways and they go wrong differently. Put this to me and
-        wait — do not pick for me:
+        First ask what I already have. If there is already a clip or an
+        animated file sitting on my machine, that settles it — check it
+        against what GC plays and skip straight to the rules below, whichever
+        route it came from.
+
+        **GC plays two families of animated file, natively, no conversion
+        required:** `.gif` / `.apng` (an animated image, decoded frame by
+        frame) and `.mov` / `.mp4` / `.m4v` (a real video clip, played by the
+        system player). Neither is the "right" one — which you end up with
+        should follow from what you already have or can make, not from a rule
+        here.
+
+        If nothing exists yet, there are two ways to make something, and they
+        go wrong differently. Put this to me and wait — do not pick for me:
 
         | | How | What goes wrong |
         |---|---|---|
         | **Frame by frame** | each frame drawn separately | it can jitter |
-        | **Video, then convert** | animate the still, convert the clip | it costs tokens |
+        | **Video** | animate the still, one continuous generation | it costs tokens |
 
         **Frame by frame jitters** because every frame is an independent
         drawing, so the subject shifts a little between them. That is survivable
         for a few frames of one small thing — a lamp blinking, a glint — and
-        obvious on anything larger.
+        obvious on anything larger. It naturally ends as a `.gif`.
 
         **Video holds the subject still**, because it is one continuous
         generation rather than many separate ones. What it costs is a video
         generation, in real tokens, and a clip that does not loop by itself.
+        Keep the result as a `.mov` — converting it down to a `.gif` afterwards
+        is only worth doing if you'd rather have the smaller, shareable file
+        and don't mind the conversion pass; GC does not require it.
 
         Say which you would use and why, then let me decide. If I have no
         preference: video where a whole character or object moves,
