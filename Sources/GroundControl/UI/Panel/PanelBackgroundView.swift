@@ -10,10 +10,7 @@ import AppKit
 final class PanelBackgroundView: NSView {
     let titleBar = TitleBarView()
     let list = SessionListView()
-    let resizeGrip = ResizeGripView()
     let skinOverlay = SkinOverlayView()
-    let closeMark = CloseMarkView()
-    let hint = HintView()
 
     private var theme: Theme = DefaultTheme.theme
 
@@ -53,25 +50,10 @@ final class PanelBackgroundView: NSView {
 
         addSubview(titleBar)
         addSubview(list)
-        // A skin covers the panel it decorates...
+        // A skin covers the panel it decorates. The two controls and the hint
+        // that labels them are no longer subviews here at all — see
+        // `PanelRootView`, which owns them outside this view's shape mask.
         addSubview(skinOverlay)
-        // ...but never the two controls: marks, then frame, then panel.
-        addSubview(resizeGrip)
-        addSubview(closeMark)
-        // Above even the marks: it describes them.
-        addSubview(hint)
-        list.onHint = { [weak self] text, rect in
-            guard let self else { return }
-            self.hint.show(text, near: self.list.convert(rect, to: self), in: self)
-        }
-        // The panel's own two controls answer to the same mechanism: they are
-        // buttons in the same window, and AppKit's tooltips fail them equally.
-        let showHint: (String?, NSRect) -> Void = { [weak self] text, rect in
-            guard let self else { return }
-            self.hint.show(text, near: rect, in: self)
-        }
-        closeMark.onHint = showHint
-        resizeGrip.onHint = showHint
         skinOverlay.elapsed = { [weak self] in self?.currentElapsed }
     }
 
@@ -96,9 +78,6 @@ final class PanelBackgroundView: NSView {
             : theme.colors.windowBackground.cgColor
         titleBar.apply(theme: theme)
         list.apply(theme: theme)
-        resizeGrip.apply(theme: theme)
-        closeMark.apply(theme: theme)
-        hint.apply(theme: theme)
         skinOverlay.apply(theme: theme)
         needsDisplay = true
     }
@@ -193,17 +172,25 @@ final class PanelBackgroundView: NSView {
         list.layer?.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
 
         skinOverlay.frame = bounds
+    }
 
-        closeMark.frame = NSRect(
+    /// Where the close mark belongs, in this view's own coordinate space —
+    /// read by `PanelRootView`, which owns the mark itself now that it needs
+    /// to sit outside this view's shape mask.
+    var closeMarkFrame: NSRect {
+        NSRect(
             x: titleBar.frame.minX + TitleBarView.markInset,
             y: titleBar.frame.minY + TitleBarView.markTop,
             width: CloseMarkView.size.width,
             height: CloseMarkView.size.height
         )
+    }
 
+    /// The resize grip's counterpart to `closeMarkFrame`.
+    var resizeGripFrame: NSRect {
         let grip = ResizeGripView.size
-        resizeGrip.frame = NSRect(
-            x: max(insets.left, titleBar.frame.maxX - TitleBarView.markInset - grip.width),
+        return NSRect(
+            x: max(effectiveInsets.left, titleBar.frame.maxX - TitleBarView.markInset - grip.width),
             y: titleBar.frame.minY + TitleBarView.markTop,
             width: grip.width,
             height: grip.height

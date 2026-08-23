@@ -6,7 +6,8 @@ import AppKit
 /// Owns the panel: show/hide, window behaviour toggles, and frame persistence.
 final class PanelController {
     private(set) var panel: FloatingPanel?
-    private let chrome = PanelBackgroundView()
+    private let root = PanelRootView()
+    private var chrome: PanelBackgroundView { root.chrome }
     private let preferences: Preferences
 
     var onActivate: ((Session) -> Void)?
@@ -23,11 +24,11 @@ final class PanelController {
         chrome.list.onSecondaryClick = { [weak self] session, event in
             self?.onSecondaryClick?(session, event)
         }
-        chrome.closeMark.onClose = { [weak self] in self?.hide() }
-        chrome.resizeGrip.onResizeBegan = { [weak self] in
+        root.closeMark.onClose = { [weak self] in self?.hide() }
+        root.resizeGrip.onResizeBegan = { [weak self] in
             self?.resizeStart = self?.panel?.frame.size ?? .zero
         }
-        chrome.resizeGrip.onResize = { [weak self] delta in self?.resize(by: delta) }
+        root.resizeGrip.onResize = { [weak self] delta in self?.resize(by: delta) }
     }
 
     deinit {
@@ -70,7 +71,7 @@ final class PanelController {
         self.theme = theme
         panel?.apply(shaped: theme.window.isShaped)
         panel?.enforce(minimum: theme.window.minimumPanelSize)
-        chrome.apply(theme: theme)
+        root.apply(theme: theme)
         panel?.invalidateShadow()
         // Themes disagree about what the panel's size means — one derives the
         // height from its artwork, the next from the rows, a third leaves it to
@@ -184,7 +185,7 @@ final class PanelController {
         if let panel { return panel }
 
         let panel = FloatingPanel(contentRect: defaultFrame())
-        panel.contentView = chrome
+        panel.contentView = root
         if let saved = preferences.panelFrame {
             var frame = NSRectFromString(saved)
             // A derived height would only fight fitHeightToContent on the first
@@ -209,7 +210,7 @@ final class PanelController {
         ) { [weak self] _ in self?.saveFrame() }
 
         self.panel = panel
-        chrome.apply(theme: theme)
+        root.apply(theme: theme)
         return panel
     }
 
