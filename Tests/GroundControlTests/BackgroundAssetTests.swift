@@ -81,6 +81,19 @@ final class BackgroundAssetTests: XCTestCase {
         XCTAssertNotNil(backgrounds.titleBar, "one bad path must not poison the rest")
     }
 
+    /// Undocumented in the reference theme.json and unreachable from the
+    /// theme-builder UI, but still a real mode a hand-edited manifest can
+    /// reach — for art that must stay proportional, like a mascot, rather
+    /// than being sliced.
+    func testCenterAndAspectFillModesParse() throws {
+        try touch("mascot.png")
+        let centered = try resolve(#"{"assets":{"windowBackground":{"image":"mascot.png","mode":"center"}}}"#)
+        XCTAssertEqual(centered.window?.mode, .center)
+
+        let filled = try resolve(#"{"assets":{"windowBackground":{"image":"mascot.png","mode":"aspectFill"}}}"#)
+        XCTAssertEqual(filled.window?.mode, .aspectFill)
+    }
+
     func testUnknownModeFallsBackToTile() throws {
         try touch("panel.png")
         let backgrounds = try resolve("""
@@ -116,6 +129,15 @@ final class BackgroundAssetTests: XCTestCase {
         XCTAssertNotEqual(tiled.cacheKey, stretched.cacheKey)
         XCTAssertNotEqual(tiled.cacheKey, capped.cacheKey)
         XCTAssertNotEqual(tiled, capped)
+    }
+
+    /// `center`/`aspectFill` ignore `capInsets` entirely — they never go
+    /// through AppKit's resizable-image path, caps or no caps.
+    func testCenterAndAspectFillNeverUseResizableDrawing() {
+        let url = URL(fileURLWithPath: "/x.png")
+        let caps = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+        XCTAssertFalse(BackgroundImage(url: url, mode: .center, capInsets: caps).usesResizableDrawing)
+        XCTAssertFalse(BackgroundImage(url: url, mode: .aspectFill, capInsets: caps).usesResizableDrawing)
     }
 
     func testThemeWithNoAssetsBlockHasNoBackgrounds() throws {
