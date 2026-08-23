@@ -55,7 +55,15 @@ final class SkinOrientationTests: XCTestCase {
     }
 
     /// Drawn through the real overlay view, which is where the flip lives.
-    private func drawn(_ mode: BackgroundImage.Mode, caps: CGFloat) throws -> NSBitmapImageRep {
+    ///
+    /// `size` defaults to the 60x120 that gives nine-slice a whole number of
+    /// tiles; `.center`/`.aspectFill` ignore caps and draw at the artwork's
+    /// own size, so those callers pass 60x60 — the same square as `artwork()`
+    /// — so the drawn image fills the view exactly and the sample points
+    /// below still land on it.
+    private func drawn(_ mode: BackgroundImage.Mode,
+                        caps: CGFloat,
+                        size: NSSize = NSSize(width: 60, height: 120)) throws -> NSBitmapImageRep {
         let view = SkinOverlayView()
         var theme = DefaultTheme.theme
         theme.window = Theme.Window(
@@ -71,7 +79,7 @@ final class SkinOrientationTests: XCTestCase {
         view.apply(theme: theme)
         // A whole number of tiles: at a fraction, the top of the view is the
         // middle of a tile and says nothing about orientation.
-        view.frame = NSRect(x: 0, y: 0, width: 60, height: 120)
+        view.frame = NSRect(origin: .zero, size: size)
         let rep = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
         view.cacheDisplay(in: view.bounds, to: rep)
         return rep
@@ -79,8 +87,9 @@ final class SkinOrientationTests: XCTestCase {
 
     private func assertUpright(_ mode: BackgroundImage.Mode,
                                caps: CGFloat,
+                               size: NSSize = NSSize(width: 60, height: 120),
                                line: UInt = #line) throws {
-        let rep = try drawn(mode, caps: caps)
+        let rep = try drawn(mode, caps: caps, size: size)
         let upended = "\(mode) caps \(caps): the bottom cap is at the top"
         let top = try XCTUnwrap(rep.colorAt(x: rep.pixelsWide / 2, y: 4)?.usingColorSpace(.sRGB))
         XCTAssertGreaterThan(top.redComponent, 0.5, upended, line: line)
@@ -102,5 +111,17 @@ final class SkinOrientationTests: XCTestCase {
     func testUnslicedArtIsLeftAlone() throws {
         try assertUpright(.tile, caps: 0)
         try assertUpright(.stretch, caps: 0)
+    }
+
+    /// `.center` and `.aspectFill` never touch the resizable-image path at
+    /// all — `drawCentered` calls `image.draw(in:)` directly, the same plain
+    /// draw that already honours the flip for capless `.tile`/`.stretch`
+    /// above. Proven here rather than assumed, since it is exactly the kind
+    /// of "surely it behaves like its neighbour" claim that was wrong once
+    /// already in this file.
+    func testCenteredAndAspectFillAreLeftAlone() throws {
+        let square = NSSize(width: 60, height: 60)
+        try assertUpright(.center, caps: 0, size: square)
+        try assertUpright(.aspectFill, caps: 0, size: square)
     }
 }
