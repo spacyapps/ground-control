@@ -126,19 +126,27 @@ final class OverlaySkinTests: XCTestCase {
     /// Marks, then frame, then panel. A skin may cover the panel it decorates,
     /// but never the only ways to close and resize it — a theme that tucks its
     /// content behind the frame used to take those two with it.
+    ///
+    /// The controls live in `PanelRootView` now, outside `chrome`'s own
+    /// subview tree entirely — not merely late in its order — so this checks
+    /// both levels: the controls above chrome as a whole, and chrome's own
+    /// internal order unchanged underneath.
     func testControlsSitAboveTheSkin() throws {
-        let view = PanelBackgroundView()
-        view.apply(theme: try theme(overlay: true))
-        view.frame = NSRect(x: 0, y: 0, width: 200, height: 200)
-        view.layoutSubtreeIfNeeded()
+        let root = PanelRootView()
+        root.apply(theme: try theme(overlay: true))
+        root.frame = NSRect(x: 0, y: 0, width: 200, height: 200)
+        root.layoutSubtreeIfNeeded()
 
-        func depth(_ subview: NSView) -> Int {
-            view.subviews.firstIndex(of: subview) ?? -1
+        func rootDepth(_ subview: NSView) -> Int {
+            root.subviews.firstIndex(of: subview) ?? -1
         }
-        XCTAssertGreaterThan(depth(view.closeMark), depth(view.skinOverlay))
-        XCTAssertGreaterThan(depth(view.resizeGrip), depth(view.skinOverlay))
-        XCTAssertGreaterThan(depth(view.skinOverlay), depth(view.list))
-        XCTAssertGreaterThan(depth(view.skinOverlay), depth(view.titleBar))
+        func chromeDepth(_ subview: NSView) -> Int {
+            root.chrome.subviews.firstIndex(of: subview) ?? -1
+        }
+        XCTAssertGreaterThan(rootDepth(root.closeMark), rootDepth(root.chrome))
+        XCTAssertGreaterThan(rootDepth(root.resizeGrip), rootDepth(root.chrome))
+        XCTAssertGreaterThan(chromeDepth(root.chrome.skinOverlay), chromeDepth(root.chrome.list))
+        XCTAssertGreaterThan(chromeDepth(root.chrome.skinOverlay), chromeDepth(root.chrome.titleBar))
     }
 
     func testOrdinaryThemesAreUnaffected() throws {
