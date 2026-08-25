@@ -137,6 +137,15 @@ final class ThemeBriefRoundTripTests: XCTestCase {
         XCTAssertEqual(makeBrief(name: "n", subject: "s", avatarSize: 44).recommendedPixels, 192)
         XCTAssertEqual(makeBrief(name: "n", subject: "s", avatarSize: 9999).recommendedPixels, 512)
     }
+
+    /// The multiplier (3x) was picked so the current house default lands here
+    /// exactly — every shipped SpacyApps theme is drawn at 192px, and that
+    /// should stop being true the moment someone changes the default without
+    /// also touching this, not silently drift.
+    func testRecommendedPixelsMatchesTheHouseAvatarSize() {
+        XCTAssertEqual(ThemeBrief.placeholder.avatarSize, 60)
+        XCTAssertEqual(makeBrief(name: "n", subject: "s", avatarSize: 60).recommendedPixels, 192)
+    }
 }
 
 /// Falling back to the default silently is what makes a broken manifest hard to
