@@ -14,7 +14,7 @@ final class ThemeBuilderWindowController: NSWindowController {
     let wordsField = NSTextField(string: "")
     let referenceBox = NSButton()
     let animateBox = NSButton()
-    let sizeField = NSTextField(string: "48")
+    let sizeField = NSTextField(string: "60")
     /// The motion cells, kept so the table can answer the animation checkbox
     /// rather than describing a fixed arrangement.
     var motionCells: [NSTextField] = []

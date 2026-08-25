@@ -52,7 +52,7 @@ struct ThemeBrief: Equatable {
         wantsAnimation: true,
         keyColour: defaultKey,
         background: "brushed dark metal with a faint scanline texture",
-        avatarSize: 48,
+        avatarSize: 60,
         position: "right",
         hasReferenceImage: false,
         words: ["BEEP BOOP", "STILL AWAKE"]
@@ -88,14 +88,17 @@ struct ThemeBrief: Equatable {
     }
 
     /// Rendered at `avatarSize` points on a Retina display, so **2x is the
-    /// floor** — 96px for a 48pt avatar is exactly one pixel per screen pixel,
-    /// and the shipped station theme is drawn at precisely that and looks
-    /// perfect. 4x is headroom for scaling the avatar up later, not a
-    /// requirement; asking for it as a minimum was overreach.
+    /// floor** — 120px for a 60pt avatar is exactly one pixel per screen
+    /// pixel. 3x is what is actually asked for here: at the current 60pt
+    /// default that lands on exactly 192px, which is what every shipped
+    /// SpacyApps theme is drawn at and gives 2x headroom all the way up to
+    /// `size: 96` — measured, not a round number picked for its own sake.
+    /// It is headroom for scaling the avatar up later, not a requirement;
+    /// asking for more as a minimum was overreach.
     ///
     /// Capped: an avatar size of 9999 would otherwise ask a model for a
-    /// 39996px square, which no generator will produce and no panel can use.
+    /// 29997px square, which no generator will produce and no panel can use.
     var recommendedPixels: Int {
-        min(512, max(192, avatarSize * 4))
+        min(512, max(192, avatarSize * 3))
     }
 }
