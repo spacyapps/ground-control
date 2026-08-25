@@ -103,6 +103,19 @@ final class ThemePromptBuilderTests: XCTestCase {
         XCTAssertTrue(ThemePromptBuilder.prompt(for: brief).contains(".webm"))
     }
 
+    /// Part three is optional and says so — joining it into the combined
+    /// document must not read as a mandatory third stage.
+    func testPartThreeIsPresentAndSaysItIsOptional() {
+        let three = ThemePromptBuilder.partThree(for: brief)
+        XCTAssertTrue(three.localizedCaseInsensitiveContains("optional"))
+        XCTAssertTrue(three.contains("cornerDecorations"))
+        XCTAssertTrue(three.contains("\"scale\""))
+        XCTAssertTrue(three.contains("\"offset\""))
+
+        let whole = ThemePromptBuilder.prompt(for: brief)
+        XCTAssertTrue(whole.contains("cornerDecorations"), "the combined prompt must include part three")
+    }
+
     /// Alpha must survive into the manifest: the default divider is fully
     /// transparent, and a 6-digit value would make hairlines appear.
     func testTransparentDefaultsKeepTheirAlpha() throws {

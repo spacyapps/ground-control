@@ -69,6 +69,9 @@ final class ManifestReferenceTests: XCTestCase {
         keys.formUnion(try properties(of: ThemeManifest.Avatar.State.self))
         keys.formUnion(try properties(of: ThemeManifest.Layout.self))
         keys.formUnion(try properties(of: ThemeManifest.Typography.self))
+        keys.formUnion(try properties(of: ThemeManifest.CornerDecorations.self))
+        keys.formUnion(try properties(of: ThemeManifest.CornerDecoration.self))
+        keys.formUnion(try properties(of: ThemeManifest.CornerDecoration.Offset.self))
         return keys
     }
 

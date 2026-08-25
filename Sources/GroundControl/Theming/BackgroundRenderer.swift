@@ -94,6 +94,35 @@ enum BackgroundRenderer {
         return image
     }
 
+    /// Decoded pixel size, for callers that must place a background before
+    /// they draw it — a corner decoration's anchor depends on knowing this
+    /// first. Goes through the same cache `configuredImage` uses, so asking
+    /// costs nothing beyond the decode drawing would have paid anyway.
+    static func naturalSize(of background: BackgroundImage) -> NSSize? {
+        configuredImage(for: background)?.size
+    }
+
+    /// Draws a background into exactly `size` at `origin` — no capInsets, no
+    /// clipping to any rect. The caller decides the size (natural, or scaled
+    /// by a corner decoration's `scale`); this never reads `image.size`
+    /// itself, so it never has an unscaled size to fall back to by accident.
+    ///
+    /// The corner-decoration primitive. `configuredImage` never sets
+    /// `capInsets`/`resizingMode` unless `background.mode` is `.tile` or
+    /// `.stretch` — for `.center` (what every corner decoration uses) it
+    /// returns a plain `NSImage`, so this goes through the same plain
+    /// `draw(in:)` path already proven to honour the view's flip correctly.
+    static func drawAnchored(_ background: BackgroundImage, at origin: NSPoint, size: NSSize, elapsed: TimeInterval? = nil) {
+        let image: NSImage?
+        if let elapsed, let animated = AnimatedImage.load(background), animated.isAnimated {
+            image = animated.frame(at: elapsed)
+        } else {
+            image = configuredImage(for: background)
+        }
+        guard let image else { return }
+        image.draw(in: NSRect(origin: origin, size: size))
+    }
+
     private static func drawCentered(_ image: NSImage, in rect: NSRect, fill: Bool) {
         let size = image.size
         guard size.width > 0, size.height > 0 else { return }

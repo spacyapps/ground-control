@@ -68,7 +68,9 @@
     "position":     "right",      // "left" | "right"
     "cornerRadius": 8,
     "states": {
-      // Each state takes an image (png/gif) or a video. A GIF animates.
+      // Each state takes an image (still, or animated gif/apng) OR a video —
+      // set whichever key you want; video wins if both are set. Video means
+      // .mov/.mp4/.m4v (H.264 or HEVC) — not .webm, no native decoder for it.
       // Draw at 2x the avatar size at minimum: 72px for a 36pt avatar, and
       // most themes set a larger size than this default.
       "idle":       { "image": null, "video": null, "loop": true, "muted": true },
@@ -80,7 +82,11 @@
 
   // The panel's own shape and frame. Absent, the panel is a plain rectangle.
   "window": {
-    "image":            null,     // the skin ("shape" is an older spelling)
+    // The skin ("shape" is an older spelling) — a still or animated gif/apng,
+    // by filename. No video here: the frame is nine-sliced, cut into corners,
+    // edges and a tiled middle and redrawn as bitmaps every frame, and a video
+    // layer has no nine-slice concept to be cut along at all.
+    "image":            null,
     "shape":            null,
     "overlay":          false,    // true draws the skin IN FRONT of the rows,
                                   // so the frame covers what it overlaps
@@ -94,6 +100,36 @@
     // along the edge.
     // All four zero means "do not slice", which is the same as leaving it out.
     "capInsets": { "top": 0, "left": 0, "bottom": 0, "right": 0 }
+  },
+
+  // Fixed art in a panel corner: 1 to 4 independent pieces, sized off their
+  // own pixels — never sliced, never resized by the panel resizing. Sits
+  // above the frame and below the close/resize marks. A theme sets any
+  // subset of the four; each is null unless given an image or video. Every
+  // field below applies to each of the four the same way.
+  "cornerDecorations": {
+    "topLeft": {
+      "image":            null,   // a still or animated gif/apng, by filename
+      "video":            null,   // a .mov/.mp4/.m4v — wins over `image` if both are set
+      "loop":             true,   // video only
+      "muted":            true,   // video only
+      "removeBackground": null,   // "auto" | "checkerboard" | hex — image/gif only, not video
+      // Multiplies the artwork's own pixel size. 1 is the file's real size.
+      // Trying a different size is a number to change here, not a new image
+      // to generate — the anchor and offset below are computed against the
+      // scaled size, so scaling down brings the art in from the corner.
+      "scale": 1,
+      // Screen direction from this corner's own point: x right, y down, the
+      // same meaning at every corner. {0,0} means the artwork's own matching
+      // corner sits exactly on the window's — e.g. bottomRight's bottom-right
+      // pixel on the window's bottom-right pixel, growing left and up from
+      // there. Offsets can be large; the artwork is only ever clipped by the
+      // window's own edge, never by anything else.
+      "offset": { "x": 0, "y": 0 }
+    },
+    "topRight":    null,
+    "bottomLeft":  null,
+    "bottomRight": null
   },
 
   // The title-bar analyser: its palette, and what it says.

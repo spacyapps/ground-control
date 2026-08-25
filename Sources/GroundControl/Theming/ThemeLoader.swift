@@ -200,6 +200,10 @@ enum ThemeLoader {
             matrix: Self.matrix(manifest.matrix, colors: colors),
             window: checked.window,
             backgrounds: AssetResolver.backgrounds(from: manifest.assets, folder: folder),
+            cornerDecorations: AssetResolver.cornerDecorations(
+                from: manifest.cornerDecorations,
+                folder: folder
+            ),
             folder: folder
         )
     }

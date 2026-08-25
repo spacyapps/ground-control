@@ -27,6 +27,7 @@ struct ThemeManifest: Decodable, Equatable {
     var matrix: Matrix?
     var layout: Layout?
     var typography: Typography?
+    var cornerDecorations: CornerDecorations?
 
     /// A background image. Accepts either a bare filename — `"panel.png"`,
     /// meaning "just tile it" — or an object carrying the resize behaviour.
@@ -134,6 +135,44 @@ struct ThemeManifest: Decodable, Equatable {
             var video: String?
             var loop: Bool?
             var muted: Bool?
+        }
+    }
+
+    /// Fixed art in a panel corner — see `docs/THEMING.md`. Deliberately
+    /// narrower than `Asset`: no `mode` or `capInsets`, since a corner
+    /// decoration is never sliced, so that question never arises. `scale`
+    /// exists precisely because size still needs adjusting sometimes, and
+    /// generating a new image to try a different size is real cost —
+    /// re-rendering the same pixels bigger or smaller is not.
+    struct CornerDecorations: Decodable, Equatable {
+        var topLeft: CornerDecoration?
+        var topRight: CornerDecoration?
+        var bottomLeft: CornerDecoration?
+        var bottomRight: CornerDecoration?
+    }
+
+    struct CornerDecoration: Decodable, Equatable {
+        var image: String?
+        var video: String?
+        var loop: Bool?
+        var muted: Bool?
+        /// Same meaning as `window.removeBackground`. Video is not offered
+        /// this key: a chroma-keyed video needs its own compositing pass this
+        /// app does not have, and every video source so far already has a
+        /// clean or transparent background of its own.
+        var removeBackground: String?
+        var offset: Offset?
+        /// Multiplies the artwork's own pixel size. 1 (the default) is the
+        /// file's real size, unscaled — same rule as everywhere else in this
+        /// app. Less than 1 shrinks it, more than 1 grows it; the corner
+        /// anchor and offset are computed against the *scaled* size, so
+        /// scaling down brings the art in from the corner rather than just
+        /// shrinking it in place.
+        var scale: Double?
+
+        struct Offset: Decodable, Equatable {
+            var x: Double?
+            var y: Double?
         }
     }
 

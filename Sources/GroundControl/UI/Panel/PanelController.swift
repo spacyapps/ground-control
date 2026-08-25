@@ -81,7 +81,7 @@ final class PanelController {
     }
 
     func apply(sessions: [Session]) {
-        chrome.update(sessions: sessions, renames: preferences.renames)
+        root.update(sessions: sessions, renames: preferences.renames)
         fitHeightToContent()
     }
 

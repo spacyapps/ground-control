@@ -224,6 +224,12 @@ the edge.
 | `lockAspect` | `true`: keeps the artwork's proportions, rows scroll inside. `false`: panel grows with sessions, art is nine-sliced |
 | `removeBackground` | `"auto"`, `"checkerboard"`, or a hex colour to key out. Omit if the file already has real alpha |
 
+**A still or an animated `.gif`/`.apng` — no video.** The frame is nine-sliced:
+cut into corners, edges and a tiled middle, and redrawn as bitmaps every
+frame. A video layer has no nine-slice concept to be cut along, so it isn't
+offered here — `.mov`/`.mp4` work for avatar states and corner decorations,
+which draw at a fixed size with nothing to slice, but not for the frame.
+
 ### `overlay` — the frame in front
 
 Behind the rows, a frame and its contents have to be fitted to each other:
@@ -486,7 +492,7 @@ The per-state face/mascot. Each state can be an **image** *or* a **video**
 - `size`, `position` (`left` | `right`), `cornerRadius` — layout of the avatar.
 
 **Draw for the size, do not shrink a detailed picture.** Avatars are generated
-large and drawn at `size` points — around 48, roughly a favicon. Detail that
+large and drawn at `size` points — around 60, roughly a favicon. Detail that
 cannot be seen there does not politely disappear, it turns to mud: fine
 linework, small facial features, texture, gradients spanning a few pixels and
 thin outlines all read as dirt at display size. Few shapes and big ones, flat
@@ -501,7 +507,7 @@ states with something to say, and motion is how they say it. `idle` and `done`
 are resting states — animating them means four looping avatars on screen at once
 and nothing standing out, which is the opposite of the point.
 
-**And they are only ever seen small.** At 48pt a face is a few dozen pixels and
+**And they are only ever seen small.** At 60pt a face is a few dozen pixels and
 its expression is unreadable, so the state has to be carried by colour and
 shape:
 
@@ -512,7 +518,7 @@ shape:
 | needsInput | **stop and look** | warm alarm colour, highest contrast, a symbol if you can |
 | done | finished well | settled green, calm but bright |
 
-Squint at the four at 48pt. If two look alike, the difference is in detail
+Squint at the four at 60pt. If two look alike, the difference is in detail
 nobody can see.
 - Omit a state → the **built-in drawn face** for that state is used, tinted
   with your palette. You never get a blank row, and overriding one state does
@@ -529,6 +535,59 @@ is replaced with the newer version, so fixes reach you; a folder that differs by
 so much as one colour is left alone, permanently, and so is anything installed
 by a build from before this was recorded. If you want a theme to be yours,
 change anything in it and it stops being ours.
+
+### `cornerDecorations` — fixed art in a panel corner
+
+Up to four independent, optional pieces of art, one per corner —
+`topLeft`, `topRight`, `bottomLeft`, `bottomRight`. A mascot, a light, a
+prop, sitting above the frame and below the close/resize marks. Nothing to
+do with `window` — no slicing, no nine-grid, no silhouette to draw.
+
+```json
+"cornerDecorations": {
+  "bottomRight": {
+    "image": "chest.apng",
+    "removeBackground": "#00FF00",
+    "scale": 1,
+    "offset": { "x": 0, "y": 0 }
+  }
+}
+```
+
+| Key | Does |
+|---|---|
+| `image` | a still or animated gif/apng, by filename |
+| `video` | a `.mov`/`.mp4`/`.m4v` — wins over `image` if both are set |
+| `loop` / `muted` | video only, both default `true` |
+| `removeBackground` | `"auto"`, `"checkerboard"`, or a hex colour to key out — image/gif only, not video |
+| `scale` | multiplies the artwork's own pixel size. 1 is the file's real size |
+| `offset` | `{ x, y }`, screen direction from the corner — `x` right, `y` down |
+
+**Always drawn at its own pixel size — never fitted, never automatically
+scaled for Retina.** Draw it at the size you actually want it to occupy on
+screen, or use `scale` to resize the same file without redrawing it. `scale`
+and `offset` are computed together: the anchor point is the *scaled* size's
+own corner, so shrinking a decoration brings it in from the panel's edge
+rather than just shrinking it in place.
+
+**`offset: {0,0}` puts the artwork's own matching corner exactly on the
+window's.** `bottomRight` at `{0,0}` means the art's bottom-right pixel sits
+on the panel's bottom-right pixel, growing left and up from there. Offsets
+can be large — the art is only ever clipped by the real window edge, never
+by anything else, so a decoration can reach well toward the panel's middle
+if you want it to.
+
+**No video keying.** `removeBackground` only applies to the image/gif path.
+A video corner decoration needs real embedded alpha (ProRes 4444, HEVC with
+alpha) or an already-clean background — chroma-keying a video would need a
+compositing pass this app does not have.
+
+**Animates only while a session is working**, the same rule as everywhere
+else in the panel — a still corner decoration is a complete, finished
+choice, not a fallback.
+
+A fuller guide with worked examples will eventually live at
+`groundcontrol.app/docs` — not live yet as of this writing.
 
 ## Making a light theme
 
