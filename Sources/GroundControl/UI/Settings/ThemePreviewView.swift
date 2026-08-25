@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Walter Mak
 
 import AppKit
+import AVFoundation
 import ImageIO
 
 /// What the selected theme actually looks like.
@@ -268,10 +269,13 @@ final class ThemePreviewView: NSView {
             draw(image, fillingAspectOf: rect)
             NSGraphicsContext.current?.restoreGraphicsState()
             return
-        case .video:
-            // A frame grab means spinning up AVFoundation for a thumbnail; the
-            // drawn face says "this state is covered" without the machinery.
-            break
+        case .video(let url, _, _):
+            guard let image = Self.frame(fromVideoAt: url) else { break }
+            NSGraphicsContext.current?.saveGraphicsState()
+            clip.addClip()
+            draw(image, fillingAspectOf: rect)
+            NSGraphicsContext.current?.restoreGraphicsState()
+            return
         case .none:
             break
         }
@@ -350,6 +354,24 @@ final class ThemePreviewView: NSView {
     private static func image(at url: URL) -> NSImage? {
         if let cached = imageCache.object(forKey: url as NSURL) { return cached }
         guard let image = NSImage(contentsOf: url) else { return nil }
+        imageCache.setObject(image, forKey: url as NSURL)
+        return image
+    }
+
+    /// One frame of a video avatar state, for the same static preview a
+    /// still image gets. Shares `imageCache` with `image(at:)` — same URL
+    /// key, same lifetime, same `clearCache()` — so this costs no new cache
+    /// and no new file, just one more kind of thing that can live in it.
+    ///
+    /// Default time tolerance, deliberately not forced to zero: an exact
+    /// frame is not the point, a representative one is, and leaving AVFoundation
+    /// free to snap to the nearest keyframe is what keeps a one-off grab fast.
+    private static func frame(fromVideoAt url: URL) -> NSImage? {
+        if let cached = imageCache.object(forKey: url as NSURL) { return cached }
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        guard let cgImage = try? generator.copyCGImage(at: .zero, actualTime: nil) else { return nil }
+        let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
         imageCache.setObject(image, forKey: url as NSURL)
         return image
     }
