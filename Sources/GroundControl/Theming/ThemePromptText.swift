@@ -29,7 +29,10 @@ enum ThemePromptText {
 
     **In stages, and stop at the end of each one.** This paste covers the
     avatars only — the four faces. The panel's frame and the manifest are a
-    second paste, sent once these are right.
+    second paste, sent once these are right. There is an optional third paste
+    at the end, for corner decorations — small, fixed pieces of art anchored
+    to a corner of the panel, independent of the frame. Skip it entirely if
+    you don't want one; most themes won't.
 
     | Stage | What happens | Ends when |
     |---|---|---|

@@ -22,6 +22,7 @@ import AppKit
 /// corners on purpose — so this is also the layer they will join.
 final class PanelRootView: NSView {
     let chrome = PanelBackgroundView()
+    let cornerDecorations = CornerDecorationsView()
     let resizeGrip = ResizeGripView()
     let closeMark = CloseMarkView()
     let hint = HintView()
@@ -32,10 +33,12 @@ final class PanelRootView: NSView {
         super.init(frame: .zero)
 
         addSubview(chrome)
-        // Unmasked, and in this order: chrome, then the controls, then the
-        // hint that labels them — the same "marks, then frame, then panel"
-        // rule chrome's own doc comments already state, just enforced by
-        // being outside chrome's mask instead of inside its subview order.
+        // Unmasked, and in this order: chrome, then corner decorations, then
+        // the controls, then the hint that labels them — the same "marks,
+        // then frame, then panel" rule chrome's own doc comments already
+        // state, just enforced by being outside chrome's mask instead of
+        // inside its subview order.
+        addSubview(cornerDecorations)
         addSubview(resizeGrip)
         addSubview(closeMark)
         addSubview(hint)
@@ -59,15 +62,26 @@ final class PanelRootView: NSView {
 
     func apply(theme: Theme) {
         chrome.apply(theme: theme)
+        cornerDecorations.apply(theme: theme)
         resizeGrip.apply(theme: theme)
         closeMark.apply(theme: theme)
         hint.apply(theme: theme)
         needsLayout = true
     }
 
+    /// Sessions reach both surfaces that care whether anything is working:
+    /// chrome (rows, and the frame's own animation) and corner decorations,
+    /// independently deriving the same signal from the same list rather than
+    /// one reading it off the other.
+    func update(sessions: [Session], renames: [String: String]) {
+        chrome.update(sessions: sessions, renames: renames)
+        cornerDecorations.update(isWorking: sessions.contains { $0.state == .working })
+    }
+
     override func layout() {
         super.layout()
         chrome.frame = bounds
+        cornerDecorations.frame = bounds
         // Forces chrome's own layout now rather than on the next cycle, so
         // `closeMarkFrame`/`resizeGripFrame` — derived from where chrome just
         // placed its title bar — read fresh values below, not last frame's.

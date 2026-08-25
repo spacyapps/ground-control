@@ -10,11 +10,13 @@ import AppKit
 /// filenames, the four states and the format rules is what makes the result
 /// drop straight into the folder and work.
 enum ThemePromptBuilder {
-    /// Both parts joined, for anywhere that wants the whole brief as one
+    /// All three parts joined, for anywhere that wants the whole brief as one
     /// document. Not what the theme folder gets — that gets two files, because
-    /// one file gets pasted whole.
+    /// one file gets pasted whole. Part three is optional and says so at its
+    /// own top, so joining it here does not turn it mandatory.
     static func prompt(for brief: ThemeBrief) -> String {
-        [partOne(for: brief), "---", partTwo(for: brief)].joined(separator: "\n\n")
+        [partOne(for: brief), "---", partTwo(for: brief), "---", partThree(for: brief)]
+            .joined(separator: "\n\n")
     }
 
     /// **Part one: the four moods.** What gets pasted first, and often all
@@ -54,6 +56,59 @@ enum ThemePromptBuilder {
         return ([ThemeFramePrompt.header]
                 + body
                 + [ThemePromptText.paletteReference]).joined(separator: "\n\n")
+    }
+
+    /// **Part three: corner decorations, optional.** Kept deliberately short
+    /// against part two's length — there is no nine-slice to teach and no
+    /// silhouette to negotiate here, just a handful of rules and a shape to
+    /// copy. Most themes are finished after part two; this exists for the
+    /// ones that want one more thing pinned to a corner.
+    static func partThree(for brief: ThemeBrief) -> String {
+        """
+        # Part three — corner decorations (optional)
+
+        Skip this whole section if you don't want one — most themes are done
+        after part two. A corner decoration is a small, independent piece of
+        art pinned to one corner of the panel: a mascot, a light, a prop. It
+        has nothing to do with the frame, and none of part two's rules apply
+        to it.
+
+        **The rules, in full — this is the whole feature:**
+
+        - **Up to four, one per corner** — `topLeft`, `topRight`,
+          `bottomLeft`, `bottomRight` — each entirely optional.
+        - **Drawn at its own pixel size, always.** No fitting into a box, no
+          automatic Retina scaling. Draw it at the size you want it to
+          actually occupy on screen.
+        - **`scale` resizes it without a new drawing.** 1 is the file's real
+          size; less shrinks it, more grows it. Trying a different size is a
+          number to change here, not a new image to generate.
+        - **`offset` moves it from its corner** — screen direction, `x`
+          right, `y` down, the same at every corner. `{0,0}` means its own
+          matching corner sits exactly on the window's.
+        - **Image or video, your choice.** `image` takes a still or animated
+          gif/apng, keyed with `removeBackground` the same way every other
+          image asset is. `video` takes `.mov`/`.mp4`/`.m4v` — no keying
+          available for video, so it needs real alpha or an already-clean
+          background.
+        - **Animates only while something is working**, same rule as the
+          rest of the panel. A still corner is a complete, finished choice.
+
+        ```json
+        "cornerDecorations": {
+          "bottomRight": {
+            "image": "mascot.apng",
+            "scale": 1,
+            "offset": { "x": 0, "y": 0 }
+          }
+        }
+        ```
+
+        That's all of it. A fuller guide, with worked examples, will
+        eventually live at groundcontrol.app/docs — it is not live yet, so
+        do not try to fetch it. Ask me directly if you want more than what
+        is written above.
+        """
     }
 
     /// How part one ends: hand the images over and stop.
@@ -123,10 +178,10 @@ enum ThemePromptBuilder {
         Requirements:
 
         - Square. **\(brief.avatarSize * 2)px is the floor** — that is one image
-          pixel per screen pixel at \(brief.avatarSize)pt on Retina, and the
-          shipped station theme is drawn at exactly that. **\(pixels)px** gives
-          headroom if I scale the avatar up later. More than that is weight for
-          nothing.
+          pixel per screen pixel at \(brief.avatarSize)pt on Retina.
+          **\(pixels)px** gives headroom if I scale the avatar up later, the
+          same size every shipped SpacyApps theme draws at. More than that is
+          weight for nothing.
         - PNG. **Decide once, for all four: transparent, or a solid tile.**
           Transparent lets the panel's own colour show through and suits a
           character with a clear outline; a tile lets each mood carry its own

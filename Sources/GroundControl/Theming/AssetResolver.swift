@@ -142,6 +142,58 @@ enum AssetResolver {
         return nil
     }
 
+    /// The `cornerDecorations` block: up to four independent slots, each
+    /// resolving to nothing rather than failing the whole theme if its file
+    /// is missing or unsupported — the same forgiving contract every other
+    /// asset lookup here follows.
+    static func cornerDecorations(from manifest: ThemeManifest.CornerDecorations?,
+                                  folder: URL?) -> Theme.CornerDecorations {
+        guard let manifest, let folder else { return .none }
+        return Theme.CornerDecorations(
+            topLeft: decoration(from: manifest.topLeft, in: folder),
+            topRight: decoration(from: manifest.topRight, in: folder),
+            bottomLeft: decoration(from: manifest.bottomLeft, in: folder),
+            bottomRight: decoration(from: manifest.bottomRight, in: folder)
+        )
+    }
+
+    /// A video key wins if both are set, same rule as an avatar state.
+    private static func decoration(from entry: ThemeManifest.CornerDecoration?,
+                                   in folder: URL) -> Theme.CornerDecoration? {
+        guard let entry else { return nil }
+        let offset = CGSize(width: entry.offset?.x ?? 0, height: entry.offset?.y ?? 0)
+        // 0 or negative would hide or invert the art, neither of which is a
+        // meaningful "scale" — fall back to the real size rather than do that.
+        let declaredScale = CGFloat(entry.scale ?? 1)
+        let scale = declaredScale > 0 ? declaredScale : 1
+
+        if let video = entry.video, let url = existingFile(video, in: folder) {
+            guard videoExtensions.contains(url.pathExtension.lowercased()) else {
+                Log.theming.notice(
+                    "Unsupported corner decoration video \(url.lastPathComponent, privacy: .public)"
+                )
+                return nil
+            }
+            return Theme.CornerDecoration(
+                asset: .video(url, loop: entry.loop ?? true, muted: entry.muted ?? true),
+                offset: offset,
+                scale: scale
+            )
+        }
+
+        guard let url = imageFile(entry.image, in: folder) else { return nil }
+        let background = BackgroundImage(
+            url: url,
+            // Meaningless for a corner decoration, but BackgroundImage still
+            // needs a value — .center is the "draw at natural size" mode, and
+            // capInsets zero means no slicing is even attempted.
+            mode: .center,
+            capInsets: NSEdgeInsets(),
+            removeBackground: ImageKeyer.Key(entry.removeBackground)
+        )
+        return Theme.CornerDecoration(asset: .image(background), offset: offset, scale: scale)
+    }
+
     /// Resolve-and-validate, the shape every asset lookup needs: a name the
     /// author wrote, a file that exists, and a format we can actually display.
     private static func imageFile(_ name: String?, in folder: URL) -> URL? {

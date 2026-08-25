@@ -32,6 +32,7 @@ struct Theme {
     var matrix: Matrix
     var window: Window
     var backgrounds: Backgrounds
+    var cornerDecorations: CornerDecorations = .none
     /// Folder the manifest was loaded from; asset paths resolve against it.
     var folder: URL?
 
