@@ -51,7 +51,12 @@ final class PurgeService {
         )) ?? []
 
         var removed = 0
-        for file in files where file.pathExtension == "jsonl" {
+        // "lock" alongside "jsonl": cc-notify's session_lock() leaves one
+        // <session>.jsonl.lock per session to serialise concurrent writers
+        // (see Scripts/cc-notify) and never deletes it itself — deleting a
+        // lock file out from under a live flock is its own hazard, so it
+        // ages out on the same mtime rule as everything else instead.
+        for file in files where ["jsonl", "lock"].contains(file.pathExtension) {
             let modified = (try? file.resourceValues(forKeys: [.contentModificationDateKey]))?
                 .contentModificationDate
             guard let modified, now.timeIntervalSince(modified) > window else { continue }

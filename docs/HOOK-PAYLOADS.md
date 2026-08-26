@@ -101,10 +101,28 @@ touched. A single turn emits well over a hundred events; all but four are noise
 | `session.created` | `sessionstart` | `sessionID`, `info.directory`, `info.title` |
 | `session.idle` | `stop` | `sessionID` |
 | `permission.asked` | `notification` | `sessionID`, `permission`, `metadata.command`, `metadata.description` |
-| `permission.replied` | `stop` | `sessionID`, `reply` (`accept` / `reject`) |
+| `permission.replied` | `posttooluse` | `sessionID`, `reply` (`accept` / `reject`) |
+| `session.status` (`status.type === "busy"` only) | `posttooluse` | `sessionID`, `status: {type}` |
 
-`session.status` also arrives with `{"type": "busy"}` and `{"type": "idle"}`, and
-is not used: `session.created` and `session.idle` already bracket the work.
+**`session.created`/`session.idle` do not bracket the work — corrected
+2026-08-26.** The original note here said they did and that `session.status`
+was therefore unneeded; live testing showed a session sits on whatever the
+last event said for the entire reply, with nothing marking the busy middle.
+`session.status` is now forwarded, filtered to the busy half only (the idle
+half is a between-tool-calls blip, not real completion — `session.idle` still
+owns that).
+
+**The status flag is nested one level deeper than it looks.** The payload is
+`properties: { sessionID, status: { type: "idle" | "retry" | "busy" } }` —
+per `@opencode-ai/sdk`'s own `EventSessionStatus` type — not `properties.type`
+directly. The first version of this integration checked `properties.type`,
+which is always `undefined`, so the busy filter always failed and no
+`session.status` event ever reached `cc-notify`. Confirmed live 2026-08-26.
+
+Also corrected: `permission.replied` does not mean the turn ended — it means
+opencode is about to resume, same as a tool call finishing. It used to alias
+to `stop` (done); it now aliases to `posttooluse` (working), same as
+`session.status` busy. Only `session.idle` means real completion.
 
 ### The one that matters
 
@@ -143,7 +161,7 @@ So the row says *"Echo hello to terminal"* rather than "needs your permission".
 | one entry in the `"plugin"` array | `~/.config/opencode/opencode.json` | tells opencode to load it |
 | `cc-notify` | `~/.groundcontrol/bin/` | the same emitter every agent uses |
 
-**What it listens for** — seven events; everything else is ignored, and a turn
+**What it listens for** — eight events; everything else is ignored, and a turn
 emits well over a hundred.
 
 | Event | The row | What it says |
@@ -152,7 +170,8 @@ emits well over a hundred.
 | `session.idle` | done | — |
 | `permission.asked` | **red** | the command, e.g. "List files with details…" |
 | `question.asked` | **red** | the question |
-| `permission.replied` · `question.replied` · `question.rejected` | clears | — |
+| `permission.replied` · `question.replied` · `question.rejected` | working | — |
+| `session.status`, busy only | working | — |
 
 **The chain, end to end**
 
