@@ -31,7 +31,9 @@ Contract with the app: the LAST line of a file is that row's current state.
 This script must never block Claude. Every failure path exits 0 silently.
 """
 
+import contextlib
 import datetime
+import fcntl
 import json
 import os
 import shutil
@@ -87,13 +89,29 @@ def source_of(payload):
 # real Cursor session, not read off its docs: three of its events — sessionStart,
 # preToolUse and stop — already normalise to our spelling and need nothing here.
 ALIASES = {
-    "beforesubmitprompt": "userpromptsubmit",   # Cursor: carries `prompt`, as ours does
-    # opencode names its lifecycle differently and splits "waiting for you" into
-    # asked/replied, which maps onto our notification/stop pair exactly.
-    "session.created": "sessionstart",
-    "session.idle": "stop",
-    "permission.asked": "notification",
-    "permission.replied": "stop",
+    # Cursor. Its other events — sessionStart, preToolUse, stop — already
+    # normalise to our spelling and need no entry here at all.
+    "beforesubmitprompt": "userpromptsubmit",   # Cursor -> working (carries `prompt`)
+
+    # opencode. It names its lifecycle differently and splits "waiting for you"
+    # into asked/replied. Replying does not end the turn — it resumes it, same
+    # as a tool call finishing — so it maps to posttooluse, not stop. Only
+    # session.idle, opencode's real "I am done" event, maps to stop.
+    "session.created": "sessionstart",     # opencode -> idle       (row appears)
+    "session.idle": "stop",                # opencode -> done       (real completion)
+    "permission.asked": "notification",    # opencode -> needsInput (red, shows the command)
+    "permission.replied": "posttooluse",   # opencode -> working    (resumes, does not finish)
+    "question.asked": "notification",      # opencode -> needsInput (red, shows the question)
+    "question.replied": "posttooluse",     # opencode -> working
+    "question.rejected": "posttooluse",    # opencode -> working
+
+    # opencode. The plugin only ever forwards the busy half of session.status —
+    # see its own comment — so this always means "generation just started".
+    "session.status": "posttooluse",       # opencode -> working
+
+    # Claude Code and Grok need no entries: both already speak in the spelling
+    # (flattened, lowercased) that interpret() reads directly — see source_of()
+    # and the Grok spelling table in docs/HOOK-PAYLOADS.md.
 }
 
 
@@ -473,6 +491,29 @@ def handle_session_end(session_id, root):
         pass
 
 
+@contextlib.contextmanager
+def session_lock(path):
+    """Serialises read-previous-then-append for one session's jsonl.
+
+    Hooks fire from independent subprocesses — one `cc-notify` per event — and
+    two events close enough together (opencode's stray trailing session.status
+    is exactly this: it lands within the same second as session.idle) start
+    two of them at once. Without a lock, the second can read `previous` before
+    the first has appended, so it never sees the state it should have been
+    filtered against — the busy-suppression check above passed a payload it
+    should have caught, because the write it needed to see hadn't landed yet.
+    Confirmed live 2026-08-26: exactly this race let a stray through.
+    """
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    lock_path = path + ".lock"
+    with open(lock_path, "a") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
+
+
 def main():
     raw = sys.stdin.read()
     payload = json.loads(raw)
@@ -503,80 +544,104 @@ def main():
         return
 
     path = os.path.join(root, "%s.jsonl" % session_id)
-    previous = last_line(path) or {}
-    # Cursor sends `cwd` as an empty string and puts the real answer in
-    # `workspace_roots`. Falling through to os.getcwd() would name every Cursor
-    # row after ~/.cursor, which is where its hooks run from.
-    roots = get(payload, "workspace_roots", "workspaceRoots")
-    root = roots[0] if isinstance(roots, list) and roots else None
-    cwd = (get(payload, "cwd", "workspaceRoot") or root
-           or previous.get("cwd") or os.getcwd())
 
-    # session_title is the name you gave the session in Claude and is the better
-    # label when it differs from the folder ("spacyapps" vs "fluffy-carnival").
-    # It only ships on UserPromptSubmit, so latch it from the previous line.
-    title = get(payload, "session_title", "sessionTitle")
-    folder = os.path.basename(cwd.rstrip("/"))
-    source = source_of(payload)
-    name = title or previous.get("name") or folder
+    # Everything from here on reads the last line, decides from it, and
+    # appends a new one — a read-modify-write that two `cc-notify` processes
+    # for the same session can otherwise interleave. See session_lock().
+    with session_lock(path):
+        previous = last_line(path) or {}
 
-    # Cursor keeps several chats open against one workspace, so the folder names
-    # them all the same thing. It titles them itself — "Free service inquiry" —
-    # but that title is app state reached through an internal MCP tool, absent
-    # from both the hook payload and the transcript on disk.
-    #
-    # The opening prompt is what Cursor derives its own title from, and it is
-    # right there in the payload. Latched, so the row keeps the question it
-    # started from rather than following the conversation.
-    # Cursor only. Claude and Grok give one session per terminal, where the
-    # folder is the useful label and a first prompt would be noise — replacing
-    # "avaterm" with "hello" was caught by a test rather than by taste.
-    if source == "cursor":
-        # "workspace: empty" rather than "empty" while nothing better is known:
-        # a row can be created by a tool event long before any prompt is seen,
-        # and a bare folder name there reads as the name of one chat when it is
-        # really the container several of them share.
-        placeholder = "workspace: %s" % folder
-        if name in (folder, placeholder):
-            name = opening_line(payload) or placeholder
+        # opencode reliably emits one trailing session.status busy in the same
+        # second as session.idle, on every turn — measured 2026-08-26, twice,
+        # both times at identical timestamps. It is not a rare race to wait
+        # out; left alone it strands a finished row on "working" forever,
+        # since nothing else ever follows it. A real next turn needs a human
+        # to type first, so 2s of cooldown after that session's own idle
+        # silently absorbs the stray without meaningfully delaying a genuine
+        # new prompt.
+        raw_event = get(payload, "hook_event_name", "hookEventName") or ""
+        if (raw_event == "session.status"
+                and previous.get("event") == "session.idle"
+                and now - previous.get("ts", 0) <= 2):
+            return
 
-    interpreted = interpret(payload)
-    if interpreted is None:
-        return
-    state, message, needs_action = interpreted
+        # Cursor sends `cwd` as an empty string and puts the real answer in
+        # `workspace_roots`. Falling through to os.getcwd() would name every
+        # Cursor row after ~/.cursor, which is where its hooks run from.
+        roots = get(payload, "workspace_roots", "workspaceRoots")
+        root = roots[0] if isinstance(roots, list) and roots else None
+        cwd = (get(payload, "cwd", "workspaceRoot") or root
+               or previous.get("cwd") or os.getcwd())
 
-    # The question and the alarm arrive on different events, six seconds apart:
-    # PreToolUse carries the words, Notification turns the row red with a
-    # generic "Claude needs your permission". Last line wins, so without this
-    # the words are overwritten by the moment they matter most. Latched the same
-    # way tty and host_app are.
-    asked = asked_question(payload) or previous.get("asked") or ""
-    if state == "needsInput" and asked:
-        message = asked
+        # session_title is the name you gave the session in Claude and is the
+        # better label when it differs from the folder ("spacyapps" vs
+        # "fluffy-carnival"). It only ships on UserPromptSubmit, so latch it
+        # from the previous line.
+        title = get(payload, "session_title", "sessionTitle")
+        folder = os.path.basename(cwd.rstrip("/"))
+        source = source_of(payload)
+        name = title or previous.get("name") or folder
 
-    tree = ProcessTree()
-    tty = resolve_tty(tree) or previous.get("tty")
-    host_app = resolve_host_app(tree) or previous.get("host_app")
-    host_id = resolve_host_id() or previous.get("host_id")
+        # Cursor keeps several chats open against one workspace, so the folder
+        # names them all the same thing. It titles them itself — "Free
+        # service inquiry" — but that title is app state reached through an
+        # internal MCP tool, absent from both the hook payload and the
+        # transcript on disk.
+        #
+        # The opening prompt is what Cursor derives its own title from, and
+        # it is right there in the payload. Latched, so the row keeps the
+        # question it started from rather than following the conversation.
+        # Cursor only. Claude and Grok give one session per terminal, where
+        # the folder is the useful label and a first prompt would be noise —
+        # replacing "avaterm" with "hello" was caught by a test rather than
+        # by taste.
+        if source == "cursor":
+            # "workspace: empty" rather than "empty" while nothing better is
+            # known: a row can be created by a tool event long before any
+            # prompt is seen, and a bare folder name there reads as the name
+            # of one chat when it is really the container several of them
+            # share.
+            placeholder = "workspace: %s" % folder
+            if name in (folder, placeholder):
+                name = opening_line(payload) or placeholder
 
-    emit(path, {
-        "schema": SCHEMA,
-        "source": source,
-        "session_id": session_id,
-        "name": name,
-        "cwd": cwd,
-        "tty": tty,
-        "host_app": host_app,
-        "host_id": host_id,
-        "event": get(payload, "hook_event_name", "hookEventName") or "",
-        "state": state,
-        "message": message,
-        "asked": asked,
-        "needs_action": needs_action,
-        "notification_type": get(payload, "notification_type", "notificationType") or "",
-        "transcript_path": get(payload, "transcript_path", "transcriptPath") or "",
-        "ts": now,
-    })
+        interpreted = interpret(payload)
+        if interpreted is None:
+            return
+        state, message, needs_action = interpreted
+
+        # The question and the alarm arrive on different events, six seconds
+        # apart: PreToolUse carries the words, Notification turns the row red
+        # with a generic "Claude needs your permission". Last line wins, so
+        # without this the words are overwritten by the moment they matter
+        # most. Latched the same way tty and host_app are.
+        asked = asked_question(payload) or previous.get("asked") or ""
+        if state == "needsInput" and asked:
+            message = asked
+
+        tree = ProcessTree()
+        tty = resolve_tty(tree) or previous.get("tty")
+        host_app = resolve_host_app(tree) or previous.get("host_app")
+        host_id = resolve_host_id() or previous.get("host_id")
+
+        emit(path, {
+            "schema": SCHEMA,
+            "source": source,
+            "session_id": session_id,
+            "name": name,
+            "cwd": cwd,
+            "tty": tty,
+            "host_app": host_app,
+            "host_id": host_id,
+            "event": get(payload, "hook_event_name", "hookEventName") or "",
+            "state": state,
+            "message": message,
+            "asked": asked,
+            "needs_action": needs_action,
+            "notification_type": get(payload, "notification_type", "notificationType") or "",
+            "transcript_path": get(payload, "transcript_path", "transcriptPath") or "",
+            "ts": now,
+        })
 
 
 if __name__ == "__main__":

@@ -35,6 +35,13 @@ const FORWARD = new Set([
   "question.asked",
   "question.replied",
   "question.rejected",
+  // session.created and session.idle only bracket a turn — nothing in between
+  // ever said "working", so a row parked on its opening "idle" for the whole
+  // reply and never moved. session.status carries {"type":"busy"|"idle"} and
+  // fires the moment generation actually starts; only the busy half is
+  // forwarded below, since the idle half is a between-tool-calls blip, not
+  // a real state change, and session.idle already reports true completion.
+  "session.status",
 ])
 
 export const GroundControl = async ({ $, directory, worktree }: any) => {
@@ -63,6 +70,13 @@ export const GroundControl = async ({ $, directory, worktree }: any) => {
       const properties = event.properties ?? {}
       const sessionID: string | undefined = properties.sessionID
       if (!sessionID) return
+      // Nested one level deeper than it looks: properties.status.type, not
+      // properties.type. Confirmed against @opencode-ai/sdk's own
+      // EventSessionStatus type — the first version of this check read
+      // properties.type, which is always undefined, so every session.status
+      // event was silently dropped and "working" never fired outside a
+      // permission reply.
+      if (event.type === "session.status" && properties.status?.type !== "busy") return
 
       // opencode splits "waiting for you" into asked and replied, which is
       // exactly our alarm going up and coming down.
