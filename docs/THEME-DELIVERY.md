@@ -4,19 +4,27 @@
 > live at `~/Documents/Projects/GroundControlThemes`, keeping their own git
 > history. Artwork is licensed separately from the code, and a public repo
 > carrying only an AGPL `LICENSE` reads as licensing everything inside it —
-> so the artwork is not inside it. `Scripts/build-app.sh` reads
-> `EXTRA_THEMES_DIR`, which defaults to that folder.
+> so the artwork is not inside it.
 >
-> **Settled 2026-08-15.** `spacyAppsUnicornOverlord`
-> lives there and is bundled only when `EXTRA_THEMES=1`, which the alpha zip and
-> the dmg both set. The release app went from 9.6 MB to **6.0 MB**.
+> **`EXTRA_THEMES` removed 2026-08-27.** For a while `build-app.sh` could copy
+> that folder in when `EXTRA_THEMES=1` was set, so an alpha tester got every
+> theme in one download. Nothing set the flag automatically, the folder now
+> holds half-finished drafts a bare `EXTRA_THEMES=1` would ship, and the lunar
+> station in the repo already exercises overlay, keying and an animated
+> decoration. So the flag is gone. Every build ships the repo's `Themes/` and
+> nothing else; extra themes go out as standalone zips via
+> `Scripts/package-theme.sh`, attached to the release beside the app, and the
+> tester drops the folder into **Theme → Open Themes Folder…**.
+>
+> **Settled 2026-08-15.** `spacyAppsUnicornOverlord` was the first theme moved
+> out. Dropping it took the release app from 9.6 MB to **6.0 MB**.
 >
 > The proposal below — `.gcTheme` packaging, release-asset downloads, an in-app
 > gallery — is **not being built**. It was written when the unicorn theme was
 > 5.5 MB of an 11 MB app and the split looked structural. It is not: 2.6 MB of
 > that theme is a single avatar GIF, and a theme's weight is its maker's problem
-> once themes are distributed separately. Moving one folder and adding one
-> environment variable got the whole benefit.
+> once themes are distributed separately. Moving one folder got the whole
+> benefit.
 >
 > Kept for the reasoning, not as a plan.
 

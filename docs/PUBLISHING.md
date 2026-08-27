@@ -15,8 +15,8 @@ These were finished on 2026-08-16 and need no repeating.
   the repo from 174 commits to 172 and dropped 14 objects.
 - **Extra themes live outside the repository**, at
   `~/Documents/Projects/GroundControlThemes`, with their own private git
-  history. `EXTRA_THEMES=1 ./Scripts/build-app.sh` finds them there via
-  `EXTRA_THEMES_DIR`; `Scripts/package-theme.sh` packages one for sale.
+  history. They are never bundled into a build — `Scripts/package-theme.sh`
+  packages one as a standalone zip, attached to the release beside the app.
   `ExtraThemes/` stays in `.gitignore` as a guard against it coming back.
 - **`Themes/spacyAppsLunarAvatar/LICENSE`** reserves the artwork while leaving
   `theme.json` free to copy. README and the Settings page had claimed for weeks

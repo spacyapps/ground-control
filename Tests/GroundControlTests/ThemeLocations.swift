@@ -30,9 +30,10 @@ enum ThemeLocations {
     /// Ships with the app.
     static var shipped: URL { repo.appendingPathComponent("Themes") }
 
-    /// Licensed separately and kept out of the repository. Overridable with
-    /// `EXTRA_THEMES_DIR`, the same variable `Scripts/build-app.sh` reads, so
-    /// the build and the tests can never disagree about where to look.
+    /// Licensed separately and kept out of the repository. The build never
+    /// touches this folder — extra themes ship as their own zips — but the
+    /// integrity tests scan it so a draft theme cannot rot unnoticed.
+    /// Overridable with `EXTRA_THEMES_DIR` for a staged or relocated folder.
     static var extra: URL {
         if let override = ProcessInfo.processInfo.environment["EXTRA_THEMES_DIR"], !override.isEmpty {
             return URL(fileURLWithPath: override)

@@ -147,8 +147,10 @@ GroundControl/
 ```
 
 > Themes licensed separately from the code live **outside this repository**, at
-> `~/Documents/Projects/GroundControlThemes`, and are bundled only with
-> `EXTRA_THEMES=1`. See `docs/THEME-DELIVERY.md`.
+> `~/Documents/Projects/GroundControlThemes`, and are never bundled — they ship
+> as their own zips via `Scripts/package-theme.sh`. Only the repo's `Themes/`
+> (`default`, `example-avatars`, the lunar station) goes into a build. See
+> `docs/THEME-DELIVERY.md`.
 
 ## Layering rules (keep dependencies pointing one way)
 
