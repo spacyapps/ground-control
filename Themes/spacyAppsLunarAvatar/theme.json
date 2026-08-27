@@ -20,7 +20,7 @@
     "divider": "#2a1f3a00"
   },
   "avatar": {
-    "size": 48,
+    "size": 60,
     "position": "right",
     "cornerRadius": 8,
     "states": {
@@ -38,7 +38,15 @@
       }
     }
   },
+  "cornerDecorations": {
+    "topLeft": {
+      "image": "decorationTopRight.png",
+      "scale": 0.5,
+      "offset": { "x": -20, "y": 0 }
+    }
+  },
   "layout": {
+    "rowPadding": 6,
     "rowMaxHeight": 100,
     "marqueeOnOverflow": true,
     "density": "comfortable",
