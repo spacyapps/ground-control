@@ -62,8 +62,8 @@ final class SkinOrientationTests: XCTestCase {
     /// — so the drawn image fills the view exactly and the sample points
     /// below still land on it.
     private func drawn(_ mode: BackgroundImage.Mode,
-                        caps: CGFloat,
-                        size: NSSize = NSSize(width: 60, height: 120)) throws -> NSBitmapImageRep {
+                       caps: CGFloat,
+                       size: NSSize = NSSize(width: 60, height: 120)) throws -> NSBitmapImageRep {
         let view = SkinOverlayView()
         var theme = DefaultTheme.theme
         theme.window = Theme.Window(

@@ -202,8 +202,11 @@ final class CornerDecorationsView: NSView {
                 continue
             }
             next[corner] = makeVideoState(
-                url: url, loop: loop, muted: muted,
-                offset: decoration.offset, scale: decoration.scale
+                url: url,
+                loop: loop,
+                muted: muted,
+                offset: decoration.offset,
+                scale: decoration.scale
             )
         }
 

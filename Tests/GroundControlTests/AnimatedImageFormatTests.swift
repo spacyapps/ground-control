@@ -27,8 +27,13 @@ final class AnimatedImageFormatTests: XCTestCase {
                 pixels[pixel] = red; pixels[pixel + 2] = blue; pixels[pixel + 3] = 255
             }
             let context = CGContext(
-                data: &pixels, width: side, height: side, bitsPerComponent: 8, bytesPerRow: side * 4,
-                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                data: &pixels,
+                width: side,
+                height: side,
+                bitsPerComponent: 8,
+                bytesPerRow: side * 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             )
             return try XCTUnwrap(context?.makeImage())
         }
