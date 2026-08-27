@@ -112,7 +112,12 @@ enum BackgroundRenderer {
     /// `.stretch` — for `.center` (what every corner decoration uses) it
     /// returns a plain `NSImage`, so this goes through the same plain
     /// `draw(in:)` path already proven to honour the view's flip correctly.
-    static func drawAnchored(_ background: BackgroundImage, at origin: NSPoint, size: NSSize, elapsed: TimeInterval? = nil) {
+    static func drawAnchored(
+        _ background: BackgroundImage,
+        at origin: NSPoint,
+        size: NSSize,
+        elapsed: TimeInterval? = nil
+    ) {
         let image: NSImage?
         if let elapsed, let animated = AnimatedImage.load(background), animated.isAnimated {
             image = animated.frame(at: elapsed)
