@@ -1,7 +1,7 @@
 # Ground Control
 
 A macOS menu-bar app that monitors your AI agent CLI sessions — Claude Code,
-Grok, Cursor, opencode — and shows, at a glance, which ones need your
+Grok CLI, Cursor, opencode — and shows, at a glance, which ones need your
 attention, whether they're running in Terminal, iTerm2, or VS Code's
 integrated terminal. Skinnable with a WinAmp-style UI (themes as image/video
 bundles).
@@ -18,7 +18,7 @@ screenshots and video on the SpacyApps site. Everything that can change
 (install steps, compatibility, theme keys) lives here in the repo instead.
 
 > Status: alpha. The app is built and notarised, and the hook side is verified
-> against live payloads from Claude Code, Grok, Cursor and opencode. See `docs/SPEC.md`
+> against live payloads from Claude Code, Grok CLI, Cursor and opencode. See `docs/SPEC.md`
 > for the event contract, `docs/STRUCTURE.md` for the code layout, and
 > `docs/LIMITATIONS.md` for what is proven versus merely believed.
 
@@ -62,7 +62,7 @@ Every row below was tested on a real session, not inferred. Dates are when, and
 | Agent | Rows | Turns red | How we know |
 |---|---|---|---|
 | **Claude Code** | yes | **yes** | a blocked session turned red, the click landed on its tab, the alarm cleared · 2026-08-12 |
-| **Grok** | yes | **yes**, partly | `elicitation_dialog` turned a row red carrying the question itself; a question asked in prose still reads as "done" · 2026-08-19. It reads `~/.claude/settings.json` by design, so one install covers both · 2026-08-11 |
+| **Grok CLI** | yes | **yes**, partly | `elicitation_dialog` turned a row red carrying the question itself; a question asked in prose still reads as "done" · 2026-08-19. It reads `~/.claude/settings.json` by design, so one install covers both · 2026-08-11 |
 | **opencode** | yes | **yes** | `permission.asked` carried "List files with details in current directory"; row went red and cleared on reply · 2026-08-19 |
 | **Cursor's own agent** (Composer) | yes | **no** | fires no hook while waiting for approval, so a blocked chat looks busy · 2026-08-14 |
 | **Claude for Desktop** — Code tab | yes | **yes** | it bundles its own Claude Code and spawns it as a child, so hooks run; a permission prompt turned the row red · 2026-08-22 |
@@ -133,7 +133,7 @@ later versions of the app update the installed emitter themselves on launch, so
 the two halves cannot drift apart. It never installs one where you have not, and
 never touches your settings. It merges rather than
 overwrites, so hooks you already have are kept, and it is safe to re-run.
-Claude Code and Grok both read that file and both are covered — and so does
+Claude Code and Grok CLI both read that file and both are covered — and so does
 Claude for Desktop, which bundles its own Claude Code and spawns it as an
 ordinary child process, so one install covers the terminal and the desktop app
 together.
@@ -144,7 +144,7 @@ its own agent reads — merging there too, and backing up anything already in it
 restarting.
 
 **3. Start a session.** Open a *new* terminal — a CLI already running has not
-loaded the hooks — and start Claude Code or Grok. A row appears as soon as it
+loaded the hooks — and start Claude Code or Grok CLI. A row appears as soon as it
 does anything.
 
 Click a row to jump to the terminal it belongs to. The menu-bar icon toggles the
