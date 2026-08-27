@@ -94,7 +94,9 @@ versus merely believed.
 
 ## Themes
 
-Copy `Themes/default/` and edit `theme.json`. Everything is optional — the app
+**Fun is a feature.** Every other menu-bar utility assumes you want it to look
+like everything else; this one is WinAmp-skinnable instead — copy
+`Themes/default/` and edit `theme.json`. Everything is optional — the app
 fills in defaults.
 
 `Themes/spacyAppsLunarAvatar/` is a complete example: per-state avatars, a
