@@ -23,12 +23,20 @@ import ImageIO
 /// A manifest and its artwork drift apart silently: the theme still loads, the
 /// panel still draws, and it simply looks wrong. Nothing else notices.
 final class ThemeIntegrityTests: XCTestCase {
-    /// Both roots. `Themes/` ships inside the app; the other is demo
-    /// weight included only in alpha builds — but an unchecked theme rots, and
-    /// the whole point of these tests is that nothing else notices when it does.
+    /// Both roots. `Themes/` ships inside the app; the other holds themes
+    /// licensed separately and distributed as their own zips — but an unchecked
+    /// theme rots, and the whole point of these tests is that nothing else
+    /// notices when it does.
     private static var themeRoots: [URL] {
         ThemeLocations.roots
     }
+
+    /// Themes that are never distributed — personal, one machine, not for sale
+    /// and not for sharing. Their artwork is the author's own problem, so a
+    /// wobbling loop or an unmeasured cap there must not fail the suite.
+    ///
+    /// spacyAppsNamiStarAvatar -> excluded (Walter's private theme)
+    private static let privateThemes: Set<String> = ["spacyAppsNamiStarAvatar"]
 
     private struct Shipped {
         let name: String
@@ -48,6 +56,7 @@ final class ThemeIntegrityTests: XCTestCase {
                 )
             }
             .filter { FileManager.default.fileExists(atPath: $0.appendingPathComponent("theme.json").path) }
+            .filter { !Self.privateThemes.contains($0.lastPathComponent) }
 
         XCTAssertFalse(folders.isEmpty, "no themes found in \(Self.themeRoots.map(\.lastPathComponent))")
         return folders.map {
