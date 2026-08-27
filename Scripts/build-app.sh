@@ -61,26 +61,12 @@ install -m 0644 Scripts/opencode-plugin.ts "$APP/Contents/Resources/opencode-plu
 
 # The example themes ship inside the app and are copied to Application Support
 # on first launch — a theme has to be editable and hot-reloadable, which one
-# living in the bundle could never be.
+# living in the bundle could never be. Only what is in the repo's Themes/ ships:
+# default, example-avatars and the lunar station. Extra/paid themes are artwork
+# licensed separately, live outside the repo, and are distributed as their own
+# zips via Scripts/package-theme.sh — see docs/THEME-DELIVERY.md.
 mkdir -p "$APP/Contents/Resources/Themes"
 cp -R Themes/* "$APP/Contents/Resources/Themes/"
-
-# Extra themes are artwork licensed separately from this code, so they live
-# outside the repository entirely — see docs/THEME-DELIVERY.md. They are demo
-# weight rather than product: the unicorn alone is several MB, and bundling it
-# made every download pay for a theme most people will never pick.
-#
-# EXTRA_THEMES=1 puts them back, which is what an alpha wants: testers need
-# something that exercises overlay, nine-slice and a long animation.
-EXTRA_THEMES_DIR="${EXTRA_THEMES_DIR:-$HOME/Documents/Projects/GroundControlThemes}"
-if [ "${EXTRA_THEMES:-0}" = "1" ]; then
-  if [ -d "$EXTRA_THEMES_DIR" ]; then
-    cp -R "$EXTRA_THEMES_DIR"/* "$APP/Contents/Resources/Themes/"
-    echo "==> Included extra themes from $EXTRA_THEMES_DIR ($(du -sh "$EXTRA_THEMES_DIR" | cut -f1))"
-  else
-    echo "!! EXTRA_THEMES=1 but no themes at $EXTRA_THEMES_DIR — building without them."
-  fi
-fi
 
 # SwiftPM emits resources as a bundle beside the binary; it has to travel too
 # or Brand.lockup and every themed asset comes back nil at runtime.

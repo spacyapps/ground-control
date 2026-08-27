@@ -33,9 +33,10 @@ else
   DEST="$HOME/Desktop/GroundControl-${VERSION}.zip"
 fi
 
-# No EXTRA_THEMES: the release carries the lunar station and nothing else.
-# Extra themes are packaged separately by Scripts/package-theme.sh, which is
-# what lets a 3.6MB demo skin exist without every download paying for it.
+# build-app.sh bundles the repo's Themes/ and nothing else — default,
+# example-avatars, the lunar station. Extra/paid themes are packaged separately
+# by Scripts/package-theme.sh, so a heavy demo skin exists without every
+# download paying for it.
 bash Scripts/build-app.sh
 
 # Notarisation is only possible for Developer ID signing, so say so here rather

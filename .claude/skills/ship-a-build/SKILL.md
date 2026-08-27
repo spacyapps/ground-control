@@ -8,17 +8,20 @@ description: >-
 
 # Shipping a build
 
-Three commands, and a list of traps that have all actually happened.
+Two commands, and a list of traps that have all actually happened.
 
 ```bash
-EXTRA_THEMES=1 ./Scripts/build-zip.sh   # alpha for a tester — includes paid artwork
-./Scripts/build-zip.sh                  # public release — artwork excluded
+./Scripts/build-zip.sh                  # release — build, notarise, staple, put it on the Desktop
 ./Scripts/build-app.sh                  # local only, signed, NOT notarised
 ```
 
 `build-app.sh` is the one for ordinary development. Notarisation only matters
 when the file crosses to another Mac, because Gatekeeper checks the ticket only
 on something that arrived with a quarantine flag.
+
+Every build ships the same thing: `Themes/` from the repo — `default`,
+`example-avatars`, the lunar station — and nothing else. There is no
+alpha-vs-public switch any more.
 
 ## Before you build
 
@@ -35,16 +38,20 @@ on something that arrived with a quarantine flag.
 
 ## The paid artwork rule
 
-Themes live **outside this repository**, at
-`~/Documents/Projects/GroundControlThemes`, and `EXTRA_THEMES_DIR` points there.
-They are licensed separately and some are meant to be sold.
+Extra/paid themes live **outside this repository**, at
+`~/Documents/Projects/GroundControlThemes`, with their own git history. They are
+licensed separately and some are meant to be sold, so nothing bundles them into
+the app.
 
-- **`EXTRA_THEMES=1` is for alpha testers only.** Never for a public release,
-  never for a release asset, never for anything on the website.
-- A public release ships `Themes/` alone. Extra themes go out through
-  `Scripts/package-theme.sh <folder>`, as a zip you control.
-- If `EXTRA_THEMES=1` is set and the folder is missing, the build now says so
-  rather than silently omitting them.
+- **Never copy an extra theme into `Themes/`** to get it into a build. The repo
+  is AGPL and a public repo carrying only that `LICENSE` reads as licensing
+  everything in it.
+- A theme goes out on its own, through `Scripts/package-theme.sh <folder>`, as a
+  zip you attach to the release beside the app. The tester drops the folder into
+  **Theme → Open Themes Folder…**.
+- The lunar station stays in the repo and in every build, so a fresh install
+  still demonstrates overlay drawing, keying and an animated decoration with no
+  download.
 
 ## Traps, in the order they bit
 
@@ -67,10 +74,11 @@ spctl -a -vv build/GroundControl.app        # want: accepted, Notarized Develope
 xcrun stapler validate build/GroundControl.app
 ```
 
-**Look inside the bundle, not at the "Included" line.** A glob of
-`"$DIR"/*/` copies each theme's *contents* rather than the theme, scattering
-files loose into `Themes/`. The build reported success either way; only
-`ls Contents/Resources/Themes/` showed it.
+**Verify themes by listing the bundle.** `ls Contents/Resources/Themes/` should
+show `default`, `example-avatars`, `spacyAppsLunarAvatar` — three folders, each
+with a `theme.json` inside. A copy glob that once used a trailing `/*/` scattered
+each theme's *contents* loose into `Themes/` and the build still reported
+success; the folder listing is the only thing that showed it.
 
 **A new build does not update anyone's themes.** `ThemeSeeder` skips any folder
 that already exists in Application Support, so a tester who installed once keeps
@@ -80,18 +88,6 @@ the old artwork forever. To see changed art yourself, copy the files into
 **Rebuild before trusting a hook change.** `HookUpdater` replaces the installed
 emitter with the one inside the app at launch, so running a stale build quietly
 reinstalls an older `cc-notify`.
-
-**`EXTRA_THEMES=1` sweeps the whole folder, including work in progress.** It
-was one unicorn when this flag was written; the themes directory now holds
-half-finished drafts too, and a plain `EXTRA_THEMES=1` ships them. Stage instead
-— copy only the themes meant to travel into a temp folder and point
-`EXTRA_THEMES_DIR` at it:
-
-```bash
-STAGE=$(mktemp -d)/themes; mkdir -p "$STAGE"
-cp -R ~/Documents/Projects/GroundControlThemes/spacyAppsUnicornOverlord "$STAGE/"
-EXTRA_THEMES=1 EXTRA_THEMES_DIR="$STAGE" ./Scripts/build-zip.sh
-```
 
 **Stapler can fail with Error 73 on `build/` while the notarisation is fine.**
 Seen 2026-08-20 on 0.7.0: Apple returned `Accepted`, then
