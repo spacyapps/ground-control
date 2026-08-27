@@ -1,8 +1,10 @@
 # Ground Control
 
-A macOS menu-bar app that monitors your Claude CLI sessions and shows, at a
-glance, which ones need your attention — with a WinAmp-style skinnable UI
-(themes as image/video bundles).
+A macOS menu-bar app that monitors your AI agent CLI sessions — Claude Code,
+Grok, Cursor, opencode — and shows, at a glance, which ones need your
+attention, whether they're running in Terminal, iTerm2, or VS Code's
+integrated terminal. Skinnable with a WinAmp-style UI (themes as image/video
+bundles).
 
 - **Menu-bar icon** that badges when a session needs you.
 - **Free-floating panel** (optional always-on-top / all-Spaces) listing each
@@ -11,8 +13,12 @@ glance, which ones need your attention — with a WinAmp-style skinnable UI
 - **Click a session** to jump straight to its terminal tab.
 - **Skinnable** via drop-in theme folders (`Themes/<name>/theme.json`).
 
+**[See it in action →](https://www.spacyapps.com/apps/ground-control)** —
+screenshots and video on the SpacyApps site. Everything that can change
+(install steps, compatibility, theme keys) lives here in the repo instead.
+
 > Status: alpha. The app is built and notarised, and the hook side is verified
-> against live payloads from Claude Code, Grok and Cursor. See `docs/SPEC.md`
+> against live payloads from Claude Code, Grok, Cursor and opencode. See `docs/SPEC.md`
 > for the event contract, `docs/STRUCTURE.md` for the code layout, and
 > `docs/LIMITATIONS.md` for what is proven versus merely believed.
 
@@ -104,9 +110,10 @@ panel.
 
 ## Install (non-developers)
 
-**1. Install the app.** Download the `.dmg` from Releases, open it, drag Ground
-Control to Applications. It is signed with a Developer ID and notarised by
-Apple, so it opens on a double-click — no right-click, no warning.
+**1. Install the app.** Download the `.zip` from Releases, unzip it, drag
+Ground Control to Applications. It is signed with a Developer ID and
+notarised by Apple, so it opens on a double-click — no right-click, no
+warning.
 
 **2. Wire up your agent CLI.** The panel stays empty until an agent tells it
 something, which is what the hooks are for. One command:
@@ -188,6 +195,8 @@ AGPL-3.0-or-later — see `LICENSE`.
 - **Themes are not covered.** They are plain folders of images and JSON, not a
   derivative of the code. Artwork carries whatever licence its author gives it —
   ask whoever made a theme before redistributing it.
+- **Need different terms for your organization?** Copyright is held by one
+  person specifically so this is possible — email spacyapps@gmail.com to ask.
 
 ## Contributions
 
