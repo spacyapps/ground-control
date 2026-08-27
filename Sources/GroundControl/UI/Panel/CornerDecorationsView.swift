@@ -71,6 +71,15 @@ final class CornerDecorationsView: NSView {
     func apply(theme: Theme) {
         decorations = theme.cornerDecorations
         rebuildVideoStates()
+        // Force updateAnimation() to restart the clock rather than treating
+        // an already-running timer as still valid: without this, switching
+        // corner-decoration themes mid-session (isWorking staying true the
+        // whole time) left the new theme's clip picking up wherever the old
+        // one's elapsed time had reached, instead of starting at its own
+        // resting frame. Fixed 2026-08-26.
+        animationTimer?.invalidate()
+        animationTimer = nil
+        updateAnimation()
         needsLayout = true
         needsDisplay = true
     }

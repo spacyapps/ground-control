@@ -66,6 +66,13 @@ final class PanelBackgroundView: NSView {
         self.theme = theme
         shapeMask = nil
         interiorBody = nil
+        // Force a restart rather than letting an already-running timer look
+        // valid: without this, switching between two animated themes mid-
+        // session kept the *previous* theme's frame-rate interval and elapsed
+        // clock, since updateAnimation() only creates a new timer when one
+        // isn't already running. Fixed 2026-08-26.
+        animationTimer?.invalidate()
+        animationTimer = nil
         updateAnimation()
         layer?.cornerRadius = theme.window.isShaped ? 0 : 10
         needsLayout = true
