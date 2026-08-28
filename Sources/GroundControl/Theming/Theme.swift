@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Walter Mak
 
 import AppKit
+import MatrixKit
 
 /// A theme with every value present — the thing the UI actually reads.
 ///

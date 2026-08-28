@@ -3,6 +3,7 @@
 
 import XCTest
 @testable import GroundControl
+import MatrixKit
 
 /// The Tier-2 formula language (docs/MATRIX-CUSTOMISATION.md). Every assertion
 /// here is something a theme author could write and expect to hold.

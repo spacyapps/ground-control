@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Walter Mak
 
 import AppKit
+import MatrixKit
 
 /// Finds themes on disk and resolves a manifest into a complete `Theme`.
 ///

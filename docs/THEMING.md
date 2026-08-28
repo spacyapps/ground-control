@@ -729,6 +729,16 @@ rotation carries on, so a typo costs you a look at Console, not a broken panel.
 - No assignment, no loops, no `if`. Divide-by-zero and negative roots are 0. The
   result is clamped to 0–1.
 
+**Preview a formula without the app:**
+
+```
+swift run matrix-preview "0.5 + 0.5*sin(pos*7 - phase*2)"
+swift run matrix-preview "<formula>" --speed slow --jitter none --state done
+```
+
+It parses with the real engine and animates in the terminal — edit, re-run,
+watch. `--frames N` prints N frames and exits instead of looping.
+
 #### The other three states
 
 `shape.needsInput`, `shape.done` and `shape.idle` take the same formulas. Each

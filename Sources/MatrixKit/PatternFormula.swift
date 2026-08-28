@@ -22,31 +22,49 @@ import Foundation
 ///   `pulse(centre, width, x)`, `wrap(x)`
 /// - the eight built-in shapes, callable by name — `wave(pos)`, `ripple(pos)` …
 ///   — each evaluated at the current phase
-struct PatternFormula: Equatable {
-    let source: String
+public struct PatternFormula: Equatable {
+    public let source: String
     private let root: Node
 
-    static func == (lhs: PatternFormula, rhs: PatternFormula) -> Bool {
+    public static func == (lhs: PatternFormula, rhs: PatternFormula) -> Bool {
         lhs.source == rhs.source
     }
 
     /// Everything an expression can read while it runs.
-    struct Context {
-        var pos: Double
-        var phase: Double
-        var energy: Double
-        var bar: Double
-        var count: Double
+    public struct Context {
+        public var pos: Double
+        public var phase: Double
+        public var energy: Double
+        public var bar: Double
+        public var count: Double
         /// Seconds since the finish edge, for `decay()` in a done formula. Zero
         /// everywhere else, where `decay()` is a parse error anyway.
-        var decayElapsed: Double = 0
+        public var decayElapsed: Double
+
+        public init(
+            pos: Double,
+            phase: Double,
+            energy: Double,
+            bar: Double,
+            count: Double,
+            decayElapsed: Double = 0
+        ) {
+            self.pos = pos
+            self.phase = phase
+            self.energy = energy
+            self.bar = bar
+            self.count = count
+            self.decayElapsed = decayElapsed
+        }
     }
 
     /// Parses, or logs and returns nil. `key` names the manifest field for the
     /// log line ("matrix.shape.working"). `allowsDecay` is set only for the
     /// done state — `decay()` is meaningless anywhere else.
-    static func parse(
-        _ source: String, key: String = "matrix.shape", allowsDecay: Bool = false
+    public static func parse(
+        _ source: String,
+        key: String = "matrix.shape",
+        allowsDecay: Bool = false
     ) -> PatternFormula? {
         do {
             var parser = Parser(source, allowsDecay: allowsDecay)
@@ -54,28 +72,28 @@ struct PatternFormula: Equatable {
             try parser.expectEnd()
             return PatternFormula(source: source, root: root)
         } catch {
-            Log.theming.notice(
+            MatrixLog.log.notice(
                 "Theme \(key, privacy: .public): \(String(describing: error), privacy: .public)"
             )
             return nil
         }
     }
 
-    func value(_ context: Context) -> Double {
+    public func value(_ context: Context) -> Double {
         root.evaluate(context)
     }
 
     /// The per-frame constants captured once, so the render loop pays for them
     /// per frame rather than per bar. `height(pos:bar:)` is then the only thing
     /// that runs 60-odd times a tick, and it returns a clamped 0…1.
-    struct Sampler {
+    public struct Sampler {
         fileprivate let formula: PatternFormula
         fileprivate let phase: Double
         fileprivate let energy: Double
         fileprivate let count: Double
         fileprivate let decayElapsed: Double
 
-        func height(pos: Double, bar: Int) -> CGFloat {
+        public func height(pos: Double, bar: Int) -> CGFloat {
             let value = formula.value(Context(
                 pos: pos,
                 phase: phase,
@@ -88,7 +106,7 @@ struct PatternFormula: Equatable {
         }
     }
 
-    func sampler(
+    public func sampler(
         phase: CGFloat, energy: CGFloat, count: Int, decayElapsed: TimeInterval = 0
     ) -> Sampler {
         Sampler(
