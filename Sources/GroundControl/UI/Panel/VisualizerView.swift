@@ -147,9 +147,17 @@ final class VisualizerView: NSView {
         phaseClock += feel.phaseStep
         advancePattern()
 
+        let barCount = levels.count
+        // A theme's `shape.working` formula stands in for the rotating built-ins
+        // entirely; the rotation keeps ticking underneath so a theme switch that
+        // drops the formula resumes cleanly.
+        let sampler = theme.matrix.workingShape?.sampler(
+            phase: phaseClock, energy: energy, count: barCount
+        )
         for index in levels.indices {
-            let position = CGFloat(index) / CGFloat(max(1, levels.count - 1))
-            let shape = pattern.shape(position: position, phase: phaseClock)
+            let position = CGFloat(index) / CGFloat(max(1, barCount - 1))
+            let shape = sampler?.height(pos: Double(position), bar: index)
+                ?? pattern.shape(position: position, phase: phaseClock)
 
             // A word sweeping past pushes the bars around it, so the letters
             // look like they are displacing the spectrum rather than sitting

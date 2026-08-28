@@ -161,6 +161,15 @@
     "sleep": {
       "face": "-  ‿  -",          // shown when nothing is running
       "zzz":  true
+    },
+
+    // Per-state bar formulas — pure math over pos, phase, energy, bar, count.
+    // See docs/MATRIX-CUSTOMISATION.md for the vocabulary and the swell example.
+    "shape": {
+      "working":    null,          // replaces the pattern rotation while working
+      "needsInput":  null,         // wired with the resolution model in a later pass
+      "done":       null,
+      "idle":       null
     }
   },
 

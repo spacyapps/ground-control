@@ -260,7 +260,10 @@ enum ThemeLoader {
             peak: color(declared?.peak, colors.titleBarText.withAlphaComponent(0.7)),
             messages: MatrixMessages.usable(declared?.messages ?? []),
             feel: MatrixFeel.resolve(declared),
-            patterns: VisualizerPattern.rotation(from: declared?.patterns ?? [])
+            patterns: VisualizerPattern.rotation(from: declared?.patterns ?? []),
+            workingShape: declared?.shape?.working.flatMap {
+                PatternFormula.parse($0, key: "matrix.shape.working")
+            }
         )
     }
 

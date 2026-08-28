@@ -708,8 +708,53 @@ The eight shapes: `wave` (a travelling sine), `ripple` (rings from the centre),
 (marching ramps), `butterfly` (mirrored wings), `heartbeat` (a flat floor with a
 crossing pulse), `spectrum` (jittery noise).
 
-The fuller story — per-state formulas, an expression language, the resolution
-model — is in `docs/MATRIX-CUSTOMISATION.md`. Not built yet; `feel` is.
+#### `matrix.shape.working` — your own bar formula
+
+A pure-math expression, evaluated for every bar every frame. If it parses it
+replaces the pattern rotation entirely; if it doesn't, it's logged and the
+rotation carries on, so a typo costs you a look at Console, not a broken panel.
+
+```json
+"matrix": { "shape": { "working": "0.5 + 0.5*sin(pos*7 - phase*2)" } }
+```
+
+- **Variables** — `pos` (0–1 across the row), `phase` (a monotonically growing
+  clock), `energy` (0–1, how busy the panel is), `bar` (this bar's index),
+  `count` (total bars).
+- **Functions** — `sin cos abs floor sqrt exp`, `min(a,b)` `max(a,b)`,
+  `step(t,x)` (0 until `x` reaches `t`, then 1), `pulse(centre,width,x)` (a
+  triangular bump), `wrap(x)` (the fractional part).
+- **The eight shapes are callable** — `wave(pos)`, `ripple(pos)`, `pyramid(pos)`
+  … each at the current phase — so you can lean on one and bend it.
+- No assignment, no loops, no `if`. Divide-by-zero and negative roots are 0. The
+  result is clamped to 0–1.
+
+`needsInput`, `done` and `idle` shapes are declared here too but not yet wired —
+that needs the resolution model in `docs/MATRIX-CUSTOMISATION.md`.
+
+##### The `swell` — an ocean wave
+
+`wave` is a *sine*: symmetric, repeating. An ocean wave is one swell — a gentle
+back, a steep face, a crest that rolls through and resets. Build it:
+
+```
+head = wrap(phase * 0.15)              crest position, loops across the row
+back = max(0, head - pos) * 0.7        gentle slope behind the crest
+face = max(0, pos - head) * 4.0        steep drop ahead of it
+      exp(-((back + face)^2) / 0.05)
+```
+
+As one formula:
+
+```json
+"shape": {
+  "working": "exp(-((max(0, wrap(phase*0.15) - pos) * 0.7 + max(0, pos - wrap(phase*0.15)) * 4.0) ^ 2) / 0.05)"
+}
+```
+
+`back` is zero ahead of the crest and `face` is zero behind it, so adding them
+gives one asymmetric hump. Swap `0.7` and `4.0` and the wave breaks the other
+way.
 
 ### `layout`
 - `resize` — how the panel may be resized. Three answers, because a skin and a

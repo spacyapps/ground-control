@@ -138,4 +138,34 @@ extension ThemeLoaderTests {
         """)
         XCTAssertEqual(ThemeLoader.loadTheme(from: folder).name, "Url")
     }
+
+    // MARK: - Matrix customisation (docs/MATRIX-CUSTOMISATION.md)
+
+    func testMatrixFeelResolvesFromNamedLevels() throws {
+        let folder = try makeTheme(named: "calm", json: """
+        { "matrix": { "feel": { "fall": "slow" }, "patterns": ["wave", "ripple"] } }
+        """)
+        let matrix = ThemeLoader.loadTheme(from: folder).matrix
+        XCTAssertLessThan(matrix.feel.release, MatrixFeel.Resolved.standard.release)
+        XCTAssertEqual(matrix.patterns, [.wave, .ripple])
+    }
+
+    func testAValidWorkingFormulaIsCompiled() throws {
+        let folder = try makeTheme(named: "wavey", json: """
+        { "matrix": { "shape": { "working": "0.5 + 0.5*sin(pos*7 - phase*2)" } } }
+        """)
+        let matrix = ThemeLoader.loadTheme(from: folder).matrix
+        XCTAssertEqual(matrix.workingShape?.source, "0.5 + 0.5*sin(pos*7 - phase*2)")
+    }
+
+    /// A broken formula falls back to the built-in patterns rather than failing
+    /// the theme — the parser logs, `workingShape` stays nil.
+    func testABrokenWorkingFormulaFallsBackSilently() throws {
+        let folder = try makeTheme(named: "broken", json: """
+        { "matrix": { "shape": { "working": "0.5 + wobble(" } } }
+        """)
+        let theme = ThemeLoader.loadTheme(from: folder)
+        XCTAssertNil(theme.matrix.workingShape)
+        XCTAssertTrue(theme.warnings.isEmpty)
+    }
 }

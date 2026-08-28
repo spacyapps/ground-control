@@ -138,6 +138,10 @@ struct ThemeManifest: Decodable, Equatable {
         var patternHold: String?
         /// What the grid shows while fully asleep.
         var sleep: Sleep?
+        /// Per-state bar-height formulas (Tier 2, docs/MATRIX-CUSTOMISATION.md).
+        /// `working` replaces the pattern rotation; the other three are wired
+        /// with the resolution model in a later pass.
+        var shape: Shape?
 
         struct Feel: Decodable, Equatable {
             var fall: String?        // still | slow | medium | fast  — release & peak ballistics
@@ -149,6 +153,13 @@ struct ThemeManifest: Decodable, Equatable {
         struct Sleep: Decodable, Equatable {
             var face: String?
             var zzz: Bool?
+        }
+
+        struct Shape: Decodable, Equatable {
+            var working: String?
+            var needsInput: String?
+            var done: String?
+            var idle: String?
         }
     }
 
