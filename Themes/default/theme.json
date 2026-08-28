@@ -150,7 +150,7 @@
       "fall":        "medium",    // still | slow | medium | fast  (how the bars settle)
       "jitter":      null,        // none | calm | lively | chaotic; null keeps each
                                   //   pattern's own noise
-      "sensitivity": "steady",    // mellow | steady | twitchy  (working count -> height)
+      "sensitivity": "steady",    // mellow | steady | eager  (working count -> height)
       "speed":       "medium"     // slow | medium | fast  (how fast a wave travels)
     },
     "patterns": [                 // which shapes rotate; [] means all eight

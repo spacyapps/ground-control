@@ -68,15 +68,15 @@ final class VisualizerTests: XCTestCase {
     /// silence is silent (docs/MATRIX-CUSTOMISATION.md).
     func testSensitivityScalesWorkButNotRest() throws {
         let one = [try session(state: .working)]
-        var twitchy = MatrixFeel.Resolved.standard
-        twitchy.energyFloor = 0.60
+        var eager = MatrixFeel.Resolved.standard
+        eager.energyFloor = 0.60
         var mellow = MatrixFeel.Resolved.standard
         mellow.energyFloor = 0.35
         XCTAssertGreaterThan(
-            VisualizerView.energy(for: one, feel: twitchy),
+            VisualizerView.energy(for: one, feel: eager),
             VisualizerView.energy(for: one, feel: mellow)
         )
-        XCTAssertEqual(VisualizerView.energy(for: [], feel: twitchy), 0)
-        XCTAssertEqual(VisualizerView.energy(for: [try session(state: .idle)], feel: twitchy), 0)
+        XCTAssertEqual(VisualizerView.energy(for: [], feel: eager), 0)
+        XCTAssertEqual(VisualizerView.energy(for: [try session(state: .idle)], feel: eager), 0)
     }
 }
