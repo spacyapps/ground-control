@@ -67,6 +67,7 @@ final class ManifestReferenceTests: XCTestCase {
         keys.formUnion(try properties(of: ThemeManifest.Matrix.self))
         keys.formUnion(try properties(of: ThemeManifest.Matrix.Feel.self))
         keys.formUnion(try properties(of: ThemeManifest.Matrix.Sleep.self))
+        keys.formUnion(try properties(of: ThemeManifest.Matrix.Shape.self))
         keys.formUnion(try properties(of: ThemeManifest.Avatar.self))
         keys.formUnion(try properties(of: ThemeManifest.Avatar.State.self))
         keys.formUnion(try properties(of: ThemeManifest.Layout.self))

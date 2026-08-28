@@ -178,6 +178,10 @@ struct Theme {
         var feel: MatrixFeel.Resolved = .standard
         /// Which built-in shapes rotate. All eight unless a theme narrowed it.
         var patterns: [VisualizerPattern] = VisualizerPattern.allCases
+        /// A theme's own working-state bar formula, if it parsed. Set, it
+        /// replaces the pattern rotation while sessions work; nil falls back to
+        /// `patterns` (docs/MATRIX-CUSTOMISATION.md).
+        var workingShape: PatternFormula?
 
         /// The same analyser in somebody's own colour.
         ///
