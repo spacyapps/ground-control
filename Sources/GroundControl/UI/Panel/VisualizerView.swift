@@ -186,7 +186,11 @@ final class VisualizerView: NSView {
 
         // Peaks fall on their own slower schedule, so stopping when only the
         // bars have settled freezes them mid-air as a row of stray dashes.
-        if isAtRest && !isShowingMessage && !isAlarmed { stop() }
+        //
+        // A settled alarm stops too: the lit red floor is painted from
+        // `isAlarmed` in `draw()`, not from a running level, so there is nothing
+        // to animate and no reason to hold the 24fps timer.
+        if isAtRest && !isShowingMessage { stop() }
         needsDisplay = true
     }
 
