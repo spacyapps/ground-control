@@ -59,4 +59,23 @@ final class VisualizerPatternTests: XCTestCase {
             XCTAssertNotEqual(VisualizerPattern.next(avoiding: pattern), pattern)
         }
     }
+
+    // MARK: - The theme's rotation (docs/MATRIX-CUSTOMISATION.md)
+
+    func testRotationKeepsTheNamedSubsetInOrderAndDeduped() {
+        XCTAssertEqual(
+            VisualizerPattern.rotation(from: ["ripple", "WAVE", "ripple"]),
+            [.ripple, .wave]
+        )
+    }
+
+    func testRotationDropsUnknownNames() {
+        XCTAssertEqual(VisualizerPattern.rotation(from: ["wave", "disco", "pyramid"]),
+                       [.wave, .pyramid])
+    }
+
+    func testRotationFallsBackToAllEight() {
+        XCTAssertEqual(VisualizerPattern.rotation(from: []), VisualizerPattern.allCases)
+        XCTAssertEqual(VisualizerPattern.rotation(from: ["nonsense"]), VisualizerPattern.allCases)
+    }
 }

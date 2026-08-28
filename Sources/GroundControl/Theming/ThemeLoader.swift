@@ -258,7 +258,9 @@ enum ThemeLoader {
             unlit: color(declared?.unlit, colors.divider.withAlphaComponent(0.10)),
             text: color(declared?.text, colors.titleBarText),
             peak: color(declared?.peak, colors.titleBarText.withAlphaComponent(0.7)),
-            messages: MatrixMessages.usable(declared?.messages ?? [])
+            messages: MatrixMessages.usable(declared?.messages ?? []),
+            feel: MatrixFeel.resolve(declared),
+            patterns: VisualizerPattern.rotation(from: declared?.patterns ?? [])
         )
     }
 

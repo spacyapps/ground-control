@@ -673,6 +673,44 @@ every third message, and words harvested from what your sessions actually
 said — those come from your work rather than from anyone's idea of what the
 panel should say.
 
+#### `matrix.feel` — how it moves
+
+Named levels, not numbers: you know what "slow" looks like, not what `0.012`
+does. Every key is independent and optional; an absent `feel` is the shipped
+analyser. An unrecognised word is logged and ignored.
+
+```json
+"matrix": {
+  "feel": {
+    "fall":        "slow",     // still | slow | medium | fast
+    "jitter":      "calm",     // none | calm | lively | chaotic
+    "sensitivity": "steady",   // mellow | steady | twitchy
+    "speed":       "medium"    // slow | medium | fast
+  },
+  "patterns":    ["wave", "ripple", "pyramid"],
+  "patternHold": "medium",     // short | medium | long
+  "sleep":       { "face": "-  ‿  -", "zzz": true }
+}
+```
+
+| Key | Does |
+|---|---|
+| `fall` | how the bars settle — `still` snaps, `slow` is a long lazy descent, `fast` is snappy. Moves the peak markers with it. |
+| `jitter` | per-bar noise. `none` is perfectly clean; `chaotic` is the old spectrum shimmer on every shape. Omit it and each pattern keeps the noise that suits it. |
+| `sensitivity` | how loudly work reads. `mellow` needs a busy panel before the bars really move; `twitchy` makes one working session already look busy. Never changes whether silence is silent. |
+| `speed` | how fast a wave travels across the row. |
+| `patterns` | which of the eight built-in shapes rotate. Case-insensitive; unknown names dropped; `[]` or absent means all eight. |
+| `patternHold` | seconds a shape holds before the next — `short` ≈ 5–9s, `medium` ≈ 9–16s, `long` ≈ 16–28s. |
+| `sleep.face` | the little face shown when nothing is running. `sleep.zzz` toggles the trailing `z z z`. |
+
+The eight shapes: `wave` (a travelling sine), `ripple` (rings from the centre),
+`chase` (a sweeping bright column), `pyramid` (a breathing triangle), `sawtooth`
+(marching ramps), `butterfly` (mirrored wings), `heartbeat` (a flat floor with a
+crossing pulse), `spectrum` (jittery noise).
+
+The fuller story — per-state formulas, an expression language, the resolution
+model — is in `docs/MATRIX-CUSTOMISATION.md`. Not built yet; `feel` is.
+
 ### `layout`
 - `resize` — how the panel may be resized. Three answers, because a skin and a
   list want opposite things and a person wants neither:

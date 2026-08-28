@@ -12,7 +12,7 @@ import Foundation
 ///
 /// Each case is a pure function of position and time returning 0…1, so the
 /// shapes are testable and the view only has to scale them by energy.
-enum VisualizerPattern: CaseIterable {
+enum VisualizerPattern: String, CaseIterable {
     /// One sine travelling left to right.
     case wave
     /// Rings spreading out from the middle.
@@ -83,10 +83,32 @@ enum VisualizerPattern: CaseIterable {
     }
 
     /// Seconds before switching. Long enough to read the shape, short enough
-    /// that the panel never looks stuck.
-    static func nextDuration() -> TimeInterval { .random(in: 9...16) }
+    /// that the panel never looks stuck. The range is the theme's `patternHold`
+    /// (docs/MATRIX-CUSTOMISATION.md); the default is `9...16`.
+    static func nextDuration(in range: ClosedRange<TimeInterval> = 9...16) -> TimeInterval {
+        .random(in: range)
+    }
 
     static func next(avoiding previous: VisualizerPattern) -> VisualizerPattern {
         allCases.filter { $0 != previous }.randomElement() ?? .wave
+    }
+
+    /// The rotation a theme asked for, validated.
+    ///
+    /// `names` are `matrix.patterns` from the manifest — case-insensitive, and
+    /// anything not one of the eight is dropped with a log rather than failing
+    /// the theme. An empty or all-invalid list means "rotate all eight", which
+    /// is also what an absent key means.
+    static func rotation(from names: [String]) -> [VisualizerPattern] {
+        guard !names.isEmpty else { return allCases }
+        var kept: [VisualizerPattern] = []
+        for name in names {
+            if let pattern = VisualizerPattern(rawValue: name.lowercased()) {
+                if !kept.contains(pattern) { kept.append(pattern) }
+            } else {
+                Log.theming.notice("Theme matrix.patterns: unknown shape \(name, privacy: .public)")
+            }
+        }
+        return kept.isEmpty ? allCases : kept
     }
 }

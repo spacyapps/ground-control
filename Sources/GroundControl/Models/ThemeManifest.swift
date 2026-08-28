@@ -110,7 +110,13 @@ struct ThemeManifest: Decodable, Equatable {
         var file: String? { image ?? shape }
     }
 
-    /// The title-bar analyser: its palette, and what it says.
+    /// The title-bar analyser: its palette, what it says, and how it moves.
+    ///
+    /// `feel`, `patterns` and `sleep` are the Tier-1 knobs from
+    /// docs/MATRIX-CUSTOMISATION.md — named levels rather than raw numbers,
+    /// because an author (or the model writing the theme) knows "slow", not
+    /// `0.012`. Anything unrecognised falls back to the built-in behaviour and
+    /// is logged; an absent `feel` is exactly today's analyser.
     struct Matrix: Decodable, Equatable {
         var low: String?
         var high: String?
@@ -122,6 +128,28 @@ struct ThemeManifest: Decodable, Equatable {
         /// it speaks. Words the font cannot draw are dropped rather than
         /// rendered as gaps.
         var messages: [String]?
+
+        /// The instrument's global feel. Each key independent; each optional.
+        var feel: Feel?
+        /// Which built-in shapes rotate. A subset of the eight names; unknown
+        /// names are dropped, an empty or absent list means all eight.
+        var patterns: [String]?
+        /// How long each shape holds before the next: `short` | `medium` | `long`.
+        var patternHold: String?
+        /// What the grid shows while fully asleep.
+        var sleep: Sleep?
+
+        struct Feel: Decodable, Equatable {
+            var fall: String?        // still | slow | medium | fast  — release & peak ballistics
+            var jitter: String?      // none | calm | lively | chaotic — per-bar noise
+            var sensitivity: String? // mellow | steady | twitchy      — working count -> amplitude
+            var speed: String?       // slow | medium | fast           — how fast phase advances
+        }
+
+        struct Sleep: Decodable, Equatable {
+            var face: String?
+            var zzz: Bool?
+        }
     }
 
     struct Avatar: Decodable, Equatable {

@@ -63,4 +63,20 @@ final class VisualizerTests: XCTestCase {
         let many = try (0..<20).map { _ in try session(state: .working) }
         XCTAssertLessThanOrEqual(VisualizerView.energy(for: many), 1.0)
     }
+
+    /// The `sensitivity` knob only changes how loudly work reads, never whether
+    /// silence is silent (docs/MATRIX-CUSTOMISATION.md).
+    func testSensitivityScalesWorkButNotRest() throws {
+        let one = [try session(state: .working)]
+        var twitchy = MatrixFeel.Resolved.standard
+        twitchy.energyFloor = 0.60
+        var mellow = MatrixFeel.Resolved.standard
+        mellow.energyFloor = 0.35
+        XCTAssertGreaterThan(
+            VisualizerView.energy(for: one, feel: twitchy),
+            VisualizerView.energy(for: one, feel: mellow)
+        )
+        XCTAssertEqual(VisualizerView.energy(for: [], feel: twitchy), 0)
+        XCTAssertEqual(VisualizerView.energy(for: [try session(state: .idle)], feel: twitchy), 0)
+    }
 }

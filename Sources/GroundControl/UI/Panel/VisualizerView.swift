@@ -59,11 +59,14 @@ final class VisualizerView: NSView {
     /// a low idle shimmer — so movement in the corner of your eye always means
     /// something is actually running. A session waiting on you is not working,
     /// so it does not drive the bars; it colours them instead.
-    static func energy(for sessions: [Session]) -> CGFloat {
+    ///
+    /// The floor and per-session step are the theme's `sensitivity` knob
+    /// (docs/MATRIX-CUSTOMISATION.md); `.standard` is the shipped curve.
+    static func energy(for sessions: [Session], feel: MatrixFeel.Resolved = .standard) -> CGFloat {
         let working = sessions.filter { $0.state == .working }.count
         guard working > 0 else { return 0 }
         // Saturates quickly: past a few it is already obviously busy.
-        return min(1.0, 0.45 + CGFloat(working) * 0.2)
+        return min(1.0, feel.energyFloor + CGFloat(working) * feel.energyPerSession)
     }
 
     static func alarms(for sessions: [Session]) -> Bool {
@@ -71,7 +74,7 @@ final class VisualizerView: NSView {
     }
 
     func update(sessions: [Session]) {
-        targetEnergy = Self.energy(for: sessions)
+        targetEnergy = Self.energy(for: sessions, feel: theme.matrix.feel)
         isAlarmed = Self.alarms(for: sessions)
         harvested = MatrixMessages.harvest(from: sessions.map(\.message))
         if targetEnergy > 0 { start() }
@@ -137,10 +140,11 @@ final class VisualizerView: NSView {
 
     private func step() {
         advanceMessage()
+        let feel = theme.matrix.feel
         energy += (targetEnergy - energy) * 0.12
         resizeBarsIfNeeded()
 
-        phaseClock += 0.09
+        phaseClock += feel.phaseStep
         advancePattern()
 
         for index in levels.indices {
@@ -151,14 +155,17 @@ final class VisualizerView: NSView {
             // look like they are displacing the spectrum rather than sitting
             // on top of it.
             let wake = messageWake(at: index)
-            let wobble = CGFloat.random(in: pattern.jitter)
+            // The theme's `jitter` knob overrides the pattern's own range;
+            // absent, each pattern keeps the noise that suits it.
+            let wobble = CGFloat.random(in: feel.jitter ?? pattern.jitter)
             let target = min(1, energy * wobble * shape + wake)
 
-            // Fast attack, slow release — the classic analyser feel.
-            let rate: CGFloat = target > levels[index] ? 0.55 : 0.12
+            // Fast attack, slow release — the classic analyser feel. Attack
+            // stays quick; `fall` tunes only the release side.
+            let rate: CGFloat = target > levels[index] ? 0.55 : feel.release
             levels[index] += (target - levels[index]) * rate
 
-            peaks[index] = max(peaks[index] - 0.012, levels[index])
+            peaks[index] = max(peaks[index] - feel.peakFall, levels[index])
         }
 
         // Peaks fall on their own slower schedule, so stopping when only the
@@ -195,10 +202,15 @@ final class VisualizerView: NSView {
         guard energy > 0.02 else { return }
         let now = Date()
         guard now >= patternUntil else { return }
-        pattern = patternUntil == .distantPast
-            ? VisualizerPattern.allCases.randomElement() ?? .wave
-            : VisualizerPattern.next(avoiding: pattern)
-        patternUntil = now.addingTimeInterval(VisualizerPattern.nextDuration())
+        let rotation = theme.matrix.patterns
+        if patternUntil == .distantPast {
+            pattern = rotation.randomElement() ?? .wave
+        } else {
+            let others = rotation.filter { $0 != pattern }
+            pattern = others.randomElement() ?? pattern
+        }
+        let hold = theme.matrix.feel.patternHold
+        patternUntil = now.addingTimeInterval(VisualizerPattern.nextDuration(in: hold))
     }
 
     /// Extra level for bars just outside the sweeping word.
@@ -294,16 +306,24 @@ final class VisualizerView: NSView {
     }
 
     private func drawSleeping() {
-        let face = "-  ‿  -"
+        let face = theme.matrix.feel.sleepFace
         let color = theme.colors.messageDim.withAlphaComponent(0.75)
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: min(13, bounds.height * 0.5), weight: .medium),
             .foregroundColor: color
         ]
         let size = (face as NSString).size(withAttributes: attributes)
-        let origin = NSPoint(x: (bounds.width - size.width) / 2 - 10, y: (bounds.height - size.height) / 2)
+        let hasZzz = theme.matrix.feel.sleepZzz
+        // The face sits left of centre only to leave room for the "z z z"; with
+        // no z's it centres properly.
+        let shift: CGFloat = hasZzz ? -10 : 0
+        let origin = NSPoint(
+            x: (bounds.width - size.width) / 2 + shift,
+            y: (bounds.height - size.height) / 2
+        )
         (face as NSString).draw(at: origin, withAttributes: attributes)
 
+        guard hasZzz else { return }
         let zzz = "z z z"
         let zAttributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: min(9, bounds.height * 0.35), weight: .semibold),
