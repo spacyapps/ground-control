@@ -57,6 +57,40 @@ final class MatrixResolverTests: XCTestCase {
         XCTAssertEqual(elapsed, 0, accuracy: 0.001)
     }
 
+    /// Row 5 — a finish edge while other sessions still work: `working` keeps
+    /// the meter, the bloom rides on top.
+    func testABloomPlaysWhileOthersStillWork() throws {
+        var resolver = MatrixResolver()
+        resolver.observe([
+            try session("a", .working),
+            try session("b", .working),
+            try session("c", .working)
+        ], at: start)
+        resolver.observe([
+            try session("a", .working),
+            try session("b", .working),
+            try session("c", .done)
+        ], at: start + 1)
+        let plan = resolver.resolve(energy: 0.7, at: start + 1)
+        XCTAssertEqual(plan.priority, .working)
+        XCTAssertNotNil(plan.bloomElapsed, "the flourish rides on top of the working spectrum")
+    }
+
+    /// Row 19 — an alarm appearing mid-bloom cuts it that frame, not a decay.
+    func testAnAlarmMidBloomSuppressesItImmediately() throws {
+        var resolver = MatrixResolver()
+        resolver.observe([try session("a", .working)], at: start)
+        resolver.observe([try session("a", .done)], at: start + 1)
+        XCTAssertNotNil(resolver.resolve(energy: 0, at: start + 1.2).bloomElapsed)
+        // b now needs you, well inside the bloom window.
+        resolver.observe([
+            try session("a", .done),
+            try session("b", .needsInput, needs: true)
+        ], at: start + 1.3)
+        XCTAssertNil(resolver.resolve(energy: 0, at: start + 1.3).bloomElapsed,
+                     "the bloom is gone the instant the alarm arrives")
+    }
+
     func testTheBloomFreesItsSlotAfterTheWindow() throws {
         var resolver = MatrixResolver()
         resolver.observe([try session("a", .working)], at: start)

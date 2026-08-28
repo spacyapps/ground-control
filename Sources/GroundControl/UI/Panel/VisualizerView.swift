@@ -36,6 +36,11 @@ final class VisualizerView: NSView {
     private var patternUntil = Date.distantPast
     var isAlarmed = false
     private var resolver = MatrixResolver()
+    /// Advanced one tick per `step()` rather than read from the wall clock, so
+    /// the escalation and bloom windows count frames — steady under scheduling
+    /// jitter, and deterministic to test. Re-seeded from `Date()` whenever the
+    /// loop resumes from rest.
+    private var frameTime = Date()
 
     /// Five rows: the fewest an LED matrix needs to spell anything, which is
     /// what lets the same grid show a message as well as a level.
@@ -87,11 +92,15 @@ final class VisualizerView: NSView {
     func update(sessions: [Session]) {
         targetEnergy = Self.energy(for: sessions, feel: theme.matrix.feel)
         isAlarmed = Self.alarms(for: sessions)
-        resolver.observe(sessions)
+        // A stopped loop leaves frameTime frozen; catch it up so a resumed
+        // animation starts from now, not from minutes ago.
+        if timer == nil { frameTime = Date() }
+        resolver.observe(sessions, at: frameTime)
         harvested = MatrixMessages.harvest(from: sessions.map(\.message))
         // A done flourish with nothing working still needs the loop running to
         // play out, so start on any of the three, not just energy.
-        if targetEnergy > 0 || isAlarmed || resolver.resolve(energy: 0).bloomElapsed != nil {
+        if targetEnergy > 0 || isAlarmed
+            || resolver.resolve(energy: 0, at: frameTime).bloomElapsed != nil {
             start()
         }
         if messageTimer == nil && !isShowingMessage { scheduleMessage() }
@@ -127,6 +136,7 @@ final class VisualizerView: NSView {
     /// run loop — the timer is the sole caller in the app.
     func step() {
         advanceMessage()
+        frameTime += 1.0 / 24.0
         let feel = theme.matrix.feel
         energy += (targetEnergy - energy) * 0.12
         resizeBarsIfNeeded()
@@ -134,7 +144,7 @@ final class VisualizerView: NSView {
         phaseClock += feel.phaseStep
         advancePattern()
 
-        let plan = resolver.resolve(energy: energy)
+        let plan = resolver.resolve(energy: energy, at: frameTime)
         let barCount = levels.count
         let driver = driverSampler(for: plan.priority, count: barCount)
         // The rotating pattern is the fallback for `working` only. `needsInput`
@@ -198,7 +208,7 @@ final class VisualizerView: NSView {
     /// than one look. Only while there is energy to see it with.
     private func advancePattern() {
         guard energy > 0.02 else { return }
-        let now = Date()
+        let now = frameTime
         guard now >= patternUntil else { return }
         let rotation = theme.matrix.patterns
         if patternUntil == .distantPast {
@@ -215,7 +225,7 @@ final class VisualizerView: NSView {
         energy < 0.01
             && levels.allSatisfy { $0 < 0.01 }
             && peaks.allSatisfy { $0 < 0.01 }
-            && resolver.resolve(energy: 0).bloomElapsed == nil
+            && resolver.resolve(energy: 0, at: frameTime).bloomElapsed == nil
     }
 
     private func resizeBarsIfNeeded() {
