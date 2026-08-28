@@ -31,9 +31,11 @@ final class VisualizerViewStepTests: XCTestCase {
         return view
     }
 
-    private func session(_ state: SessionState, needs: Bool = false) throws -> Session {
+    private func session(
+        _ state: SessionState, id: String = UUID().uuidString, needs: Bool = false
+    ) throws -> Session {
         let json = """
-        {"session_id":"\(UUID().uuidString)","name":"x","cwd":"/tmp/x",\
+        {"session_id":"\(id)","name":"x","cwd":"/tmp/x",\
         "state":"\(state.rawValue)","message":"","needs_action":\(needs),\
         "ts":\(Int(Date().timeIntervalSince1970))}
         """
@@ -70,5 +72,19 @@ final class VisualizerViewStepTests: XCTestCase {
         view.update(sessions: [try session(.needsInput, needs: true)])
         pump(view)
         XCTAssertGreaterThan(view.levels.min() ?? 0, 0.8)
+    }
+
+    /// A done formula lifts the bars when a turn finishes, then they fall back.
+    /// Also row 18: a session that starts working mid-bloom does not cut it.
+    func testDoneFlourishBloomsThenFades() throws {
+        let view = try view(matrix: #"""
+        { "shape": { "done": "1 * decay(0.5)" }, "feel": { "jitter": "none", "fall": "fast" } }
+        """#)
+        view.update(sessions: [try session(.working, id: "s")])
+        view.update(sessions: [try session(.done, id: "s")])   // the finish edge
+        pump(view, 4)
+        XCTAssertGreaterThan(view.levels.max() ?? 0, 0.5, "the flourish lifts the bars")
+        pump(view, 120)   // well past the 0.5s decay at 24fps
+        XCTAssertTrue(view.levels.allSatisfy { $0 < 0.05 }, "then it is gone")
     }
 }
