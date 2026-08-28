@@ -1,9 +1,11 @@
 # Matrix customisation
 
-> **Status (2026-08-27): Tiers 1, 2a and 2b built.** `matrix.feel`,
+> **Status (2026-08-28): Tiers 1, 2a and 2b built.** `matrix.feel`,
 > `matrix.patterns`, `matrix.patternHold`, `matrix.sleep`, and per-state
-> formulas `matrix.shape.{working,needsInput,done,idle}` all work. Tier 3
-> (script hooks) and Tier 4 (native plugin) remain design only.
+> formulas `matrix.shape.{working,needsInput,done,idle}` all work. The engine is
+> its own target (`Sources/MatrixKit`), and `swift run matrix-preview` renders a
+> formula in the terminal. Tier 3 (script hooks) and Tier 4 (native plugin)
+> remain design only.
 >
 > One deviation from the spec below, made during the build: **a state with no
 > formula keeps today's behaviour** rather than getting a built-in animation.
@@ -144,6 +146,11 @@ falls back, never breaks.
 
 Whatever a formula returns is clamped to 0…1 by stage 4 regardless, so a bad
 range is ugly, not fatal.
+
+The engine (`PatternFormula`, the parser, `VisualizerPattern`) lives in its own
+target, `Sources/MatrixKit` — Foundation only, no app. That is what lets
+`swift run matrix-preview "<formula>"` animate a shape in the terminal with the
+*same* code the panel runs. Edit, re-run, watch — no app build.
 
 ### The eight built-ins
 

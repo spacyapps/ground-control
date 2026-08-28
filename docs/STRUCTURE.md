@@ -7,7 +7,8 @@ lines, split it.
 
 ```
 GroundControl/
-├── Package.swift                 # SPM manifest — no dependencies; target + resources
+├── Package.swift                 # SPM manifest — no third-party deps; three targets:
+│                                 # GroundControl (app), MatrixKit (lib), matrix-preview
 ├── .swiftlint.yml                # lint rules (root; nested configs allowed later)
 ├── .gitignore                    # excludes build/, DerivedData/, secrets, xcuserdata
 ├── README.md                     # landing page: what it is, build, screenshots
@@ -65,7 +66,7 @@ GroundControl/
 │   │   │   ├── SkinOverlayView.swift      # window.overlay: the skin drawn in front
 │   │   │   ├── SkinInterior.swift         # what a frame encloses vs what is outside it
 │   │   │   ├── VisualizerView.swift       # WinAmp-style analyser, driven by state
-│   │   │   ├── VisualizerPattern.swift    # the shapes it sweeps through
+│   │   │   ├── VisualizerView+Marquee.swift # the word it spells while asleep
 │   │   │   ├── MatrixFont.swift           # 5-row letterforms for the analyser
 │   │   │   ├── MatrixMessages.swift       # what it spells, theme words included
 │   │   │   └── SessionListView.swift      # the scrolling stack of rows
@@ -96,9 +97,25 @@ GroundControl/
 │   ├── Extensions/               # small, focused extensions
 │   │   └── NSColor+Hex.swift
 │   │
+│   ├── Theming/ (continued)      # the analyser's Tier-1/2 knobs
+│   │   ├── MatrixFeel.swift      # named feel levels -> tuned numbers
+│   │   └── MatrixResolver.swift  # priority stack + done-bloom + alarm escalation
+│   │
 │   └── Resources/                # the app's own mark (themes draw their own —
 │       ├── logo-glyph.png        # see DrawnAvatar for the built-in faces)
 │       └── logo-lockup.png       # Themes/ is copied in by build-app.sh too
+│
+├── Sources/MatrixKit/           # the analyser's formula engine — Foundation
+│   │                             # only, no AppKit, no app state; its own target
+│   │                             # so the preview tool and tests can use it
+│   ├── PatternFormula.swift      # the public type: parse / value / sampler
+│   ├── PatternFormula+Parser.swift # hand-written recursive descent
+│   ├── PatternFormula+Tree.swift # the evaluated nodes + whitelisted functions
+│   ├── VisualizerPattern.swift   # the eight built-in shapes, callable in a formula
+│   └── MatrixLog.swift           # its own os.Logger (same subsystem as the app)
+│
+├── Sources/matrix-preview/      # `swift run matrix-preview "<formula>"` —
+│   └── main.swift                # animated ASCII preview in the terminal
 │
 ├── Themes/
 │   ├── default/theme.json        # THE key reference: every key, annotated,

@@ -24,11 +24,13 @@ echo "==> Building release"
 # queried with the *same* flags — a universal build lands somewhere different
 # from a native one, and asking without the flags silently returns the wrong
 # directory.
+# Just the app: the package also has matrix-preview (a dev tool) which the
+# bundle does not want.
 ARCH_FLAGS="--arch arm64 --arch x86_64"
-if ! swift build -c release $ARCH_FLAGS >/dev/null 2>&1; then
+if ! swift build -c release --product GroundControl $ARCH_FLAGS >/dev/null 2>&1; then
   echo "    (universal build unavailable, falling back to native)"
   ARCH_FLAGS=""
-  swift build -c release
+  swift build -c release --product GroundControl
 fi
 
 BIN="$(swift build -c release $ARCH_FLAGS --show-bin-path 2>/dev/null | tail -1)"
