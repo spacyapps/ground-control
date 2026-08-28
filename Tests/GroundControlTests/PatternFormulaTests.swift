@@ -123,6 +123,25 @@ final class PatternFormulaTests: XCTestCase {
 
     // MARK: - The documented swell example
 
+    /// A guard, not a benchmark: `height` runs ~60 times a frame, 24 frames a
+    /// second, so a formula eval that turned pathological (an allocation per
+    /// node, a quadratic parse cached wrong) would show here long before a
+    /// person felt it. The bound is loose enough never to flake.
+    func testEvaluatingASwellForManyFramesStaysCheap() throws {
+        let swell = try XCTUnwrap(PatternFormula.parse("""
+        exp(-((max(0, wrap(phase * 0.15) - pos) * 0.7 \
+        + max(0, pos - wrap(phase * 0.15)) * 4.0) ^ 2) / 0.05)
+        """))
+        let began = Date()
+        for frame in 0..<200 {
+            let sampler = swell.sampler(phase: CGFloat(frame) * 0.1, energy: 1, count: 64)
+            for bar in 0..<64 { _ = sampler.height(pos: Double(bar) / 63, bar: bar) }
+        }
+        // 12,800 evals of a ~15-node tree. Real cost is well under a millisecond
+        // in total; 100ms catches a 100x regression without ever being tight.
+        XCTAssertLessThan(Date().timeIntervalSince(began), 0.1)
+    }
+
     func testSwellExampleParsesAndStaysInRange() throws {
         let swell = """
         exp(-((max(0, wrap(phase * 0.15) - pos) * 0.7 \
