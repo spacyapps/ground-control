@@ -81,12 +81,12 @@ enum MatrixFeel {
     // sensitivity -> working-count to amplitude.
     // mellow  -> needs a busy panel before the bars really move
     // steady  -> the shipped curve
-    // twitchy -> one working session already looks busy
+    // eager -> one working session already looks busy
     private static func applySensitivity(_ level: String?, to out: inout Resolved) {
         switch level?.lowercased() {
         case nil, "steady": break
         case "mellow":      out.energyFloor = 0.35; out.energyPerSession = 0.12
-        case "twitchy":     out.energyFloor = 0.60; out.energyPerSession = 0.28
+        case "eager":     out.energyFloor = 0.60; out.energyPerSession = 0.28
         case let other?:    warn("matrix.feel.sensitivity", other)
         }
     }

@@ -36,9 +36,9 @@ final class MatrixFeelTests: XCTestCase {
 
     func testSensitivityBendsTheEnergyCurve() throws {
         let mellow = try feel(#"{"feel":{"sensitivity":"mellow"}}"#)
-        let twitchy = try feel(#"{"feel":{"sensitivity":"twitchy"}}"#)
-        XCTAssertLessThan(mellow.energyFloor, twitchy.energyFloor)
-        XCTAssertLessThan(mellow.energyPerSession, twitchy.energyPerSession)
+        let eager = try feel(#"{"feel":{"sensitivity":"eager"}}"#)
+        XCTAssertLessThan(mellow.energyFloor, eager.energyFloor)
+        XCTAssertLessThan(mellow.energyPerSession, eager.energyPerSession)
     }
 
     func testJitterIsAbsoluteAndOptional() throws {

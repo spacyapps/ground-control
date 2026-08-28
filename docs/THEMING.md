@@ -684,7 +684,7 @@ analyser. An unrecognised word is logged and ignored.
   "feel": {
     "fall":        "slow",     // still | slow | medium | fast
     "jitter":      "calm",     // none | calm | lively | chaotic
-    "sensitivity": "steady",   // mellow | steady | twitchy
+    "sensitivity": "steady",   // mellow | steady | eager
     "speed":       "medium"    // slow | medium | fast
   },
   "patterns":    ["wave", "ripple", "pyramid"],
@@ -697,7 +697,7 @@ analyser. An unrecognised word is logged and ignored.
 |---|---|
 | `fall` | how the bars settle — `still` snaps, `slow` is a long lazy descent, `fast` is snappy. Moves the peak markers with it. |
 | `jitter` | per-bar noise. `none` is perfectly clean; `chaotic` is the old spectrum shimmer on every shape. Omit it and each pattern keeps the noise that suits it. |
-| `sensitivity` | how loudly work reads. `mellow` needs a busy panel before the bars really move; `twitchy` makes one working session already look busy. Never changes whether silence is silent. |
+| `sensitivity` | how loudly work reads. `mellow` needs a busy panel before the bars really move; `eager` makes one working session already look busy. Never changes whether silence is silent. |
 | `speed` | how fast a wave travels across the row. |
 | `patterns` | which of the eight built-in shapes rotate. Case-insensitive; unknown names dropped; `[]` or absent means all eight. |
 | `patternHold` | seconds a shape holds before the next — `short` ≈ 5–9s, `medium` ≈ 9–16s, `long` ≈ 16–28s. |

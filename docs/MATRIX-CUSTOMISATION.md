@@ -103,7 +103,7 @@ Every key optional. An absent `matrix`, or today's colours-only block, behaves
   "feel": {
     "fall":        "slow",     // still | slow | medium | fast  — release & peak ballistics
     "jitter":      "calm",     // none | calm | lively | chaotic
-    "sensitivity": "steady",   // mellow | steady | twitchy     — working count -> amplitude
+    "sensitivity": "steady",   // mellow | steady | eager     — working count -> amplitude
     "speed":       "medium"    // slow | medium | fast          — how fast phase advances
   },
 

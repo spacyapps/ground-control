@@ -146,7 +146,7 @@ struct ThemeManifest: Decodable, Equatable {
         struct Feel: Decodable, Equatable {
             var fall: String?        // still | slow | medium | fast  — release & peak ballistics
             var jitter: String?      // none | calm | lively | chaotic — per-bar noise
-            var sensitivity: String? // mellow | steady | twitchy      — working count -> amplitude
+            var sensitivity: String? // mellow | steady | eager      — working count -> amplitude
             var speed: String?       // slow | medium | fast           — how fast phase advances
         }
 
