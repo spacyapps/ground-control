@@ -214,6 +214,8 @@ enum ThemePromptText {
     | `window.capInsets` | `{ top, left, bottom, right }` — only when `lockAspect` is false |
     | `layout.contentInset` | holds rows inside your border — panel points, 8–48 |
     | `matrix.messages` | array of phrases, 13 chars max, A–Z 0–9 `. - !` only |
+    | `matrix.feel` | `{ fall, jitter, sensitivity, speed }` — named levels for the analyser's motion. Optional |
+    | `matrix.shape.working` | a math formula for the bars, e.g. `"0.5 + 0.5*sin(pos*7 - phase*2)"`. Optional |
 
     ## Colours
 
