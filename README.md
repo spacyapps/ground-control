@@ -26,7 +26,7 @@ screenshots and video on the SpacyApps site. Everything that can change
 
 ```bash
 swift build
-swift run
+swift run GroundControl
 ```
 
 Requires macOS 13+ and Swift 5.9+. **No third-party dependencies** — the app
@@ -109,6 +109,13 @@ image models without usable alpha, so `removeBackground` chroma-keys it at load
 and suppresses the rim the key leaves behind. The ✕ and ↔ marks always draw
 above the skin, so no theme can hide the only ways to close and resize the
 panel.
+
+The title-bar analyser can run a theme's own bar-height formula
+(`matrix.shape`). Preview one in the terminal without launching the app:
+
+```
+swift run matrix-preview "0.5 + 0.5*sin(pos*7 - phase*2)"
+```
 
 ## Install (non-developers)
 
