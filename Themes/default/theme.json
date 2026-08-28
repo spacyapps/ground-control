@@ -132,7 +132,10 @@
     "bottomRight": null
   },
 
-  // The title-bar analyser: its palette, and what it says.
+  // The title-bar analyser: its palette, what it says, and how it moves.
+  // feel / patterns / patternHold / sleep are named levels, not raw numbers —
+  // see docs/MATRIX-CUSTOMISATION.md. Every value below is the built-in one, so
+  // this block changes nothing.
   "matrix": {
     "low":      null,             // defaults to colors.accent
     "high":     null,             // defaults to colors.working
@@ -140,8 +143,25 @@
     "unlit":    null,             // defaults to colors.divider at 10% alpha
     "text":     null,             // defaults to colors.titleBarText
     "peak":     null,             // defaults to colors.titleBarText at 70%
-    "messages": []                // replaces the built-in phrases. A theme is a
+    "messages": [],               // replaces the built-in phrases. A theme is a
                                   // character; this is how it speaks.
+
+    "feel": {
+      "fall":        "medium",    // still | slow | medium | fast  (how the bars settle)
+      "jitter":      null,        // none | calm | lively | chaotic; null keeps each
+                                  //   pattern's own noise
+      "sensitivity": "steady",    // mellow | steady | twitchy  (working count -> height)
+      "speed":       "medium"     // slow | medium | fast  (how fast a wave travels)
+    },
+    "patterns": [                 // which shapes rotate; [] means all eight
+      "wave", "ripple", "chase", "pyramid",
+      "sawtooth", "butterfly", "heartbeat", "spectrum"
+    ],
+    "patternHold": "medium",      // short | medium | long  (seconds per shape)
+    "sleep": {
+      "face": "-  ‿  -",          // shown when nothing is running
+      "zzz":  true
+    }
   },
 
   "layout": {

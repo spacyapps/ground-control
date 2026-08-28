@@ -173,6 +173,11 @@ struct Theme {
         var peak: NSColor
         /// What the display spells. Empty means the built-in phrases.
         var messages: [String]
+        /// The Tier-1 feel knobs, already resolved to numbers
+        /// (docs/MATRIX-CUSTOMISATION.md). `.standard` is today's analyser.
+        var feel: MatrixFeel.Resolved = .standard
+        /// Which built-in shapes rotate. All eight unless a theme narrowed it.
+        var patterns: [VisualizerPattern] = VisualizerPattern.allCases
 
         /// The same analyser in somebody's own colour.
         ///
