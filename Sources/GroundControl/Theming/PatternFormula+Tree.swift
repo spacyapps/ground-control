@@ -26,7 +26,7 @@ extension PatternFormula {
             case .binary(let op, let lhs, let rhs):
                 return op.apply(lhs.evaluate(context), rhs.evaluate(context))
             case .function(let function, let arguments):
-                return function.apply(arguments.map { $0.evaluate(context) })
+                return function.apply(arguments, context)
             case .pattern(let pattern, let argument):
                 let x = CGFloat(argument.evaluate(context))
                 return Double(pattern.shape(position: x, phase: CGFloat(context.phase)))
@@ -93,25 +93,31 @@ extension PatternFormula {
             }
         }
 
-        func apply(_ args: [Double]) -> Double {
+        /// Takes the argument `Node`s, not evaluated `Double`s, and pulls out
+        /// only the ones it needs. The parser already checked the count, so the
+        /// indices are safe — and there is no per-call `[Double]` allocated in
+        /// the render loop, which `arguments.map { … }` used to do.
+        func apply(_ args: [Node], _ context: PatternFormula.Context) -> Double {
+            let first = args[0].evaluate(context)
             switch self {
-            case .sin:   return Foundation.sin(args[0])
-            case .cos:   return Foundation.cos(args[0])
-            case .abs:   return Swift.abs(args[0])
-            case .floor: return args[0].rounded(.down)
-            case .sqrt:  return args[0] < 0 ? 0 : args[0].squareRoot()
-            case .exp:   return Foundation.exp(args[0])
-            case .min:   return Swift.min(args[0], args[1])
-            case .max:   return Swift.max(args[0], args[1])
+            case .sin:   return Foundation.sin(first)
+            case .cos:   return Foundation.cos(first)
+            case .abs:   return Swift.abs(first)
+            case .floor: return first.rounded(.down)
+            case .sqrt:  return first < 0 ? 0 : first.squareRoot()
+            case .exp:   return Foundation.exp(first)
+            // wrap(x): the fractional part, so a growing phase stays 0…1.
+            case .wrap:  return first - first.rounded(.down)
+            case .min:   return Swift.min(first, args[1].evaluate(context))
+            case .max:   return Swift.max(first, args[1].evaluate(context))
             // step(t, x): 1 once x reaches t, else 0.
-            case .step:  return args[1] >= args[0] ? 1 : 0
+            case .step:  return args[1].evaluate(context) >= first ? 1 : 0
             // pulse(centre, width, x): a triangular bump, 1 at the centre, 0 at
             // ±width. Predictable — no tails to reason about.
             case .pulse:
-                let distance = Swift.abs(args[2] - args[0])
-                return args[1] <= 0 ? 0 : Swift.max(0, 1 - distance / args[1])
-            // wrap(x): the fractional part, so a growing phase stays 0…1.
-            case .wrap:  return args[0] - args[0].rounded(.down)
+                let width = args[1].evaluate(context)
+                let distance = Swift.abs(args[2].evaluate(context) - first)
+                return width <= 0 ? 0 : Swift.max(0, 1 - distance / width)
             }
         }
     }
