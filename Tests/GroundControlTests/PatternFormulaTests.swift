@@ -102,6 +102,25 @@ final class PatternFormulaTests: XCTestCase {
         XCTAssertEqual(cold.height(pos: 0, bar: 0), 0)
     }
 
+    // MARK: - decay(), the done-only function
+
+    func testDecayIsRejectedOutsideADoneFormula() {
+        XCTAssertNil(PatternFormula.parse("pyramid(pos) * decay(0.6)"))
+    }
+
+    func testDecayRampsOneToZeroOverItsSpan() throws {
+        let formula = try XCTUnwrap(
+            PatternFormula.parse("decay(0.6)", key: "matrix.shape.done", allowsDecay: true)
+        )
+        func atElapsed(_ seconds: TimeInterval) -> CGFloat {
+            formula.sampler(phase: 0, energy: 0, count: 1, decayElapsed: seconds).height(pos: 0, bar: 0)
+        }
+        XCTAssertEqual(atElapsed(0), 1, accuracy: 1e-9)
+        XCTAssertEqual(atElapsed(0.3), 0.5, accuracy: 1e-9)
+        XCTAssertEqual(atElapsed(0.6), 0, accuracy: 1e-9)
+        XCTAssertEqual(atElapsed(2.0), 0, "never goes negative")
+    }
+
     // MARK: - The documented swell example
 
     func testSwellExampleParsesAndStaysInRange() throws {
