@@ -729,8 +729,31 @@ rotation carries on, so a typo costs you a look at Console, not a broken panel.
 - No assignment, no loops, no `if`. Divide-by-zero and negative roots are 0. The
   result is clamped to 0–1.
 
-`needsInput`, `done` and `idle` shapes are declared here too but not yet wired —
-that needs the resolution model in `docs/MATRIX-CUSTOMISATION.md`.
+#### The other three states
+
+`shape.needsInput`, `shape.done` and `shape.idle` take the same formulas. Each
+is optional and each falls back to what the panel does today:
+
+| State | With no formula | With a formula |
+|---|---|---|
+| `needsInput` | flat, lit red floor | strobes at full height for ~15s, then settles to that lit floor until answered. Always wins the meter while something waits. |
+| `done` | nothing | blooms once, on top of whatever else is drawn, when a turn finishes — then decays. One at a time, suppressed while an alarm is up. |
+| `idle` | flat / the sleep face | a resting texture. Runs at full amplitude, so **keep the values small** — this is not a spectrum. `"0"` is flat, the default. |
+
+The priority is `needsInput` > `working` > `idle`, decided every frame with no
+memory. The full model — mixed states, the escalation timer, what a finish under
+an alarm does — is in `docs/MATRIX-CUSTOMISATION.md`.
+
+##### `decay()`, in a `done` formula only
+
+`decay(span)` is `1` at the instant a turn finishes and ramps to `0` over `span`
+seconds. It is how a `done` bloom fades:
+
+```json
+"shape": { "done": "pyramid(pos) * decay(0.6)" }
+```
+
+Using `decay()` anywhere but `shape.done` is a parse error.
 
 ##### The `swell` — an ocean wave
 

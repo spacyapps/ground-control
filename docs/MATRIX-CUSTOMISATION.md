@@ -1,11 +1,16 @@
 # Matrix customisation
 
-> **Status: design, nothing built.** Settled across a design session on
-> 2026-08-27. This is the spec to build against, not a description of code that
-> exists. The `matrix` block today is colours plus `messages` and nothing here
-> is wired up yet.
+> **Status (2026-08-27): Tiers 1, 2a and 2b built.** `matrix.feel`,
+> `matrix.patterns`, `matrix.patternHold`, `matrix.sleep`, and per-state
+> formulas `matrix.shape.{working,needsInput,done,idle}` all work. Tier 3
+> (script hooks) and Tier 4 (native plugin) remain design only.
 >
-> Kept as the plan, with the open questions closed at the bottom.
+> One deviation from the spec below, made during the build: **a state with no
+> formula keeps today's behaviour** rather than getting a built-in animation.
+> No default alarm strobe, no default done bloom — the resolution machinery is
+> all there, it just has nothing to drive until a theme supplies a formula.
+> This keeps every existing theme byte-identical. Where the tables below imply
+> a built-in shape, read it as "the shape a theme's formula plays."
 
 ---
 

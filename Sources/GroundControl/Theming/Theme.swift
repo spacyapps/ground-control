@@ -178,10 +178,16 @@ struct Theme {
         var feel: MatrixFeel.Resolved = .standard
         /// Which built-in shapes rotate. All eight unless a theme narrowed it.
         var patterns: [VisualizerPattern] = VisualizerPattern.allCases
-        /// A theme's own working-state bar formula, if it parsed. Set, it
-        /// replaces the pattern rotation while sessions work; nil falls back to
-        /// `patterns` (docs/MATRIX-CUSTOMISATION.md).
+        /// Per-state bar formulas, each nil unless it parsed
+        /// (docs/MATRIX-CUSTOMISATION.md). `working` replaces the pattern
+        /// rotation; `needsInput` is the strobe that seizes the meter for the
+        /// escalation window; `done` is the decaying flourish overlay; `idle`
+        /// is the resting texture. A nil state falls back to today's behaviour
+        /// for it — rotation, flat-with-lit-floor, no flourish, sleep.
         var workingShape: PatternFormula?
+        var needsInputShape: PatternFormula?
+        var doneShape: PatternFormula?
+        var idleShape: PatternFormula?
 
         /// The same analyser in somebody's own colour.
         ///

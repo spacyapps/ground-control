@@ -165,11 +165,14 @@
 
     // Per-state bar formulas — pure math over pos, phase, energy, bar, count.
     // See docs/MATRIX-CUSTOMISATION.md for the vocabulary and the swell example.
+    // Each null: that state keeps its built-in behaviour.
     "shape": {
-      "working":    null,          // replaces the pattern rotation while working
-      "needsInput":  null,         // wired with the resolution model in a later pass
-      "done":       null,
-      "idle":       null
+      "working":    null,          // else: the pattern rotation while working
+      "needsInput": null,          // else: flat, lit red floor. A formula strobes
+                                   //   for ~15s then settles to that floor.
+      "done":       null,          // else: no flourish. A formula (with decay())
+                                   //   blooms once when a turn finishes.
+      "idle":       null           // else: flat / the sleep face
     }
   },
 

@@ -261,10 +261,18 @@ enum ThemeLoader {
             messages: MatrixMessages.usable(declared?.messages ?? []),
             feel: MatrixFeel.resolve(declared),
             patterns: VisualizerPattern.rotation(from: declared?.patterns ?? []),
-            workingShape: declared?.shape?.working.flatMap {
-                PatternFormula.parse($0, key: "matrix.shape.working")
-            }
+            workingShape: shape(declared?.shape?.working, "matrix.shape.working"),
+            needsInputShape: shape(declared?.shape?.needsInput, "matrix.shape.needsInput"),
+            doneShape: shape(declared?.shape?.done, "matrix.shape.done", allowsDecay: true),
+            idleShape: shape(declared?.shape?.idle, "matrix.shape.idle")
         )
+    }
+
+    /// Parses one per-state formula. A miss logs (inside `PatternFormula.parse`)
+    /// and stays nil, so the state falls back to its built-in behaviour.
+    private static func shape(_ source: String?, _ key: String, allowsDecay: Bool = false)
+        -> PatternFormula? {
+        source.flatMap { PatternFormula.parse($0, key: key, allowsDecay: allowsDecay) }
     }
 
     private static func weight(_ name: String?) -> NSFont.Weight? {

@@ -9,11 +9,21 @@ import AppKit
 /// sessions are actually doing. Nothing running settles the bars to the floor;
 /// a session working makes them dance; one waiting on you pushes them into the
 /// red. You can read the panel's mood without reading a word of it.
+///
+/// Which shape drives the bars, and whether a done flourish is playing, is
+/// `MatrixResolver`'s job — the priority stack, the escalation timer and the
+/// bloom slot are all edges and windows and live better in a tested value type.
+/// This view owns the 24 fps loop, the easing, and the draw. The word-spelling
+/// half is in `VisualizerView+Marquee.swift`.
+///
+/// A theme with no `matrix.shape` formulas behaves exactly as it always has:
+/// the eight patterns rotate while working, the panel is flat with a lit red
+/// floor while something waits, and it sleeps otherwise.
 final class VisualizerView: NSView {
-    private var levels: [CGFloat] = []
+    var levels: [CGFloat] = []
     private var peaks: [CGFloat] = []
     private var timer: Timer?
-    private var theme: Theme = DefaultTheme.theme
+    var theme: Theme = DefaultTheme.theme
 
     /// 0…1, smoothed towards `targetEnergy` so state changes ease in.
     private var energy: CGFloat = 0
@@ -24,24 +34,25 @@ final class VisualizerView: NSView {
     private var phaseClock: CGFloat = 0
     private var pattern: VisualizerPattern = .wave
     private var patternUntil = Date.distantPast
-    private var isAlarmed = false
+    var isAlarmed = false
+    private var resolver = MatrixResolver()
 
     /// Five rows: the fewest an LED matrix needs to spell anything, which is
     /// what lets the same grid show a message as well as a level.
-    private static let rows = 5
-    private let barWidth: CGFloat = 3
+    static let rows = 5
+    let barWidth: CGFloat = 3
     private let barGap: CGFloat = 2
-    private let segmentGap: CGFloat = 1
+    let segmentGap: CGFloat = 1
 
     /// Every so often, and only while asleep, the grid spells something.
-    private var messageText = MatrixMessages.brand
-    private var messageTurn = 0
-    /// Screen column the message's first character currently sits at. It
-    /// starts off the right edge and walks left. `nil` means no message.
-    private var messageScroll: CGFloat?
-    private var messageTimer: Timer?
+    var messageText = MatrixMessages.brand
+    var messageTurn = 0
+    /// Screen column the message's first character currently sits at. It starts
+    /// off the right edge and walks left. `nil` means no message.
+    var messageScroll: CGFloat?
+    var messageTimer: Timer?
     /// Words lifted from what the sessions last said.
-    private var harvested: [String] = []
+    var harvested: [String] = []
 
     override var isFlipped: Bool { true }
 
@@ -76,8 +87,13 @@ final class VisualizerView: NSView {
     func update(sessions: [Session]) {
         targetEnergy = Self.energy(for: sessions, feel: theme.matrix.feel)
         isAlarmed = Self.alarms(for: sessions)
+        resolver.observe(sessions)
         harvested = MatrixMessages.harvest(from: sessions.map(\.message))
-        if targetEnergy > 0 { start() }
+        // A done flourish with nothing working still needs the loop running to
+        // play out, so start on any of the three, not just energy.
+        if targetEnergy > 0 || isAlarmed || resolver.resolve(energy: 0).bloomElapsed != nil {
+            start()
+        }
         if messageTimer == nil && !isShowingMessage { scheduleMessage() }
         // The alarm colour can change while the bars are at rest and the timer
         // is stopped, so repaint regardless.
@@ -86,7 +102,7 @@ final class VisualizerView: NSView {
 
     // MARK: - Animation
 
-    private func start() {
+    func start() {
         guard timer == nil, window != nil else { return }
         let tick = 1.0 / 24.0
         let timer = Timer.scheduledTimer(withTimeInterval: tick, repeats: true) { [weak self] _ in
@@ -102,43 +118,14 @@ final class VisualizerView: NSView {
         scheduleMessage()
     }
 
-    /// A one-shot rather than a heartbeat: the analyser stops dead at rest, and
-    /// this wakes it just long enough to spell the name once.
-    private func scheduleMessage() {
-        // Never restart a countdown that is already running. The bars settle
-        // between every burst of activity, and rescheduling on each settle
-        // meant the delay never actually elapsed.
-        guard messageTimer?.isValid != true else { return }
-        messageTimer?.invalidate()
-        guard window != nil, !isAlarmed else { return }
-        messageTimer = Timer.scheduledTimer(
-            withTimeInterval: MatrixMessages.nextDelay(), repeats: false
-        ) { [weak self] _ in
-            self?.beginMessage()
-        }
-    }
-
-    private func beginMessage() {
-        guard window != nil, !isAlarmed else { return }
-        messageTurn += 1
-        messageText = MatrixMessages.next(
-            turn: messageTurn,
-            avoiding: messageText,
-            harvested: harvested,
-            themed: theme.matrix.messages
-        )
-        messageScroll = columnCount
-        start()
-    }
-
-    private var isShowingMessage: Bool { messageScroll != nil }
-
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if window == nil { stop() } else { start() }
     }
 
-    private func step() {
+    /// One animation tick. Internal only so a test can pump it without a
+    /// run loop — the timer is the sole caller in the app.
+    func step() {
         advanceMessage()
         let feel = theme.matrix.feel
         energy += (targetEnergy - energy) * 0.12
@@ -147,26 +134,37 @@ final class VisualizerView: NSView {
         phaseClock += feel.phaseStep
         advancePattern()
 
+        let plan = resolver.resolve(energy: energy)
         let barCount = levels.count
-        // A theme's `shape.working` formula stands in for the rotating built-ins
-        // entirely; the rotation keeps ticking underneath so a theme switch that
-        // drops the formula resumes cleanly.
-        let sampler = theme.matrix.workingShape?.sampler(
-            phase: phaseClock, energy: energy, count: barCount
-        )
+        let driver = driverSampler(for: plan.priority, count: barCount)
+        // The rotating pattern is the fallback for `working` only. `needsInput`
+        // and `idle` with no formula stay flat — that is today's behaviour, and
+        // it is why an alarm with no strobe formula is just a lit red floor.
+        let patternFallback = driver == nil && plan.priority == .working
+        let bloom = plan.bloomElapsed.flatMap { elapsed in
+            theme.matrix.doneShape?.sampler(
+                phase: phaseClock, energy: energy, count: barCount, decayElapsed: elapsed
+            )
+        }
+
         for index in levels.indices {
             let position = CGFloat(index) / CGFloat(max(1, barCount - 1))
-            let shape = sampler?.height(pos: Double(position), bar: index)
-                ?? pattern.shape(position: position, phase: phaseClock)
+            let base: CGFloat
+            if let driver {
+                base = driver.height(pos: Double(position), bar: index)
+            } else if patternFallback {
+                base = pattern.shape(position: position, phase: phaseClock)
+            } else {
+                base = 0
+            }
+            let bloomHeight = bloom?.height(pos: Double(position), bar: index) ?? 0
 
-            // A word sweeping past pushes the bars around it, so the letters
-            // look like they are displacing the spectrum rather than sitting
-            // on top of it.
+            // A word sweeping past pushes the bars around it.
             let wake = messageWake(at: index)
             // The theme's `jitter` knob overrides the pattern's own range;
             // absent, each pattern keeps the noise that suits it.
             let wobble = CGFloat.random(in: feel.jitter ?? pattern.jitter)
-            let target = min(1, energy * wobble * shape + wake)
+            let target = min(1, plan.amplitude * wobble * base + bloomHeight + wake)
 
             // Fast attack, slow release — the classic analyser feel. Attack
             // stays quick; `fall` tunes only the release side.
@@ -178,30 +176,22 @@ final class VisualizerView: NSView {
 
         // Peaks fall on their own slower schedule, so stopping when only the
         // bars have settled freezes them mid-air as a row of stray dashes.
-        if isAtRest && !isShowingMessage { stop() }
+        if isAtRest && !isShowingMessage && !isAlarmed { stop() }
         needsDisplay = true
     }
 
-    /// Walks the message leftwards across the grid. The bars keep running
-    /// underneath: the word is made of the same squares, so it reads as the
-    /// display forming letters rather than as text pasted over a meter.
-    private func advanceMessage() {
-        guard var scroll = messageScroll else { return }
-
-        // An alarm is the one thing that clears it — nothing should sweep
-        // across a panel that needs you.
-        if isAlarmed {
-            messageScroll = nil
-            return
+    /// The formula driving the bars this frame, or nil. For `working`, nil means
+    /// "use the rotating built-in pattern"; for `needsInput` and `idle`, nil
+    /// means flat.
+    private func driverSampler(for priority: MatrixResolver.Priority,
+                               count: Int) -> PatternFormula.Sampler? {
+        let formula: PatternFormula?
+        switch priority {
+        case .needsInput: formula = theme.matrix.needsInputShape
+        case .working:    formula = theme.matrix.workingShape
+        case .idle:       formula = theme.matrix.idleShape
         }
-
-        scroll -= 0.5
-        if scroll < -CGFloat(MatrixFont.columns(for: messageText)) {
-            messageScroll = nil
-            scheduleMessage()
-        } else {
-            messageScroll = scroll
-        }
+        return formula?.sampler(phase: phaseClock, energy: energy, count: count)
     }
 
     /// Rotates the shape every so often, so the panel has a repertoire rather
@@ -221,24 +211,11 @@ final class VisualizerView: NSView {
         patternUntil = now.addingTimeInterval(VisualizerPattern.nextDuration(in: hold))
     }
 
-    /// Extra level for bars just outside the sweeping word.
-    private func messageWake(at index: Int) -> CGFloat {
-        guard let scroll = messageScroll else { return 0 }
-        let distance = abs(CGFloat(index) - scroll)
-        let span = CGFloat(MatrixFont.columns(for: messageText))
-        guard distance < span + 6 else { return 0 }
-        let edge = min(abs(CGFloat(index) - scroll), abs(CGFloat(index) - (scroll + span)))
-        return edge < 5 ? (5 - edge) / 5 * 0.35 : 0
-    }
-
-    private var columnCount: CGFloat {
-        CGFloat(max(1, levels.count))
-    }
-
     private var isAtRest: Bool {
         energy < 0.01
             && levels.allSatisfy { $0 < 0.01 }
             && peaks.allSatisfy { $0 < 0.01 }
+            && resolver.resolve(energy: 0).bloomElapsed == nil
     }
 
     private func resizeBarsIfNeeded() {
@@ -289,30 +266,6 @@ final class VisualizerView: NSView {
         }
     }
 
-    /// Which column of the message, if any, currently sits at this screen
-    /// position.
-    private func messageColumn(at index: Int) -> Int? {
-        guard let scroll = messageScroll else { return nil }
-        let column = index - Int(scroll.rounded())
-        guard column >= 0, column < MatrixFont.columns(for: messageText) else { return nil }
-        return column
-    }
-
-    /// One column of the sweeping word, drawn in the same cells the bars use.
-    private func drawLetterColumn(x originX: CGFloat, column: Int, usable: CGFloat, inset: CGFloat) {
-        let cell = (usable - CGFloat(Self.rows - 1) * segmentGap) / CGFloat(Self.rows)
-        for row in 0..<Self.rows {
-            let lit = MatrixFont.isLit(text: messageText, column: column, row: row)
-            let y = inset + CGFloat(row) * (cell + segmentGap)
-            if lit {
-                letterColor.setFill()
-            } else {
-                theme.matrix.unlit.setFill()
-            }
-            NSRect(x: originX, y: y, width: barWidth, height: cell).fill()
-        }
-    }
-
     private func drawSleeping() {
         let face = theme.matrix.feel.sleepFace
         let color = theme.colors.messageDim.withAlphaComponent(0.75)
@@ -322,8 +275,7 @@ final class VisualizerView: NSView {
         ]
         let size = (face as NSString).size(withAttributes: attributes)
         let hasZzz = theme.matrix.feel.sleepZzz
-        // The face sits left of centre only to leave room for the "z z z"; with
-        // no z's it centres properly.
+        // The face sits left of centre only to leave room for the "z z z".
         let shift: CGFloat = hasZzz ? -10 : 0
         let origin = NSPoint(
             x: (bounds.width - size.width) / 2 + shift,
@@ -359,12 +311,7 @@ final class VisualizerView: NSView {
             let fraction = CGFloat(step) / CGFloat(max(1, steps - 1))
             let y = bounds.height - inset - CGFloat(step + 1) * (segment + segmentGap)
             let rect = NSRect(x: originX, y: y, width: barWidth, height: segment)
-
-            if step < lit {
-                color(at: fraction).setFill()
-            } else {
-                theme.matrix.unlit.setFill()
-            }
+            (step < lit ? color(at: fraction) : theme.matrix.unlit).setFill()
             rect.fill()
         }
 
@@ -374,16 +321,6 @@ final class VisualizerView: NSView {
         let peakY = bounds.height - inset - CGFloat(peakStep + 1) * (segment + segmentGap)
         theme.matrix.peak.setFill()
         NSRect(x: originX, y: peakY, width: barWidth, height: 1).fill()
-    }
-
-    /// The word picks its own colour from the palette, so consecutive messages
-    /// look different without ever borrowing the alarm red.
-    private var letterColor: NSColor {
-        // Never the alarm colour: red belongs to a row that needs you.
-        let blend = theme.matrix.low.blended(withFraction: 0.5, of: theme.matrix.high)
-        let palette = [theme.colors.working, theme.colors.accent, blend ?? theme.colors.working]
-        let hash = messageText.unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) & 0xFFFF }
-        return palette[hash % palette.count]
     }
 
     /// Green at the floor through to the alarm colour at the ceiling — and the
