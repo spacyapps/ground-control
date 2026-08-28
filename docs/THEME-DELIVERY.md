@@ -16,6 +16,14 @@
 > `Scripts/package-theme.sh`, attached to the release beside the app, and the
 > tester drops the folder into **Theme → Open Themes Folder…**.
 >
+> **`private/` 2026-08-27.** A `private/` subfolder inside
+> `~/Documents/Projects/GroundControlThemes` holds themes that are personal —
+> one machine, never packaged, never sold, never shared. "Private" is a
+> location, not a name list: `Scripts/package-theme.sh` refuses any path under
+> `private/`, and `ThemeIntegrityTests` skips that subtree, so a personal
+> theme's wobbling loop or unmeasured cap does not fail the suite.
+> `spacyAppsNamiStarAvatar` was the first one moved there.
+>
 > **Settled 2026-08-15.** `spacyAppsUnicornOverlord` was the first theme moved
 > out. Dropping it took the release app from 9.6 MB to **6.0 MB**.
 >

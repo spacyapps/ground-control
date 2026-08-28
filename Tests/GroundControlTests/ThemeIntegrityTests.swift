@@ -31,13 +31,6 @@ final class ThemeIntegrityTests: XCTestCase {
         ThemeLocations.roots
     }
 
-    /// Themes that are never distributed — personal, one machine, not for sale
-    /// and not for sharing. Their artwork is the author's own problem, so a
-    /// wobbling loop or an unmeasured cap there must not fail the suite.
-    ///
-    /// spacyAppsNamiStarAvatar -> excluded (Walter's private theme)
-    private static let privateThemes: Set<String> = ["spacyAppsNamiStarAvatar"]
-
     private struct Shipped {
         let name: String
         let folder: URL
@@ -45,6 +38,13 @@ final class ThemeIntegrityTests: XCTestCase {
     }
 
     /// Every theme folder that ships inside the app.
+    ///
+    /// A `private/` folder inside a root is skipped: those themes are personal,
+    /// one machine, never distributed, so a wobbling loop or an unmeasured cap
+    /// there is the author's own problem. It is a location, not a name list —
+    /// drop a theme in `private/` and it is out of the suite. The one-level
+    /// scan already would not descend into it; the `pathComponents` guard keeps
+    /// that true if the scan ever goes recursive.
     private func shippedThemes() throws -> [Shipped] {
         let folders = try Self.themeRoots
             .filter { FileManager.default.fileExists(atPath: $0.path) }
@@ -55,8 +55,8 @@ final class ThemeIntegrityTests: XCTestCase {
                     options: [.skipsHiddenFiles]
                 )
             }
+            .filter { !$0.pathComponents.contains("private") }
             .filter { FileManager.default.fileExists(atPath: $0.appendingPathComponent("theme.json").path) }
-            .filter { !Self.privateThemes.contains($0.lastPathComponent) }
 
         XCTAssertFalse(folders.isEmpty, "no themes found in \(Self.themeRoots.map(\.lastPathComponent))")
         return folders.map {
