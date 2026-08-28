@@ -3,6 +3,7 @@
 
 import XCTest
 @testable import GroundControl
+import MatrixKit
 
 /// Patterns are pure functions, so their shape can be checked rather than
 /// eyeballed — a pattern that silently clips or flatlines looks like a bug in

@@ -12,7 +12,7 @@ import Foundation
 ///
 /// Each case is a pure function of position and time returning 0…1, so the
 /// shapes are testable and the view only has to scale them by energy.
-enum VisualizerPattern: String, CaseIterable {
+public enum VisualizerPattern: String, CaseIterable {
     /// One sine travelling left to right.
     case wave
     /// Rings spreading out from the middle.
@@ -31,7 +31,7 @@ enum VisualizerPattern: String, CaseIterable {
     case spectrum
 
     /// Height for one bar, 0…1. `position` is 0…1 across the row.
-    func shape(position: CGFloat, phase: CGFloat) -> CGFloat {
+    public func shape(position: CGFloat, phase: CGFloat) -> CGFloat {
         let value: CGFloat
         switch self {
         case .wave:
@@ -74,7 +74,7 @@ enum VisualizerPattern: String, CaseIterable {
 
     /// How much per-bar jitter suits this shape. Deliberate patterns want to
     /// stay clean; the spectrum wants noise.
-    var jitter: ClosedRange<CGFloat> {
+    public var jitter: ClosedRange<CGFloat> {
         switch self {
         case .spectrum: return 0.45...1.0
         case .chase, .heartbeat: return 0.92...1.0
@@ -85,11 +85,11 @@ enum VisualizerPattern: String, CaseIterable {
     /// Seconds before switching. Long enough to read the shape, short enough
     /// that the panel never looks stuck. The range is the theme's `patternHold`
     /// (docs/MATRIX-CUSTOMISATION.md); the default is `9...16`.
-    static func nextDuration(in range: ClosedRange<TimeInterval> = 9...16) -> TimeInterval {
+    public static func nextDuration(in range: ClosedRange<TimeInterval> = 9...16) -> TimeInterval {
         .random(in: range)
     }
 
-    static func next(avoiding previous: VisualizerPattern) -> VisualizerPattern {
+    public static func next(avoiding previous: VisualizerPattern) -> VisualizerPattern {
         allCases.filter { $0 != previous }.randomElement() ?? .wave
     }
 
@@ -99,14 +99,14 @@ enum VisualizerPattern: String, CaseIterable {
     /// anything not one of the eight is dropped with a log rather than failing
     /// the theme. An empty or all-invalid list means "rotate all eight", which
     /// is also what an absent key means.
-    static func rotation(from names: [String]) -> [VisualizerPattern] {
+    public static func rotation(from names: [String]) -> [VisualizerPattern] {
         guard !names.isEmpty else { return allCases }
         var kept: [VisualizerPattern] = []
         for name in names {
             if let pattern = VisualizerPattern(rawValue: name.lowercased()) {
                 if !kept.contains(pattern) { kept.append(pattern) }
             } else {
-                Log.theming.notice("Theme matrix.patterns: unknown shape \(name, privacy: .public)")
+                MatrixLog.log.notice("Theme matrix.patterns: unknown shape \(name, privacy: .public)")
             }
         }
         return kept.isEmpty ? allCases : kept

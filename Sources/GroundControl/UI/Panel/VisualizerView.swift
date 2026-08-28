@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Walter Mak
 
 import AppKit
+import MatrixKit
 
 /// A WinAmp-style spectrum analyser in the title bar.
 ///

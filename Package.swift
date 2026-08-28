@@ -18,19 +18,35 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "GroundControl", targets: ["GroundControl"])
+        .executable(name: "GroundControl", targets: ["GroundControl"]),
+        // A terminal preview for `matrix.shape` formulas — reuses MatrixKit so
+        // what it draws is exactly what the panel draws. See Sources/matrix-preview.
+        .executable(name: "matrix-preview", targets: ["matrix-preview"])
     ],
     targets: [
+        // The analyser's formula engine: Foundation only, no AppKit, no app
+        // state. Its own target so the preview tool and the tests can use it
+        // without pulling in the whole app.
+        .target(
+            name: "MatrixKit",
+            path: "Sources/MatrixKit"
+        ),
         .executableTarget(
             name: "GroundControl",
+            dependencies: ["MatrixKit"],
             path: "Sources/GroundControl",
             resources: [
                 .process("Resources")
             ]
         ),
+        .executableTarget(
+            name: "matrix-preview",
+            dependencies: ["MatrixKit"],
+            path: "Sources/matrix-preview"
+        ),
         .testTarget(
             name: "GroundControlTests",
-            dependencies: ["GroundControl"],
+            dependencies: ["GroundControl", "MatrixKit"],
             path: "Tests/GroundControlTests"
         )
     ]
