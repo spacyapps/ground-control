@@ -91,7 +91,18 @@ final class GroupRowView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         theme.colors.rowBackgroundAlt.setFill()
-        bounds.fill(using: .sourceOver)
+        // A child card matches the parent rows under `bodyFade` — see
+        // SessionRowView.
+        if theme.window.bodyFadesBelowAnalyser {
+            let card = bounds.insetBy(dx: 0, dy: 1)
+            NSBezierPath(
+                roundedRect: card,
+                xRadius: SessionRowView.floatingCornerRadius,
+                yRadius: SessionRowView.floatingCornerRadius
+            ).fill()
+        } else {
+            bounds.fill(using: .sourceOver)
+        }
     }
 
     override func updateTrackingAreas() {

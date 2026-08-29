@@ -288,7 +288,9 @@ nothing across the height of the first row. From the second row down the rows
 keep only their own `rowBackground`, so a translucent row colour lets the
 frame's own artwork — or whatever its keyed centre shows through to — read
 behind the list. Give `rowBackground` and `rowBackgroundAlt` some alpha for the
-effect to be worth anything.
+effect to be worth anything. Each row is also drawn as its own rounded card
+with a hairline gap, since it is now a separate object over the frame rather
+than a band in a solid block.
 
 **On `removeBackground`.** Image models cannot produce reliable transparency —
 they paint the checkerboard an editor *shows*, or drop alpha entirely. But they
