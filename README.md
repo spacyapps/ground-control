@@ -12,26 +12,32 @@
   <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
 </p>
 
+**Say you've got three Claude Code sessions running.** This is how Ground Control
+shows them — each one's name, its current line, and a dot that goes **red** the
+moment it's blocked and waiting on you.
+
 <div align="center">
 
 https://github.com/user-attachments/assets/4de010d5-3304-45e6-8558-9b3efd12f213
 
 </div>
 
-# The cost was never the waiting. It was the checking.
+# Why
 
-You start an agent and switch away — that's the point. Then it goes wrong one of
-two ways:
+> *"I waste time checking whether my session is done, or waiting on me."*
 
-- **You forget.** It sits blocked for twenty minutes on a one-word answer.
-- **You check instead.** You shred the focus you switched away to protect — over
-  and over, mostly to find nothing.
+You start an agent so you can go do something else. Then it needs a decision,
+and you're caught between two ways of losing:
 
-Neither is a discipline problem.
+- **You don't check.** It sits blocked for twenty minutes, waiting on one word.
+- **You do check.** Every check is a context switch away from whatever you moved
+  on to — and most turn up nothing.
 
-> **Ground Control is the third option: a glance instead of a context switch.**
+The cost was never the waiting. It was the checking.
 
-# What you get
+> **Ground Control is the third option — a glance instead of a context switch.**
+
+# How
 
 - **A row per session** — name, what it's doing now, and a dot that turns
   **red** the moment it's blocked and needs you.
