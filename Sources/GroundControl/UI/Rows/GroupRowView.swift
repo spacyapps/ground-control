@@ -66,7 +66,12 @@ final class GroupRowView: NSView {
 
         let textX = dot.frame.maxX + 8
         let available = max(0, bounds.width - textX - theme.layout.rowPadding)
-        let nameWidth = min(available * 0.45, nameLabel.intrinsicContentSize.width)
+        // Split the row with the message only when there is one. A subagent
+        // always has a status line; a Grok bot's is usually empty, and then the
+        // name should have the whole width rather than be clipped at 45%.
+        let hasMessage = !messageLabel.text.isEmpty
+        let nameCap = hasMessage ? available * 0.45 : available
+        let nameWidth = min(nameCap, nameLabel.intrinsicContentSize.width)
 
         let lineHeight = theme.typography.messageSize + 4
         nameLabel.frame = NSRect(

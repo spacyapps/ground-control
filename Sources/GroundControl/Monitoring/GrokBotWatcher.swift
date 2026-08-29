@@ -113,10 +113,13 @@ final class GrokBotWatcher {
             .sorted { $0.updatedAt > $1.updatedAt }
             .map { bot -> AgentRow in
                 let needy = bot.sessionPreviewKind == GrokBotRoster.cardPendingKind || bot.awaitingUser
+                // No message line: the red dot says "waiting", and the name
+                // gets the whole row. Everything else about a bot's state is
+                // unknowable from the cache anyway.
                 return AgentRow(
                     id: bot.id,
                     displayName: bot.name,
-                    message: needy ? "waiting for you" : "",
+                    message: "",
                     state: needy ? .needsInput : .idle,
                     needsAction: needy,
                     source: source,
