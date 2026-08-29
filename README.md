@@ -1,26 +1,92 @@
-# Ground Control
+<h1 align="center">🛰&nbsp; Ground Control</h1>
 
-A macOS menu-bar app that monitors your AI agent CLI sessions — Claude Code,
-Grok CLI, Cursor, opencode — and shows, at a glance, which ones need your
-attention, whether they're running in Terminal, iTerm2, or VS Code's
-integrated terminal. Skinnable with a WinAmp-style UI (themes as image/video
-bundles).
+<p align="center">
+  <strong>Mission control for every AI agent you're running — and one click to jump to it.</strong>
+</p>
 
-- **Menu-bar icon** that badges when a session needs you.
-- **Free-floating panel** (optional always-on-top / all-Spaces) listing each
-  session: name, latest message, a red dot when it needs action, and a
-  themeable avatar.
-- **Click a session** to jump straight to its terminal tab.
-- **Skinnable** via drop-in theme folders (`Themes/<name>/theme.json`).
+<p align="center">
+  <img alt="License AGPL-3.0-or-later" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue">
+  <img alt="macOS 13+" src="https://img.shields.io/badge/macOS-13%2B-111111">
+  <img alt="Swift 5.9" src="https://img.shields.io/badge/Swift-5.9-F05138">
+  <img alt="No third-party dependencies" src="https://img.shields.io/badge/dependencies-none-2ea44f">
+  <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
+</p>
 
-**[See it in action →](https://www.spacyapps.com/apps/ground-control)** —
-screenshots and video on the SpacyApps site. Everything that can change
-(install steps, compatibility, theme keys) lives here in the repo instead.
+<!-- ▸ HERO VIDEO — when pushing: drag ~/Desktop/gc-readme-hero.mp4 into the PR
+     description, copy the github.com/…/assets/… URL it produces, and either
+     paste that URL on its own line here (GitHub auto-embeds a player), or swap
+     the <img> below for:
+     <video src="THE_URL" poster="docs/images/hero-poster.png" width="820" muted autoplay loop playsinline></video> -->
+<p align="center">
+  <img src="docs/images/hero-poster.png" alt="Ground Control's space-station theme, running live" width="820">
+</p>
 
-> Status: alpha. The app is built and notarised, and the hook side is verified
-> against live payloads from Claude Code, Grok CLI, Cursor and opencode. See `docs/SPEC.md`
-> for the event contract, `docs/STRUCTURE.md` for the code layout, and
-> `docs/LIMITATIONS.md` for what is proven versus merely believed.
+## The cost was never the waiting. It was the checking.
+
+You start an agent and switch away — that's the point. Then it goes wrong one of
+two ways:
+
+- **You forget.** It sits blocked for twenty minutes on a one-word answer.
+- **You check instead.** You shred the focus you switched away to protect — over
+  and over, mostly to find nothing.
+
+Neither is a discipline problem. Ground Control is the third option:
+**a glance instead of a context switch.**
+
+## What you get
+
+- **A row per session** — name, what it's doing now, and a dot that turns
+  **red** the moment it's blocked and needs you.
+- **One click to the terminal** — the exact tab in Terminal and iTerm2, the app
+  itself for VS Code, Cursor, Warp, Ghostty and WezTerm.
+- **A menu-bar icon** that badges the instant anything needs you.
+- **Skinnable, WinAmp-style** — swap the whole look in seconds.
+- **Runs on the CLIs you already use** — Claude Code and Grok CLI today,
+  opencode and Cursor covered too. → **[full compatibility, tested on real
+  sessions](#what-it-works-with)**
+
+## See it in action
+
+**Click a row, land on its terminal** — the exact tab, or the owning app for
+editors that can't be scripted.
+
+<!-- ▸ JUMP VIDEO — drag ~/Desktop/gc-readme-jump.mp4 into the PR, paste its
+     URL on its own line here (or use a <video> tag like the hero note above). -->
+<p align="center">
+  <img src="docs/images/jump-poster.png" alt="Hovering a row shows Jump; clicking brings its terminal to the front" width="720">
+</p>
+
+**Swap the entire look.** Themes are drop-in folders of images and JSON — even
+the title-bar analyser's motion is a theme's to change.
+
+<!-- ▸ THEME VIDEO — drag ~/Desktop/gc-readme-theme.mp4 into the PR, paste its
+     URL on its own line here. -->
+<p align="center">
+  <img src="docs/images/theme-poster.png" alt="The unicorn theme: an ornate frame, corner art, and a themed analyser" width="560">
+</p>
+
+**Make your own without writing JSON.** Answer a handful of rough questions —
+character, mood, style — and **Create a Theme** writes the prompt. Paste it into
+any image-capable LLM; it draws the four faces and the frame, and you drop the
+folder in.
+
+<p align="center">
+  <img src="docs/images/theme-builder.png" alt="The Create a Theme window: a few fields, then Copy Part 1 / Copy Part 2 buttons" width="480">
+</p>
+
+More video — the analyser, resizing, the whole theme flow — is on the
+[SpacyApps page](https://www.spacyapps.com/apps/ground-control).
+
+## Make it yours
+
+- The station is one folder — swap it for a unicorn, an aquarium, or something
+  nobody's drawn yet.
+- A theme is a folder you can hand to a friend.
+- **Create a Theme** writes the prompt; you don't have to draw at all.
+- More on the way.
+
+Running a dozen agents should feel like mission control, not inbox triage —
+and it's allowed to be fun.
 
 ## Install (non-developers)
 
@@ -78,6 +144,14 @@ under each saying whether anything has arrived from it yet.
 - Hooks are never allowed to interrupt your agent, so `cc-notify` fails silently
   by design. `docs/LIMITATIONS.md` covers what that can hide.
 
+---
+
+*Everything below is for building from source and the technical detail. Status:
+alpha — the app is built and notarised, and the hook side is verified against
+live payloads from Claude Code, Grok CLI, Cursor and opencode. `docs/SPEC.md` is
+the event contract, `docs/STRUCTURE.md` the code layout, `docs/LIMITATIONS.md`
+what is proven versus merely believed.*
+
 ## Build (from source)
 
 ```bash
@@ -107,6 +181,28 @@ hands over the full assistant message, and `Notification` carries the real
 
 It **merges** — existing hooks on the same events keep working — and backs up
 your settings first. Hooks take effect immediately; no restart.
+
+## The one feature we built, proved, and then deleted
+
+The obvious next step was answering an agent from your phone. *Approve* or *deny*
+is the easy half. But approve and deny aren't what you actually need to send —
+you need words: *use Postgres, not SQLite.* The only route to words was scripting
+your terminal directly.
+
+We built that. It works.
+
+Which is exactly where it stops. Anything that can type into your terminal is a
+remote-execution capability, and a relay in that path turns one compromised
+server into every Mac connected to it. A *yes* tapped on a lock screen isn't the
+same *yes* — you can't see the working directory, the diff, or what the last
+three approvals already unlocked, and approvals chain.
+
+**No relay was ever built.** The app's `TerminalFocuser` only ever *navigates* —
+it brings a window forward. It cannot type, run a command, or do damage if it
+misfires. If you want remote answering, Claude Code ships it natively now, with a
+better security model than we could have justified building.
+
+> Finding out you can do something is not the same as finding a reason to.
 
 ## What it works with
 
@@ -176,10 +272,11 @@ swift run matrix-preview "0.5 + 0.5*sin(pos*7 - phase*2)"
 ## Uninstall
 
 Click the menu-bar icon, open **Hooks**, and turn the agents off — or run
-`~/.groundcontrol/bin/uninstall-hooks.sh`, which is
-kept there so it still works after the app is gone. It takes the `cc-notify` entries out
-of `~/.claude/settings.json` (a dated backup sits beside it). Session files live
-in `~/.groundcontrol/`, themes in
+`~/.groundcontrol/bin/uninstall-hooks.sh`, which is kept there so it still works
+after the app is gone. It takes the `cc-notify` entries out of
+`~/.claude/settings.json` (a dated backup sits beside it). The emitter and
+uninstaller live in `~/.groundcontrol/bin/`; session files sit in a temp folder
+and clear themselves. Themes are in
 `~/Library/Application Support/GroundControl/Themes/`.
 
 ## License
