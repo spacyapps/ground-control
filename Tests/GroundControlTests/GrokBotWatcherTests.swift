@@ -69,6 +69,7 @@ final class GrokBotWatcherTests: XCTestCase {
         let sessions = map([bot("Idle One"), bot("Waiting", preview: "widget_options")])
         let parent = try XCTUnwrap(sessions.first)
         XCTAssertTrue(parent.needsAction, "the collapsed group inherits the dot")
+        XCTAssertEqual(parent.state, .needsInput, "the whole group takes the needsInput mood")
 
         let waiting = try XCTUnwrap(parent.children.first { $0.displayName == "Waiting" })
         XCTAssertEqual(waiting.state, .needsInput)
@@ -82,6 +83,7 @@ final class GrokBotWatcherTests: XCTestCase {
     func testAnAnsweredCardIsNotNeedy() {
         let sessions = map([bot("Answered", preview: "widget_answered")])
         XCTAssertFalse(sessions.first?.needsAction ?? true)
+        XCTAssertEqual(sessions.first?.state, .idle)
     }
 
     func testAHardBlockAlsoCounts() {
