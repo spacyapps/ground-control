@@ -149,6 +149,54 @@ final class OverlaySkinTests: XCTestCase {
         XCTAssertGreaterThan(chromeDepth(root.chrome.skinOverlay), chromeDepth(root.chrome.titleBar))
     }
 
+    private func idleSession() throws -> Session {
+        let json = """
+        {"session_id":"s1","source":"claude","name":"work","cwd":"/tmp/work",\
+        "state":"idle","needs_action":false,"ts":1}
+        """
+        let event = try JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8))
+        return Session(id: event.sessionID, latest: event, children: [], acknowledgedAt: nil)
+    }
+
+    private func lowestOpaqueRow(of image: NSImage) throws -> Int {
+        var rect = NSRect(origin: .zero, size: image.size)
+        let rep = NSBitmapImageRep(
+            cgImage: try XCTUnwrap(image.cgImage(forProposedRect: &rect, context: nil, hints: nil))
+        )
+        for y in stride(from: rep.pixelsHigh - 1, through: 0, by: -1)
+        where (rep.colorAt(x: rep.pixelsWide / 2, y: y)?.alphaComponent ?? 0) > 0.5 {
+            return y
+        }
+        return 0
+    }
+
+    private func panel(bodyFade: Bool) throws -> PanelBackgroundView {
+        var theme = try theme(overlay: true)
+        theme.window.bodyFadesBelowAnalyser = bodyFade
+        let view = PanelBackgroundView()
+        view.apply(theme: theme)
+        view.frame = NSRect(x: 0, y: 0, width: 200, height: 400)
+        view.update(sessions: [try idleSession(), try idleSession(), try idleSession()], renames: [:])
+        view.layoutSubtreeIfNeeded()
+        return view
+    }
+
+    /// `bodyFade` keeps the ground solid to the analyser, ramps it out across
+    /// the first row, and never reaches the rows below.
+    func testBodyFadeRampsOutBelowTheAnalyser() throws {
+        let faded = try panel(bodyFade: true)
+        let full = try panel(bodyFade: false)
+
+        let fadedFloor = try lowestOpaqueRow(of: try XCTUnwrap(faded.interiorBody))
+        let fullFloor = try lowestOpaqueRow(of: try XCTUnwrap(full.interiorBody))
+        let analyser = Int(faded.titleBar.preferredHeight)
+        let rowHeight = Int(SessionRowView.height(for: try theme(overlay: true)))
+
+        XCTAssertGreaterThan(fadedFloor, analyser - 4, "solid at least to the analyser")
+        XCTAssertLessThan(fadedFloor, analyser + rowHeight, "faded out within the first row")
+        XCTAssertGreaterThan(fullFloor, fadedFloor + 60, "the plain body runs on past the rows")
+    }
+
     func testOrdinaryThemesAreUnaffected() throws {
         let view = PanelBackgroundView()
         view.apply(theme: try theme(overlay: false))

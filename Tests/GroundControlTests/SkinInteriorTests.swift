@@ -148,6 +148,29 @@ final class SkinInteriorTests: XCTestCase {
         XCTAssertNotEqual(short.tiffRepresentation, tall.tiffRepresentation)
     }
 
+    /// `fadeOver` softens the cut: solid at `contentBottom`, half way at the
+    /// band's midpoint, gone by its end.
+    func testOverlayBodyRampsAcrossTheFadeBand() throws {
+        let enclosed = SkinInterior.fillEnclosed(in: try frameMask())
+        let body = try XCTUnwrap(SkinInterior.overlayBody(
+            from: enclosed,
+            size: NSSize(width: side, height: side),
+            contentBottom: 20,
+            colour: NSColor(srgbRed: 0.1, green: 0.08, blue: 0.13, alpha: 1),
+            fadeOver: 16
+        ))
+        var rect = NSRect(origin: .zero, size: body.size)
+        let painted = NSBitmapImageRep(
+            cgImage: try XCTUnwrap(body.cgImage(forProposedRect: &rect, context: nil, hints: nil))
+        )
+        let solid = painted.colorAt(x: side / 2, y: 18)?.alphaComponent ?? 0
+        let midRamp = painted.colorAt(x: side / 2, y: 28)?.alphaComponent ?? 0
+        let cleared = painted.colorAt(x: side / 2, y: 40)?.alphaComponent ?? 1
+        XCTAssertEqual(solid, 1, accuracy: 0.05, "solid down to contentBottom")
+        XCTAssertEqual(midRamp, 0.5, accuracy: 0.2, "half way across the band")
+        XCTAssertEqual(cleared, 0, accuracy: 0.05, "gone past the band")
+    }
+
     func testOverlayBodyRejectsAWrongSizedArray() {
         XCTAssertNil(SkinInterior.overlayBody(
             from: [true, false],

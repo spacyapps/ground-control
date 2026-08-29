@@ -271,6 +271,9 @@ in `docs/THEMING.md`; the shape of it:
   covers what it overlaps and needs no pixel-accurate fit to its opening.
   Requires a transparent middle; `SkinCheck` refuses a skin that would hide the
   panel and reports it rather than showing an empty frame.
+- **`window.bodyFade`** — with `overlay`, the solid panel body goes to the
+  analyser strip then fades out across the first row; the rows below float on
+  the frame with only their own (translucent) `rowBackground`.
 - **`window.removeBackground`** — chroma key or checkerboard flood fill at load,
   because image models cannot produce reliable alpha but will fill a flat
   colour perfectly. The rim the key leaves is suppressed by distance from the

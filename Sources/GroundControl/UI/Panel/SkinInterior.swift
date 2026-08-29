@@ -124,22 +124,41 @@ enum SkinInterior {
     /// for the width and the top. The bottom, though, should end with the rows:
     /// below the last one is the frame's own floor and its greebles, and a
     /// panel body carried down there just backs the deck with black and leaks
-    /// onto the desktop through its grating. `contentBottom` is where the rows
-    /// stop. The enclosed area is size-dependent and the clip is not, so the
-    /// caller keeps the array and re-clips it as the rows grow.
+    /// onto the desktop through its grating. `contentBottom` is where it goes
+    /// solid to; the enclosed area is size-dependent and the clip is not, so
+    /// the caller keeps the array and re-clips it as the rows grow.
+    ///
+    /// `fadeOver`, when non-zero, softens that cut: the body ramps from solid
+    /// at `contentBottom` to nothing over that many points, so an overlay skin
+    /// can keep a solid ground under the analyser and dissolve it into the
+    /// frame across the first row.
     static func overlayBody(from enclosed: [Bool],
                             size: NSSize,
                             contentBottom: CGFloat,
-                            colour: NSColor) -> NSImage? {
+                            colour: NSColor,
+                            fadeOver: CGFloat = 0) -> NSImage? {
         let width = Int(size.width), height = Int(size.height)
         guard !enclosed.isEmpty, enclosed.count == width * height else { return nil }
 
-        var clipped = enclosed
-        let floor = max(0, min(height, Int(contentBottom.rounded())))
-        for y in floor..<height {
-            for x in 0..<width { clipped[y * width + x] = false }
+        let solid = max(0, contentBottom)
+        let clear = solid + max(0, fadeOver)
+        var coverage = [CGFloat](repeating: 0, count: width * height)
+        for y in 0..<height {
+            let scale = verticalScale(y: CGFloat(y), solid: solid, clear: clear)
+            guard scale > 0 else { continue }
+            for x in 0..<width where enclosed[y * width + x] {
+                coverage[y * width + x] = scale
+            }
         }
-        return body(from: clipped, width: width, height: height, colour: colour)
+        return render(coverage: coverage, width: width, height: height, colour: colour)
+    }
+
+    /// 1 up to `solid`, 0 at `clear` and below, a straight line between.
+    /// `clear == solid` is the hard cut.
+    private static func verticalScale(y: CGFloat, solid: CGFloat, clear: CGFloat) -> CGFloat {
+        if y <= solid { return 1 }
+        if y >= clear { return 0 }
+        return 1 - (y - solid) / (clear - solid)
     }
 
     /// The enclosed area as a paintable image, so the panel can put a body
@@ -150,20 +169,32 @@ enum SkinInterior {
                      width: Int,
                      height: Int,
                      colour: NSColor) -> NSImage? {
-        guard !enclosed.isEmpty, width > 0, height > 0,
+        guard !enclosed.isEmpty else { return nil }
+        let coverage: [CGFloat] = enclosed.map { $0 ? 1 : 0 }
+        return render(coverage: coverage, width: width, height: height, colour: colour)
+    }
+
+    /// Rasterises a per-cell coverage (0…1) as a premultiplied image in
+    /// `colour` — a hard 0/1 for the plain body, a vertical ramp for a faded
+    /// one.
+    private static func render(coverage: [CGFloat],
+                               width: Int,
+                               height: Int,
+                               colour: NSColor) -> NSImage? {
+        guard width > 0, height > 0, coverage.count == width * height,
               let srgb = colour.usingColorSpace(.sRGB) else { return nil }
 
-        let alpha = srgb.alphaComponent
-        let red = UInt8(srgb.redComponent * alpha * 255)
-        let green = UInt8(srgb.greenComponent * alpha * 255)
-        let blue = UInt8(srgb.blueComponent * alpha * 255)
+        let base = srgb.alphaComponent
+        let red = srgb.redComponent, green = srgb.greenComponent, blue = srgb.blueComponent
 
         var pixels = [UInt8](repeating: 0, count: width * height * 4)
-        for cell in 0..<(width * height) where enclosed[cell] {
+        for cell in 0..<(width * height) {
+            let alpha = base * coverage[cell]
+            guard alpha > 0 else { continue }
             let index = cell * 4
-            pixels[index] = red
-            pixels[index + 1] = green
-            pixels[index + 2] = blue
+            pixels[index] = UInt8(red * alpha * 255)
+            pixels[index + 1] = UInt8(green * alpha * 255)
+            pixels[index + 2] = UInt8(blue * alpha * 255)
             pixels[index + 3] = UInt8(alpha * 255)
         }
 

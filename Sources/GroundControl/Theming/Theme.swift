@@ -123,6 +123,13 @@ struct Theme {
         /// whatever it overlaps, so the content needs no pixel-accurate fit to
         /// the opening — at the cost of requiring a transparent centre.
         var drawsOverContent: Bool = false
+        /// With an overlay skin, the solid body behind the rows is drawn only
+        /// as tall as the analyser strip, then ramps to nothing across the
+        /// first row. The rows keep their own (usually translucent) background
+        /// and, past the first, sit straight on the frame — for a skin whose
+        /// artwork is worth seeing through the list. Inert without
+        /// `drawsOverContent`.
+        var bodyFadesBelowAnalyser: Bool = false
         /// The artwork's own width in pixels.
         ///
         /// A locked skin is scaled bodily to the panel, so the frame painted
