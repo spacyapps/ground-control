@@ -137,6 +137,7 @@ enum ThemeLoader {
         Log.theming.notice("Overlay skin has a solid centre; drawing it behind the rows instead")
         var demoted = window
         demoted.drawsOverContent = false
+        demoted.bodyFadesBelowAnalyser = false   // meaningless once it draws behind
         return (demoted, [
             """
             This skin is set to draw in front, but its middle is solid, which \
