@@ -17,6 +17,12 @@ final class StatusMarkTests: XCTestCase {
         XCTAssertEqual(StatusDotView.Mark.forSource("cursor"), .square)
     }
 
+    /// Grok Bot can say "a card is waiting" but not what it is doing otherwise,
+    /// so its quiet dot is the split idle|done mark (docs/GROK-BOT-GROUPING.md).
+    func testGrokBotIsMarkedUnknown() {
+        XCTAssertEqual(StatusDotView.Mark.forSource("grokbot"), .unknown)
+    }
+
     /// The CLIs whose alarm works must keep the plain dot, or the shape stops
     /// meaning anything.
     func testEveryOtherSourceKeepsTheDot() {
@@ -49,5 +55,39 @@ final class StatusMarkTests: XCTestCase {
         XCTAssertGreaterThan(square.reduce(0) { $0 + Int($1) },
                              round.reduce(0) { $0 + Int($1) },
                              "the square should cover more area than the circle")
+    }
+
+    /// The quiet `.unknown` dot must actually show two different colours — the
+    /// left half idle, the right half done — at the size a parent row draws it.
+    /// A plain dot draws one colour edge to edge, so left ≠ right is the test.
+    func testTheUnknownDotDrawsTwoHalves() throws {
+        func halves(_ mark: StatusDotView.Mark) throws -> (NSColor, NSColor) {
+            let view = StatusDotView()
+            view.frame = NSRect(x: 0, y: 0, width: 14, height: 14)
+            view.mark = mark
+            view.color = NSColor(srgbRed: 1, green: 0, blue: 0, alpha: 1)
+            view.altColor = NSColor(srgbRed: 0, green: 0, blue: 1, alpha: 1)
+            view.isProminent = false
+            let rep = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+            view.cacheDisplay(in: view.bounds, to: rep)
+            // colorAt takes device pixels, which are 2x points on a Retina rep.
+            let midY = rep.pixelsHigh / 2
+            return (
+                try XCTUnwrap(rep.colorAt(x: rep.pixelsWide / 4, y: midY)),
+                try XCTUnwrap(rep.colorAt(x: rep.pixelsWide * 3 / 4, y: midY))
+            )
+        }
+
+        let (roundLeft, roundRight) = try halves(.round)
+        XCTAssertEqual(
+            roundLeft.redComponent,
+            roundRight.redComponent,
+            accuracy: 0.05,
+            "a plain dot is one colour across"
+        )
+
+        let (left, right) = try halves(.unknown)
+        XCTAssertGreaterThan(left.redComponent - right.redComponent, 0.4, "left half is idle, right is not")
+        XCTAssertGreaterThan(right.blueComponent - left.blueComponent, 0.4, "right half is done, left is not")
     }
 }
