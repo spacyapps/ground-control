@@ -100,11 +100,11 @@ final class SessionRowView: NSView {
         self.isExpanded = presentation.isExpanded
         self.useAlternateBackground = presentation.isAlternate
 
-        // "Claude → xcode" rather than a second row also called "xcode".
+        // "Claude → xcode", not a second row also called "xcode" — but not
+        // "Grok Bot → Grok Bot" where the host is the name.
         let name = session.displayName(renames: renames)
-        nameLabel.stringValue = presentation.showsHost && session.hostName != nil
-            ? "\(session.hostName ?? "") → \(name)"
-            : name
+        let host = presentation.showsHost ? session.hostName : nil
+        nameLabel.stringValue = host != nil && host != name ? "\(host ?? "") → \(name)" : name
         nameLabel.font = theme.typography.nameFont()
         nameLabel.textColor = theme.colors.sessionName
 

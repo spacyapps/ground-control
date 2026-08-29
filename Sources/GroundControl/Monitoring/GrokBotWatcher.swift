@@ -127,6 +127,10 @@ final class GrokBotWatcher {
                 )
             }
 
+        // Any waiting bot puts the whole group in the needsInput mood — red
+        // dot, alarm face, and it drives the title-bar alarm like any other
+        // needy row (docs/GROK-BOT-GROUPING.md, decision 1).
+        let anyWaiting = children.contains { $0.needsAction }
         let latest = bots.map(\.updatedAt).max() ?? now
         let parent = SessionEvent(
             sessionID: groupID,
@@ -134,9 +138,9 @@ final class GrokBotWatcher {
             name: "Grok Bot",
             hostApp: appPath,
             hostID: bundleID,
-            state: .idle,
+            state: anyWaiting ? .needsInput : .idle,
             message: "",
-            needsAction: false,
+            needsAction: anyWaiting,
             timestamp: latest
         )
         return [Session(id: groupID, latest: parent, children: children, acknowledgedAt: nil)]
