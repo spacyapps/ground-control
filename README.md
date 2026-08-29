@@ -76,6 +76,15 @@ folder in.
 More video — the analyser, resizing, the whole theme flow — is on the
 [SpacyApps page](https://www.spacyapps.com/apps/ground-control).
 
+## Make it yours
+
+The station is one folder. Swap it for a unicorn, an aquarium, or something
+nobody's drawn yet — a theme travels as a folder you can hand to a friend, and
+**Create a Theme** means you don't have to draw at all. More are on the way.
+
+Running a dozen agents at once should feel like mission control, not inbox
+triage. That's the whole idea — and it's allowed to be fun.
+
 ## Install (non-developers)
 
 ### 1. Install the app
