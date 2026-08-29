@@ -180,12 +180,13 @@ final class AvatarView: NSView {
             }
 
             // A seam down the middle, so it reads as two states rather than
-            // one odd portrait.
+            // one odd portrait. `sessionName` tracks contrast with the panel,
+            // so the line shows on dark artwork and light alike.
             let seam = NSBezierPath()
-            seam.lineWidth = max(1.5, rect.width * 0.035)
+            seam.lineWidth = max(2, rect.width * 0.05)
             seam.move(to: NSPoint(x: rect.midX, y: rect.minY))
             seam.line(to: NSPoint(x: rect.midX, y: rect.maxY))
-            theme.colors.windowBackground.withAlphaComponent(0.9).setStroke()
+            theme.colors.sessionName.withAlphaComponent(0.8).setStroke()
             seam.stroke()
             return true
         }
