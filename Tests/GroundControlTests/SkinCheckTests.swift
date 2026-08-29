@@ -23,7 +23,7 @@ final class SkinCheckTests: XCTestCase {
 
     /// `centreFill` is what the author painted in the middle: the key colour if
     /// they got it right, anything else if they did not.
-    private func makeTheme(centreFill: [UInt8], overlay: Bool = true) throws -> Theme {
+    private func makeTheme(centreFill: [UInt8], overlay: Bool = true, bodyFade: Bool = false) throws -> Theme {
         let side = 100
         let border = 20
         var pixels = [UInt8](repeating: 0, count: side * side * 4)
@@ -63,6 +63,7 @@ final class SkinCheckTests: XCTestCase {
           "window": {
             "image": "\(url.lastPathComponent)",
             "overlay": \(overlay),
+            "bodyFade": \(bodyFade),
             "removeBackground": "#00FF00"
           }
         }
@@ -84,6 +85,14 @@ final class SkinCheckTests: XCTestCase {
         XCTAssertFalse(theme.window.drawsOverContent, "this skin would have hidden the panel")
         XCTAssertTrue(theme.window.isShaped, "it is still a perfectly good background")
         XCTAssertEqual(theme.warnings.count, 1, "and it has to say so")
+    }
+
+    /// `bodyFade` only makes sense in front of the rows; a demoted skin drops it
+    /// so the rows do not come up as rounded cards on a solid block.
+    func testDemotingAnOverlayAlsoClearsBodyFade() throws {
+        let theme = try makeTheme(centreFill: [20, 20, 30], bodyFade: true)
+        XCTAssertFalse(theme.window.drawsOverContent)
+        XCTAssertFalse(theme.window.bodyFadesBelowAnalyser)
     }
 
     /// Nearly right is still wrong: a centre keyed to a *different* green is
