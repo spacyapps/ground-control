@@ -24,6 +24,14 @@ final class PanelController {
         chrome.list.onSecondaryClick = { [weak self] session, event in
             self?.onSecondaryClick?(session, event)
         }
+        // Expanding a group changes the content height with no session update
+        // and no drag: refit the panel, then redo the body behind the rows now
+        // that the rows have their new positions.
+        chrome.list.onContentHeightChange = { [weak self] in
+            guard let self else { return }
+            self.fitHeightToContent()
+            self.chrome.refreshInteriorBody()
+        }
         root.closeMark.onClose = { [weak self] in self?.hide() }
         root.resizeGrip.onResizeBegan = { [weak self] in
             self?.resizeStart = self?.panel?.frame.size ?? .zero

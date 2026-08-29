@@ -118,6 +118,30 @@ enum SkinInterior {
         return outside
     }
 
+    /// The body an overlay skin puts behind its rows.
+    ///
+    /// `enclosed` — from `fillEnclosed` — follows the frame's real inner edge
+    /// for the width and the top. The bottom, though, should end with the rows:
+    /// below the last one is the frame's own floor and its greebles, and a
+    /// panel body carried down there just backs the deck with black and leaks
+    /// onto the desktop through its grating. `contentBottom` is where the rows
+    /// stop. The enclosed area is size-dependent and the clip is not, so the
+    /// caller keeps the array and re-clips it as the rows grow.
+    static func overlayBody(from enclosed: [Bool],
+                            size: NSSize,
+                            contentBottom: CGFloat,
+                            colour: NSColor) -> NSImage? {
+        let width = Int(size.width), height = Int(size.height)
+        guard !enclosed.isEmpty, enclosed.count == width * height else { return nil }
+
+        var clipped = enclosed
+        let floor = max(0, min(height, Int(contentBottom.rounded())))
+        for y in floor..<height {
+            for x in 0..<width { clipped[y * width + x] = false }
+        }
+        return body(from: clipped, width: width, height: height, colour: colour)
+    }
+
     /// The enclosed area as a paintable image, so the panel can put a body
     /// behind its rows without also painting the gaps around the artwork —
     /// where an animated frame has moved and left nothing, and a fill would
