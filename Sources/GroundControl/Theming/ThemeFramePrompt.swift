@@ -137,8 +137,12 @@ enum ThemeFramePrompt {
           visible, and a solid middle hides the whole panel. Keep the art well
           clear of that colour rather than merely different from it — against a
           green key a bright green light is erased too, which is why the colour
-          is chosen per theme. I clean the rim afterwards, so soft or glowing
-          edges are fine.
+          is chosen per theme. A washed-out or desaturated hint of the key hue
+          on the artwork is cut too, and leaves a hole the desktop shows
+          through — no glints, gems or reflections anywhere near that hue. I
+          clean the rim afterwards, so soft or glowing edges are fine, and I do
+          all the keying myself: hand me the frame with `\(brief.keyColour)`
+          still in it, never pre-keyed.
         - **`window.image` is the only key for panel art.** Do not invent
           another place for it and do not put it under `assets`.
         - **My ✕ and ↔ marks draw themselves** at the ends of the title strip,
