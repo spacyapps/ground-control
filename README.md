@@ -22,6 +22,62 @@ screenshots and video on the SpacyApps site. Everything that can change
 > for the event contract, `docs/STRUCTURE.md` for the code layout, and
 > `docs/LIMITATIONS.md` for what is proven versus merely believed.
 
+## Install (non-developers)
+
+### 1. Install the app
+
+- Download the `.zip` from the **Releases** page, unzip it, and drag
+  **Ground Control** into Applications.
+- It is signed with a Developer ID and notarised by Apple, so it opens on a
+  double-click — no right-click, no warning.
+
+![Drag GroundControl.app into Applications](docs/images/install-1-drag-to-applications.png)
+
+### 2. Connect your agent
+
+The panel stays empty until an agent reports in. Either run:
+
+```bash
+/Applications/GroundControl.app/Contents/Resources/install-hooks.sh
+```
+
+…or click the menu-bar icon and open **Hooks** — a switch per agent, and a line
+under each saying whether anything has arrived from it yet.
+
+![The menu-bar icon's Hooks submenu](docs/images/install-2-enable-hooks.png)
+
+- **Run it once.** Later versions of the app keep the installed emitter up to
+  date on their own.
+- It **merges** into `~/.claude/settings.json` — hooks you already have keep
+  working — and backs the file up first.
+- One install covers **Claude Code**, **Grok CLI**, and **Claude for Desktop**
+  (its Code tab bundles Claude Code).
+- Using **Cursor**? It also writes `~/.cursor/hooks.json` — **restart Cursor**
+  afterwards. Nothing else needs restarting.
+
+### 3. Start a session
+
+- Open a **new** terminal — a CLI that was already running has not loaded the
+  hooks.
+- Start Claude Code or Grok CLI. A row appears the moment it does anything.
+
+![A session appears in the panel](docs/images/install-3-a-session-appears.png)
+
+- **Click a row** to jump to its terminal — the exact tab in Terminal and
+  iTerm2, the app itself for VS Code, Warp, Ghostty and WezTerm.
+- The **menu-bar icon** toggles the panel and opens Settings, where you pick a
+  theme. **Theme → Open Themes Folder…** is where your own themes go.
+
+### Nothing showing up?
+
+- Open the **Hooks** submenu — the line under each agent says whether anything
+  has arrived. "nothing received yet" means the CLI is not calling the emitter.
+- Was the terminal opened *after* you ran the installer? Hooks load at startup.
+- A click opening **Finder** instead of your terminal means the hooks predate
+  that support — re-run the installer.
+- Hooks are never allowed to interrupt your agent, so `cc-notify` fails silently
+  by design. `docs/LIMITATIONS.md` covers what that can hide.
+
 ## Build (from source)
 
 ```bash
@@ -116,75 +172,6 @@ The title-bar analyser can run a theme's own bar-height formula
 ```
 swift run matrix-preview "0.5 + 0.5*sin(pos*7 - phase*2)"
 ```
-
-## Install (non-developers)
-
-**1. Install the app.** Download the `.zip` from Releases, unzip it, drag
-Ground Control to Applications. It is signed with a Developer ID and
-notarised by Apple, so it opens on a double-click — no right-click, no
-warning.
-
-![Drag GroundControl.app into Applications](docs/images/install-1-drag-to-applications.png)
-
-**2. Wire up your agent CLI.** The panel stays empty until an agent tells it
-something, which is what the hooks are for. One command:
-
-```bash
-/Applications/GroundControl.app/Contents/Resources/install-hooks.sh
-```
-
-Or click the menu-bar icon and open the **Hooks** submenu, which has a switch per
-agent and a line under each saying whether anything has actually arrived from it.
-
-![The menu bar icon's Hooks submenu, with a switch per agent](docs/images/install-2-enable-hooks.png)
-
-It installs `cc-notify` to `~/.groundcontrol/bin/`
-and registers it in `~/.claude/settings.json`, backing up the file first. **You only run it once** —
-later versions of the app update the installed emitter themselves on launch, so
-the two halves cannot drift apart. It never installs one where you have not, and
-never touches your settings. It merges rather than
-overwrites, so hooks you already have are kept, and it is safe to re-run.
-Claude Code and Grok CLI both read that file and both are covered — and so does
-Claude for Desktop, which bundles its own Claude Code and spawns it as an
-ordinary child process, so one install covers the terminal and the desktop app
-together.
-
-If Cursor is installed it also registers `~/.cursor/hooks.json`, which is what
-its own agent reads — merging there too, and backing up anything already in it.
-**Restart Cursor** afterwards: it reads that file at startup. Nothing else needs
-restarting.
-
-**3. Start a session.** Open a *new* terminal — a CLI already running has not
-loaded the hooks — and start Claude Code or Grok CLI. A row appears as soon as it
-does anything.
-
-Click a row to jump to the terminal it belongs to. The menu-bar icon toggles the
-panel and opens Settings, where you can pick a theme, and **Theme → Open Themes
-Folder…** is where your own themes go.
-
-Clicking a row goes to the exact tab in iTerm2 and Terminal, and raises the
-owning application for anything else — VS Code and its forks, Warp, Ghostty,
-WezTerm. If a click opens Finder instead, the hooks predate that support: re-run
-the installer above.
-
-Rows come from agent CLIs that fire hooks, so **Claude Code running in VS Code's
-integrated terminal appears**, while VS Code's own Copilot chat does not — it
-never calls the emitter. See `docs/LIMITATIONS.md`.
-
-### If no rows appear
-
-- Was the terminal opened *after* running the installer? Hooks load at start.
-- **Check the registration.** Claude Code shows its own hooks in a panel —
-  *Agent Customizations → Hooks* — which is quicker than reading JSON, and lists
-  `cc-notify` against each event it fires on. Hooks you already had are listed
-  beside it, since the installer merges rather than replaces. (That panel does
-  not render `Notification` hooks, so seeing seven entries rather than eight is
-  normal; `~/.claude/settings.json` is the source of truth.) These are Claude
-  Code's settings and have no bearing on VS Code's own Copilot chat.
-- `ls ~/.groundcontrol/sessions/` — files here mean the hooks are firing and the
-  problem is the app; an empty folder means the CLI is not calling them.
-- Hooks are never allowed to interrupt your agent, so `cc-notify` fails
-  silently by design. `docs/LIMITATIONS.md` covers what that hides.
 
 ## Uninstall
 
