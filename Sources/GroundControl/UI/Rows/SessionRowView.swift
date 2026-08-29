@@ -142,11 +142,17 @@ final class SessionRowView: NSView {
 
         avatar.isHidden = theme.avatar.isHidden
         if !avatar.isHidden {
-            avatar.configure(
-                asset: theme.avatar.asset(for: session.state),
-                state: session.state,
-                theme: theme
-            )
+            // A quiet Grok Bot row can't say which state it is in, so its face
+            // is split idle | done — the same admission the dot makes.
+            if StatusDotView.Mark.forSource(session.source) == .unknown, !session.needsAction {
+                avatar.configureSplit(left: .idle, right: .done, theme: theme)
+            } else {
+                avatar.configure(
+                    asset: theme.avatar.asset(for: session.state),
+                    state: session.state,
+                    theme: theme
+                )
+            }
         }
 
         disclosure.isHidden = !session.isGroup
@@ -164,29 +170,6 @@ final class SessionRowView: NSView {
     func refreshElapsed(for session: Session) {
         elapsedLabel.stringValue = ElapsedFormatter.short(since: session.lastActivity)
         needsLayout = true
-    }
-
-    private func summary(for session: Session) -> String {
-        guard session.isGroup else { return session.message }
-        let count = session.children.count
-
-        // Grok Bot's parent is not one conversation: a count, and how many bots
-        // wait on you, in place of a last line (docs/GROK-BOT-GROUPING.md).
-        if session.source == "grokbot" {
-            let base = count == 1 ? "1 bot" : "\(count) bots"
-            let waiting = session.children.filter(\.needsAction).count
-            return waiting > 0 ? "\(base)  ·  \(waiting) waiting" : base
-        }
-
-        let suffix = count == 1 ? "1 subagent" : "\(count) subagents"
-        return session.message.isEmpty ? suffix : "\(session.message)  ·  \(suffix)"
-    }
-
-    private func triangle(expanded: Bool, color: NSColor) -> NSAttributedString {
-        NSAttributedString(
-            string: expanded ? "▼" : "▶",
-            attributes: [.foregroundColor: color, .font: NSFont.systemFont(ofSize: 8)]
-        )
     }
 
     // MARK: - Layout
