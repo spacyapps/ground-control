@@ -12,13 +12,8 @@
   <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
 </p>
 
-<!-- ▸ HERO VIDEO — when pushing: drag ~/Desktop/gc-readme-hero.mp4 into the PR
-     description, copy the github.com/…/assets/… URL it produces, and either
-     paste that URL on its own line here (GitHub auto-embeds a player), or swap
-     the <img> below for:
-     <video src="THE_URL" poster="docs/images/hero-poster.png" width="820" muted autoplay loop playsinline></video> -->
 <p align="center">
-  <img src="docs/images/hero-poster.png" alt="Ground Control's space-station theme, running live" width="820">
+  <video src="https://github.com/user-attachments/assets/4de010d5-3304-45e6-8558-9b3efd12f213" poster="docs/images/hero-poster.png" width="820" controls muted loop playsinline></video>
 </p>
 
 ## The cost was never the waiting. It was the checking.
@@ -50,19 +45,15 @@ Neither is a discipline problem. Ground Control is the third option:
 **Click a row, land on its terminal** — the exact tab, or the owning app for
 editors that can't be scripted.
 
-<!-- ▸ JUMP VIDEO — drag ~/Desktop/gc-readme-jump.mp4 into the PR, paste its
-     URL on its own line here (or use a <video> tag like the hero note above). -->
 <p align="center">
-  <img src="docs/images/jump-poster.png" alt="Hovering a row shows Jump; clicking brings its terminal to the front" width="720">
+  <video src="https://github.com/user-attachments/assets/cb817a73-017f-463b-851f-d3904a526861" poster="docs/images/jump-poster.png" width="720" controls muted loop playsinline></video>
 </p>
 
 **Swap the entire look.** Themes are drop-in folders of images and JSON — even
 the title-bar analyser's motion is a theme's to change.
 
-<!-- ▸ THEME VIDEO — drag ~/Desktop/gc-readme-theme.mp4 into the PR, paste its
-     URL on its own line here. -->
 <p align="center">
-  <img src="docs/images/theme-poster.png" alt="The unicorn theme: an ornate frame, corner art, and a themed analyser" width="560">
+  <video src="https://github.com/user-attachments/assets/a87cbf31-a39c-42ff-90a2-5e7d01f4cc72" poster="docs/images/theme-poster.png" width="640" controls muted loop playsinline></video>
 </p>
 
 **Make your own without writing JSON.** Answer a handful of rough questions —
