@@ -86,6 +86,10 @@ struct ThemeManifest: Decodable, Equatable {
         /// covers what it overlaps and the artwork decides where the content
         /// appears to stop. Needs a transparent centre.
         var overlay: Bool?
+        /// With `overlay`, the solid ground stops at the analyser strip. The
+        /// rows below then float on their own (usually translucent) background
+        /// over the frame, instead of on a filled panel body.
+        var bodyFade: Bool?
         /// The skin. `shape` is accepted as an older spelling.
         var image: String?
         var shape: String?

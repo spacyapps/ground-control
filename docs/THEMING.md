@@ -227,6 +227,7 @@ the edge.
 |---|---|
 | `image` | the skin — drop a generated file straight in |
 | `overlay` | `true` draws the skin **in front of** the rows instead of behind |
+| `bodyFade` | overlay only: the solid body goes to the analyser then fades out across the first row, so the rows below float on the frame with just their own background |
 | `lockAspect` | `true`: keeps the artwork's proportions, rows scroll inside. `false`: panel grows with sessions, art is nine-sliced |
 | `removeBackground` | `"auto"`, `"checkerboard"`, or a hex colour to key out. Omit if the file already has real alpha |
 
@@ -279,6 +280,15 @@ The app checks this rather than trusting it. If an overlay skin's middle is
 solid, it is drawn *behind* the rows instead — imperfect, but visible — and
 Settings says why. The frame never takes a click, however opaque it is; clicks
 fall through to the rows beneath.
+
+**`bodyFade` — let the rows float on the frame.** Behind the rows an overlay
+skin still gets a solid panel colour, sized to the list. `"bodyFade": true`
+keeps that ground solid only under the analyser strip, then ramps it to
+nothing across the height of the first row. From the second row down the rows
+keep only their own `rowBackground`, so a translucent row colour lets the
+frame's own artwork — or whatever its keyed centre shows through to — read
+behind the list. Give `rowBackground` and `rowBackgroundAlt` some alpha for the
+effect to be worth anything.
 
 **On `removeBackground`.** Image models cannot produce reliable transparency —
 they paint the checkerboard an editor *shows*, or drop alpha entirely. But they

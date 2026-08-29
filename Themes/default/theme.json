@@ -90,6 +90,9 @@
     "shape":            null,
     "overlay":          false,    // true draws the skin IN FRONT of the rows,
                                   // so the frame covers what it overlaps
+    "bodyFade":         false,    // overlay only: solid body to the analyser,
+                                  // fading out across the first row; rows below
+                                  // then float on the frame
     "lockAspect":       false,    // superseded by layout.resize; still read
     "removeBackground": null,     // "auto" | "checkerboard" | hex, e.g. "#00FF00"
     "mode":             null,     // "tile" | "stretch" for the sliced edges

@@ -83,6 +83,7 @@ enum AssetResolver {
             locksAspect: locked,
             aspectRatio: measure(url).ratio,
             drawsOverContent: manifest.overlay ?? false,
+            bodyFadesBelowAnalyser: manifest.bodyFade ?? false,
             naturalWidth: measure(url).width
         )
     }

@@ -86,17 +86,24 @@ extension PanelBackgroundView {
 
     /// The body sits behind the rows and ends with them — below the last row is
     /// the frame's own floor. Cheap: a re-clip of `enclosedArea`.
+    ///
+    /// With `bodyFade` it goes solid only to the analyser strip and then ramps
+    /// to nothing across the first row, so the rows past the first sit on the
+    /// frame with only their own translucent background.
     func rebuildInteriorBody(size: NSSize) {
         guard theme.window.drawsOverContent else {
             interiorBody = nil
             return
         }
-        let contentBottom = effectiveInsets.top + titleBar.preferredHeight + list.contentHeight
+        let analyserBottom = effectiveInsets.top + titleBar.preferredHeight
+        let fades = theme.window.bodyFadesBelowAnalyser
+        let bodyBottom = fades ? analyserBottom : analyserBottom + list.contentHeight
         interiorBody = SkinInterior.overlayBody(
             from: enclosedArea,
             size: size,
-            contentBottom: contentBottom,
-            colour: theme.colors.windowBackground
+            contentBottom: bodyBottom,
+            colour: theme.colors.windowBackground,
+            fadeOver: fades ? SessionRowView.height(for: theme) : 0
         )
     }
 
