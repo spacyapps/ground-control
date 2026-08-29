@@ -67,28 +67,6 @@ the title-bar analyser's motion is a theme's to change.
 More video — the analyser, resizing, the theme builder — is on the
 [SpacyApps page](https://www.spacyapps.com/apps/ground-control).
 
-## The one feature we built, proved, and then deleted
-
-The obvious next step was answering an agent from your phone. *Approve* or *deny*
-is the easy half. But approve and deny aren't what you actually need to send —
-you need words: *use Postgres, not SQLite.* The only route to words was scripting
-your terminal directly.
-
-We built that. It works.
-
-Which is exactly where it stops. Anything that can type into your terminal is a
-remote-execution capability, and a relay in that path turns one compromised
-server into every Mac connected to it. A *yes* tapped on a lock screen isn't the
-same *yes* — you can't see the working directory, the diff, or what the last
-three approvals already unlocked, and approvals chain.
-
-**No relay was ever built.** The app's `TerminalFocuser` only ever *navigates* —
-it brings a window forward. It cannot type, run a command, or do damage if it
-misfires. If you want remote answering, Claude Code ships it natively now, with a
-better security model than we could have justified building.
-
-> Finding out you can do something is not the same as finding a reason to.
-
 ## Install (non-developers)
 
 ### 1. Install the app
@@ -182,6 +160,28 @@ hands over the full assistant message, and `Notification` carries the real
 
 It **merges** — existing hooks on the same events keep working — and backs up
 your settings first. Hooks take effect immediately; no restart.
+
+## The one feature we built, proved, and then deleted
+
+The obvious next step was answering an agent from your phone. *Approve* or *deny*
+is the easy half. But approve and deny aren't what you actually need to send —
+you need words: *use Postgres, not SQLite.* The only route to words was scripting
+your terminal directly.
+
+We built that. It works.
+
+Which is exactly where it stops. Anything that can type into your terminal is a
+remote-execution capability, and a relay in that path turns one compromised
+server into every Mac connected to it. A *yes* tapped on a lock screen isn't the
+same *yes* — you can't see the working directory, the diff, or what the last
+three approvals already unlocked, and approvals chain.
+
+**No relay was ever built.** The app's `TerminalFocuser` only ever *navigates* —
+it brings a window forward. It cannot type, run a command, or do damage if it
+misfires. If you want remote answering, Claude Code ships it natively now, with a
+better security model than we could have justified building.
+
+> Finding out you can do something is not the same as finding a reason to.
 
 ## What it works with
 
