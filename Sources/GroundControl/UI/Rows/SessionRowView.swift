@@ -293,6 +293,9 @@ final class SessionRowView: NSView {
 
     // MARK: - Drawing & interaction
 
+    /// Rounded-card radius for a row that floats free under `bodyFade`.
+    static let floatingCornerRadius: CGFloat = 7
+
     override func draw(_ dirtyRect: NSRect) {
         let background: NSColor
         if isHovering {
@@ -300,16 +303,30 @@ final class SessionRowView: NSView {
         } else {
             background = useAlternateBackground ? theme.colors.rowBackgroundAlt : theme.colors.rowBackground
         }
-        // sourceOver, not the default: a row colour carrying alpha has to
-        // blend over the panel's background image rather than replace it.
         background.setFill()
-        bounds.fill(using: .sourceOver)
 
-        theme.colors.divider.setStroke()
-        let line = NSBezierPath()
-        line.move(to: NSPoint(x: 0, y: bounds.maxY - 0.5))
-        line.line(to: NSPoint(x: bounds.width, y: bounds.maxY - 0.5))
-        line.stroke()
+        // Under `bodyFade` the rows are separate cards over the frame, so each
+        // one paints a rounded rect with a hairline gap and no divider. Behind
+        // the analyser they are still a contiguous block: full-bleed fill,
+        // divider between.
+        if theme.window.bodyFadesBelowAnalyser {
+            let card = bounds.insetBy(dx: 0, dy: 1)
+            NSBezierPath(
+                roundedRect: card,
+                xRadius: Self.floatingCornerRadius,
+                yRadius: Self.floatingCornerRadius
+            ).fill()
+        } else {
+            // sourceOver, not the default: a row colour carrying alpha has to
+            // blend over the panel's background image rather than replace it.
+            bounds.fill(using: .sourceOver)
+
+            theme.colors.divider.setStroke()
+            let line = NSBezierPath()
+            line.move(to: NSPoint(x: 0, y: bounds.maxY - 0.5))
+            line.line(to: NSPoint(x: bounds.width, y: bounds.maxY - 0.5))
+            line.stroke()
+        }
 
         drawMenuMark()
     }

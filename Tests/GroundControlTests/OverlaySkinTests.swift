@@ -197,6 +197,45 @@ final class OverlaySkinTests: XCTestCase {
         XCTAssertGreaterThan(fullFloor, fadedFloor + 60, "the plain body runs on past the rows")
     }
 
+    private func renderedRow(bodyFade: Bool) throws -> NSBitmapImageRep {
+        var theme = DefaultTheme.theme
+        theme.window.bodyFadesBelowAnalyser = bodyFade
+        theme.colors.rowBackground = NSColor(srgbRed: 0.05, green: 0.1, blue: 0.14, alpha: 1)
+
+        let presentation = SessionRowView.Presentation(
+            theme: theme,
+            renames: [:],
+            isExpanded: false,
+            isAlternate: false,
+            showsSource: false,
+            showsHost: false
+        )
+        let view = SessionRowView()
+        view.configure(session: try idleSession(), presentation: presentation)
+        view.frame = NSRect(x: 0, y: 0, width: 240, height: SessionRowView.height(for: theme))
+        view.layoutSubtreeIfNeeded()
+
+        let rep = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: rep)
+        return rep
+    }
+
+    /// Under `bodyFade` a row is a rounded card: the corner is clipped away,
+    /// the left edge below the arc is still filled.
+    func testBodyFadeRowsAreRoundedCards() throws {
+        let card = try renderedRow(bodyFade: true)
+        let corner = card.colorAt(x: 2, y: 2)?.alphaComponent ?? 1
+        let edge = card.colorAt(x: 2, y: card.pixelsHigh / 2)?.alphaComponent ?? 0
+        XCTAssertEqual(corner, 0, accuracy: 0.02, "corner clipped")
+        XCTAssertGreaterThan(edge, 0.9, "edge past the arc still filled")
+    }
+
+    /// An ordinary row fills its corner square.
+    func testOrdinaryRowsFillTheirCorner() throws {
+        let plain = try renderedRow(bodyFade: false)
+        XCTAssertGreaterThan(plain.colorAt(x: 2, y: 2)?.alphaComponent ?? 0, 0.9)
+    }
+
     func testOrdinaryThemesAreUnaffected() throws {
         let view = PanelBackgroundView()
         view.apply(theme: try theme(overlay: false))
