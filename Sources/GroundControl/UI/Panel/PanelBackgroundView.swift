@@ -12,7 +12,7 @@ final class PanelBackgroundView: NSView {
     let list = SessionListView()
     let skinOverlay = SkinOverlayView()
 
-    private var theme: Theme = DefaultTheme.theme
+    var theme: Theme = DefaultTheme.theme
 
     /// The silhouette rendered at the current size.
     ///
@@ -22,13 +22,19 @@ final class PanelBackgroundView: NSView {
     /// resize and sampling that is both simpler and exact.
     /// Readable by tests: it is what decides both what shows and what takes a
     /// click, and it has been wrong twice.
-    private(set) var shapeMask: NSBitmapImageRep?
+    var shapeMask: NSBitmapImageRep?
 
     /// The panel's body for an overlay skin: the area the frame encloses,
     /// painted so the rows have something to sit on. Clipped to that area
     /// rather than filling the layer, because an animated frame leaves gaps
     /// around itself where a full fill would show as a dark fringe.
-    private(set) var interiorBody: NSImage?
+    var interiorBody: NSImage?
+
+    /// The silhouette rebuild is the 44-frame composite; the body is a cheap
+    /// re-clip of it. So the silhouette is kept and only redone when the panel
+    /// resizes, while the body follows the rows on every session change.
+    var maskedSize: NSSize = .zero
+    var enclosedArea: [Bool] = []
 
     /// Animated backgrounds play only while something is working.
     ///
@@ -66,6 +72,8 @@ final class PanelBackgroundView: NSView {
         self.theme = theme
         shapeMask = nil
         interiorBody = nil
+        maskedSize = .zero
+        enclosedArea = []
         // Force a restart rather than letting an already-running timer look
         // valid: without this, switching between two animated themes mid-
         // session kept the *previous* theme's frame-rate interval and elapsed
@@ -107,11 +115,11 @@ final class PanelBackgroundView: NSView {
     /// Capped either way: the intent ("hold the rows inside the frame") is
     /// right even when the number is not, so it is honoured as far as it fits
     /// rather than leaving the rows no room at all.
-    private var artworkScale: CGFloat {
+    var artworkScale: CGFloat {
         theme.window.artworkScale(atPanelWidth: bounds.width)
     }
 
-    private var effectiveInsets: NSEdgeInsets {
+    var effectiveInsets: NSEdgeInsets {
         let scale = artworkScale
         let declared = theme.layout.contentInset
         let room = min(bounds.width, bounds.height)
@@ -139,7 +147,6 @@ final class PanelBackgroundView: NSView {
 
     override func layout() {
         super.layout()
-        updateShapeMask()
         // Everything sits inside the inset, so a framed background shows all
         // the way round rather than only above the first row.
         let insets = effectiveInsets
@@ -157,6 +164,10 @@ final class PanelBackgroundView: NSView {
             width: width,
             height: max(0, bounds.height - titleBar.frame.maxY - insets.bottom)
         )
+
+        // After the list has its frame — the body is cut to where the rows
+        // actually sit.
+        updateShapeMask()
 
         // Top-right of the title strip, mirroring the close mark at its left
         // end. Both corner marks then sit on the same line, inside the inset,
@@ -296,93 +307,5 @@ final class PanelBackgroundView: NSView {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         updateAnimation()
-    }
-
-    // MARK: - Shape
-
-    /// Renders the silhouette at the current size and masks the content to it,
-    /// so rows are cut to the outline instead of spilling past a curve.
-    private func updateShapeMask() {
-        guard let shape = theme.window.shape, bounds.width > 1, bounds.height > 1 else {
-            layer?.mask = nil
-            shapeMask = nil
-            return
-        }
-
-        let size = NSSize(width: bounds.width, height: bounds.height)
-        guard let rep = NSBitmapImageRep(
-            bitmapDataPlanes: nil,
-            pixelsWide: Int(size.width),
-            pixelsHigh: Int(size.height),
-            bitsPerSample: 8,
-            samplesPerPixel: 4,
-            hasAlpha: true,
-            isPlanar: false,
-            colorSpaceName: .deviceRGB,
-            bytesPerRow: 0,
-            bitsPerPixel: 0
-        ) else { return }
-
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-        // Every frame, drawn over itself. A mask only removes, so a silhouette
-        // taken from frame one clips whatever a later frame moves into — and
-        // swallows clicks where the art has since moved away. Compositing the
-        // frames unions their coverage, which is the shape the skin occupies
-        // over its whole loop.
-        if let animated = AnimatedImage.load(shape), animated.isAnimated {
-            for index in 0..<animated.frames.count {
-                BackgroundRenderer.draw(
-                    shape,
-                    in: NSRect(origin: .zero, size: size),
-                    elapsed: Double(index) * animated.duration
-                )
-            }
-        } else {
-            BackgroundRenderer.draw(shape, in: NSRect(origin: .zero, size: size))
-        }
-        NSGraphicsContext.restoreGraphicsState()
-
-        // An overlay skin's middle is transparent by design, which would
-        // otherwise mask away the very rows it is meant to frame.
-        if theme.window.drawsOverContent {
-            let enclosed = SkinInterior.fillEnclosed(in: rep)
-            interiorBody = SkinInterior.body(
-                from: enclosed,
-                width: rep.pixelsWide,
-                height: rep.pixelsHigh,
-                colour: theme.colors.windowBackground
-            )
-        } else {
-            interiorBody = nil
-        }
-
-        shapeMask = rep
-
-        let mask = CALayer()
-        mask.frame = bounds
-        mask.contents = rep.cgImage
-        layer?.mask = mask
-        window?.invalidateShadow()
-    }
-
-    /// Lets clicks fall through transparent parts of a skin.
-    ///
-    /// Without this a shaped panel is still an invisible rectangle as far as
-    /// the mouse is concerned, swallowing clicks meant for whatever is behind
-    /// it — the most irritating way a skinned window can misbehave.
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        guard theme.window.isShaped, let mask = shapeMask else {
-            return super.hitTest(point)
-        }
-
-        let local = convert(point, from: superview)
-        let column = Int(local.x)
-        let row = Int(isFlipped ? local.y : bounds.height - local.y)
-        guard column >= 0, row >= 0,
-              column < mask.pixelsWide, row < mask.pixelsHigh else { return nil }
-
-        let alpha = mask.colorAt(x: column, y: row)?.alphaComponent ?? 0
-        return alpha > 0.08 ? super.hitTest(point) : nil
     }
 }

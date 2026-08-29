@@ -104,4 +104,56 @@ final class SkinInteriorTests: XCTestCase {
     func testNothingEnclosedMeansNoBody() {
         XCTAssertNil(SkinInterior.body(from: [], width: side, height: side, colour: .black))
     }
+
+    private func frameMask() throws -> NSBitmapImageRep {
+        try mask { x, y in
+            let onBand = (10..<50).contains(x) && (10..<50).contains(y)
+                && !((16..<44).contains(x) && (16..<44).contains(y))
+            return !onBand
+        }
+    }
+
+    /// The body follows the frame's real inner edge for width and top, but
+    /// ends with the rows — `contentBottom` — not with the frame, so it never
+    /// backs the deck below them.
+    func testOverlayBodyEndsWithTheRows() throws {
+        let enclosed = SkinInterior.fillEnclosed(in: try frameMask())
+        let body = try XCTUnwrap(SkinInterior.overlayBody(
+            from: enclosed,
+            size: NSSize(width: side, height: side),
+            contentBottom: 30,
+            colour: NSColor(srgbRed: 0.1, green: 0.08, blue: 0.13, alpha: 1)
+        ))
+        var rect = NSRect(origin: .zero, size: body.size)
+        let painted = NSBitmapImageRep(
+            cgImage: try XCTUnwrap(body.cgImage(forProposedRect: &rect, context: nil, hints: nil))
+        )
+        let aboveTheLine = painted.colorAt(x: side / 2, y: 22)?.alphaComponent ?? 0
+        let belowTheLine = painted.colorAt(x: side / 2, y: 38)?.alphaComponent ?? 1
+        XCTAssertGreaterThan(aboveTheLine, 0.5, "backed while the rows are")
+        XCTAssertEqual(belowTheLine, 0, accuracy: 0.05, "nothing past where the rows stop")
+    }
+
+    /// The enclosed array is size-bound; the clip is not — so a taller
+    /// `contentBottom` re-clips the same array without another flood-fill.
+    func testOverlayBodyReclipsTheSameArrayAsTheRowsGrow() throws {
+        let enclosed = SkinInterior.fillEnclosed(in: try frameMask())
+        let size = NSSize(width: side, height: side)
+        let short = try XCTUnwrap(SkinInterior.overlayBody(
+            from: enclosed, size: size, contentBottom: 20, colour: .black
+        ))
+        let tall = try XCTUnwrap(SkinInterior.overlayBody(
+            from: enclosed, size: size, contentBottom: CGFloat(side), colour: .black
+        ))
+        XCTAssertNotEqual(short.tiffRepresentation, tall.tiffRepresentation)
+    }
+
+    func testOverlayBodyRejectsAWrongSizedArray() {
+        XCTAssertNil(SkinInterior.overlayBody(
+            from: [true, false],
+            size: NSSize(width: side, height: side),
+            contentBottom: 10,
+            colour: .black
+        ))
+    }
 }

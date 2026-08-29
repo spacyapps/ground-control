@@ -35,6 +35,10 @@ final class SessionListView: NSView {
     var onSecondaryClick: ((Session, NSEvent) -> Void)?
     /// A hint to draw, already converted into this view's coordinates.
     var onHint: ((String?, NSRect) -> Void)?
+    /// `contentHeight` changed — expanding a group does this without any
+    /// session update, so the panel has to be told to resize and to redo the
+    /// body behind the rows.
+    var onContentHeightChange: (() -> Void)?
 
     private let scrollView = NSScrollView()
     private let stack = TopAlignedStackView()
@@ -216,7 +220,9 @@ final class SessionListView: NSView {
                 add(childRow, height: childHeight)
             }
         }
+        let changed = total != contentHeight
         contentHeight = total
+        if changed { onContentHeightChange?() }
     }
 
     /// Ticks the clocks — and catches the one thing that changes without an

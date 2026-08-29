@@ -201,6 +201,12 @@ like the title bar, set `top` and `bottom` to 0 instead.
 A bare `"windowBackground": "panel.png"` means `tile` with no corners held,
 which is what a plain repeating texture wants.
 
+**Seeing faint vertical or horizontal dashes inside the opening?** That is
+`tile` — AppKit does not always land the tiled centre flush against the caps,
+and on a keyed frame the soft edge left by `removeBackground` makes the seam
+show. Switch that frame to `"mode": "stretch"`. It costs nothing on a frame
+whose edges are texture rather than a pattern, and it has no seam to leak.
+
 Editing an image hot-reloads exactly like editing the manifest.
 
 ### `window` — breaking the rectangle
