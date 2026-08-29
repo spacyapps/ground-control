@@ -285,7 +285,17 @@ Two things follow from how a key works:
 - **Keep the artwork well away from the key colour**, not just different from
   it. Anything within about 130 units of RGB distance is treated as background
   and removed — against `#00FF00` that erases a bright green running light like
-  `#39ff14`. If the art needs green, key on `#FF00FF` instead.
+  `#39ff14`. If the art needs green, key on `#FF00FF` instead. **Distance is not
+  the whole test:** a pixel whose *key channels* lead the others by more than
+  120 is cut whole as a shaded key, however far it is in plain distance — so a
+  desaturated pinkish highlight against `#FF00FF` disappears even though it
+  looks nothing like magenta. The aquarium frame lost a glint on its palm this
+  way and the desktop showed through the hole.
+- **Deliver the frame with the key colour still in it — do not pre-key it.**
+  Chroma-keying the clip in a video tool *and then* naming `removeBackground`
+  keys it twice: the first pass desaturates a near-key pixel just enough to push
+  it over the shaded-key line on the second. One pass, done on load, is the
+  contract.
 - **A soft or glowing edge is fine.** The key leaves a rim of its own colour on
   whatever it cuts around, so that rim is suppressed afterwards — but only
   within a few pixels of the cut, which is the only place it can physically be.
