@@ -97,15 +97,34 @@ final class StatusDotView: NSView {
     }
 
     /// Left half `color`, right half `altColor`, clipped to the circle — idle
-    /// on one side, done on the other, because it is genuinely one or the
-    /// other and the cache will not say.
+    /// on one side, done on the other, because it is genuinely one or the other
+    /// and the cache will not say. This mark carries information, so it draws
+    /// at full strength rather than the quiet 0.55 of a settled dot.
+    ///
+    /// Below ~7pt (a child row's dot) two halves are a smudge, so it falls back
+    /// to the mix of the two.
     private func drawSplit(in body: NSRect) {
-        NSGraphicsContext.current?.saveGraphicsState()
-        NSBezierPath(ovalIn: body).addClip()
-        color.withAlphaComponent(0.55).setFill()
-        NSRect(x: body.minX, y: body.minY, width: body.width / 2, height: body.height).fill()
-        altColor.withAlphaComponent(0.55).setFill()
-        NSRect(x: body.midX, y: body.minY, width: body.width / 2, height: body.height).fill()
-        NSGraphicsContext.current?.restoreGraphicsState()
+        guard body.width >= 7 else {
+            (color.blended(withFraction: 0.5, of: altColor) ?? color).setFill()
+            NSBezierPath(ovalIn: body).fill()
+            return
+        }
+
+        let center = NSPoint(x: body.midX, y: body.midY)
+        let radius = body.width / 2
+
+        let left = NSBezierPath()
+        left.move(to: center)
+        left.appendArc(withCenter: center, radius: radius, startAngle: 90, endAngle: 270)
+        left.close()
+        color.setFill()
+        left.fill()
+
+        let right = NSBezierPath()
+        right.move(to: center)
+        right.appendArc(withCenter: center, radius: radius, startAngle: 270, endAngle: 90)
+        right.close()
+        altColor.setFill()
+        right.fill()
     }
 }
