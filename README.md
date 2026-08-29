@@ -12,11 +12,13 @@
   <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
 </p>
 
-<p align="center">
-  <video src="https://github.com/user-attachments/assets/4de010d5-3304-45e6-8558-9b3efd12f213" poster="docs/images/hero-poster.png" width="820" controls muted loop playsinline></video>
-</p>
+<div align="center">
 
-## The cost was never the waiting. It was the checking.
+https://github.com/user-attachments/assets/4de010d5-3304-45e6-8558-9b3efd12f213
+
+</div>
+
+# The cost was never the waiting. It was the checking.
 
 You start an agent and switch away — that's the point. Then it goes wrong one of
 two ways:
@@ -25,10 +27,11 @@ two ways:
 - **You check instead.** You shred the focus you switched away to protect — over
   and over, mostly to find nothing.
 
-Neither is a discipline problem. Ground Control is the third option:
-**a glance instead of a context switch.**
+Neither is a discipline problem.
 
-## What you get
+> **Ground Control is the third option: a glance instead of a context switch.**
+
+# What you get
 
 - **A row per session** — name, what it's doing now, and a dot that turns
   **red** the moment it's blocked and needs you.
@@ -40,21 +43,25 @@ Neither is a discipline problem. Ground Control is the third option:
   opencode and Cursor covered too. → **[full compatibility, tested on real
   sessions](#what-it-works-with)**
 
-## See it in action
+# See it in action
 
 **Click a row, land on its terminal** — the exact tab, or the owning app for
 editors that can't be scripted.
 
-<p align="center">
-  <video src="https://github.com/user-attachments/assets/cb817a73-017f-463b-851f-d3904a526861" poster="docs/images/jump-poster.png" width="720" controls muted loop playsinline></video>
-</p>
+<div align="center">
+
+https://github.com/user-attachments/assets/cb817a73-017f-463b-851f-d3904a526861
+
+</div>
 
 **Swap the entire look.** Themes are drop-in folders of images and JSON — even
 the title-bar analyser's motion is a theme's to change.
 
-<p align="center">
-  <video src="https://github.com/user-attachments/assets/a87cbf31-a39c-42ff-90a2-5e7d01f4cc72" poster="docs/images/theme-poster.png" width="640" controls muted loop playsinline></video>
-</p>
+<div align="center">
+
+https://github.com/user-attachments/assets/a87cbf31-a39c-42ff-90a2-5e7d01f4cc72
+
+</div>
 
 **Make your own without writing JSON.** Answer a handful of rough questions —
 character, mood, style — and **Create a Theme** writes the prompt. Paste it into
@@ -68,7 +75,7 @@ folder in.
 More video — the analyser, resizing, the whole theme flow — is on the
 [SpacyApps page](https://www.spacyapps.com/apps/ground-control).
 
-## Make it yours
+# Make it yours
 
 - The station is one folder — swap it for a unicorn, an aquarium, or something
   nobody's drawn yet.
@@ -79,9 +86,9 @@ More video — the analyser, resizing, the whole theme flow — is on the
 Running a dozen agents should feel like mission control, not inbox triage —
 and it's allowed to be fun.
 
-## Install (non-developers)
+# Install (non-developers)
 
-### 1. Install the app
+## 1. Install the app
 
 - Download the `.zip` from the **Releases** page, unzip it, and drag
   **Ground Control** into Applications.
@@ -90,7 +97,7 @@ and it's allowed to be fun.
 
 ![Drag GroundControl.app into Applications](docs/images/install-1-drag-to-applications.png)
 
-### 2. Connect your agent
+## 2. Connect your agent
 
 The panel stays empty until an agent reports in. Either run:
 
@@ -112,7 +119,7 @@ under each saying whether anything has arrived from it yet.
 - Using **Cursor**? It also writes `~/.cursor/hooks.json` — **restart Cursor**
   afterwards. Nothing else needs restarting.
 
-### 3. Start a session
+## 3. Start a session
 
 - Open a **new** terminal — a CLI that was already running has not loaded the
   hooks.
@@ -125,7 +132,7 @@ under each saying whether anything has arrived from it yet.
 - The **menu-bar icon** toggles the panel and opens Settings, where you pick a
   theme. **Theme → Open Themes Folder…** is where your own themes go.
 
-### Nothing showing up?
+## Nothing showing up?
 
 - Open the **Hooks** submenu — the line under each agent says whether anything
   has arrived. "nothing received yet" means the CLI is not calling the emitter.
@@ -143,7 +150,7 @@ live payloads from Claude Code, Grok CLI, Cursor and opencode. `docs/SPEC.md` is
 the event contract, `docs/STRUCTURE.md` the code layout, `docs/LIMITATIONS.md`
 what is proven versus merely believed.*
 
-## Build (from source)
+# Build (from source)
 
 ```bash
 swift build
@@ -154,7 +161,7 @@ Requires macOS 13+ and Swift 5.9+. **No third-party dependencies** — the app
 imports only AppKit, AVFoundation, Foundation and os. Linting uses the
 standalone `swiftlint` binary (`brew install swiftlint`).
 
-## How it works
+# How it works
 
 Claude Code hooks call a small script (`Scripts/cc-notify`) that writes one
 `.jsonl` file per session into a temp folder, named by the session's id. The
@@ -173,7 +180,7 @@ hands over the full assistant message, and `Notification` carries the real
 It **merges** — existing hooks on the same events keep working — and backs up
 your settings first. Hooks take effect immediately; no restart.
 
-## The one feature we built, proved, and then deleted
+# The one feature we built, proved, and then deleted
 
 The obvious next step was answering an agent from your phone. *Approve* or *deny*
 is the easy half. But approve and deny aren't what you actually need to send —
@@ -195,12 +202,12 @@ better security model than we could have justified building.
 
 > Finding out you can do something is not the same as finding a reason to.
 
-## What it works with
+# What it works with
 
 Every row below was tested on a real session, not inferred. Dates are when, and
 `docs/LIMITATIONS.md` says how.
 
-### Agents
+## Agents
 
 | Agent | Rows | Turns red | How we know |
 |---|---|---|---|
@@ -212,7 +219,7 @@ Every row below was tested on a real session, not inferred. Dates are when, and
 | **Claude for Desktop** — Home tab | **no** | no | ordinary chat in Electron; no process is spawned, so there is nothing to hook — and nothing to miss, since a chat cannot block you unnoticed · 2026-08-22 |
 | **Xcode's Claude Agent** | **no** | no | it *is* Claude Code (`sdk-cli`) and can see both the config and the emitter, but that entrypoint does not run hooks · 2026-08-19 |
 
-### Terminals
+## Terminals
 
 Any agent running in a terminal is covered by that agent's row — the terminal
 needs no integration of its own. Clicking a row jumps to the exact tab where the
@@ -235,7 +242,7 @@ measured payloads it is built on, `docs/ARCHITECTURE.md` for how a hook event
 becomes a row, and `docs/LIMITATIONS.md` for what is proven
 versus merely believed.
 
-## Themes
+# Themes
 
 **Fun is a feature.** Every other menu-bar utility assumes you want it to look
 like everything else; this one is WinAmp-skinnable instead — copy
@@ -260,7 +267,7 @@ The title-bar analyser can run a theme's own bar-height formula
 swift run matrix-preview "0.5 + 0.5*sin(pos*7 - phase*2)"
 ```
 
-## Uninstall
+# Uninstall
 
 Click the menu-bar icon, open **Hooks**, and turn the agents off — or run
 `~/.groundcontrol/bin/uninstall-hooks.sh`, which is kept there so it still works
@@ -270,7 +277,7 @@ uninstaller live in `~/.groundcontrol/bin/`; session files sit in a temp folder
 and clear themselves. Themes are in
 `~/Library/Application Support/GroundControl/Themes/`.
 
-## License
+# License
 
 AGPL-3.0-or-later — see `LICENSE`.
 
@@ -286,7 +293,7 @@ AGPL-3.0-or-later — see `LICENSE`.
 - **Need different terms for your organization?** Copyright is held by one
   person specifically so this is possible — email spacyapps@gmail.com to ask.
 
-## Contributions
+# Contributions
 
 - **Not accepting code** — no pull requests, patches, or pasted snippets.
 - **Bug reports, feature requests and themes are very welcome.** The most
