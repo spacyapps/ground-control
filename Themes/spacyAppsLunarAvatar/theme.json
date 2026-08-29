@@ -75,6 +75,7 @@
     "image": "frame.gif",
     "lockAspect": false,
     "overlay": true,
+    "bodyFade": true,
     "removeBackground": "#00FF00",
     "mode": "tile",
     "capInsets": {
