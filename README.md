@@ -124,6 +124,8 @@ Ground Control to Applications. It is signed with a Developer ID and
 notarised by Apple, so it opens on a double-click — no right-click, no
 warning.
 
+![Drag GroundControl.app into Applications](docs/images/install-1-drag-to-applications.png)
+
 **2. Wire up your agent CLI.** The panel stays empty until an agent tells it
 something, which is what the hooks are for. One command:
 
@@ -133,6 +135,8 @@ something, which is what the hooks are for. One command:
 
 Or click the menu-bar icon and open the **Hooks** submenu, which has a switch per
 agent and a line under each saying whether anything has actually arrived from it.
+
+![The menu bar icon's Hooks submenu, with a switch per agent](docs/images/install-2-enable-hooks.png)
 
 It installs `cc-notify` to `~/.groundcontrol/bin/`
 and registers it in `~/.claude/settings.json`, backing up the file first. **You only run it once** —
