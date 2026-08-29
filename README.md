@@ -1,26 +1,93 @@
-# Ground Control
+<h1 align="center">🛰&nbsp; Ground Control</h1>
 
-A macOS menu-bar app that monitors your AI agent CLI sessions — Claude Code,
-Grok CLI, Cursor, opencode — and shows, at a glance, which ones need your
-attention, whether they're running in Terminal, iTerm2, or VS Code's
-integrated terminal. Skinnable with a WinAmp-style UI (themes as image/video
-bundles).
+<p align="center">
+  <strong>Mission control for every AI agent you're running — and one click to jump to it.</strong>
+</p>
 
-- **Menu-bar icon** that badges when a session needs you.
-- **Free-floating panel** (optional always-on-top / all-Spaces) listing each
-  session: name, latest message, a red dot when it needs action, and a
-  themeable avatar.
-- **Click a session** to jump straight to its terminal tab.
-- **Skinnable** via drop-in theme folders (`Themes/<name>/theme.json`).
+<p align="center">
+  <img alt="License AGPL-3.0-or-later" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue">
+  <img alt="macOS 13+" src="https://img.shields.io/badge/macOS-13%2B-111111">
+  <img alt="Swift 5.9" src="https://img.shields.io/badge/Swift-5.9-F05138">
+  <img alt="No third-party dependencies" src="https://img.shields.io/badge/dependencies-none-2ea44f">
+  <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
+</p>
 
-**[See it in action →](https://www.spacyapps.com/apps/ground-control)** —
-screenshots and video on the SpacyApps site. Everything that can change
-(install steps, compatibility, theme keys) lives here in the repo instead.
+<p align="center">
+  <img src="docs/images/hero.gif" alt="Ground Control's space-station theme, running live" width="720">
+</p>
 
-> Status: alpha. The app is built and notarised, and the hook side is verified
-> against live payloads from Claude Code, Grok CLI, Cursor and opencode. See `docs/SPEC.md`
-> for the event contract, `docs/STRUCTURE.md` for the code layout, and
-> `docs/LIMITATIONS.md` for what is proven versus merely believed.
+## The cost was never the waiting. It was the checking.
+
+You start an agent and switch away — email, Slack, a review, a question from the
+desk behind you. That's the whole point of starting it; the work is supposed to
+happen while you're not watching.
+
+Then it goes wrong in one of two directions, and they point away from each other:
+
+- **You forget** — and an agent sits blocked for twenty minutes, waiting on a
+  one-word answer you'd have given instantly.
+- **You check instead** — and shred the focus you switched away to protect, over
+  and over, mostly to find nothing.
+
+Neither is a discipline problem. You can't remember what you were never shown,
+and the only way to find out is to stop what you're doing and go look.
+
+Ground Control is the third option: **a glance instead of a context switch.**
+
+## What you get
+
+- **A row per session** — its name, what it's doing right now, and a dot that
+  turns **red** the moment it's blocked and needs you.
+- **One click to the terminal.** Straight to the tab that owns the session — the
+  exact tab in Terminal and iTerm2, the app itself for VS Code, Cursor, Warp,
+  Ghostty and WezTerm.
+- **A menu-bar icon** that badges the instant anything needs you.
+- **Skinnable, WinAmp-style.** Swap the whole look in seconds — a panel you
+  stare at all day should be one you actually want on screen.
+
+Built for the AI coding CLIs already on your Mac — **Claude Code** and
+**Grok CLI** today, with **opencode** and **Cursor** covered too.
+
+## See it in action
+
+**Click a row, land on its terminal** — the exact tab, or the owning app for
+editors that can't be scripted.
+
+<p align="center">
+  <img src="docs/images/jump.gif" alt="Hovering a row shows Jump; clicking brings its terminal to the front" width="720">
+</p>
+
+**Swap the entire look.** Themes are drop-in folders of images and JSON — even
+the title-bar analyser's motion is a theme's to change.
+
+<p align="center">
+  <img src="docs/images/theme.gif" alt="The unicorn theme: an ornate frame, corner art, and a themed analyser" width="560">
+</p>
+
+More video — the analyser, resizing, the theme builder — is on the
+[SpacyApps page](https://www.spacyapps.com/apps/ground-control).
+
+## The one feature we built, proved, and then deleted
+
+The obvious next step was answering an agent from your phone. *Approve* or *deny*
+is the easy half. But approve and deny aren't what you actually need to send —
+you need words: *use Postgres, not SQLite.* The only route to words was scripting
+your terminal directly.
+
+We built that. It works.
+
+Which is exactly where it stops. Anything that can type into your terminal is a
+remote-execution capability, and a relay in that path turns one compromised
+server into every Mac connected to it. A *yes* tapped on a lock screen isn't the
+same *yes* — you can't see the working directory, the diff, or what the last
+three approvals already unlocked, and approvals chain.
+
+**No relay was ever built.** The app's `TerminalFocuser` only ever *navigates* —
+it brings a window forward. It cannot type, run a command, or do damage if it
+misfires. If you want remote answering, Claude Code ships it natively now, with a
+better security model than we could have justified building.
+
+> Finding out you can do something is not the same as finding a reason to.
 
 ## Install (non-developers)
 
@@ -77,6 +144,14 @@ under each saying whether anything has arrived from it yet.
   that support — re-run the installer.
 - Hooks are never allowed to interrupt your agent, so `cc-notify` fails silently
   by design. `docs/LIMITATIONS.md` covers what that can hide.
+
+---
+
+*Everything below is for building from source and the technical detail. Status:
+alpha — the app is built and notarised, and the hook side is verified against
+live payloads from Claude Code, Grok CLI, Cursor and opencode. `docs/SPEC.md` is
+the event contract, `docs/STRUCTURE.md` the code layout, `docs/LIMITATIONS.md`
+what is proven versus merely believed.*
 
 ## Build (from source)
 
@@ -176,10 +251,11 @@ swift run matrix-preview "0.5 + 0.5*sin(pos*7 - phase*2)"
 ## Uninstall
 
 Click the menu-bar icon, open **Hooks**, and turn the agents off — or run
-`~/.groundcontrol/bin/uninstall-hooks.sh`, which is
-kept there so it still works after the app is gone. It takes the `cc-notify` entries out
-of `~/.claude/settings.json` (a dated backup sits beside it). Session files live
-in `~/.groundcontrol/`, themes in
+`~/.groundcontrol/bin/uninstall-hooks.sh`, which is kept there so it still works
+after the app is gone. It takes the `cc-notify` entries out of
+`~/.claude/settings.json` (a dated backup sits beside it). The emitter and
+uninstaller live in `~/.groundcontrol/bin/`; session files sit in a temp folder
+and clear themselves. Themes are in
 `~/Library/Application Support/GroundControl/Themes/`.
 
 ## License
