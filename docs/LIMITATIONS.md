@@ -214,17 +214,21 @@ own chats.
 Claude Code running in Xcode's *terminal* is unaffected and fully supported, as
 in every other editor.
 
-## Grok Bot — investigated 2026-08-28, not supported
+## Grok Bot — supported as a group, measured 2026-08-28
 
-xAI's "Grok Bot" desktop app (`/Applications/Grok Bot.app`, Electron, v0.30.0) is
-a **Cursor fork** — `cursor-machine-id`, a bundled `cursor-proclist` native
-module, `api2.cursor.sh`, `anysphere.cursor-mcp`, and `~/.cursor/` as its config
-root all sit in the bundle. Its agents run on an xAI **cloud desktop**, not on
-this machine; a local `sand-local-exec-daemon` ("serving local exec over the
-gateway") bridges back only when the agent runs a command *here*, and only after
-an in-app approval plus a macOS TCC prompt.
+xAI's "Grok Bot" desktop app (`/Applications/Grok Bot.app`, Electron, v0.30.0)
+appears in the panel as one collapsible group, a row per bot, and a decision
+card waiting on your answer turns that bot and the group red. What it does not
+yet distinguish is working from done — that section is why.
 
-**Hooks are a dead end.** The bundle carries Cursor's entire hooks engine —
+Grok Bot is a **Cursor fork** — `cursor-machine-id`, a bundled `cursor-proclist`
+native module, `api2.cursor.sh`, `anysphere.cursor-mcp`, and `~/.cursor/` as its
+config root all sit in the bundle. Its agents run on an xAI **cloud desktop**,
+not on this machine; a local `sand-local-exec-daemon` ("serving local exec over
+the gateway") bridges back only when the agent runs a command *here*, and only
+after an in-app approval plus a macOS TCC prompt.
+
+**Hooks are not the route.** The bundle carries Cursor's entire hooks engine —
 `dist/local-exec-daemon/main.cjs` has the full event vocabulary (`stop`,
 `afterAgentResponse`, `beforeSubmitPrompt`, `preToolUse`, `sessionStart` …) and
 an explicit Claude-Code compatibility map (`PreToolUse → preToolUse`,
@@ -253,9 +257,10 @@ rewritten every turn:
 | `awaitingUserResponse` | **stayed `null` through every test**, including both approval prompts — see below |
 | `isGroup` / `memberIds` | channels vs solo bots |
 
-So a watcher on that one folder could show **active / quiet / has an unanswered
-card** per bot. It could **not** reliably show "done", and it could **not** show
-"blocked on a permission prompt or CAPTCHA".
+A watcher on that one folder is what drives the group: a row per bot, and the
+red alarm when `sessionPreview.kind == "widget_options"` — an unanswered
+decision card. It does **not** try to tell working from done, and it does
+**not** see "blocked on a permission prompt or CAPTCHA".
 
 **"Done" is not knowable.** A long turn watched live posted two interim notes
 ("On it…", "This one's a longer pull, I'll come back with a cited table…"), each
@@ -285,15 +290,19 @@ The usable "card is waiting" signal is therefore `lastEntry.sessionPreview.kind
 == "widget_options"` being the *current* value: it appeared when the bot asked
 and flipped back to `"text"` the moment the card was answered.
 
-This is the local, unauthenticated twin of Grok Bot's own
+The cache is the local, unauthenticated twin of Grok Bot's own
 `aiserver.v1.WatchGrokBotTranscripts` gRPC method — same data, from a file
 instead of a cloud stream that would need its auth and protobuf reverse-
-engineered. Neither is worth building against until there is real demand.
+engineered.
 
-| | Has hooks? | Reports? | Answer |
-|---|---|---|---|
-| Cursor's Composer | yes | not while waiting for you | none available; stated in the UI |
-| **Grok Bot** | **engine present, never wired to a local file** | **busy/done via a cache file; not "blocked"** | **watch `sand-client-persistence/` if demand appears; nothing shipped** |
+**What shipped:** `GrokBotWatcher` reads that folder and emits one group;
+`SessionAggregator` merges it beside the hook-driven rows. A pending card raises
+the alarm like any other blocked session. Full design: `docs/GROK-BOT-GROUPING.md`.
+
+| | Turns red when it needs you | Tells working from done |
+|---|---|---|
+| Cursor's Composer | no — no hook while it waits | n/a |
+| **Grok Bot** | **yes — the decision card** | not yet; the cloud agent can go silent mid-task |
 
 ## Verified (measured, not assumed)
 
