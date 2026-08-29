@@ -64,7 +64,16 @@ the title-bar analyser's motion is a theme's to change.
   <img src="docs/images/theme.gif" alt="The unicorn theme: an ornate frame, corner art, and a themed analyser" width="560">
 </p>
 
-More video — the analyser, resizing, the theme builder — is on the
+**Make your own without writing JSON.** Answer a handful of rough questions —
+character, mood, style — and **Create a Theme** writes the prompt. Paste it into
+any image-capable LLM; it draws the four faces and the frame, and you drop the
+folder in.
+
+<p align="center">
+  <img src="docs/images/theme-builder.png" alt="The Create a Theme window: a few fields, then Copy Part 1 / Copy Part 2 buttons" width="480">
+</p>
+
+More video — the analyser, resizing, the whole theme flow — is on the
 [SpacyApps page](https://www.spacyapps.com/apps/ground-control).
 
 ## Install (non-developers)
