@@ -18,35 +18,27 @@
 
 ## The cost was never the waiting. It was the checking.
 
-You start an agent and switch away — email, Slack, a review, a question from the
-desk behind you. That's the whole point of starting it; the work is supposed to
-happen while you're not watching.
+You start an agent and switch away — that's the point. Then it goes wrong one of
+two ways:
 
-Then it goes wrong in one of two directions, and they point away from each other:
-
-- **You forget** — and an agent sits blocked for twenty minutes, waiting on a
-  one-word answer you'd have given instantly.
-- **You check instead** — and shred the focus you switched away to protect, over
+- **You forget.** It sits blocked for twenty minutes on a one-word answer.
+- **You check instead.** You shred the focus you switched away to protect — over
   and over, mostly to find nothing.
 
-Neither is a discipline problem. You can't remember what you were never shown,
-and the only way to find out is to stop what you're doing and go look.
-
-Ground Control is the third option: **a glance instead of a context switch.**
+Neither is a discipline problem. Ground Control is the third option:
+**a glance instead of a context switch.**
 
 ## What you get
 
-- **A row per session** — its name, what it's doing right now, and a dot that
-  turns **red** the moment it's blocked and needs you.
-- **One click to the terminal.** Straight to the tab that owns the session — the
-  exact tab in Terminal and iTerm2, the app itself for VS Code, Cursor, Warp,
-  Ghostty and WezTerm.
+- **A row per session** — name, what it's doing now, and a dot that turns
+  **red** the moment it's blocked and needs you.
+- **One click to the terminal** — the exact tab in Terminal and iTerm2, the app
+  itself for VS Code, Cursor, Warp, Ghostty and WezTerm.
 - **A menu-bar icon** that badges the instant anything needs you.
-- **Skinnable, WinAmp-style.** Swap the whole look in seconds — a panel you
-  stare at all day should be one you actually want on screen.
-
-Built for the AI coding CLIs already on your Mac — **Claude Code** and
-**Grok CLI** today, with **opencode** and **Cursor** covered too.
+- **Skinnable, WinAmp-style** — swap the whole look in seconds.
+- **Runs on the CLIs you already use** — Claude Code and Grok CLI today,
+  opencode and Cursor covered too. → **[full compatibility, tested on real
+  sessions](#what-it-works-with)**
 
 ## See it in action
 
@@ -78,12 +70,14 @@ More video — the analyser, resizing, the whole theme flow — is on the
 
 ## Make it yours
 
-The station is one folder. Swap it for a unicorn, an aquarium, or something
-nobody's drawn yet — a theme travels as a folder you can hand to a friend, and
-**Create a Theme** means you don't have to draw at all. More are on the way.
+- The station is one folder — swap it for a unicorn, an aquarium, or something
+  nobody's drawn yet.
+- A theme is a folder you can hand to a friend.
+- **Create a Theme** writes the prompt; you don't have to draw at all.
+- More on the way.
 
-Running a dozen agents at once should feel like mission control, not inbox
-triage. That's the whole idea — and it's allowed to be fun.
+Running a dozen agents should feel like mission control, not inbox triage —
+and it's allowed to be fun.
 
 ## Install (non-developers)
 
