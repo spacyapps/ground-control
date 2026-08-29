@@ -23,6 +23,7 @@ final class Preferences {
         static let themeName = "themeName"
         static let renames = "renames"
         static let showsInternalAgents = "showsInternalAgents"
+        static let showsGrokBot = "showsGrokBot"
         static let showsAnalyser = "showsAnalyser"
         static let analyserTint = "analyserTint"
     }
@@ -49,6 +50,15 @@ final class Preferences {
     var showsInternalAgents: Bool {
         get { defaults.bool(forKey: Key.showsInternalAgents) }
         set { defaults.set(newValue, forKey: Key.showsInternalAgents) }
+    }
+
+    /// The Grok Bot group (docs/GROK-BOT-GROUPING.md). On by default — it costs
+    /// nothing when Grok Bot is not installed — but its status comes from an
+    /// undocumented cache, so `defaults write GroundControl showsGrokBot -bool NO`
+    /// turns it off.
+    var showsGrokBot: Bool {
+        get { defaults.object(forKey: Key.showsGrokBot) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Key.showsGrokBot) }
     }
 
     var panelFrame: String? {

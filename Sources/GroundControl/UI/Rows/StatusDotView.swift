@@ -8,22 +8,39 @@ import AppKit
 /// `needsAction` is the loud case — it fills solid in the theme's needsAction
 /// colour. Quiet states draw dimmer so a panel of idle rows stays calm.
 final class StatusDotView: NSView {
-    /// A round mark reports fully; a square one cannot.
+    /// A round mark reports fully; a square one cannot; a split one does not
+    /// know which quiet state it is in.
     ///
     /// Cursor's agent fires no hook while it waits for approval, so its rows
     /// never turn red however stuck they are. A dot that means "state" beside a
     /// dot that means "state, as far as we can tell" is a quiet lie, and the
     /// difference is worth a shape — it reads at a glance and survives every
     /// theme, since it costs no colour.
+    ///
+    /// `.unknown` is Grok Bot: we can read "a card is waiting" (that row turns
+    /// red and round like any other), but between cards its cloud agent can be
+    /// working, idle or done and the local cache never says which. The dot
+    /// splits idle | done to show exactly that — never a guess at "working".
     enum Mark: Equatable {
         case round
         case square
+        case unknown
 
-        /// Which sources can be trusted to say they are blocked. Kept here so
-        /// the rule has one home rather than being re-decided per view.
+        /// Which sources can be trusted to say they are blocked, and which
+        /// cannot say what they are doing at all. Kept here so the rule has one
+        /// home rather than being re-decided per view.
         static func forSource(_ source: String) -> Mark {
-            source == "cursor" ? .square : .round
+            switch source {
+            case "cursor": return .square
+            case "grokbot": return .unknown
+            default: return .round
+            }
         }
+    }
+
+    /// The other half of an `.unknown` split dot. Ignored for every other mark.
+    var altColor: NSColor = DefaultTheme.colors.accent {
+        didSet { needsDisplay = true }
     }
 
     var mark: Mark = .round {
@@ -61,6 +78,14 @@ final class StatusDotView: NSView {
             return
         }
         let body = rect.insetBy(dx: 1, dy: 1)
+
+        // A split dot only while quiet: a waiting Grok bot is prominent, and
+        // then it is a solid red circle like every other alarm.
+        if mark == .unknown, !isProminent {
+            drawSplit(in: body)
+            return
+        }
+
         // Slightly rounded rather than a hard square: at eight points a sharp
         // corner reads as an artefact, and this still cannot be mistaken for
         // the circle beside it.
@@ -69,5 +94,18 @@ final class StatusDotView: NSView {
             : NSBezierPath(ovalIn: body)
         color.withAlphaComponent(isProminent ? 1.0 : 0.55).setFill()
         path.fill()
+    }
+
+    /// Left half `color`, right half `altColor`, clipped to the circle — idle
+    /// on one side, done on the other, because it is genuinely one or the
+    /// other and the cache will not say.
+    private func drawSplit(in body: NSRect) {
+        NSGraphicsContext.current?.saveGraphicsState()
+        NSBezierPath(ovalIn: body).addClip()
+        color.withAlphaComponent(0.55).setFill()
+        NSRect(x: body.minX, y: body.minY, width: body.width / 2, height: body.height).fill()
+        altColor.withAlphaComponent(0.55).setFill()
+        NSRect(x: body.midX, y: body.minY, width: body.width / 2, height: body.height).fill()
+        NSGraphicsContext.current?.restoreGraphicsState()
     }
 }

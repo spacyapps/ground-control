@@ -50,6 +50,8 @@ final class GroupRowView: NSView {
         messageLabel.text = child.message
 
         dot.color = theme.colors.color(for: child.state)
+        dot.altColor = theme.colors.color(for: .done)
+        dot.mark = .forSource(child.source)
         dot.isProminent = child.needsAction
 
         needsLayout = true

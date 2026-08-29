@@ -52,7 +52,7 @@ enum AgentGrouper {
         }
 
         for key in grouped.keys {
-            grouped[key]?.sort { $0.latest.timestamp > $1.latest.timestamp }
+            grouped[key]?.sort { $0.lastActivity > $1.lastActivity }
         }
         return grouped
     }

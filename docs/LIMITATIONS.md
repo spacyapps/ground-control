@@ -214,6 +214,87 @@ own chats.
 Claude Code running in Xcode's *terminal* is unaffected and fully supported, as
 in every other editor.
 
+## Grok Bot — investigated 2026-08-28, not supported
+
+xAI's "Grok Bot" desktop app (`/Applications/Grok Bot.app`, Electron, v0.30.0) is
+a **Cursor fork** — `cursor-machine-id`, a bundled `cursor-proclist` native
+module, `api2.cursor.sh`, `anysphere.cursor-mcp`, and `~/.cursor/` as its config
+root all sit in the bundle. Its agents run on an xAI **cloud desktop**, not on
+this machine; a local `sand-local-exec-daemon` ("serving local exec over the
+gateway") bridges back only when the agent runs a command *here*, and only after
+an in-app approval plus a macOS TCC prompt.
+
+**Hooks are a dead end.** The bundle carries Cursor's entire hooks engine —
+`dist/local-exec-daemon/main.cjs` has the full event vocabulary (`stop`,
+`afterAgentResponse`, `beforeSubmitPrompt`, `preToolUse`, `sessionStart` …) and
+an explicit Claude-Code compatibility map (`PreToolUse → preToolUse`,
+`Stop → stop`). `Scripts/probe-cursor-hooks.sh` was installed into
+`~/.cursor/hooks.json` (all 18 events) and Grok Bot restarted. Across four turns
+— plain chat, an inline decision card, and a local `ls ~/Desktop` that passed
+through both the app's approval prompt and macOS TCC — **nothing was written to
+the probe log.** Grok Bot never consults a local `hooks.json`; the engine is
+dormant code, driven only by cloud-pushed `HooksConfigInfo`. Local commands go
+through its own `~/.grokbot/local-tool-approvals.json` grant ledger instead,
+which is written *after* approval, not while waiting.
+
+**The only local signal is an undocumented cache.** Grok Bot mirrors state to
+plaintext JSON blobs under
+`~/Library/Application Support/Grok Bot/sand-client-persistence/` (base32-encoded
+slice names). The useful one is `…roster.last-roster` — one row per bot,
+rewritten every turn:
+
+| field | carries |
+|---|---|
+| `name` | the bot's display name — a clean row label, no empty-`cwd` guessing |
+| `avatarColor` / `avatarShape` | the sidebar avatar |
+| `updatedAt` / `lastActivityAt` | a heartbeat — advances each time the bot emits anything, including interim "on it…" notes mid-turn. Moving recently ≈ active; quiet ≈ **done *or* deferred**, and the file can't tell you which (see below) |
+| `hasUnread` / `unreadCount` | focus-driven: increments on a bot message while its window is unfocused, clears to 0 on view. Not a reliable "you haven't seen this" flag |
+| `lastEntry.sessionPreview.kind` | small state machine: `"widget_options"` while a decision card is pending → `"widget_answered"` the moment it is tapped → back to `"text"`/absent on the next reply. The `"widget_options"` value as the *current* roster state is the usable "needs you" signal |
+| `awaitingUserResponse` | **stayed `null` through every test**, including both approval prompts — see below |
+| `isGroup` / `memberIds` | channels vs solo bots |
+
+So a watcher on that one folder could show **active / quiet / has an unanswered
+card** per bot. It could **not** reliably show "done", and it could **not** show
+"blocked on a permission prompt or CAPTCHA".
+
+**"Done" is not knowable.** A long turn watched live posted two interim notes
+("On it…", "This one's a longer pull, I'll come back with a cited table…"), each
+a complete transcript entry — then went **completely silent for 3 min 49 sec**,
+no write of any kind, before the cited table arrived under a *new* `requestId`.
+The cloud agent had ended the first request and resumed later as a fresh one.
+For those ~4 minutes the file was byte-identical to a finished turn. A GC row for
+a Grok Bot would have read "quiet / done" the whole time it was working.
+
+The format is an internal cache with no stability promise; the roster schema is
+already at version 3, and entries carry no `isStreaming` — the cache stores
+finalised messages, not token streams.
+
+**Why `awaitingUserResponse` stays null.** The demo decision card carried
+`dismissOnMoveOn: true`, and the agent's cloud turn had already *finished* when
+it posted the card — the bot is idle, the card just sits in the UI, and tapping
+it starts a fresh turn. `awaitingUserResponse` marks an agent that is genuinely
+paused mid-turn and cannot proceed (a login wall or CAPTCHA on the cloud desktop
+— xAI's docs call this "Computer View State"). Asked directly, the bot said it
+does not flip that bit itself, the app does, and *"widgets look like they land in
+`lastEntry` and may never set `awaitingUserResponse`"* — the model describing its
+own app, so informed but not authoritative. That case was never triggered here,
+so what a true hard block writes to the roster is **unconfirmed** — it may set
+this field, or it may surface only through an OS notification.
+
+The usable "card is waiting" signal is therefore `lastEntry.sessionPreview.kind
+== "widget_options"` being the *current* value: it appeared when the bot asked
+and flipped back to `"text"` the moment the card was answered.
+
+This is the local, unauthenticated twin of Grok Bot's own
+`aiserver.v1.WatchGrokBotTranscripts` gRPC method — same data, from a file
+instead of a cloud stream that would need its auth and protobuf reverse-
+engineered. Neither is worth building against until there is real demand.
+
+| | Has hooks? | Reports? | Answer |
+|---|---|---|---|
+| Cursor's Composer | yes | not while waiting for you | none available; stated in the UI |
+| **Grok Bot** | **engine present, never wired to a local file** | **busy/done via a cache file; not "blocked"** | **watch `sand-client-persistence/` if demand appears; nothing shipped** |
+
 ## Verified (measured, not assumed)
 
 | Thing | How it was proven | When |

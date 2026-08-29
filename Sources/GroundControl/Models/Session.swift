@@ -102,18 +102,52 @@ struct Session: Identifiable, Equatable {
     var isGroup: Bool { !children.isEmpty }
 }
 
-/// One subagent child row.
+/// One child row under a group parent.
+///
+/// Stores its fields directly rather than wrapping an event: a subagent has an
+/// `AgentEvent` behind it, but a Grok Bot child has only a line in an
+/// undocumented JSON cache (docs/GROK-BOT-GROUPING.md). Both build the same row.
 struct AgentRow: Identifiable, Equatable {
     let id: String
-    let latest: AgentEvent
+    let displayName: String
+    let message: String
+    let state: SessionState
+    let needsAction: Bool
+    /// Drives the status dot's mark — `"grokbot"` splits it, the rest stay
+    /// round. See `StatusDotView.Mark`.
+    let source: String
+    /// Newest-first ordering within a group.
+    let lastActivity: Date
 
-    var message: String { latest.message }
-    var state: SessionState { latest.state }
-    var needsAction: Bool { latest.needsAction }
+    init(
+        id: String,
+        displayName: String,
+        message: String,
+        state: SessionState,
+        needsAction: Bool,
+        source: String,
+        lastActivity: Date
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.message = message
+        self.state = state
+        self.needsAction = needsAction
+        self.source = source
+        self.lastActivity = lastActivity
+    }
 
-    /// `agent_type` is empty for Claude Code's internal agents, so it cannot
-    /// yet be used as a label or a filter — see docs/SPEC.md §10.
-    var displayName: String {
-        latest.agentType.isEmpty ? "agent \(id.prefix(6))" : latest.agentType
+    /// From a subagent's event. `agent_type` is empty for Claude Code's
+    /// internal agents, so it cannot yet be used as a label — see docs/SPEC.md §10.
+    init(id: String, latest: AgentEvent) {
+        self.init(
+            id: id,
+            displayName: latest.agentType.isEmpty ? "agent \(id.prefix(6))" : latest.agentType,
+            message: latest.message,
+            state: latest.state,
+            needsAction: latest.needsAction,
+            source: "claude",
+            lastActivity: latest.timestamp
+        )
     }
 }
