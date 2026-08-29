@@ -12,9 +12,12 @@
   <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
 </p>
 
-**Say you've got three Claude Code sessions running.** This is how Ground Control
-shows them — each one's name, its current line, and a dot that goes **red** the
-moment it's blocked and waiting on you.
+**Say you've got three Claude Code sessions running.** Here's how Ground Control
+shows them:
+
+- name and current line, per session
+- a dot that goes **red** the moment one is blocked and waiting on you
+- click a row → its terminal tab jumps to the front
 
 <div align="center">
 
@@ -89,8 +92,8 @@ More video — the analyser, resizing, the whole theme flow — is on the
 - **Create a Theme** writes the prompt; you don't have to draw at all.
 - More on the way.
 
-Running a dozen agents should feel like mission control, not inbox triage —
-and it's allowed to be fun.
+> **Running a dozen agents should feel like mission control, not inbox triage —
+> and it's allowed to be fun.**
 
 # Install (non-developers)
 
