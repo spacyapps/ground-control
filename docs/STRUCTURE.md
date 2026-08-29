@@ -29,10 +29,14 @@ GroundControl/
 │   │   └── ThemeManifest.swift   # decoded theme.json — all-optional, pure data
 │   │
 │   ├── Monitoring/               # the file<->row engine
-│   │   ├── SessionStore.swift    # source of truth: [Session], publishes changes
+│   │   ├── SessionAggregator.swift # merges every row producer into one sorted list
+│   │   ├── SessionStore.swift    # hook producer: file<->row from .jsonl, publishes changes
 │   │   ├── FolderWatcher.swift   # DispatchSource on a directory, debounced
 │   │   ├── SessionFileParser.swift # last decodable line of a .jsonl file
 │   │   ├── AgentGrouper.swift    # agents/*.jsonl -> children, keyed by session
+│   │   ├── GrokBotWatcher.swift  # Grok Bot producer: its local cache -> one group (docs/GROK-BOT-GROUPING.md)
+│   │   ├── GrokBotRoster.swift   # parses the undocumented roster blob, tolerant of drift
+│   │   ├── Base32.swift          # RFC 4648 decode, for the cache's filenames
 │   │   └── PurgeService.swift    # deletes files untouched > window (timer)
 │   │
 │   ├── Theming/                  # skin engine (may import AppKit; no UI)

@@ -6,10 +6,10 @@ import AppKit
 /// Composition root: owns the subsystems and is the only place that wires
 /// concrete instances together (docs/STRUCTURE.md).
 ///
-/// The dependency flow is one-way — the store knows nothing about the panel,
+/// The dependency flow is one-way — the aggregator knows nothing about the panel,
 /// the panel knows nothing about files.
 final class AppCoordinator {
-    private let store = SessionStore()
+    private let aggregator = SessionAggregator()
     private let themeStore = ThemeStore()
     private let purge = PurgeService()
     private let panel = PanelController()
@@ -52,17 +52,17 @@ final class AppCoordinator {
             self?.settings?.themeDidChange()
         }
 
-        store.onChange = { [weak self] sessions in
+        aggregator.onChange = { [weak self] sessions in
             self?.panel.apply(sessions: sessions)
             self?.statusItem.update(sessions: sessions)
         }
 
         themeStore.start()
         purge.start()
-        store.start()
+        aggregator.start()
 
-        panel.apply(sessions: store.sessions)
-        statusItem.update(sessions: store.sessions)
+        panel.apply(sessions: aggregator.sessions)
+        statusItem.update(sessions: aggregator.sessions)
         panel.show()
     }
 
@@ -84,7 +84,7 @@ final class AppCoordinator {
             fallbackPath: session.cwd
         )
         if arrived {
-            store.acknowledge(sessionID: session.id)
+            aggregator.acknowledge(sessionID: session.id)
         } else {
             Log.integration.notice("Could not reach the session; leaving its alarm up")
         }
@@ -184,12 +184,12 @@ final class AppCoordinator {
     /// so this is only permanent for one that has genuinely finished.
     @objc private func contextRemove() {
         guard let session = contextSession else { return }
-        store.remove(sessionID: session.id)
+        aggregator.remove(sessionID: session.id)
     }
 
     @objc private func contextDismiss() {
         guard let session = contextSession else { return }
-        store.acknowledge(sessionID: session.id)
+        aggregator.acknowledge(sessionID: session.id)
     }
 
     @objc private func contextReveal() {
@@ -219,7 +219,7 @@ final class AppCoordinator {
 
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         preferences.rename(sessionID: session.id, to: field.stringValue)
-        panel.apply(sessions: store.sessions)
+        panel.apply(sessions: aggregator.sessions)
     }
 
     /// Re-applies the current theme, which is what rebuilds the title strip.
@@ -229,7 +229,7 @@ final class AppCoordinator {
     /// is nothing else to say.
     private func refreshPanelChrome() {
         panel.apply(theme: themeStore.theme)
-        panel.apply(sessions: store.sessions)
+        panel.apply(sessions: aggregator.sessions)
     }
 
     /// Kept alive between openings, so the window remembers where it was put.
@@ -245,14 +245,14 @@ final class AppCoordinator {
             settings = SettingsWindowController(actions: SettingsView.Actions(
                 selectTheme: { [weak self] name in self?.themeStore.select(name: name) },
                 applyWindowBehaviour: { [weak self] in self?.panel.applyWindowBehaviour() },
-                reloadSessions: { [weak self] in self?.store.reload() },
+                reloadSessions: { [weak self] in self?.aggregator.reload() },
                 refreshPanelChrome: { [weak self] in self?.refreshPanelChrome() },
                 reloadTheme: { [weak self] in self?.themeStore.reload() },
                 openLegal: { [weak self] in self?.showLegal() },
                 openThemesFolder: { [weak self] in self?.openThemesFolder() },
                 resetPanelPosition: { [weak self] in self?.panel.resetPosition() },
                 createTheme: { [weak self] in self?.showThemeBuilder() },
-                currentSessions: { [weak self] in self?.store.sessions ?? [] }
+                currentSessions: { [weak self] in self?.aggregator.sessions ?? [] }
             ))
         }
         settings?.present()
@@ -291,7 +291,7 @@ final class AppCoordinator {
             toggleHook: { target, on in
                 HookInstaller.run(on ? .install : .uninstall, target: target, silent: true)
             },
-            currentSessions: { [weak self] in self?.store.sessions ?? [] },
+            currentSessions: { [weak self] in self?.aggregator.sessions ?? [] },
             quit: { NSApp.terminate(nil) }
         ))
     }

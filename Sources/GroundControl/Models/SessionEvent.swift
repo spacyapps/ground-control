@@ -63,6 +63,41 @@ struct SessionEvent: Decodable, Equatable {
         needsAction && notificationType != "idle_prompt"
     }
 
+    /// Synthesised, not decoded — for a producer that has no `.jsonl` line
+    /// behind its rows (Grok Bot, docs/GROK-BOT-GROUPING.md). The file-backed
+    /// path still goes through `init(from:)`.
+    init(
+        sessionID: String,
+        source: String,
+        name: String? = nil,
+        cwd: String? = nil,
+        tty: String? = nil,
+        hostApp: String? = nil,
+        hostID: String? = nil,
+        event: String? = nil,
+        state: SessionState,
+        message: String,
+        needsAction: Bool = false,
+        notificationType: String? = nil,
+        transcriptPath: String? = nil,
+        timestamp: Date
+    ) {
+        self.sessionID = sessionID
+        self.source = source
+        self.name = name
+        self.cwd = cwd
+        self.tty = tty
+        self.hostApp = hostApp
+        self.hostID = hostID
+        self.event = event
+        self.state = state
+        self.message = message
+        self.needsAction = needsAction
+        self.notificationType = notificationType
+        self.transcriptPath = transcriptPath
+        self.timestamp = timestamp
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         sessionID = try container.decode(String.self, forKey: .sessionID)

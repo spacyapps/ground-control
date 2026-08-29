@@ -133,6 +133,7 @@ final class SessionRowView: NSView {
         // a red that no longer means "deal with me".
         let seen = session.isDismissedAlarm
         dot.color = seen ? theme.colors.idle : theme.colors.color(for: session.state)
+        dot.altColor = theme.colors.color(for: .done)
         dot.isProminent = session.needsAction
         dot.badge = theme.backgrounds.needsActionDot
         dot.mark = .forSource(session.source)
@@ -168,6 +169,15 @@ final class SessionRowView: NSView {
     private func summary(for session: Session) -> String {
         guard session.isGroup else { return session.message }
         let count = session.children.count
+
+        // Grok Bot's parent is not one conversation: a count, and how many bots
+        // wait on you, in place of a last line (docs/GROK-BOT-GROUPING.md).
+        if session.source == "grokbot" {
+            let base = count == 1 ? "1 bot" : "\(count) bots"
+            let waiting = session.children.filter(\.needsAction).count
+            return waiting > 0 ? "\(base)  ·  \(waiting) waiting" : base
+        }
+
         let suffix = count == 1 ? "1 subagent" : "\(count) subagents"
         return session.message.isEmpty ? suffix : "\(session.message)  ·  \(suffix)"
     }
