@@ -138,7 +138,7 @@ because files written before this live on for up to 24h.
 **Naming.** `name` prefers `session_title` (the name you gave the session in
 Claude) and falls back to `basename(cwd)`. Measured across five live sessions,
 two differed — and the title was the better label both times (`spacyapps` over
-`fluffy-carnival`, `secretstuff` over `iOS8_miVault`). `session_title` ships
+`fluffy-carnival`, `notes` over `ios-vault`). `session_title` ships
 **only** on `UserPromptSubmit`, so `cc-notify` latches it from the previous
 line of the file.
 

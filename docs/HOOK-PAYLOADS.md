@@ -243,7 +243,7 @@ SAME  name='mediaSeedTree'   basename(cwd)='mediaSeedTree'
 SAME  name='ironman'         basename(cwd)='ironman'
 SAME  name='avaterm'         basename(cwd)='avaterm'
 DIFF  name='spacyapps'       basename(cwd)='fluffy-carnival'
-DIFF  name='secretstuff'     basename(cwd)='iOS8_miVault'
+DIFF  name='notes'           basename(cwd)='ios-vault'
 ```
 
 Prefer `session_title`, fall back to `basename(cwd)`.
