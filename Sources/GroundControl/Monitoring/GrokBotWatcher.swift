@@ -80,7 +80,9 @@ final class GrokBotWatcher {
             .filter { Base32.decode($0.deletingPathExtension().lastPathComponent)?
                 .hasSuffix("roster.last-roster") == true }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
-            .compactMap { url in (try? Data(contentsOf: url)).map(GrokBotRoster.parse) }
+            .compactMap { url in
+                BoundedRead.data(at: url, limit: BoundedRead.manifestLimit).map(GrokBotRoster.parse)
+            }
     }
 
     // MARK: - Mapping

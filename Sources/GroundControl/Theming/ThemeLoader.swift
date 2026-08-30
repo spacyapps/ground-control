@@ -34,7 +34,8 @@ enum ThemeLoader {
     /// point of such a file is that resolving it produces the built-in theme —
     /// by the time it is a `Theme` there is nothing left to tell it apart.
     static func isReference(_ folder: URL) -> Bool {
-        guard let data = try? Data(contentsOf: folder.appendingPathComponent("theme.json")),
+        guard let data = BoundedRead.data(at: folder.appendingPathComponent("theme.json"),
+                                          limit: BoundedRead.manifestLimit),
               let manifest = try? JSONDecoder().decode(ThemeManifest.self, from: forgiving(data))
         else { return false }
         return manifest.reference == true
@@ -48,7 +49,7 @@ enum ThemeLoader {
 
     static func loadTheme(from folder: URL) -> Theme {
         let manifestURL = folder.appendingPathComponent("theme.json")
-        guard let data = try? Data(contentsOf: manifestURL) else {
+        guard let data = BoundedRead.data(at: manifestURL, limit: BoundedRead.manifestLimit) else {
             Log.theming.notice("No theme.json in \(folder.lastPathComponent, privacy: .public); using defaults")
             return failed(folder, because: "There is no theme.json in this folder.")
         }

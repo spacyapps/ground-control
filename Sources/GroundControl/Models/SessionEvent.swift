@@ -98,9 +98,25 @@ struct SessionEvent: Decodable, Equatable {
         self.timestamp = timestamp
     }
 
+    /// The id is an opaque token that becomes a filename (`<id>.jsonl`) and a
+    /// prefix match when a row is removed. A `.jsonl` file is written by
+    /// another process into a world-touchable temp folder, so an id carrying a
+    /// slash or a `..` is a path-traversal attempt, not a session — the line is
+    /// rejected and the file is ignored.
+    static func isPlainID(_ id: String) -> Bool {
+        id.range(of: #"^[A-Za-z0-9_-]{1,128}$"#, options: .regularExpression) != nil
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         sessionID = try container.decode(String.self, forKey: .sessionID)
+        guard Self.isPlainID(sessionID) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .sessionID,
+                in: container,
+                debugDescription: "session id is used as a filename; must be [A-Za-z0-9_-], 1–128 chars"
+            )
+        }
         source = try container.decodeIfPresent(String.self, forKey: .source) ?? "claude"
         name = try container.decodeIfPresent(String.self, forKey: .name)
         cwd = try container.decodeIfPresent(String.self, forKey: .cwd)

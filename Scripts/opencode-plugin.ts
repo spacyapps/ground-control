@@ -55,10 +55,12 @@ export const GroundControl = async ({ $, directory, worktree }: any) => {
     // Fire and forget, and never let a monitor break the agent it watches: a
     // hook that throws would surface as an error in somebody's coding session.
     try {
-      // Piped rather than written to stdin: the shell's `stdin` is a readonly
-      // stream with no way to hand it a string, and interpolation escapes the
-      // JSON into a single argument safely.
-      await $`echo ${JSON.stringify(payload)} | ${EMITTER}`.quiet().nothrow()
+      // Straight to the emitter's stdin — no shell in the path, so nothing in
+      // the payload can be read as a command however it is shaped.
+      const proc = Bun.spawn([EMITTER], { stdin: "pipe", stdout: "ignore", stderr: "ignore" })
+      proc.stdin.write(JSON.stringify(payload))
+      proc.stdin.end()
+      await proc.exited
     } catch {
       /* the panel simply misses a row */
     }

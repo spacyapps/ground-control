@@ -52,9 +52,18 @@ enum Paths {
     }
 
     /// Creates the folders the app expects to read. Safe to call repeatedly.
+    ///
+    /// Owner-only: when `TMPDIR` is unset the sessions folder falls back under
+    /// `/tmp`, whose parent is world-writable, and its contents — session
+    /// names, working directories, assistant text — are nobody else's business.
+    /// `cc-notify` keeps the same 0700 on its side.
     static func ensureFoldersExist() {
         for url in [sessionsRoot, agentsRoot, userThemes] {
-            try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            try? FileManager.default.createDirectory(
+                at: url,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700]
+            )
         }
     }
 }

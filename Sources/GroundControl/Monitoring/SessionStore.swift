@@ -63,6 +63,9 @@ final class SessionStore {
     ///
     /// A session that is still running simply reappears on its next event.
     func remove(sessionID: String) {
+        // The id should already be plain by the time a row exists — this is the
+        // second lock on the door, since the value ends in `removeItem`.
+        guard SessionEvent.isPlainID(sessionID) else { return }
         try? FileManager.default.removeItem(at: root.appendingPathComponent("\(sessionID).jsonl"))
 
         let children = (try? FileManager.default.contentsOfDirectory(

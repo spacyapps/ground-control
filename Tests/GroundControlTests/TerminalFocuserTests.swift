@@ -142,6 +142,27 @@ final class TerminalFocuserTests: XCTestCase {
         )
         XCTAssertEqual(destination, .finder(path: "/repo"))
     }
+
+    /// The tty is pasted into an AppleScript string. A value carrying a quote,
+    /// a space or a `..` was written to break out of it — it is not a tty, so
+    /// it does not claim a tab, and the click falls through to the host.
+    func testAttackerControlledTtyDoesNotReachAScript() {
+        let hostile = "/dev/ttys008\" \n do shell script \"touch /tmp/pwned\" \n if \"x\" is \""
+        let destination = TerminalFocuser.destination(
+            tty: hostile,
+            hostApp: nil,
+            hostID: iTerm,
+            fallbackPath: "/repo",
+            probe: probe(running: [iTerm])
+        )
+        XCTAssertEqual(destination, .application(bundleID: iTerm), "no tab for a non-tty")
+
+        XCTAssertTrue(TerminalFocuser.isDeviceTTY("/dev/ttys008"))
+        XCTAssertTrue(TerminalFocuser.isDeviceTTY("/dev/ttyp3"))
+        for bad in [hostile, "../../x", "/dev/ttys008; rm -rf ~", "/dev/pts/0", "ttys008", ""] {
+            XCTAssertFalse(TerminalFocuser.isDeviceTTY(bad), "\(bad) is not a device path")
+        }
+    }
 }
 
 /// The bug the first version shipped: a session in VS Code has a real tty, and

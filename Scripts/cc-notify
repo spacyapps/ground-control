@@ -36,6 +36,7 @@ import datetime
 import fcntl
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -139,16 +140,54 @@ def sessions_dir():
     return os.path.join(base, "groundcontrol")
 
 
+# A session or agent id is an opaque token — a UUID from Claude Code,
+# UUID-shaped from the others. It becomes a filename here (`<id>.jsonl`,
+# `<id>__<id>.jsonl`), so a slash, a dot or an absurd length means it did
+# not come from a CLI, and it is refused rather than cleaned.
+_SAFE_ID = re.compile(r"\A[A-Za-z0-9_-]{1,128}\Z")
+
+
+def safe_id(value):
+    """The id if it is a plain identifier, else None."""
+    return value if isinstance(value, str) and _SAFE_ID.match(value) else None
+
+
+def secure_dir(path):
+    """Create the sessions dir and keep it owner-only.
+
+    Under the `/tmp` fallback (TMPDIR unset) the path is predictable and its
+    parent is world-writable, so a 0755 dir would leak session names, cwds and
+    assistant text to other local accounts. Best-effort: a dir owned by someone
+    else cannot be chmod'd, and that is left for the app to notice.
+    """
+    try:
+        os.makedirs(path, exist_ok=True)
+        os.chmod(path, 0o700)
+    except OSError:
+        pass
+
+
 class ProcessTree:
-    """The ancestry, read one process at a time and remembered.
+    """The ancestry of the CLI that fired this hook, read one process at a time.
+
+    Why this exists: a click on a row should land on the terminal that owns the
+    session. The hook itself runs detached with no controlling tty, so the tty
+    and the host application have to be found by walking up the parent chain
+    from this process to the `claude`/`grok` that spawned it.
+
+    What it reads: `ps -o ppid=,tty=,comm= -p <pid>` — for a single pid at a
+    time, always one of this process's own ancestors — returns exactly three
+    fields: the parent pid, the controlling tty, and the command name. Nothing
+    else. It does **not** read command-line arguments, environment variables,
+    open files, or memory, and it never enumerates other users' processes or
+    processes outside this hook's own lineage. The walk is bounded to 16 hops
+    (`walk_up`) so a cycle cannot hang the CLI.
 
     Both walks below climb the same chain, so sharing a cache means each `ps`
-    runs once rather than once per walk.
-
-    Reading every process instead — a single `ps -axo` — was tried and measured
-    *slower*: about 900 rows to fetch and parse against the handful of `ps -p`
-    calls a walk actually makes. Hooks run on every tool call, so this is worth
-    knowing rather than assuming.
+    runs once rather than once per walk. Reading every process instead — a
+    single `ps -axo` — was tried and measured *slower*: about 900 rows to fetch
+    and parse against the handful of `ps -p` calls a walk actually makes. Hooks
+    run on every tool call, so this is worth knowing rather than assuming.
     """
 
     def __init__(self):
@@ -453,8 +492,8 @@ def handle_subagent(payload, root, now, finished):
 
     Grok fires SubagentStart as well as SubagentStop, so its children can show
     up while they are still running; Claude Code only announces the stop."""
-    agent_id = get(payload, "agent_id", "agentId")
-    session_id = get(payload, "session_id", "sessionId")
+    agent_id = safe_id(get(payload, "agent_id", "agentId"))
+    session_id = safe_id(get(payload, "session_id", "sessionId"))
     if not agent_id or not session_id:
         return
     message = get(payload, "last_assistant_message", "lastAssistantMessage")
@@ -520,11 +559,12 @@ def main():
     if not isinstance(payload, dict):
         return
 
-    session_id = get(payload, "session_id", "sessionId")
+    session_id = safe_id(get(payload, "session_id", "sessionId"))
     if not session_id:
         return
 
     root = sessions_dir()
+    secure_dir(root)
     now = timestamp_of(payload)
     event = canonical_event(payload)
 

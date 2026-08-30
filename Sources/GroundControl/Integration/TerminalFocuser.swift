@@ -70,7 +70,7 @@ enum TerminalFocuser {
         // and confidently. When the host is unknown, which is any session
         // written before host_app existed, searching every running terminal is
         // still the best available guess.
-        if let tty, !tty.isEmpty {
+        if let tty, isDeviceTTY(tty) {
             for terminal in supported
             where probe.isBundleRunning(terminal.bundleID)
                 && (host == nil || host == terminal.bundleID) {
@@ -86,6 +86,16 @@ enum TerminalFocuser {
             return .finder(path: fallbackPath)
         }
         return .nowhere
+    }
+
+    /// A tty is a device path — `/dev/ttys008` — and it is about to be pasted
+    /// into an AppleScript source string. Anything with a quote, a space, a
+    /// newline or a `..` in it did not come from a terminal: it was written
+    /// into a `.jsonl` file to break out of that string and run its own script.
+    /// Such a value is treated as "no tty" — the click lands on the host app
+    /// instead, which is a worse landing, not a compromised one.
+    static func isDeviceTTY(_ tty: String) -> Bool {
+        tty.range(of: #"^/dev/[A-Za-z0-9]+$"#, options: .regularExpression) != nil
     }
 
     /// The app that owns the session, as a bundle id.

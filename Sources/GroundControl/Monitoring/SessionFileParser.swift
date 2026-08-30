@@ -72,7 +72,7 @@ enum SessionFileParser {
             return box.value as? T
         }
 
-        guard let contents = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        guard let contents = BoundedRead.string(at: url, limit: BoundedRead.sessionFileLimit) else { return nil }
         let decoder = JSONDecoder()
         var decoded: T?
         for line in contents.split(separator: "\n").reversed() {

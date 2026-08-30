@@ -297,4 +297,33 @@ final class EmitterDialectTests: XCTestCase {
         """)
         XCTAssertTrue(line.isEmpty, "an idle_prompt should write no line at all")
     }
+
+    // MARK: - Hardening
+
+    /// The id becomes a filename. One that climbs out of the folder writes
+    /// nothing at all rather than appending a line above the sessions dir.
+    func testATraversalSessionIDWritesNothing() throws {
+        _ = try emit("""
+        {"session_id":"../escaped","hook_event_name":"Stop","transcript_path":null}
+        """)
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: home.appendingPathComponent("escaped.jsonl").path),
+            "the id escaped the sessions folder"
+        )
+        let inside = home.appendingPathComponent("groundcontrol").path
+        let written = (try? FileManager.default.contentsOfDirectory(atPath: inside)) ?? []
+        XCTAssertTrue(written.filter { $0.hasSuffix(".jsonl") }.isEmpty, "and nothing landed inside either")
+    }
+
+    /// The sessions folder is owner-only — under the `/tmp` fallback its
+    /// contents are otherwise readable by every local account.
+    func testTheSessionsFolderIsOwnerOnly() throws {
+        _ = try emit("""
+        {"session_id":"perm1","hook_event_name":"Stop","transcript_path":null}
+        """)
+        let attrs = try FileManager.default.attributesOfItem(
+            atPath: home.appendingPathComponent("groundcontrol").path
+        )
+        XCTAssertEqual((attrs[.posixPermissions] as? NSNumber)?.intValue, 0o700)
+    }
 }

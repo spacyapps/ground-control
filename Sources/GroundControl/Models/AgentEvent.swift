@@ -30,6 +30,14 @@ struct AgentEvent: Decodable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         sessionID = try container.decode(String.self, forKey: .sessionID)
         agentID = try container.decode(String.self, forKey: .agentID)
+        // Both ids reach a filename or a prefix match — same rule as SessionEvent.
+        guard SessionEvent.isPlainID(sessionID), SessionEvent.isPlainID(agentID) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .sessionID,
+                in: container,
+                debugDescription: "session/agent id is used as a filename; must be [A-Za-z0-9_-], 1–128 chars"
+            )
+        }
         agentType = try container.decodeIfPresent(String.self, forKey: .agentType) ?? ""
         state = try container.decodeIfPresent(SessionState.self, forKey: .state) ?? .done
         message = try container.decodeIfPresent(String.self, forKey: .message) ?? ""
