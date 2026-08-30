@@ -31,6 +31,9 @@ Secrets.xcconfig
 .idea/
 *.swp
 
+# Subagent local memory — per-project, deliberately not versioned (memory: local)
+.claude/agent-memory-local/
+
 # Sellable artwork — lives on disk, ships as its own zip, never in git.
 # Removed from history 2026-08-16 before the repo was first published.
 ExtraThemes/
