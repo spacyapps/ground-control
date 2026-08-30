@@ -25,7 +25,7 @@ trigger each event, then read the files.
 |---|---|
 | `session_id` | `0ff3699a-597f-44c2-8a5f-3665332bc659` |
 | `transcript_path` | `~/.claude/projects/<slug>/<session_id>.jsonl` |
-| `cwd` | `/Users/waltermak/github/avaterm` |
+| `cwd` | `/Users/you/github/ground-control` |
 | `permission_mode` | `auto` |
 | `hook_event_name` | `PreToolUse` |
 
@@ -36,7 +36,7 @@ trigger each event, then read the files.
 
 ### `UserPromptSubmit`
 ```json
-{"prompt": "here's my short reply test", "session_title": "avaterm",
+{"prompt": "here's my short reply test", "session_title": "ground-control",
  "prompt_id": "cd938804-..."}
 ```
 `session_title` is the **only** place the session's display name appears, so it
@@ -239,10 +239,10 @@ target. If the walk fails you lose the jump on that row, not the row.
 Measured across five live sessions:
 
 ```
-SAME  name='mediaSeedTree'   basename(cwd)='mediaSeedTree'
-SAME  name='ironman'         basename(cwd)='ironman'
-SAME  name='avaterm'         basename(cwd)='avaterm'
-DIFF  name='spacyapps'       basename(cwd)='fluffy-carnival'
+SAME  name='docs-site'   basename(cwd)='docs-site'
+SAME  name='my-cli'         basename(cwd)='my-cli'
+SAME  name='ground-control'         basename(cwd)='ground-control'
+DIFF  name='spacyapps'       basename(cwd)='my-site'
 DIFF  name='notes'           basename(cwd)='ios-vault'
 ```
 
@@ -255,7 +255,7 @@ Prefer `session_title`, fall back to `basename(cwd)`.
 `~/.claude/sessions/<pid>.json` holds live per-session state:
 
 ```json
-{"pid": 61828, "sessionId": "0ff3699a-...", "cwd": "...", "name": "avaterm",
+{"pid": 61828, "sessionId": "0ff3699a-...", "cwd": "...", "name": "ground-control",
  "status": "busy", "version": "2.1.226", "updatedAt": 1786345055344}
 ```
 
@@ -319,7 +319,7 @@ Grok's docs list `idle_prompt`, `permission_prompt` and `task_complete`. A live
 ```json
 {"hookEventName":"notification","notificationType":"elicitation_dialog",
  "message":"Approve input (test) — enter 1, 2, or 3.",
- "cwd":"/Users/waltermak/Documents/Projects/GroundControlThemes"}
+ "cwd":"/Users/you/github/my-themes"}
 ```
 
 `needs_action=true`, `state=needsInput`, and the row carried the question rather

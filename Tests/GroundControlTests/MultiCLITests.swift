@@ -16,7 +16,7 @@ final class MultiCLITests: XCTestCase {
     }
 
     func testSourceDecodes() throws {
-        let grok = try event(#"{"session_id":"a","source":"grok","name":"lunararray","ts":1}"#)
+        let grok = try event(#"{"session_id":"a","source":"grok","name":"my-app","ts":1}"#)
         XCTAssertEqual(grok.source, "grok")
         XCTAssertEqual(session(grok).source, "grok")
     }
@@ -43,7 +43,7 @@ final class MultiCLITests: XCTestCase {
     /// Grok sends no session title, so the folder name has to carry the row —
     /// and a trailing slash on `workspaceRoot` must not produce an empty name.
     func testNameFallsBackToFolderForToolsWithoutTitles() throws {
-        let grok = try event(#"{"session_id":"a","source":"grok","cwd":"/Users/w/github/lunararray","ts":1}"#)
-        XCTAssertEqual(session(grok).displayName(renames: [:]), "lunararray")
+        let grok = try event(#"{"session_id":"a","source":"grok","cwd":"/Users/you/github/my-app","ts":1}"#)
+        XCTAssertEqual(session(grok).displayName(renames: [:]), "my-app")
     }
 }

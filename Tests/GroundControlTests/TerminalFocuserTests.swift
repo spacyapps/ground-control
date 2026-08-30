@@ -220,7 +220,7 @@ final class HostAwareTabTests: XCTestCase {
             tty: nil,
             hostApp: "/Applications/Cursor.app",
             hostID: cursor,
-            fallbackPath: "/Users/waltermak/github/empty",
+            fallbackPath: "/Users/you/github/scratch",
             probe: probe(running: [cursor, terminal],
                          ids: ["/Applications/Cursor.app": cursor])
         )
@@ -234,10 +234,10 @@ final class HostAwareTabTests: XCTestCase {
             tty: nil,
             hostApp: "/Applications/Cursor.app",
             hostID: "com.todesktop.230313mzl4w4u92",
-            fallbackPath: "/Users/waltermak/github/empty",
+            fallbackPath: "/Users/you/github/scratch",
             probe: probe(running: [terminal])
         )
-        XCTAssertEqual(destination, .finder(path: "/Users/waltermak/github/empty"))
+        XCTAssertEqual(destination, .finder(path: "/Users/you/github/scratch"))
     }
 
     /// Sessions written before host_app existed name no host, so every running

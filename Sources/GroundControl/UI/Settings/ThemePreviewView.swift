@@ -89,7 +89,7 @@ final class ThemePreviewView: NSView {
         // Rows are translucent in most themes, which is exactly how the skin is
         // meant to show through — so they go on top of the artwork, not instead.
         let samples = [
-            (SessionState.working, "avaterm", "Bash: swift build"),
+            (SessionState.working, "ground-control", "Bash: swift build"),
             (SessionState.needsInput, "spacyapps", "Allow npm install?")
         ]
         let rowsTop = content.minY + titleHeight

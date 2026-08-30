@@ -25,7 +25,7 @@ final class SessionFileParserTests: XCTestCase {
 
     private func line(message: String, needsAction: Bool = false, ts: Int = 100) -> String {
         """
-        {"schema":1,"session_id":"abc","name":"avaterm","cwd":"/tmp/avaterm",\
+        {"schema":1,"session_id":"abc","name":"ground-control","cwd":"/tmp/ground-control",\
         "tty":"/dev/ttys008","event":"Stop","state":"done","message":"\(message)",\
         "needs_action":\(needsAction),"ts":\(ts)}
         """

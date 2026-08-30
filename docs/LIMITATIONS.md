@@ -52,7 +52,7 @@ has ever recorded from Grok**:
 ```
 event=notification  notification_type=elicitation_dialog  needs_action=true
 message="Approve input (test) — enter 1, 2, or 3."
-cwd=/Users/waltermak/Documents/Projects/GroundControlThemes
+cwd=/Users/you/github/my-themes
 ```
 
 The row went red and carried **the question itself**, not a generic phrase. That
@@ -391,7 +391,7 @@ Grok is no longer alarm-less: see "Grok asks two different ways" above, where
 spawned subagents both reported `agent_type: "Explore"` and appeared as
 children, while every internal agent on disk reported `""` and was hidden —
 their messages being echoes of the user's own prompts ("commit", "rename it to
-avaterm"), which is exactly what made them misleading on screen.
+ground-control"), which is exactly what made them misleading on screen.
 
 Still a heuristic rather than a guarantee: a real subagent *could* report no
 type. `defaults write GroundControl showsInternalAgents -bool YES`, or the

@@ -123,22 +123,22 @@ because files written before this live on for up to 24h.
 ```json
 {"schema":1,
  "session_id":"0ff3699a-597f-44c2-8a5f-3665332bc659",
- "name":"avaterm",
- "cwd":"/Users/waltermak/github/avaterm",
+ "name":"ground-control",
+ "cwd":"/Users/you/github/ground-control",
  "tty":"/dev/ttys008",
  "event":"Notification",
  "state":"needsInput",
  "message":"Claude is waiting for your input",
  "needs_action":true,
  "notification_type":"idle_prompt",
- "transcript_path":"/Users/waltermak/.claude/projects/…/<session_id>.jsonl",
+ "transcript_path":"/Users/you/.claude/projects/…/<session_id>.jsonl",
  "ts":1786345349}
 ```
 
 **Naming.** `name` prefers `session_title` (the name you gave the session in
 Claude) and falls back to `basename(cwd)`. Measured across five live sessions,
 two differed — and the title was the better label both times (`spacyapps` over
-`fluffy-carnival`, `notes` over `ios-vault`). `session_title` ships
+`my-site`, `notes` over `ios-vault`). `session_title` ships
 **only** on `UserPromptSubmit`, so `cc-notify` latches it from the previous
 line of the file.
 

@@ -615,7 +615,7 @@ def main():
 
         # session_title is the name you gave the session in Claude and is the
         # better label when it differs from the folder ("spacyapps" vs
-        # "fluffy-carnival"). It only ships on UserPromptSubmit, so latch it
+        # "my-site"). It only ships on UserPromptSubmit, so latch it
         # from the previous line.
         title = get(payload, "session_title", "sessionTitle")
         folder = os.path.basename(cwd.rstrip("/"))
@@ -633,7 +633,7 @@ def main():
         # question it started from rather than following the conversation.
         # Cursor only. Claude and Grok give one session per terminal, where
         # the folder is the useful label and a first prompt would be noise —
-        # replacing "avaterm" with "hello" was caught by a test rather than
+        # replacing "ground-control" with "hello" was caught by a test rather than
         # by taste.
         if source == "cursor":
             # "workspace: empty" rather than "empty" while nothing better is

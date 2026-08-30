@@ -72,7 +72,7 @@ final class EmitterDialectTests: XCTestCase {
     {"conversation_id":"0639bbe2","generation_id":"36431e0d","model":"composer-2.5",\
     "composer_mode":"agent","prompt":"Hello, what can you here ?","attachments":[],\
     "session_id":"0639bbe2","hook_event_name":"beforeSubmitPrompt","cursor_version":"3.15.6",\
-    "workspace_roots":["/Users/waltermak/github/empty"],"transcript_path":null}
+    "workspace_roots":["/Users/you/github/scratch"],"transcript_path":null}
     """
 
     /// Cursor's own agent is a different CLI sharing Claude's field casing, so
@@ -94,7 +94,7 @@ final class EmitterDialectTests: XCTestCase {
     /// `workspace_roots`. Taking `cwd` at face value would fall through to the
     /// hook's own working directory and put `.cursor` on every row.
     func testCursorWorkspaceComesFromWorkspaceRoots() throws {
-        XCTAssertEqual(try emit(cursorPrompt)["cwd"] as? String, "/Users/waltermak/github/empty")
+        XCTAssertEqual(try emit(cursorPrompt)["cwd"] as? String, "/Users/you/github/scratch")
     }
 
     /// Cursor keeps several chats against one workspace, so naming rows after
@@ -112,9 +112,9 @@ final class EmitterDialectTests: XCTestCase {
         let line = try emit("""
         {"session_id":"s9","hook_event_name":"preToolUse","cursor_version":"3.15.6",\
         "tool_name":"Write","tool_input":{"file_path":"/x"},"cwd":"",\
-        "workspace_roots":["/Users/waltermak/github/empty"]}
+        "workspace_roots":["/Users/you/github/scratch"]}
         """)
-        XCTAssertEqual(line["name"] as? String, "workspace: empty")
+        XCTAssertEqual(line["name"] as? String, "workspace: scratch")
     }
 
     /// And the placeholder still gives way to the first prompt — it is a label
@@ -123,12 +123,12 @@ final class EmitterDialectTests: XCTestCase {
         try emit("""
         {"session_id":"s9","hook_event_name":"preToolUse","cursor_version":"3.15.6",\
         "tool_name":"Write","tool_input":{"file_path":"/x"},"cwd":"",\
-        "workspace_roots":["/Users/waltermak/github/empty"]}
+        "workspace_roots":["/Users/you/github/scratch"]}
         """)
         let named = try emit("""
         {"session_id":"s9","hook_event_name":"beforeSubmitPrompt","cursor_version":"3.15.6",\
         "prompt":"do I pick composer or Grok?",\
-        "workspace_roots":["/Users/waltermak/github/empty"]}
+        "workspace_roots":["/Users/you/github/scratch"]}
         """)
         XCTAssertEqual(named["name"] as? String, "do I pick composer or Grok?")
     }
@@ -140,7 +140,7 @@ final class EmitterDialectTests: XCTestCase {
         let later = try emit("""
         {"session_id":"0639bbe2","hook_event_name":"beforeSubmitPrompt","cursor_version":"3.15.6",\
         "prompt":"and now something completely different",\
-        "workspace_roots":["/Users/waltermak/github/empty"]}
+        "workspace_roots":["/Users/you/github/scratch"]}
         """)
         XCTAssertEqual(later["name"] as? String, "Hello, what can you here ?")
     }
@@ -152,7 +152,7 @@ final class EmitterDialectTests: XCTestCase {
         let line = try emit("""
         {"session_id":"0639bbe2","hook_event_name":"preToolUse","cursor_version":"3.15.6",\
         "tool_name":"Shell","tool_input":{"command":"ls -la","cwd":"","timeout":30000},\
-        "cwd":"","workspace_roots":["/Users/waltermak/github/empty"]}
+        "cwd":"","workspace_roots":["/Users/you/github/scratch"]}
         """)
         XCTAssertEqual(line["state"] as? String, "working")
         XCTAssertEqual(line["message"] as? String, "Shell: ls -la")
@@ -161,7 +161,7 @@ final class EmitterDialectTests: XCTestCase {
     func testCursorStopFinishesTheRow() throws {
         let line = try emit("""
         {"session_id":"0639bbe2","hook_event_name":"stop","cursor_version":"3.15.6",\
-        "status":"completed","workspace_roots":["/Users/waltermak/github/empty"]}
+        "status":"completed","workspace_roots":["/Users/you/github/scratch"]}
         """)
         XCTAssertEqual(line["state"] as? String, "done")
         XCTAssertEqual(line["needs_action"] as? Bool, false)
@@ -175,7 +175,7 @@ final class EmitterDialectTests: XCTestCase {
     /// "Working… (AskUserQuestion)" and told you nothing.
     private let askPayload = """
     {"session_id":"q1","hook_event_name":"PreToolUse","tool_name":"AskUserQuestion",\
-    "cwd":"/Users/waltermak/github/avaterm","tool_input":{"questions":[{\
+    "cwd":"/Users/you/github/ground-control","tool_input":{"questions":[{\
     "question":"Commit the JournalShell.tsx fix?","header":"Commit",\
     "options":[{"label":"Approve"},{"label":"Deny"}]}]}}
     """
@@ -192,7 +192,7 @@ final class EmitterDialectTests: XCTestCase {
         try emit(askPayload)
         let alarm = try emit("""
         {"session_id":"q1","hook_event_name":"Notification",\
-        "message":"Claude needs your permission","cwd":"/Users/waltermak/github/avaterm"}
+        "message":"Claude needs your permission","cwd":"/Users/you/github/ground-control"}
         """)
         XCTAssertEqual(alarm["state"] as? String, "needsInput")
         XCTAssertEqual(alarm["needs_action"] as? Bool, true)
@@ -224,16 +224,16 @@ final class EmitterDialectTests: XCTestCase {
     func testClaudeIsStillClaude() throws {
         let line = try emit("""
         {"session_id":"c1","hook_event_name":"UserPromptSubmit","prompt":"hello",\
-        "cwd":"/Users/waltermak/github/avaterm"}
+        "cwd":"/Users/you/github/ground-control"}
         """)
         XCTAssertEqual(line["source"] as? String, "claude")
         XCTAssertEqual(line["state"] as? String, "working")
-        XCTAssertEqual(line["name"] as? String, "avaterm")
+        XCTAssertEqual(line["name"] as? String, "ground-control")
     }
 
     func testGrokIsStillGrok() throws {
         let line = try emit("""
-        {"sessionId":"g1","hookEventName":"SessionStart","cwd":"/Users/waltermak/github/avaterm"}
+        {"sessionId":"g1","hookEventName":"SessionStart","cwd":"/Users/you/github/ground-control"}
         """)
         XCTAssertEqual(line["source"] as? String, "grok")
         XCTAssertEqual(line["state"] as? String, "idle")
@@ -251,7 +251,7 @@ final class EmitterDialectTests: XCTestCase {
         let line = try emit("""
         {"sessionId":"g2","hookEventName":"notification","notificationType":"elicitation_dialog",\
         "message":"Approve input (test) — enter 1, 2, or 3.",\
-        "cwd":"/Users/waltermak/github/avaterm"}
+        "cwd":"/Users/you/github/ground-control"}
         """)
         XCTAssertEqual(line["state"] as? String, "needsInput")
         XCTAssertEqual(line["needs_action"] as? Bool, true)
@@ -272,11 +272,11 @@ final class EmitterDialectTests: XCTestCase {
     func testAnsweringAQuestionClearsTheAlarm() throws {
         try emit("""
         {"sessionId":"g4","hookEventName":"notification","notificationType":"elicitation_dialog",\
-        "message":"Overlay or background?","cwd":"/Users/waltermak/github/avaterm"}
+        "message":"Overlay or background?","cwd":"/Users/you/github/ground-control"}
         """)
         let cleared = try emit("""
         {"sessionId":"g4","hookEventName":"PostToolUse","toolName":"ask_user_question",\
-        "cwd":"/Users/waltermak/github/avaterm"}
+        "cwd":"/Users/you/github/ground-control"}
         """)
         XCTAssertEqual(cleared["state"] as? String, "working")
         XCTAssertEqual(cleared["needs_action"] as? Bool, false, "the alarm must not outlive the answer")
@@ -293,7 +293,7 @@ final class EmitterDialectTests: XCTestCase {
     func testIdlePromptIsTheOnlyTypeSkipped() throws {
         let line = try emit("""
         {"sessionId":"g3","hookEventName":"notification","notificationType":"idle_prompt",\
-        "message":"Grok is waiting for your input","cwd":"/Users/waltermak/github/avaterm"}
+        "message":"Grok is waiting for your input","cwd":"/Users/you/github/ground-control"}
         """)
         XCTAssertTrue(line.isEmpty, "an idle_prompt should write no line at all")
     }

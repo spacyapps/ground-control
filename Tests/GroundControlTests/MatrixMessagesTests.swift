@@ -49,7 +49,7 @@ final class MatrixMessagesTests: XCTestCase {
     /// Punctuation and paths must not smuggle in undrawable characters.
     func testHarvestedWordsAreAlwaysDrawable() {
         let words = MatrixMessages.harvest(from: [
-            "Read: /Users/w/github/avaterm/Sources/Theme.swift — done, ~90% cached"
+            "Read: /Users/you/github/ground-control/Sources/Theme.swift — done, ~90% cached"
         ])
         for word in words {
             XCTAssertTrue(word.allSatisfy(MatrixFont.supports), "\(word) is not drawable")

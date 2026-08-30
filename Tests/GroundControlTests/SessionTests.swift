@@ -8,7 +8,7 @@ import XCTest
 /// (docs/HOOK-PAYLOADS.md) turns into what the user actually sees.
 final class SessionTests: XCTestCase {
     private func event(name: String? = nil,
-                       cwd: String? = "/Users/w/github/fluffy-carnival",
+                       cwd: String? = "/Users/you/github/my-site",
                        needsAction: Bool = false,
                        ts: Int = 100) throws -> SessionEvent {
         let nameField = name.map { "\"name\":\"\($0)\"," } ?? ""
@@ -40,7 +40,7 @@ final class SessionTests: XCTestCase {
 
     func testFallsBackToFolderWhenTitleMissing() throws {
         let subject = session(try event(name: nil))
-        XCTAssertEqual(subject.displayName(renames: [:]), "fluffy-carnival")
+        XCTAssertEqual(subject.displayName(renames: [:]), "my-site")
     }
 
     func testFallsBackToSessionIDWhenNothingElseIsKnown() throws {
