@@ -196,7 +196,9 @@ final class AvatarView: NSView {
     static func clockSeamAngle(_ date: Date = Date()) -> CGFloat {
         let seconds = date.timeIntervalSince(Calendar.current.startOfDay(for: date))
         let intoHour = seconds.truncatingRemainder(dividingBy: 3600)
-        return CGFloat(intoHour / 3600) * 2 * .pi
+        // A real minute hand: vertical at :00, horizontal (pointing at the 3)
+        // at :15, and sweeping clockwise — so the angle counts *down* from π/2.
+        return .pi / 2 - CGFloat(intoHour / 3600) * 2 * .pi
     }
 
     static func splitFace(left: SessionState,
