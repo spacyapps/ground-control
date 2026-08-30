@@ -21,6 +21,7 @@ shows them:
 
 <div align="center">
 
+<!-- REPLACE: drag ground-control-preview.mp4 here in the PR, then delete this line and the old URL below -->
 https://github.com/user-attachments/assets/4de010d5-3304-45e6-8558-9b3efd12f213
 
 </div>
@@ -59,6 +60,7 @@ editors that can't be scripted.
 
 <div align="center">
 
+<!-- REPLACE: drag gc-jump-clean.mp4 here in the PR, then delete this line and the old URL below -->
 https://github.com/user-attachments/assets/cb817a73-017f-463b-851f-d3904a526861
 
 </div>
