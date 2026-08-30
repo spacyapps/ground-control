@@ -59,6 +59,23 @@ final class AssetResolverTests: XCTestCase {
         XCTAssertNotNil(avatar.asset(for: .done), "one bad path must not poison the rest")
     }
 
+    /// A theme names its own files. A `..` in the name is reaching for
+    /// someone else's, and resolves to nothing even when the target exists.
+    func testAnAssetPathCannotEscapeTheThemeFolder() throws {
+        let outside = folder.deletingLastPathComponent().appendingPathComponent("outside-\(UUID()).png")
+        try Data("x".utf8).write(to: outside)
+        addTeardownBlock { try? FileManager.default.removeItem(at: outside) }
+
+        let avatar = try resolve(#"""
+        {"states":{"idle":{"image":"../\#(outside.lastPathComponent)"}}}
+        """#)
+        XCTAssertNil(avatar.asset(for: .idle), "the file exists, but not inside the theme")
+
+        XCTAssertTrue(AssetResolver.isInside(folder.appendingPathComponent("a.png"), folder))
+        XCTAssertFalse(AssetResolver.isInside(folder.appendingPathComponent("../a.png"), folder))
+        XCTAssertFalse(AssetResolver.isInside(folder.appendingPathComponent("sub/../../a.png"), folder))
+    }
+
     /// macOS has no native webm decoder, so the format is refused rather than
     /// silently producing a blank avatar.
     func testUnsupportedVideoFormatIsRejected() throws {

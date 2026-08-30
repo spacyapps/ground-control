@@ -211,6 +211,14 @@ enum AssetResolver {
         guard !trimmed.isEmpty else { return nil }
 
         let url = folder.appendingPathComponent(trimmed)
+        // A theme is a folder you may have been handed. Its manifest names its
+        // own files — `"image": "../../secret.png"` is reaching for someone
+        // else's, and while the worst it wins is a picture on screen (there is
+        // no network), it does not get even that.
+        guard isInside(url, folder) else {
+            Log.theming.notice("Theme asset \(trimmed, privacy: .public) points outside its folder")
+            return nil
+        }
         if FileManager.default.fileExists(atPath: url.path) { return url }
 
         if let sibling = siblingWithAnotherExtension(of: url) {
@@ -222,6 +230,15 @@ enum AssetResolver {
 
         Log.theming.notice("Theme file not found: \(trimmed, privacy: .public)")
         return nil
+    }
+
+    /// Whether `url` resolves to a location within `folder` — `..` walked out
+    /// and symlinks followed, on both sides, so neither a `../` in the name nor
+    /// a planted symlink escapes.
+    static func isInside(_ url: URL, _ folder: URL) -> Bool {
+        let base = folder.resolvingSymlinksInPath().standardizedFileURL.path
+        let target = url.resolvingSymlinksInPath().standardizedFileURL.path
+        return target == base || target.hasPrefix(base + "/")
     }
 
     /// Accepts `cat.gif` when the manifest asked for `cat.png`.
