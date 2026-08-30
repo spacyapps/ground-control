@@ -29,36 +29,35 @@ final class AvatarSplitTests: XCTestCase {
         )
     }
 
-    func testTheSplitFaceIsNotRecomposedForTheSamePair() {
-        let view = AvatarView(frame: NSRect(x: 0, y: 0, width: 60, height: 60))
-        view.configureSplit(left: .idle, right: .done, theme: DefaultTheme.theme)
-        let first = imageView(of: view)?.image
-
-        view.configureSplit(left: .idle, right: .done, theme: DefaultTheme.theme)
-        XCTAssertTrue(first === imageView(of: view)?.image, "the same pair reuses the composed image")
+    /// The seam turns like a clock hand, so the composite at two times is two
+    /// different pictures — that motion is the whole point of the unknown mood.
+    func testTheSeamMovesWithTheClock() {
+        let theme = DefaultTheme.theme
+        let flat = AvatarView.splitFace(left: .idle, right: .done, theme: theme, angle: 0)
+        let quarter = AvatarView.splitFace(left: .idle, right: .done, theme: theme, angle: .pi / 2)
+        XCTAssertNotEqual(flat.tiffRepresentation, quarter.tiffRepresentation)
     }
 
-    /// The seam is what stops it reading as one odd portrait. Rendered rather
-    /// than assumed: a full-bleed split with no divider looks like a bug.
-    func testTheSplitFaceHasASeamDownTheMiddle() throws {
+    /// A seam is what stops it reading as one odd portrait. Sampled across the
+    /// divider — which at angle 0 runs left-to-right — the centre differs from
+    /// the face above and the face below.
+    func testTheSplitFaceHasASeamAcrossTheDivider() throws {
         let theme = try XCTUnwrap(ThemeLoader.loadTheme(named: "spacyAppsLunarAvatar"))
-        let view = AvatarView(frame: NSRect(x: 0, y: 0, width: 80, height: 80))
-        view.configureSplit(left: .idle, right: .done, theme: theme)
+        let image = AvatarView.splitFace(left: .idle, right: .done, theme: theme, angle: 0)
+        var rect = NSRect(origin: .zero, size: image.size)
+        let rep = NSBitmapImageRep(
+            cgImage: try XCTUnwrap(image.cgImage(forProposedRect: &rect, context: nil, hints: nil))
+        )
 
-        let rep = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
-        view.cacheDisplay(in: view.bounds, to: rep)
-
-        // The centre column should not match either its left or right neighbour
-        // — the seam colour sits between the two faces.
         let midX = rep.pixelsWide / 2
-        let y = rep.pixelsHigh / 2
-        let centre = try XCTUnwrap(rep.colorAt(x: midX, y: y))
-        let left = try XCTUnwrap(rep.colorAt(x: midX - rep.pixelsWide / 6, y: y))
-        let right = try XCTUnwrap(rep.colorAt(x: midX + rep.pixelsWide / 6, y: y))
+        let midY = rep.pixelsHigh / 2
+        let centre = try XCTUnwrap(rep.colorAt(x: midX, y: midY))
+        let above = try XCTUnwrap(rep.colorAt(x: midX, y: midY - rep.pixelsHigh / 3))
+        let below = try XCTUnwrap(rep.colorAt(x: midX, y: midY + rep.pixelsHigh / 3))
 
         XCTAssertFalse(
-            centre.isClose(to: left) && centre.isClose(to: right),
-            "the centre seam differs from the faces on either side"
+            centre.isClose(to: above) && centre.isClose(to: below),
+            "the seam colour sits between the two faces"
         )
     }
 }

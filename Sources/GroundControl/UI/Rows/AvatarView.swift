@@ -58,7 +58,11 @@ final class AvatarView: NSView {
 
     override func layout() {
         super.layout()
-        layer?.cornerRadius = cornerRadius
+        // The split "we don't know" face is almost a circle — corners far
+        // rounder than any theme's, so it reads as its own thing at a glance.
+        layer?.cornerRadius = splitPair == nil
+            ? cornerRadius
+            : min(bounds.width, bounds.height) * 0.42
         playerLayer?.frame = bounds
 
         // Drawn symbols are line art and need room inside the plate or they
@@ -113,7 +117,13 @@ final class AvatarView: NSView {
     /// orphaned players would otherwise keep decoding forever.
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        if window == nil { player?.pause() } else { player?.play() }
+        if window == nil {
+            player?.pause()
+        } else {
+            player?.play()
+            // The seam froze while the panel was hidden — catch it up.
+            if splitPair != nil { renderSplitFace() }
+        }
     }
 
     /// `asset` is the theme's artwork for this state, if it supplied any.
@@ -150,7 +160,7 @@ final class AvatarView: NSView {
         layer?.cornerRadius = cornerRadius
         applyButtonChrome()
 
-        if let splitPair, splitPair == (left, right) { return }
+        let unchanged = splitPair.map { $0 == (left, right) } ?? false
         splitPair = (left, right)
         asset = nil
         drawnState = nil
@@ -160,33 +170,72 @@ final class AvatarView: NSView {
         stopSpin()
         imageView.isHidden = false
         imageView.contentTintColor = nil
-        imageView.image = Self.splitFace(left: left, right: right, theme: theme)
-        needsLayout = true
+        renderSplitFace()
+        // The pair did not change, so nothing about the layout did either —
+        // only the seam angle, which `renderSplitFace` already refreshed.
+        if !unchanged { needsLayout = true }
     }
 
-    private static func splitFace(left: SessionState, right: SessionState, theme: Theme) -> NSImage {
+    private func renderSplitFace() {
+        guard let (left, right) = splitPair else { return }
+        imageView.image = Self.splitFace(
+            left: left, right: right, theme: theme, angle: Self.clockSeamAngle()
+        )
+    }
+
+    /// Re-strikes the seam at the current clock angle. Cheap no-op unless this
+    /// avatar is showing the split. Driven by the row's elapsed tick.
+    func tickSplitSeam() {
+        guard splitPair != nil, window != nil else { return }
+        renderSplitFace()
+    }
+
+    /// Where the seam points: a clock's minute hand, one full turn an hour.
+    /// It moves because "we don't know" is a live guess, not a resting state —
+    /// docs/GROK-BOT-GROUPING.md.
+    static func clockSeamAngle(_ date: Date = Date()) -> CGFloat {
+        let seconds = date.timeIntervalSince(Calendar.current.startOfDay(for: date))
+        let intoHour = seconds.truncatingRemainder(dividingBy: 3600)
+        return CGFloat(intoHour / 3600) * 2 * .pi
+    }
+
+    static func splitFace(left: SessionState,
+                          right: SessionState,
+                          theme: Theme,
+                          angle: CGFloat) -> NSImage {
         let side = max(1, theme.avatar.size)
         return NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
-            for (state, onLeft) in [(left, true), (right, false)] {
+            let centre = NSPoint(x: rect.midX, y: rect.midY)
+            let reach = rect.width * 4
+            let along = NSPoint(x: cos(angle), y: sin(angle))       // the seam's direction
+            let across = NSPoint(x: -sin(angle), y: cos(angle))     // its normal
+
+            for (state, sign) in [(left, CGFloat(1)), (right, CGFloat(-1))] {
                 NSGraphicsContext.current?.saveGraphicsState()
-                NSRect(
-                    x: onLeft ? rect.minX : rect.midX,
-                    y: rect.minY,
-                    width: rect.width / 2,
-                    height: rect.height
-                ).clip()
+                // The half-plane on one side of the seam, as a big quad.
+                let ends = (NSPoint(x: centre.x - along.x * reach, y: centre.y - along.y * reach),
+                            NSPoint(x: centre.x + along.x * reach, y: centre.y + along.y * reach))
+                let half = NSBezierPath()
+                half.move(to: ends.0)
+                half.line(to: ends.1)
+                half.line(to: NSPoint(x: ends.1.x + across.x * reach * sign,
+                                      y: ends.1.y + across.y * reach * sign))
+                half.line(to: NSPoint(x: ends.0.x + across.x * reach * sign,
+                                      y: ends.0.y + across.y * reach * sign))
+                half.close()
+                half.addClip()
                 face(for: state, theme: theme)?.draw(in: rect)
                 NSGraphicsContext.current?.restoreGraphicsState()
             }
 
-            // A seam down the middle, so it reads as two states rather than
-            // one odd portrait. `sessionName` tracks contrast with the panel,
-            // so the line shows on dark artwork and light alike.
+            // The seam itself — a diameter at `angle`. `messageDim` is the
+            // avatar's own border colour, so the line belongs to the plate
+            // rather than sitting on the artwork like the old white one did.
             let seam = NSBezierPath()
             seam.lineWidth = max(2, rect.width * 0.05)
-            seam.move(to: NSPoint(x: rect.midX, y: rect.minY))
-            seam.line(to: NSPoint(x: rect.midX, y: rect.maxY))
-            theme.colors.sessionName.withAlphaComponent(0.8).setStroke()
+            seam.move(to: NSPoint(x: centre.x - along.x * reach, y: centre.y - along.y * reach))
+            seam.line(to: NSPoint(x: centre.x + along.x * reach, y: centre.y + along.y * reach))
+            theme.colors.messageDim.withAlphaComponent(0.75).setStroke()
             seam.stroke()
             return true
         }

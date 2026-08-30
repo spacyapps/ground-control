@@ -19,7 +19,7 @@ final class SessionRowView: NSView {
     private let dot = StatusDotView()
     private let nameLabel = NSTextField(labelWithString: "")
     private let messageLabel = MarqueeLabel()
-    private let disclosure = NSButton()
+    let disclosure = NSButton()
     private let avatar = AvatarView()
     /// For the hint, which lives in its own file and only needs to know where
     /// the avatar is when it is on screen at all.
@@ -33,10 +33,10 @@ final class SessionRowView: NSView {
     /// Not private: the menu mark, in its own file, dims itself when the
     /// pointer is elsewhere in the row.
     var isHovering = false
-    private var isGroup = false
+    var isGroup = false
     private var isExpanded = false
     private var useAlternateBackground = false
-    private var trackingArea: NSTrackingArea?
+    var trackingArea: NSTrackingArea?
 
     /// Where the menu mark sits, filled in during layout so the click test and
     /// the drawing cannot disagree about it.
@@ -169,6 +169,7 @@ final class SessionRowView: NSView {
     /// marquee and drop hover state every few seconds.
     func refreshElapsed(for session: Session) {
         elapsedLabel.stringValue = ElapsedFormatter.short(since: session.lastActivity)
+        avatar.tickSplitSeam()
         needsLayout = true
     }
 
@@ -329,69 +330,6 @@ final class SessionRowView: NSView {
         }
 
         drawMenuMark()
-    }
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        if let trackingArea { removeTrackingArea(trackingArea) }
-        let area = NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
-            owner: self
-        )
-        addTrackingArea(area)
-        trackingArea = area
-    }
-
-    // Pushed imperatively rather than via cursorUpdate: this panel never
-    // becomes key, and AppKit only runs cursor updates for the key window.
-    override func mouseEntered(with event: NSEvent) {
-        isHovering = true
-        NSCursor.pointingHand.push()
-        needsDisplay = true
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        isHovering = false
-        isMenuHovered = false
-        NSCursor.pop()
-        needsDisplay = true
-        onHint?(nil, .zero)
-    }
-
-    override func mouseMoved(with event: NSEvent) {
-        let point = convert(event.locationInWindow, from: nil)
-        let inside = menuTarget.contains(point)
-        if inside != isMenuHovered {
-            isMenuHovered = inside
-            needsDisplay = true
-        }
-        updateHint(at: point)
-    }
-
-    /// One word, because the hint appears beside a 48pt avatar in a panel that
-    /// is often narrow. The row menu names the destination in full; this only
-    /// has to say what kind of thing a click is.
-    func applyJumpHint(canJump: Bool) {
-        jumpHint = canJump ? "Jump" : "Finder"
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        let point = convert(event.locationInWindow, from: nil)
-        // Generously sized: the mark is 14pt but the target is not.
-        if menuTarget.contains(point) {
-            onSecondaryClick?(event)
-            return
-        }
-        if isGroup && disclosure.frame.insetBy(dx: -4, dy: -4).contains(point) {
-            onToggleChildren?()
-            return
-        }
-        onActivate?()
-    }
-
-    override func rightMouseDown(with event: NSEvent) {
-        onSecondaryClick?(event)
     }
 
     @objc private func toggleChildren() {
