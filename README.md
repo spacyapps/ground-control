@@ -21,6 +21,15 @@ shows them:
 
 <div align="center">
 
+<img src="docs/images/gc-default.png" alt="The Ground Control panel: three rows under a green title-bar analyser — a working session with a gear avatar, a Grok Bot group, and a finished one with a sleeping-moon avatar" width="900">
+
+</div>
+
+That's the default look. The whole thing is a theme, though — a drop-in folder of
+images and JSON — so it can look like this instead:
+
+<div align="center">
+
 https://github.com/user-attachments/assets/adfacf3a-ce9b-4c9b-a915-0e2d8dc0865f
 
 </div>
