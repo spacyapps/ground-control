@@ -193,7 +193,7 @@ turn resumes.
 | `~/.grokbot/local-tool-retirements.json` | retired approval ids |
 | `~/.grokbot/local-exec-daemon.log` | daemon lifecycle ("started (pid …)", "desktop ownership lost, shutting down") |
 | `~/.grokbot/local-exec-daemon-connection.json` | sealed blob (encrypted) |
-| `~/Library/Application Support/Grok Bot/sand-secrets.json` | keys incl. `local-exec-file-key`, `cursor-accounts` |
+| a local secrets file under Application Support | Grok Bot's own credentials — noted and left alone; not a signal Ground Control uses |
 | `sand-session-marker.json` | `{ pid, appVersion, startedAtMs, crashSeen }` — app liveness |
 
 **Automations** — Grok Bot has a scheduled-task layer (`automationId:
