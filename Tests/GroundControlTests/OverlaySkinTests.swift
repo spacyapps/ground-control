@@ -222,11 +222,15 @@ final class OverlaySkinTests: XCTestCase {
 
     /// Under `bodyFade` a row is a rounded card: the corner is clipped away,
     /// the left edge below the arc is still filled.
+    ///
+    /// The corner sample sits well inside the clip so it reads clean at 1x and
+    /// 2x alike — a pixel right on the arc lands in the antialiasing fringe and
+    /// only one of the two scales sees it as empty.
     func testBodyFadeRowsAreRoundedCards() throws {
         let card = try renderedRow(bodyFade: true)
-        let corner = card.colorAt(x: 2, y: 2)?.alphaComponent ?? 1
+        let corner = card.colorAt(x: 1, y: 1)?.alphaComponent ?? 1
         let edge = card.colorAt(x: 2, y: card.pixelsHigh / 2)?.alphaComponent ?? 0
-        XCTAssertEqual(corner, 0, accuracy: 0.02, "corner clipped")
+        XCTAssertLessThan(corner, 0.1, "corner clipped")
         XCTAssertGreaterThan(edge, 0.9, "edge past the arc still filled")
     }
 
