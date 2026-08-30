@@ -21,7 +21,7 @@ shows them:
 
 <div align="center">
 
-https://github.com/user-attachments/assets/4de010d5-3304-45e6-8558-9b3efd12f213
+https://github.com/user-attachments/assets/357f529c-eca2-4884-b8e6-a7bdfc86a880
 
 </div>
 
@@ -59,7 +59,7 @@ editors that can't be scripted.
 
 <div align="center">
 
-https://github.com/user-attachments/assets/cb817a73-017f-463b-851f-d3904a526861
+https://github.com/user-attachments/assets/adfacf3a-ce9b-4c9b-a915-0e2d8dc0865f
 
 </div>
 
