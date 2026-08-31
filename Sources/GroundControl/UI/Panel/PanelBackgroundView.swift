@@ -137,15 +137,25 @@ final class PanelBackgroundView: NSView {
     var effectiveInsets: NSEdgeInsets {
         let scale = artworkScale
         let declared = theme.layout.contentInset
-        let room = min(bounds.width, bounds.height)
-        let ceiling = room > 0 ? room * 0.32 : .greatestFiniteMagnitude
-        func clamp(_ value: CGFloat) -> CGFloat { min(value * scale, ceiling) }
-        return NSEdgeInsets(
-            top: clamp(declared.top),
-            left: clamp(declared.left),
-            bottom: clamp(declared.bottom),
-            right: clamp(declared.right)
-        )
+
+        // Each inset pair is fitted against *its own* axis: the sides against
+        // the width, the top and bottom against the height. Clamping both pairs
+        // to `min(width, height)` coupled them — shrinking a wide panel's
+        // height would eat into the side insets, and an asymmetric pair
+        // (Skybird's left 114 / right 35) then slid the content sideways on a
+        // purely vertical drag. When a pair would leave the axis less than a
+        // third for content, both sides scale down together so the block keeps
+        // its place rather than one edge collapsing alone.
+        func fit(_ near: CGFloat, _ far: CGFloat, axis extent: CGFloat) -> (CGFloat, CGFloat) {
+            let (one, two) = (near * scale, far * scale)
+            let budget = extent * 0.64
+            guard extent > 0, one + two > budget, one + two > 0 else { return (one, two) }
+            let factor = budget / (one + two)
+            return (one * factor, two * factor)
+        }
+        let (left, right) = fit(declared.left, declared.right, axis: bounds.width)
+        let (top, bottom) = fit(declared.top, declared.bottom, axis: bounds.height)
+        return NSEdgeInsets(top: top, left: left, bottom: bottom, right: right)
     }
 
     func refreshElapsed() {

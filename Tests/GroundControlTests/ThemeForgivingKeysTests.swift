@@ -58,6 +58,31 @@ final class ThemeForgivingKeysTests: XCTestCase {
         XCTAssertGreaterThan(view.titleBar.frame.width, 60)
     }
 
+    /// A vertical resize must not move the content sideways. The side insets
+    /// are fitted against the width alone, so dragging only the height leaves
+    /// them where they were — Skybird's left 114 / right 35 used to slide left
+    /// as the panel got shorter, because both pairs were clamped to
+    /// `min(width, height)`.
+    func testVerticalResizeLeavesTheSideInsetsAlone() {
+        var theme = DefaultTheme.theme
+        theme.layout.contentInset = NSEdgeInsets(top: 60, left: 114, bottom: 65, right: 35)
+
+        let view = PanelBackgroundView()
+        view.apply(theme: theme)
+
+        view.frame = NSRect(x: 0, y: 0, width: 760, height: 520)
+        view.layoutSubtreeIfNeeded()
+        let tall = view.effectiveInsets
+
+        view.frame = NSRect(x: 0, y: 0, width: 760, height: 300)
+        view.layoutSubtreeIfNeeded()
+        let short = view.effectiveInsets
+
+        XCTAssertEqual(short.left, tall.left, accuracy: 0.5, "the left inset moved on a vertical resize")
+        XCTAssertEqual(short.right, tall.right, accuracy: 0.5)
+        XCTAssertEqual(tall.left, 114, accuracy: 0.5, "and it is the declared value, unclamped")
+    }
+
     /// A sane inset is still passed through untouched.
     func testReasonableContentInsetIsUnchanged() {
         var theme = DefaultTheme.theme
