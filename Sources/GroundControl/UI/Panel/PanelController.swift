@@ -85,7 +85,7 @@ final class PanelController {
         // height from its artwork, the next from the rows, a third leaves it to
         // you. Without this, a theme was drawn at whatever size the *previous*
         // one had settled on, and looked wrong through no fault of its own.
-        fitHeightToContent()
+        fitHeightToContent(afterThemeChange: true)
     }
 
     func apply(sessions: [Session]) {
@@ -99,12 +99,18 @@ final class PanelController {
     /// position stay yours; only the height is derived — and it stops at a
     /// fraction of the screen, after which the list scrolls instead of the
     /// panel eating the display.
-    func fitHeightToContent() {
+    ///
+    /// `afterThemeChange` is the one moment a `free` panel is also fitted: a
+    /// switch should land the new skin near its own content, not at whatever
+    /// height the last skin happened to be dragged to. Every resize after that
+    /// is the person's again.
+    func fitHeightToContent(afterThemeChange: Bool = false) {
         guard let panel, panel.isVisible else { return }
 
-        // Free: the height is the person's, and nothing here may take it back.
-        // Any derivation would fight them a frame after every drag.
-        if theme.layout.resize == .free { return }
+        // Free: the height is the person's, and nothing here may take it back —
+        // save for the deliberate act of changing themes, which starts fresh.
+        // Any other derivation would fight them a frame after every drag.
+        if theme.layout.resize == .free, !afterThemeChange { return }
 
         // A skin with its aspect locked is a designed object, not a container:
         // width is yours to drag, height follows the artwork, and the rows
