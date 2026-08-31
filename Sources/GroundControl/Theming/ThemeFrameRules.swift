@@ -95,6 +95,21 @@ enum ThemeFrameRules {
         If your opening is rounded, give `layout.contentCornerRadius` its radius
         in the same pixels — otherwise a round frame encloses a square screen.
 
+        **A top that is far deeper than the sides** — a tiled roof, an arch,
+        hanging branches — is its own case. Do not pour that whole height into
+        `contentInset.top`: that drops my rows but leaves the frame drawing from
+        the panel's edge, so the decoration floats up top over a bare strip and
+        its keyed gaps show the desktop. Measure `contentInset.top` to where the
+        *structural* frame ends — the lintel, the top rail — and then:
+        - `layout.titleBackdropTop` — how far the opaque panel body reaches up
+          behind the decoration, so its gaps read as panel and not desktop.
+          This is the one you usually want.
+        - `layout.frameOffsetTop` — how far to push the whole frame down, so
+          sky/desktop shows *above* its top edge. Only if that gap is the look.
+
+        Both are nine-slice only and default `0`. `spacyAppsSkybirdTheme` is the
+        worked example.
+
         **If you redraw at a different size, re-measure both.** Caps do not
         scale themselves, and stale ones land inside the ornament.
         """
