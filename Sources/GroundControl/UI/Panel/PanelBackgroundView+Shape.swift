@@ -5,7 +5,7 @@ import AppKit
 
 /// The window silhouette and the body behind the rows, split out because the
 /// silhouette is the expensive 44-frame composite and the body is a cheap
-/// re-clip of it.
+/// rectangle re-filled to the current row height inside it.
 extension PanelBackgroundView {
     // MARK: - Shape
 
@@ -77,7 +77,7 @@ extension PanelBackgroundView {
         window?.invalidateShadow()
     }
 
-    /// Re-cut the body to the rows without touching the silhouette — for when
+    /// Re-fill the body to the rows without touching the silhouette — for when
     /// a group expanded and only the content height moved.
     func refreshInteriorBody() {
         guard maskedSize != .zero else { return }

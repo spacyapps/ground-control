@@ -68,7 +68,7 @@ GroundControl/
 │   │   │   ├── ResizeGripView.swift       # the ↔ — the only resize on a shaped panel
 │   │   │   ├── HintView.swift             # the panel's own tooltip; AppKit's never show
 │   │   │   ├── SkinOverlayView.swift      # window.overlay: the skin drawn in front
-│   │   │   ├── SkinInterior.swift         # what a frame encloses vs what is outside it
+│   │   │   ├── SkinInterior.swift         # stamps a frame's opening into the mask; builds the body rect behind the rows
 │   │   │   ├── VisualizerView.swift       # WinAmp-style analyser, driven by state
 │   │   │   ├── VisualizerView+Marquee.swift # the word it spells while asleep
 │   │   │   ├── MatrixFont.swift           # 5-row letterforms for the analyser

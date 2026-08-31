@@ -503,8 +503,11 @@ What differs is whether they get scaled, and that follows how the art is drawn:
 
 That is the single most common way a skin goes wrong: a 1408px artwork with
 160px caps and `lockAspect: false` puts 160 *points* of corner on each side of a
-400pt panel. `contentInset` is additionally capped at a third of the panel, so an
-over-large value cannot squeeze the rows out of existence entirely.
+400pt panel. As a backstop, each inset pair is fitted to its own axis — left and
+right to the panel's width, top and bottom to its height — and if a pair would
+take more than about two-thirds of that axis, both sides scale down together so
+the content keeps its place. An over-large value can't squeeze the rows out of
+existence, and it can't slide the block sideways when only the height changes.
 
 `layout.contentInset` holds the rows inside the frame; without it they cover
 your border. `Themes/spacyAppsLunarAvatar` is a working example of all of this — a station hull whose antennae extend past the panel edge.
