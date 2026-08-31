@@ -40,7 +40,8 @@ final class ResizeGripTests: XCTestCase {
         let titleBar = root.chrome.titleBar.frame
 
         XCTAssertEqual(grip.width, grip.height, "corner marks are square")
-        XCTAssertEqual(grip.minY, titleBar.minY + TitleBarView.markTop, accuracy: 0.5)
+        let titleRow = root.chrome.titleRowTop + TitleBarView.markTop
+        XCTAssertEqual(grip.minY, titleRow, accuracy: 0.5, "the grip rides with the title row")
         XCTAssertEqual(
             titleBar.maxX - grip.maxX,
             TitleBarView.markInset,

@@ -77,106 +77,61 @@ final class SkinInteriorTests: XCTestCase {
         XCTAssertTrue(SkinInterior.fillEnclosed(in: rep).isEmpty)
     }
 
-    /// The body is painted only where the frame encloses, never across the gaps
-    /// around it — an animated frame leaves those, and a full-layer fill would
-    /// show them as a dark fringe against the desktop.
-    func testBodyCoversOnlyTheEnclosedArea() throws {
-        let rep = try mask { x, y in
-            let onBand = (10..<50).contains(x) && (10..<50).contains(y)
-                && !((16..<44).contains(x) && (16..<44).contains(y))
-            return !onBand
-        }
-        let enclosed = SkinInterior.fillEnclosed(in: rep)
-        let body = try XCTUnwrap(SkinInterior.body(
-            from: enclosed,
-            width: side,
-            height: side,
-            colour: NSColor(srgbRed: 0.1, green: 0.08, blue: 0.13, alpha: 1)
-        ))
-
-        var rect = NSRect(origin: .zero, size: body.size)
-        let cgImage = try XCTUnwrap(body.cgImage(forProposedRect: &rect, context: nil, hints: nil))
-        let painted = NSBitmapImageRep(cgImage: cgImage)
-        XCTAssertGreaterThan(painted.colorAt(x: side / 2, y: side / 2)?.alphaComponent ?? 0, 0.5)
-        XCTAssertEqual(painted.colorAt(x: 2, y: 2)?.alphaComponent ?? 1, 0, accuracy: 0.01)
-    }
-
-    func testNothingEnclosedMeansNoBody() {
-        XCTAssertNil(SkinInterior.body(from: [], width: side, height: side, colour: .black))
-    }
-
-    private func frameMask() throws -> NSBitmapImageRep {
-        try mask { x, y in
-            let onBand = (10..<50).contains(x) && (10..<50).contains(y)
-                && !((16..<44).contains(x) && (16..<44).contains(y))
-            return !onBand
-        }
-    }
-
-    /// The body follows the frame's real inner edge for width and top, but
-    /// ends with the rows — `contentBottom` — not with the frame, so it never
-    /// backs the deck below them.
-    func testOverlayBodyEndsWithTheRows() throws {
-        let enclosed = SkinInterior.fillEnclosed(in: try frameMask())
-        let body = try XCTUnwrap(SkinInterior.overlayBody(
-            from: enclosed,
-            size: NSSize(width: side, height: side),
-            contentBottom: 30,
-            colour: NSColor(srgbRed: 0.1, green: 0.08, blue: 0.13, alpha: 1)
-        ))
-        var rect = NSRect(origin: .zero, size: body.size)
+    /// The centre-column alpha at row `y` of a rendered body.
+    private func coverage(_ image: NSImage, at y: Int) throws -> CGFloat {
+        var rect = NSRect(origin: .zero, size: image.size)
         let painted = NSBitmapImageRep(
-            cgImage: try XCTUnwrap(body.cgImage(forProposedRect: &rect, context: nil, hints: nil))
+            cgImage: try XCTUnwrap(image.cgImage(forProposedRect: &rect, context: nil, hints: nil))
         )
-        let aboveTheLine = painted.colorAt(x: side / 2, y: 22)?.alphaComponent ?? 0
-        let belowTheLine = painted.colorAt(x: side / 2, y: 38)?.alphaComponent ?? 1
-        XCTAssertGreaterThan(aboveTheLine, 0.5, "backed while the rows are")
-        XCTAssertEqual(belowTheLine, 0, accuracy: 0.05, "nothing past where the rows stop")
+        return painted.colorAt(x: side / 2, y: y)?.alphaComponent ?? -1
     }
 
-    /// The enclosed array is size-bound; the clip is not — so a taller
-    /// `contentBottom` re-clips the same array without another flood-fill.
-    func testOverlayBodyReclipsTheSameArrayAsTheRowsGrow() throws {
-        let enclosed = SkinInterior.fillEnclosed(in: try frameMask())
-        let size = NSSize(width: side, height: side)
-        let short = try XCTUnwrap(SkinInterior.overlayBody(
-            from: enclosed, size: size, contentBottom: 20, colour: .black
+    private func aBody(top: CGFloat, bottom: CGFloat, fade: CGFloat = 0) throws -> NSImage {
+        try XCTUnwrap(SkinInterior.solidBody(
+            size: NSSize(width: side, height: side),
+            contentTop: top,
+            contentBottom: bottom,
+            colour: NSColor(srgbRed: 0.1, green: 0.08, blue: 0.13, alpha: 1),
+            fadeOver: fade
         ))
-        let tall = try XCTUnwrap(SkinInterior.overlayBody(
-            from: enclosed, size: size, contentBottom: CGFloat(side), colour: .black
-        ))
+    }
+
+    /// The body ends with the rows — `contentBottom` — not with the frame, so
+    /// it never backs the deck below them.
+    func testSolidBodyEndsWithTheRows() throws {
+        let body = try aBody(top: 0, bottom: 30)
+        XCTAssertGreaterThan(try coverage(body, at: 22), 0.5, "backed while the rows are")
+        XCTAssertEqual(try coverage(body, at: 38), 0, accuracy: 0.05, "nothing past the rows")
+    }
+
+    /// `contentTop` holds the fill below the band where a corner decoration
+    /// sits — nothing is painted above it.
+    func testSolidBodyStartsAtContentTop() throws {
+        let body = try aBody(top: 20, bottom: 50)
+        XCTAssertEqual(try coverage(body, at: 10), 0, accuracy: 0.05, "clear above contentTop")
+        XCTAssertGreaterThan(try coverage(body, at: 30), 0.5, "solid below it")
+    }
+
+    /// A taller `contentBottom` fills more of the panel — the body follows the
+    /// rows as they grow.
+    func testSolidBodyFollowsTheRows() throws {
+        let short = try aBody(top: 0, bottom: 20)
+        let tall = try aBody(top: 0, bottom: CGFloat(side))
         XCTAssertNotEqual(short.tiffRepresentation, tall.tiffRepresentation)
     }
 
     /// `fadeOver` softens the cut: solid at `contentBottom`, half way at the
     /// band's midpoint, gone by its end.
-    func testOverlayBodyRampsAcrossTheFadeBand() throws {
-        let enclosed = SkinInterior.fillEnclosed(in: try frameMask())
-        let body = try XCTUnwrap(SkinInterior.overlayBody(
-            from: enclosed,
-            size: NSSize(width: side, height: side),
-            contentBottom: 20,
-            colour: NSColor(srgbRed: 0.1, green: 0.08, blue: 0.13, alpha: 1),
-            fadeOver: 16
-        ))
-        var rect = NSRect(origin: .zero, size: body.size)
-        let painted = NSBitmapImageRep(
-            cgImage: try XCTUnwrap(body.cgImage(forProposedRect: &rect, context: nil, hints: nil))
-        )
-        let solid = painted.colorAt(x: side / 2, y: 18)?.alphaComponent ?? 0
-        let midRamp = painted.colorAt(x: side / 2, y: 28)?.alphaComponent ?? 0
-        let cleared = painted.colorAt(x: side / 2, y: 40)?.alphaComponent ?? 1
-        XCTAssertEqual(solid, 1, accuracy: 0.05, "solid down to contentBottom")
-        XCTAssertEqual(midRamp, 0.5, accuracy: 0.2, "half way across the band")
-        XCTAssertEqual(cleared, 0, accuracy: 0.05, "gone past the band")
+    func testSolidBodyRampsAcrossTheFadeBand() throws {
+        let body = try aBody(top: 0, bottom: 20, fade: 16)
+        XCTAssertEqual(try coverage(body, at: 18), 1, accuracy: 0.05, "solid to contentBottom")
+        XCTAssertEqual(try coverage(body, at: 28), 0.5, accuracy: 0.2, "half way across the band")
+        XCTAssertEqual(try coverage(body, at: 40), 0, accuracy: 0.05, "gone past the band")
     }
 
-    func testOverlayBodyRejectsAWrongSizedArray() {
-        XCTAssertNil(SkinInterior.overlayBody(
-            from: [true, false],
-            size: NSSize(width: side, height: side),
-            contentBottom: 10,
-            colour: .black
+    func testSolidBodyRejectsAZeroSize() {
+        XCTAssertNil(SkinInterior.solidBody(
+            size: .zero, contentTop: 0, contentBottom: 10, colour: .black
         ))
     }
 }

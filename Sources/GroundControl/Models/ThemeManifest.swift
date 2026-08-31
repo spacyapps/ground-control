@@ -256,6 +256,17 @@ struct ThemeManifest: Decodable, Equatable {
         /// could not express the third case.
         var resize: String?
         var contentInset: Sides?
+        /// Pushes the frame's top cap down this many points, so a deep top
+        /// decoration (a roof, an arch) hangs near the title with the desktop
+        /// showing above it rather than sitting at the panel's edge. Nine-slice
+        /// skins only. 0 leaves the frame at the top.
+        var frameOffsetTop: Double?
+        /// How far the opaque title-bar background reaches *up* above the title,
+        /// behind that decoration — its ground, so keyed gaps in a roof read as
+        /// panel and not desktop. 0 means the strip is only as tall as the
+        /// title and analyser, and a frame's top decoration keeps whatever
+        /// shows through its gaps.
+        var titleBackdropTop: Double?
         /// Rounds the block the rows sit in, so a skin with a rounded opening
         /// does not frame a square-cornered screen.
         var contentCornerRadius: Double?

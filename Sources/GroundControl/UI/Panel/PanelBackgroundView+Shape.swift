@@ -16,14 +16,13 @@ extension PanelBackgroundView {
             layer?.mask = nil
             shapeMask = nil
             maskedSize = .zero
-            enclosedArea = []
             return
         }
 
         let size = NSSize(width: bounds.width, height: bounds.height)
 
         // Same size, just more rows: keep the composite, re-clip the body.
-        if size == maskedSize, !enclosedArea.isEmpty {
+        if size == maskedSize, maskedSize != .zero {
             rebuildInteriorBody(size: size)
             return
         }
@@ -43,6 +42,12 @@ extension PanelBackgroundView {
 
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        // `skinOverlay` is a flipped view, this bitmap context is not — so to
+        // land the frame's top `frameTopOffset` points down from the *visible*
+        // top, the draw box shrinks from y=0 here, which is the visible bottom.
+        let drawRect = NSRect(
+            x: 0, y: 0, width: size.width, height: max(0, size.height - frameTopOffset)
+        )
         // Every frame, drawn over itself. A mask only removes, so a silhouette
         // taken from frame one clips whatever a later frame moves into — and
         // swallows clicks where the art has since moved away. Compositing the
@@ -50,20 +55,16 @@ extension PanelBackgroundView {
         // over its whole loop.
         if let animated = AnimatedImage.load(shape), animated.isAnimated {
             for index in 0..<animated.frames.count {
-                BackgroundRenderer.draw(
-                    shape,
-                    in: NSRect(origin: .zero, size: size),
-                    elapsed: Double(index) * animated.duration
-                )
+                BackgroundRenderer.draw(shape, in: drawRect, elapsed: Double(index) * animated.duration)
             }
         } else {
-            BackgroundRenderer.draw(shape, in: NSRect(origin: .zero, size: size))
+            BackgroundRenderer.draw(shape, in: drawRect)
         }
         NSGraphicsContext.restoreGraphicsState()
 
-        // Also fills the opening into the mask so the window covers its middle;
-        // the array it returns is what the body re-clips from later.
-        enclosedArea = SkinInterior.fillEnclosed(in: rep)
+        // Fills the frame's opening into the mask so the window covers its own
+        // middle — the return value is unused now that the body is a rectangle.
+        SkinInterior.fillEnclosed(in: rep)
         maskedSize = size
         rebuildInteriorBody(size: size)
 
@@ -85,8 +86,10 @@ extension PanelBackgroundView {
     }
 
     /// The body sits behind the rows and ends with them — below the last row is
-    /// the frame's own floor. Cheap: a re-clip of `enclosedArea`.
+    /// the frame's own floor, which the skin draws itself.
     ///
+    /// A plain rectangle, not a traced shape: the silhouette mask on this view's
+    /// layer already clips it to the frame's outline, so it only needs bounds.
     /// With `bodyFade` it goes solid only to the analyser strip and then ramps
     /// to nothing across the first row, so the rows past the first sit on the
     /// frame with only their own translucent background.
@@ -95,12 +98,12 @@ extension PanelBackgroundView {
             interiorBody = nil
             return
         }
-        let analyserBottom = effectiveInsets.top + titleBar.preferredHeight
+        let analyserBottom = effectiveInsets.top + titleBar.contentHeight
         let fades = theme.window.bodyFadesBelowAnalyser
         let bodyBottom = fades ? analyserBottom : analyserBottom + list.contentHeight
-        interiorBody = SkinInterior.overlayBody(
-            from: enclosedArea,
+        interiorBody = SkinInterior.solidBody(
             size: size,
+            contentTop: titleStripTop,
             contentBottom: bodyBottom,
             colour: theme.colors.windowBackground,
             fadeOver: fades ? SessionRowView.height(for: theme) : 0

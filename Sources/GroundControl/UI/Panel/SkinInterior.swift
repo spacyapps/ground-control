@@ -22,8 +22,9 @@ enum SkinInterior {
     /// Only the *largest* enclosed region counts. Decorative artwork traps small
     /// pockets all over the place — between a unicorn's horn and the band it
     /// leans on, say — and those are gaps you should see straight through. Left
-    /// in, they bloat the opening to nearly the whole panel and get painted with
-    /// the panel's colour, which shows as dark flecks caught in the artwork.
+    /// in, they get stamped opaque in the mask too, so the window covers them
+    /// and `hitTest` treats them as solid — clicks meant for the desktop behind
+    /// a decorative gap would die on it.
     ///
     /// Returns an empty array when nothing is enclosed, which is every ordinary
     /// skin: a solid one has no holes, and a shape open at one edge has no
@@ -118,37 +119,40 @@ enum SkinInterior {
         return outside
     }
 
-    /// The body an overlay skin puts behind its rows.
+    /// The rectangular body an overlay skin puts behind its rows: solid between
+    /// `contentTop` and `contentBottom`, then a `fadeOver` ramp to nothing.
     ///
-    /// `enclosed` — from `fillEnclosed` — follows the frame's real inner edge
-    /// for the width and the top. The bottom, though, should end with the rows:
-    /// below the last one is the frame's own floor and its greebles, and a
-    /// panel body carried down there just backs the deck with black and leaks
-    /// onto the desktop through its grating. `contentBottom` is where it goes
-    /// solid to; the enclosed area is size-dependent and the clip is not, so
-    /// the caller keeps the array and re-clips it as the rows grow.
+    /// No inner-edge tracing. The silhouette mask on the panel layer already
+    /// clips this to the frame's outline, and in overlay mode the frame redraws
+    /// on top — so where its art is opaque the fill is hidden anyway, and where
+    /// its art is *keyed* (a roof's sky holes, a chest-lid seam) the fill shows
+    /// through and those gaps read as panel rather than desktop, which is the
+    /// point.
     ///
-    /// `fadeOver`, when non-zero, softens that cut: the body ramps from solid
-    /// at `contentBottom` to nothing over that many points, so an overlay skin
-    /// can keep a solid ground under the analyser and dissolve it into the
-    /// frame across the first row.
-    static func overlayBody(from enclosed: [Bool],
-                            size: NSSize,
-                            contentBottom: CGFloat,
-                            colour: NSColor,
-                            fadeOver: CGFloat = 0) -> NSImage? {
+    /// `contentTop` keeps the fill out of the band above the analyser where a
+    /// corner decoration lives — raise it (via `titleBackdropTop`) only for a
+    /// frame that wants an opaque ground behind a deep top ornament. The bottom
+    /// ends with the rows: below the last one is the frame's own floor and its
+    /// greebles, and a body carried down there backs the deck with black and
+    /// leaks onto the desktop through its grating. `fadeOver`, when non-zero,
+    /// softens that cut so the body can dissolve into the frame across the
+    /// first row instead of ending on a hard line.
+    static func solidBody(size: NSSize,
+                          contentTop: CGFloat,
+                          contentBottom: CGFloat,
+                          colour: NSColor,
+                          fadeOver: CGFloat = 0) -> NSImage? {
         let width = Int(size.width), height = Int(size.height)
-        guard !enclosed.isEmpty, enclosed.count == width * height else { return nil }
+        guard width > 0, height > 0 else { return nil }
 
-        let solid = max(0, contentBottom)
+        let top = max(0, contentTop)
+        let solid = max(top, contentBottom)
         let clear = solid + max(0, fadeOver)
         var coverage = [CGFloat](repeating: 0, count: width * height)
-        for y in 0..<height {
+        for y in 0..<height where CGFloat(y) >= top {
             let scale = verticalScale(y: CGFloat(y), solid: solid, clear: clear)
             guard scale > 0 else { continue }
-            for x in 0..<width where enclosed[y * width + x] {
-                coverage[y * width + x] = scale
-            }
+            for x in 0..<width { coverage[y * width + x] = scale }
         }
         return render(coverage: coverage, width: width, height: height, colour: colour)
     }
@@ -159,19 +163,6 @@ enum SkinInterior {
         if y <= solid { return 1 }
         if y >= clear { return 0 }
         return 1 - (y - solid) / (clear - solid)
-    }
-
-    /// The enclosed area as a paintable image, so the panel can put a body
-    /// behind its rows without also painting the gaps around the artwork —
-    /// where an animated frame has moved and left nothing, and a fill would
-    /// show as a dark fringe against the desktop.
-    static func body(from enclosed: [Bool],
-                     width: Int,
-                     height: Int,
-                     colour: NSColor) -> NSImage? {
-        guard !enclosed.isEmpty else { return nil }
-        let coverage: [CGFloat] = enclosed.map { $0 ? 1 : 0 }
-        return render(coverage: coverage, width: width, height: height, colour: colour)
     }
 
     /// Rasterises a per-cell coverage (0…1) as a premultiplied image in

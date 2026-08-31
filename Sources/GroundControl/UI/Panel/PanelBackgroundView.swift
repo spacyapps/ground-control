@@ -24,17 +24,16 @@ final class PanelBackgroundView: NSView {
     /// click, and it has been wrong twice.
     var shapeMask: NSBitmapImageRep?
 
-    /// The panel's body for an overlay skin: the area the frame encloses,
-    /// painted so the rows have something to sit on. Clipped to that area
-    /// rather than filling the layer, because an animated frame leaves gaps
-    /// around itself where a full fill would show as a dark fringe.
+    /// The panel's body for an overlay skin: a plain rectangle from the strip
+    /// down to the last row, so the rows have something to sit on. The
+    /// silhouette mask on this view's layer already clips it to the frame's
+    /// outline, so it needs bounds, not a traced shape.
     var interiorBody: NSImage?
 
     /// The silhouette rebuild is the 44-frame composite; the body is a cheap
-    /// re-clip of it. So the silhouette is kept and only redone when the panel
+    /// re-fill. So the silhouette is kept and only redone when the panel
     /// resizes, while the body follows the rows on every session change.
     var maskedSize: NSSize = .zero
-    var enclosedArea: [Bool] = []
 
     /// Animated backgrounds play only while something is working.
     ///
@@ -73,7 +72,6 @@ final class PanelBackgroundView: NSView {
         shapeMask = nil
         interiorBody = nil
         maskedSize = .zero
-        enclosedArea = []
         // Force a restart rather than letting an already-running timer look
         // valid: without this, switching between two animated themes mid-
         // session kept the *previous* theme's frame-rate interval and elapsed
@@ -101,7 +99,7 @@ final class PanelBackgroundView: NSView {
     /// frame the theme asked to keep clear.
     var desiredHeight: CGFloat {
         let insets = effectiveInsets
-        return titleBar.preferredHeight + list.contentHeight + insets.top + insets.bottom
+        return titleBar.contentHeight + list.contentHeight + insets.top + insets.bottom
     }
 
     /// `contentInset` measures where the frame ends in the artwork, so it is
@@ -117,6 +115,23 @@ final class PanelBackgroundView: NSView {
     /// rather than leaving the rows no room at all.
     var artworkScale: CGFloat {
         theme.window.artworkScale(atPanelWidth: bounds.width)
+    }
+
+    /// How far the frame is pushed down from the panel's top edge, so a deep
+    /// top decoration hangs near the title with the desktop above it rather
+    /// than at y=0. The theme's `layout.frameOffsetTop`, capped so the content
+    /// still clears the frame. Nine-slice only — a bodily-scaled skin is one
+    /// piece and cannot be split from its cap.
+    var frameTopOffset: CGFloat {
+        guard theme.window.isShaped, !theme.window.locksAspect else { return 0 }
+        return max(0, min(theme.layout.frameOffsetTop, effectiveInsets.top))
+    }
+
+    /// Where the opaque title-bar strip begins: `titleBackdropTop` above the
+    /// content, but never below the frame it is meant to back or above the
+    /// panel edge.
+    var titleStripTop: CGFloat {
+        max(frameTopOffset, effectiveInsets.top - max(0, theme.layout.titleBackdropTop))
     }
 
     var effectiveInsets: NSEdgeInsets {
@@ -152,11 +167,16 @@ final class PanelBackgroundView: NSView {
         let insets = effectiveInsets
         let width = max(0, bounds.width - insets.left - insets.right)
 
+        // The strip runs from `titleStripTop` — up behind the frame's
+        // decoration as far as the theme asked — down to where the content
+        // sits. Its opaque background is the ground a deep roof's keyed gaps
+        // sit on, instead of the desktop.
+        let stripTop = titleStripTop
         titleBar.frame = NSRect(
             x: insets.left,
-            y: insets.top,
+            y: stripTop,
             width: width,
-            height: titleBar.preferredHeight
+            height: insets.top + titleBar.contentHeight - stripTop
         )
         list.frame = NSRect(
             x: insets.left,
@@ -189,16 +209,29 @@ final class PanelBackgroundView: NSView {
         titleBar.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         list.layer?.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
 
-        skinOverlay.frame = bounds
+        // The frame is drawn into the panel below its offset — the strip above
+        // it is desktop, the sky over the roof.
+        skinOverlay.frame = NSRect(
+            x: 0,
+            y: frameTopOffset,
+            width: bounds.width,
+            height: max(0, bounds.height - frameTopOffset)
+        )
     }
 
     /// Where the close mark belongs, in this view's own coordinate space —
     /// read by `PanelRootView`, which owns the mark itself now that it needs
     /// to sit outside this view's shape mask.
+    /// The mark rides with the title row, which sits at the bottom of the strip
+    /// — `contentHeight` up from `maxY` — not at the strip's own top.
+    var titleRowTop: CGFloat {
+        titleBar.frame.maxY - titleBar.contentHeight
+    }
+
     var closeMarkFrame: NSRect {
         NSRect(
             x: titleBar.frame.minX + TitleBarView.markInset,
-            y: titleBar.frame.minY + TitleBarView.markTop,
+            y: titleRowTop + TitleBarView.markTop,
             width: CloseMarkView.size.width,
             height: CloseMarkView.size.height
         )
@@ -209,7 +242,7 @@ final class PanelBackgroundView: NSView {
         let grip = ResizeGripView.size
         return NSRect(
             x: max(effectiveInsets.left, titleBar.frame.maxX - TitleBarView.markInset - grip.width),
-            y: titleBar.frame.minY + TitleBarView.markTop,
+            y: titleRowTop + TitleBarView.markTop,
             width: grip.width,
             height: grip.height
         )

@@ -24,8 +24,12 @@ final class TitleBarView: NSView {
     private var trackingArea: NSTrackingArea?
     private let preferences: Preferences
 
-    /// What this strip needs, which the panel asks for rather than assuming.
-    var preferredHeight: CGFloat {
+    /// How much the title, glyph and analyser actually occupy. The view's frame
+    /// may be taller — `layout.contentInset.top` adds a themed strip above,
+    /// filled with `titleBarBackground` so a frame with a deep top decoration
+    /// (a roof, an arch) has something opaque behind its keyed gaps instead of
+    /// the desktop. The content sits in this much at the bottom.
+    var contentHeight: CGFloat {
         preferences.showsAnalyser ? Self.height : Self.compactHeight
     }
 
@@ -92,17 +96,20 @@ final class TitleBarView: NSView {
         super.layout()
         let inset: CGFloat = 10
         let titleRow: CGFloat = 22
+        // The content lives in the bottom `contentHeight`; anything above is the
+        // themed strip. `top` shifts everything down into place.
+        let top = max(0, bounds.height - contentHeight)
 
         // The close mark is drawn by the panel, above any skin, but its place
         // in the row is still reserved here so the two agree.
         let markSide: CGFloat = 15
         mark.frame = NSRect(
             x: Self.markInset + CloseMarkView.size.width + 7,
-            y: (titleRow - markSide) / 2 + 4,
+            y: top + (titleRow - markSide) / 2 + 4,
             width: markSide,
             height: markSide
         )
-        let textY = (titleRow - 14) / 2 + 4
+        let textY = top + (titleRow - 14) / 2 + 4
         // Stops short of the resize mark at the far end.
         titleLabel.frame = NSRect(
             x: mark.frame.maxX + 6,
@@ -114,9 +121,9 @@ final class TitleBarView: NSView {
         guard visualizer.superview != nil else { return }
         visualizer.frame = NSRect(
             x: inset,
-            y: titleRow + 6,
+            y: top + titleRow + 6,
             width: bounds.width - inset * 2,
-            height: max(0, bounds.height - titleRow - 12)
+            height: max(0, contentHeight - titleRow - 12)
         )
     }
 

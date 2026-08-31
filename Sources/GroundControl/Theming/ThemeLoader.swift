@@ -110,6 +110,11 @@ enum ThemeLoader {
                     defaultLayout.contentInset.right
                 )
             ),
+            frameOffsetTop: Theme.length(manifestLayout?.frameOffsetTop, defaultLayout.frameOffsetTop),
+            titleBackdropTop: Theme.length(
+                manifestLayout?.titleBackdropTop,
+                defaultLayout.titleBackdropTop
+            ),
             contentCornerRadius: Theme.length(
                 manifestLayout?.contentCornerRadius,
                 defaultLayout.contentCornerRadius

@@ -189,6 +189,12 @@
     // have been swapped before, and the result looks like a corrupt image
     // rather than a wrong number.
     "contentInset": { "top": 0, "left": 0, "bottom": 0, "right": 0 },
+    // For a frame with a deep top decoration (a roof, an arch), nine-slice only:
+    "frameOffsetTop":     0,           // push the frame's top cap down this far,
+                                       // desktop shows above it
+    "titleBackdropTop":   0,           // how far the opaque panel body reaches
+                                       // up behind that decoration — its ground,
+                                       // so the frame's keyed gaps read as panel
     "contentCornerRadius": 0,
     "rowMaxHeight":        100,
     "rowPadding":          10,

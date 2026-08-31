@@ -189,7 +189,7 @@ final class OverlaySkinTests: XCTestCase {
 
         let fadedFloor = try lowestOpaqueRow(of: try XCTUnwrap(faded.interiorBody))
         let fullFloor = try lowestOpaqueRow(of: try XCTUnwrap(full.interiorBody))
-        let analyser = Int(faded.titleBar.preferredHeight)
+        let analyser = Int(faded.titleBar.contentHeight)
         let rowHeight = Int(SessionRowView.height(for: try theme(overlay: true)))
 
         XCTAssertGreaterThan(fadedFloor, analyser - 4, "solid at least to the analyser")

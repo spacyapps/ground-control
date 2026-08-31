@@ -133,9 +133,34 @@ final class ContentInsetSidesTests: XCTestCase {
         view.frame = NSRect(x: 0, y: 0, width: 400, height: 400)
         view.layoutSubtreeIfNeeded()
 
+        // No frame offset or backdrop, so the strip still starts at the inset.
         XCTAssertEqual(view.titleBar.frame.minY, 60, accuracy: 0.5)
         XCTAssertEqual(view.titleBar.frame.minX, 20, accuracy: 0.5)
         XCTAssertEqual(view.titleBar.frame.maxX, 360, accuracy: 0.5)
         XCTAssertEqual(view.list.frame.maxY, 390, accuracy: 0.5)
+    }
+
+    /// `titleBackdropTop` raises the strip's top above the title row so a deep
+    /// decoration has an opaque ground; `frameOffsetTop` pushes the frame down.
+    func testTopStripReachesUpWhenAsked() {
+        var theme = DefaultTheme.theme
+        theme.layout.contentInset = NSEdgeInsets(top: 120, left: 20, bottom: 10, right: 40)
+        theme.layout.titleBackdropTop = 80
+        theme.window = Theme.Window(
+            shape: BackgroundImage(url: URL(fileURLWithPath: "/x.gif"), mode: .tile, capInsets: NSEdgeInsets()),
+            locksAspect: false,
+            aspectRatio: 1
+        )
+        theme.layout.frameOffsetTop = 30
+
+        let view = PanelBackgroundView()
+        view.apply(theme: theme)
+        view.frame = NSRect(x: 0, y: 0, width: 400, height: 400)
+        view.layoutSubtreeIfNeeded()
+
+        XCTAssertEqual(view.frameTopOffset, 30, accuracy: 0.5, "the frame drops")
+        XCTAssertEqual(view.titleStripTop, 40, accuracy: 0.5, "strip top = inset.top − backdrop")
+        XCTAssertEqual(view.titleBar.frame.minY, 40, accuracy: 0.5)
+        XCTAssertEqual(view.titleRowTop, 120, accuracy: 0.5, "the content still sits at the inset")
     }
 }

@@ -246,6 +246,12 @@ struct Theme {
         /// cover exactly the border the artwork lives in.
         var resize: Resize = .content
         var contentInset: NSEdgeInsets
+        /// Frame pushed down from the top edge; desktop shows above it. See the
+        /// manifest. Nine-slice only.
+        var frameOffsetTop: CGFloat = 0
+        /// How far the opaque title-bar background reaches above the title, as a
+        /// ground for a deep top decoration. See the manifest.
+        var titleBackdropTop: CGFloat = 0
         /// Corner radius of the content block, in the same artwork pixels as
         /// `contentInset` — a framed opening is rounded in the art, so this is
         /// measured off the art and scaled with it.

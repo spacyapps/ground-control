@@ -846,6 +846,21 @@ way.
 - `contentInset` — holds the rows inside your frame, in artwork pixels. One
   number for all four sides, or `{ "top": …, "left": …, "bottom": …, "right": … }`
   for the common case where a frame is not equally thick all round.
+- `frameOffsetTop` / `titleBackdropTop` — for a frame with a **deep top
+  decoration** (a tiled roof, an arch, hanging branches), nine-slice only.
+  `contentInset.top` alone pushes the title down but leaves the frame drawing
+  from the panel's edge, so the decoration floats up top with a bare strip
+  below it — and its keyed gaps show the desktop.
+  - **`frameOffsetTop`** pushes the frame's top cap down that many points. The
+    space above it is desktop — a roof against the sky.
+  - **`titleBackdropTop`** raises the top of the opaque panel body that far
+    above the title, behind the decoration, so the frame's keyed gaps read as
+    panel instead of desktop. Leave it `0` and a frame whose top is *meant* to
+    be see-through (an open pergola) keeps what shows through.
+
+  Both default `0` — the frame draws at the edge and the body starts at the
+  content inset, which is right for a shallow top. `spacyAppsSkybirdTheme` uses
+  `titleBackdropTop`.
 - `contentCornerRadius` — rounds the block the rows sit in, so a frame with a
   rounded opening does not enclose a square-cornered screen. Same artwork
   pixels, scaled the same way.
