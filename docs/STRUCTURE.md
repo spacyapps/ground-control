@@ -137,7 +137,9 @@ GroundControl/
 │   ├── theme-preview.sh          # one fake row per state, for theming
 │   ├── make-icon.sh              # logo -> AppIcon.icns
 │   ├── build-app.sh              # assembles + signs GroundControl.app
-│   ├── build-dmg.sh              # dmg: signed, notarised, stapled
+│   ├── build-dmg.sh              # dmg: styled drag-install window (create-dmg),
+│   │                             # signed, notarised, stapled
+│   ├── build-zip.sh              # zip of the app + INSTALL.txt, same as above
 │   └── opencode-plugin.ts        # opencode has no hook commands, so its
 │                                 # integration is a plugin — installed into
 │                                 # ~/.config/opencode/plugin/ and shipped
@@ -161,7 +163,10 @@ GroundControl/
 ├── Packaging/
 │   ├── Info.plist                # bundle id, version, LSUIElement
 │   ├── GroundControl.entitlements # hardened runtime + apple-events
-│   └── AppIcon.icns
+│   ├── AppIcon.icns
+│   ├── INSTALL.txt               # rides in the zip beside the app
+│   └── dmg-background@2x.png     # 1728x1152 art; build-dmg.sh wraps it in a
+│                                 # HiDPI tiff for the 864x576 window
 │
 └── .github/workflows/
     └── ci.yml                    # build + swiftlint on push/PR
