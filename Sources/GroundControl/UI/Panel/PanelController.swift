@@ -17,6 +17,7 @@ final class PanelController {
     private var resizeStart: CGSize = .zero
     private var frameObserver: NSObjectProtocol?
     private var elapsedTimer: Timer?
+    private var hasAppeared = false
 
     init(preferences: Preferences = .shared) {
         self.preferences = preferences
@@ -67,7 +68,12 @@ final class PanelController {
         let panel = existingOrNewPanel()
         applyWindowBehaviour()
         panel.orderFrontRegardless()
-        fitHeightToContent()
+        // First appearance after launch is fitted like a theme switch: the
+        // saved frame's height can be from a different skin, and a `free`
+        // panel would otherwise open squished under a tall frame — with the
+        // resize grip that fixes it lost somewhere in the artwork.
+        fitHeightToContent(afterThemeChange: !hasAppeared)
+        hasAppeared = true
         startElapsedTicking()
     }
 
@@ -100,16 +106,16 @@ final class PanelController {
     /// fraction of the screen, after which the list scrolls instead of the
     /// panel eating the display.
     ///
-    /// `afterThemeChange` is the one moment a `free` panel is also fitted: a
-    /// switch should land the new skin near its own content, not at whatever
-    /// height the last skin happened to be dragged to. Every resize after that
-    /// is the person's again.
+    /// `afterThemeChange` is when a `free` panel is also fitted: a theme switch
+    /// — or the first appearance after launch — should land the skin near its
+    /// own content, not at whatever height the last skin was dragged to. Every
+    /// resize after that is the person's again.
     func fitHeightToContent(afterThemeChange: Bool = false) {
         guard let panel, panel.isVisible else { return }
 
         // Free: the height is the person's, and nothing here may take it back —
-        // save for the deliberate act of changing themes, which starts fresh.
-        // Any other derivation would fight them a frame after every drag.
+        // save for a theme switch or the first launch, which start fresh. Any
+        // other derivation would fight them a frame after every drag.
         if theme.layout.resize == .free, !afterThemeChange { return }
 
         // A skin with its aspect locked is a designed object, not a container:
@@ -202,9 +208,10 @@ final class PanelController {
         panel.contentView = root
         if let saved = preferences.panelFrame {
             var frame = NSRectFromString(saved)
-            // A derived height would only fight fitHeightToContent on the first
-            // paint — but a height the person chose has to survive a relaunch,
-            // or "free" means free until you quit.
+            // Width and position are restored; the height is not — `show()`
+            // refits it to the current theme on first appearance, since the
+            // saved one can belong to a skin that is no longer active. A
+            // non-free theme never keeps a saved height at all.
             if theme.layout.resize != .free {
                 frame.size.height = panel.frame.height
             }
