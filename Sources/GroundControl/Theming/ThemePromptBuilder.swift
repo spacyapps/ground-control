@@ -60,8 +60,8 @@ enum ThemePromptBuilder {
 
     /// **Part three: corner decorations, optional.** A guided step in its own
     /// right now — questions before drawing, like part two — for the themes that
-    /// want something pinned to a corner. Lives in `ThemePromptText`; takes the
-    /// key colour so it can name it.
+    /// want something pinned to a corner. Lives in `ThemeDecorationsPrompt`;
+    /// takes the key colour so it can name it the way part two does.
     static func partThree(for brief: ThemeBrief) -> String {
         ThemeDecorationsPrompt.text(key: brief.keyColour)
     }
