@@ -195,7 +195,10 @@ struct ThemeManifest: Decodable, Equatable {
     }
 
     struct CornerDecoration: Decodable, Equatable {
-        var image: String?
+        /// One filename, or several. A list plays end to end and loops while a
+        /// session is working — each entry for its own length — freezing at
+        /// rest. A quiet easter egg. A bare string decodes to a one-element list.
+        var image: [String]?
         var video: String?
         var loop: Bool?
         var muted: Bool?
@@ -216,6 +219,32 @@ struct ThemeManifest: Decodable, Equatable {
         struct Offset: Decodable, Equatable {
             var x: Double?
             var y: Double?
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case image, video, loop, muted, removeBackground, offset, scale
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            if let one = try? container.decode(String.self, forKey: .image) {
+                image = [one]
+            } else {
+                image = try container.decodeIfPresent([String].self, forKey: .image)
+            }
+            video = try container.decodeIfPresent(String.self, forKey: .video)
+            loop = try container.decodeIfPresent(Bool.self, forKey: .loop)
+            muted = try container.decodeIfPresent(Bool.self, forKey: .muted)
+            removeBackground = try container.decodeIfPresent(String.self, forKey: .removeBackground)
+            offset = try container.decodeIfPresent(Offset.self, forKey: .offset)
+            scale = try container.decodeIfPresent(Double.self, forKey: .scale)
+        }
+
+        init(image: [String]? = nil, video: String? = nil, offset: Offset? = nil, scale: Double? = nil) {
+            self.image = image
+            self.video = video
+            self.offset = offset
+            self.scale = scale
         }
     }
 

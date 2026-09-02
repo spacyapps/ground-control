@@ -116,7 +116,9 @@
   // drawn into it.
   "cornerDecorations": {
     "topLeft": {
-      "image":            null,   // a still or animated gif/apng, by filename
+      "image":            null,   // a filename, or a list of them — a still or
+                                  // gif/apng each. A list plays end to end and
+                                  // loops while working, freezing at rest.
       "video":            null,   // a .mov/.mp4/.m4v — wins over `image` if both are set
       "loop":             true,   // video only
       "muted":            true,   // video only

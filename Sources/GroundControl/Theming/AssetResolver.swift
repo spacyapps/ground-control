@@ -182,17 +182,16 @@ enum AssetResolver {
             )
         }
 
-        guard let url = imageFile(entry.image, in: folder) else { return nil }
-        let background = BackgroundImage(
-            url: url,
+        let key = ImageKeyer.Key(entry.removeBackground)
+        let backgrounds = (entry.image ?? []).compactMap { name -> BackgroundImage? in
+            guard let url = imageFile(name, in: folder) else { return nil }
             // Meaningless for a corner decoration, but BackgroundImage still
             // needs a value — .center is the "draw at natural size" mode, and
             // capInsets zero means no slicing is even attempted.
-            mode: .center,
-            capInsets: NSEdgeInsets(),
-            removeBackground: ImageKeyer.Key(entry.removeBackground)
-        )
-        return Theme.CornerDecoration(asset: .image(background), offset: offset, scale: scale)
+            return BackgroundImage(url: url, mode: .center, capInsets: NSEdgeInsets(), removeBackground: key)
+        }
+        guard !backgrounds.isEmpty else { return nil }
+        return Theme.CornerDecoration(asset: .image(backgrounds), offset: offset, scale: scale)
     }
 
     /// Resolve-and-validate, the shape every asset lookup needs: a name the

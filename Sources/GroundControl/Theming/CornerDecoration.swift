@@ -14,7 +14,9 @@ extension Theme {
     /// writes for this block.
     struct CornerDecoration: Equatable {
         enum Asset: Equatable {
-            case image(BackgroundImage)
+            /// One image, or several the corner plays through and loops while
+            /// working — see `DecorationSequence`. Never empty.
+            case image([BackgroundImage])
             case video(URL, loop: Bool, muted: Bool)
         }
 

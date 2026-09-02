@@ -43,6 +43,20 @@ final class CornerDecorationsView: NSView {
     private var decorations: Theme.CornerDecorations = .none
     private var videoStates: [Corner: VideoState] = [:]
 
+    /// A multi-image corner is played by a `DecorationSequence` against a clock
+    /// that runs only while something is working — frozen on stop, resumed from
+    /// where it left off. The easter egg.
+    private var sequences: [Corner: DecorationSequence] = [:]
+    private var workAccrued: TimeInterval = 0
+    private var spellStart: Date?
+    private var workClock: TimeInterval {
+        workAccrued + (spellStart.map { max(0, Date().timeIntervalSince($0)) } ?? 0)
+    }
+
+    /// How long a still entry in a sequence holds before the next. A `var` so a
+    /// timing test can turn it down — nothing else writes it.
+    static var secondsPerImage: TimeInterval = 3
+
     private var isWorking = false
     private var animationTimer: Timer?
     private var animationStart = Date()
@@ -70,6 +84,13 @@ final class CornerDecorationsView: NSView {
 
     func apply(theme: Theme) {
         decorations = theme.cornerDecorations
+        workAccrued = 0
+        spellStart = isWorking ? Date() : nil
+        sequences = [:]
+        for corner in Corner.allCases {
+            guard case .image(let images)? = decoration(at: corner)?.asset, images.count > 1 else { continue }
+            sequences[corner] = DecorationSequence(images, stillBeat: Self.secondsPerImage)
+        }
         rebuildVideoStates()
         // Force updateAnimation() to restart the clock rather than treating
         // an already-running timer as still valid: without this, switching
@@ -89,6 +110,12 @@ final class CornerDecorationsView: NSView {
     func update(isWorking: Bool) {
         guard isWorking != self.isWorking else { return }
         self.isWorking = isWorking
+        if isWorking {
+            spellStart = Date()
+        } else {
+            workAccrued = workClock
+            spellStart = nil
+        }
         updateAnimation()
         for state in videoStates.values {
             if isWorking {
@@ -123,10 +150,9 @@ final class CornerDecorationsView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        let elapsed = currentElapsed
         for corner in Corner.allCases {
             guard let decoration = decoration(at: corner),
-                  case .image(let background) = decoration.asset,
+                  let (background, elapsed) = frame(at: corner),
                   let natural = BackgroundRenderer.naturalSize(of: background) else { continue }
             let size = NSSize(width: natural.width * decoration.scale, height: natural.height * decoration.scale)
             let point = origin(for: corner, size: size, offset: decoration.offset)
@@ -156,11 +182,28 @@ final class CornerDecorationsView: NSView {
 
     // MARK: - Gif/still animation
 
-    private var hasAnimatedImageDecoration: Bool {
-        Corner.allCases.contains { corner in
-            guard case .image(let background)? = decoration(at: corner)?.asset else { return false }
-            return BackgroundRenderer.isAnimated(background)
+    /// Whether the redraw timer needs to run: any sequence to advance, or a
+    /// lone gif corner to step.
+    private var needsAnimationTimer: Bool {
+        if !sequences.isEmpty { return true }
+        return Corner.allCases.contains { corner in
+            guard case .image(let images)? = decoration(at: corner)?.asset,
+                  let image = images.first else { return false }
+            return BackgroundRenderer.isAnimated(image)
         }
+    }
+
+    /// What a corner draws right now, and how far into that image's own loop:
+    /// its still or lone gif, or the sequence entry the work clock has reached.
+    private func frame(at corner: Corner) -> (image: BackgroundImage, elapsed: TimeInterval?)? {
+        if let sequence = sequences[corner] {
+            guard let sample = sequence.sample(at: workClock) else { return nil }
+            return (sample.image, sample.into)
+        }
+        guard case .image(let images)? = decoration(at: corner)?.asset, let only = images.first else {
+            return nil
+        }
+        return (only, currentElapsed)
     }
 
     private var currentElapsed: TimeInterval? {
@@ -168,7 +211,7 @@ final class CornerDecorationsView: NSView {
     }
 
     private func updateAnimation() {
-        guard isWorking, window != nil, hasAnimatedImageDecoration else {
+        guard isWorking, window != nil, needsAnimationTimer else {
             animationTimer?.invalidate()
             animationTimer = nil
             needsDisplay = true
@@ -177,6 +220,8 @@ final class CornerDecorationsView: NSView {
         guard animationTimer == nil else { return }
 
         animationStart = Date()
+        // 12fps just paces the redraw; the frame shown is computed from a real
+        // wall clock in `draw()`, so a coarse tick still animates smoothly.
         let timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 12, repeats: true) { [weak self] _ in
             self?.needsDisplay = true
         }

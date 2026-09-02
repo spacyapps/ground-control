@@ -592,7 +592,7 @@ button in "Create a Theme".
 
 | Key | Does |
 |---|---|
-| `image` | a still or animated gif/apng, by filename |
+| `image` | a filename, or a **list** of filenames — a still or animated gif/apng each |
 | `video` | a `.mov`/`.mp4`/`.m4v` — wins over `image` if both are set |
 | `loop` / `muted` | video only, both default `true` |
 | `removeBackground` | `"auto"`, `"checkerboard"`, or a hex colour to key out — image/gif only, not video |
@@ -630,6 +630,16 @@ compositing pass this app does not have.
 **Animates only while a session is working**, the same rule as everywhere
 else in the panel — a still corner decoration is a complete, finished
 choice, not a fallback.
+
+**`image` as a list is a quiet easter egg.** Give it several filenames and,
+while a session is working, the corner plays through them end to end and
+loops — each entry for its own natural length: a gif runs its whole loop, a
+still holds a few seconds (`CornerDecorationsView.secondsPerImage`), then
+the next takes over. The join lands where the artwork already repeats, not
+on a cut. It freezes when work stops and resumes from there. Two or three
+distinct poses is the point. `scale`, `offset` and `removeBackground` apply
+to every entry; a missing file in the list is skipped; `video` still wins
+over the whole thing if set.
 
 A fuller guide with worked examples will eventually live at
 `groundcontrol.app/docs` — not live yet as of this writing.

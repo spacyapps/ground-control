@@ -98,6 +98,13 @@ enum ThemeDecorationsPrompt {
         - **Part two may already have an ornament in this corner.** Your
           decoration sits on top of it — draw it to work *with* what is there: a
           mascot leaning against the frame's dish, not a second dish over it.
+        - **A quiet easter egg, if you want one:** `image` can be a *list* of
+          filenames instead of one. While a session is working the corner
+          plays through the list end to end and loops — each entry for its own
+          natural length: a gif runs its whole loop, a still holds a few
+          seconds, then the next takes over. It freezes when work stops and
+          picks up from there. Two or three distinct poses is the idea; skip
+          this unless I ask.
 
         ## The block
 
