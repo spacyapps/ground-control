@@ -30,9 +30,9 @@ enum ThemePromptText {
     **In stages, and stop at the end of each one.** This paste covers the
     avatars only — the four faces. The panel's frame and the manifest are a
     second paste, sent once these are right. There is an optional third paste
-    at the end, for corner decorations — small, fixed pieces of art anchored
-    to a corner of the panel, independent of the frame. Skip it entirely if
-    you don't want one; most themes won't.
+    at the end, for corner decorations — a mascot or ornament pinned to a
+    corner of the panel, independent of the frame, with its own short set of
+    questions. Skip it entirely if you don't want one; most themes won't.
 
     | Stage | What happens | Ends when |
     |---|---|---|
@@ -267,55 +267,4 @@ enum ThemePromptText {
         go, the character may not — four tiles that each star something different
         read as four themes.
         """
-
-    /// **Part three: corner decorations, optional.** Entirely fixed prose —
-    /// nothing here depends on the brief — so it lives with the rest of the
-    /// constant text rather than in the builder. Kept deliberately short
-    /// against part two's length: there is no nine-slice to teach and no
-    /// silhouette to negotiate, just a handful of rules and a shape to copy.
-    static let partThreeCornerDecorations = """
-    # Part three — corner decorations (optional)
-
-    Skip this whole section if you don't want one — most themes are done
-    after part two. A corner decoration is a small, independent piece of
-    art pinned to one corner of the panel: a mascot, a light, a prop. It
-    has nothing to do with the frame, and none of part two's rules apply
-    to it.
-
-    **The rules, in full — this is the whole feature:**
-
-    - **Up to four, one per corner** — `topLeft`, `topRight`,
-      `bottomLeft`, `bottomRight` — each entirely optional.
-    - **Drawn at its own pixel size, always.** No fitting into a box, no
-      automatic Retina scaling. Draw it at the size you want it to
-      actually occupy on screen.
-    - **`scale` resizes it without a new drawing.** 1 is the file's real
-      size; less shrinks it, more grows it. Trying a different size is a
-      number to change here, not a new image to generate.
-    - **`offset` moves it from its corner** — screen direction, `x`
-      right, `y` down, the same at every corner. `{0,0}` means its own
-      matching corner sits exactly on the window's.
-    - **Image or video, your choice.** `image` takes a still or animated
-      gif/apng, keyed with `removeBackground` the same way every other
-      image asset is. `video` takes `.mov`/`.mp4`/`.m4v` — no keying
-      available for video, so it needs real alpha or an already-clean
-      background.
-    - **Animates only while something is working**, same rule as the
-      rest of the panel. A still corner is a complete, finished choice.
-
-    ```json
-    "cornerDecorations": {
-      "bottomRight": {
-        "image": "mascot.apng",
-        "scale": 1,
-        "offset": { "x": 0, "y": 0 }
-      }
-    }
-    ```
-
-    That's all of it. A fuller guide, with worked examples, will
-    eventually live at groundcontrol.app/docs — it is not live yet, so
-    do not try to fetch it. Ask me directly if you want more than what
-    is written above.
-    """
 }

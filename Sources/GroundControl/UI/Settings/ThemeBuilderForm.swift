@@ -276,18 +276,24 @@ extension ThemeBuilderWindowController {
         row.spacing = 8
 
         let regenerateButton = NSButton(title: "Update", target: self, action: #selector(regenerate))
-        // Two pastes, two buttons. Part one is the moods and is often all
-        // anybody needs; part two is the frame, and goes into the same
-        // conversation once the moods are right.
-        let copyButton = NSButton(
-            title: "Copy Part 1 — Moods",
+        // One button per paste, in the order they are sent. Part one is the
+        // moods and is often all anybody needs; part two is the frame; part
+        // three is corner decorations and most themes skip it. Each goes into
+        // the same conversation as the last.
+        let copyMoodsButton = NSButton(
+            title: "Part 1 — Moods",
             target: self,
-            action: #selector(copyPrompt)
+            action: #selector(copyMoodsPrompt)
         )
         let copyFrameButton = NSButton(
-            title: "Copy Part 2 — Frame",
+            title: "Part 2 — Frame",
             target: self,
             action: #selector(copyFramePrompt)
+        )
+        let copyCornersButton = NSButton(
+            title: "Part 3 — Corners",
+            target: self,
+            action: #selector(copyDecorationsPrompt)
         )
         let createButton = NSButton(
             title: "Create Folder",
@@ -296,7 +302,8 @@ extension ThemeBuilderWindowController {
         )
         createButton.keyEquivalent = "\r"
 
-        for button in [regenerateButton, copyButton, copyFrameButton, createButton] {
+        for button in [regenerateButton, copyMoodsButton, copyFrameButton,
+                       copyCornersButton, createButton] {
             button.bezelStyle = .rounded
             row.addArrangedSubview(button)
         }

@@ -58,11 +58,12 @@ enum ThemePromptBuilder {
                 + [ThemePromptText.paletteReference]).joined(separator: "\n\n")
     }
 
-    /// **Part three: corner decorations, optional.** The text is fixed and
-    /// lives in `ThemePromptText`; most themes are finished after part two, and
-    /// this exists for the ones that want one more thing pinned to a corner.
+    /// **Part three: corner decorations, optional.** A guided step in its own
+    /// right now — questions before drawing, like part two — for the themes that
+    /// want something pinned to a corner. Lives in `ThemePromptText`; takes the
+    /// key colour so it can name it.
     static func partThree(for brief: ThemeBrief) -> String {
-        ThemePromptText.partThreeCornerDecorations
+        ThemeDecorationsPrompt.text(key: brief.keyColour)
     }
 
     /// How part one ends: hand the images over and stop.

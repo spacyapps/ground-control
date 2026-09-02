@@ -110,7 +110,10 @@
   // own pixels — never sliced, never resized by the panel resizing. Sits
   // above the frame and below the close/resize marks. A theme sets any
   // subset of the four; each is null unless given an image or video. Every
-  // field below applies to each of the four the same way.
+  // field below applies to each of the four the same way. Anything that
+  // moves is baked into one fixed canvas — the app never slides a decoration,
+  // so a bird flying across the corner is one wide image with the whole path
+  // drawn into it.
   "cornerDecorations": {
     "topLeft": {
       "image":            null,   // a still or animated gif/apng, by filename

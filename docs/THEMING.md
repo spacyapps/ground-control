@@ -574,6 +574,11 @@ Up to four independent, optional pieces of art, one per corner —
 prop, sitting above the frame and below the close/resize marks. Nothing to
 do with `window` — no slicing, no nine-grid, no silhouette to draw.
 
+The theme creator's part three walks an author through this: which corners,
+subject or flourish, size, whether it reaches past the frame, and — if it
+moves — whether it travels and how far. Copy it from the "Part 3 — Corners"
+button in "Create a Theme".
+
 ```json
 "cornerDecorations": {
   "bottomRight": {
@@ -605,8 +610,17 @@ rather than just shrinking it in place.
 window's.** `bottomRight` at `{0,0}` means the art's bottom-right pixel sits
 on the panel's bottom-right pixel, growing left and up from there. Offsets
 can be large — the art is only ever clipped by the real window edge, never
-by anything else, so a decoration can reach well toward the panel's middle
-if you want it to.
+by the frame or the silhouette, so a decoration can sit in the transparent
+margin around the frame and read as sticking out past it. The window edge
+*is* a hard limit, though: the panel does not grow to fit a decoration, so
+anything past its rectangle is lost.
+
+**Anything that moves is baked into one fixed canvas.** The app never
+translates a decoration — a bird that flies across the corner, smoke that
+drifts up and out, is drawn as a single wide image with the whole path of
+travel inside it, pinned to the corner like a still. Crop that canvas tight
+to the travel, not out to a square; an animated corner is the heaviest file
+a theme ships.
 
 **No video keying.** `removeBackground` only applies to the image/gif path.
 A video corner decoration needs real embedded alpha (ProRes 4444, HEVC with

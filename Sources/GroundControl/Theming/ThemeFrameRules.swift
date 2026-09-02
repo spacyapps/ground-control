@@ -108,7 +108,9 @@ enum ThemeFrameRules {
           sky/desktop shows *above* its top edge. Only if that gap is the look.
 
         Both are nine-slice only and default `0`. `spacyAppsSkybirdTheme` is the
-        worked example.
+        worked example. Or, if that deep top piece is really a separate hanging
+        thing — a lantern, a bird, a single bough — it may not belong in the
+        frame at all: draw it in part three as a corner decoration instead.
 
         **If you redraw at a different size, re-measure both.** Caps do not
         scale themselves, and stale ones land inside the ornament.

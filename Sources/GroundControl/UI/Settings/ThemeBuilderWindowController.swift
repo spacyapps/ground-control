@@ -97,6 +97,14 @@ final class ThemeBuilderWindowController: NSWindowController {
         statusLabel.stringValue = ""
     }
 
+    /// Part one — the moods — which is where every theme starts and often all
+    /// it needs.
+    @objc func copyMoodsPrompt() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(ThemePromptBuilder.partOne(for: brief), forType: .string)
+        statusLabel.stringValue = "Part 1 copied — paste it into your LLM."
+    }
+
     /// Part two, for when the moods are settled and the frame is next.
     @objc func copyFramePrompt() {
         NSPasteboard.general.clearContents()
@@ -104,11 +112,12 @@ final class ThemeBuilderWindowController: NSWindowController {
         statusLabel.stringValue = "Part 2 copied — paste it into the same conversation."
     }
 
-    @objc func copyPrompt() {
-        regenerate()
+    /// Part three, corner decorations — optional, and only if the author wants
+    /// something pinned to a corner once the frame is done.
+    @objc func copyDecorationsPrompt() {
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(promptView.string, forType: .string)
-        statusLabel.stringValue = "Prompt copied — paste it into your LLM."
+        NSPasteboard.general.setString(ThemePromptBuilder.partThree(for: brief), forType: .string)
+        statusLabel.stringValue = "Part 3 copied — paste it after part two, if you want corners."
     }
 
     @objc func createFolder() {

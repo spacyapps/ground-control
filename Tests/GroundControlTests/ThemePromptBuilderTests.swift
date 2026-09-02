@@ -116,6 +116,27 @@ final class ThemePromptBuilderTests: XCTestCase {
         XCTAssertTrue(whole.contains("cornerDecorations"), "the combined prompt must include part three")
     }
 
+    /// Part three is a guided step now: it asks before it draws, the same as
+    /// part two, rather than handing over a page of rules.
+    func testPartThreeAsksBeforeItDraws() {
+        let three = ThemePromptBuilder.partThree(for: brief)
+        XCTAssertTrue(three.contains("Ask them all at once"))
+        XCTAssertTrue(three.contains("Which corners?"))
+        // The travel question — the one that sizes the canvas.
+        XCTAssertTrue(three.localizedCaseInsensitiveContains("travel"))
+        // It names the theme's own key colour, like part two.
+        XCTAssertTrue(three.contains(brief.keyColour), "part three must name the key colour")
+    }
+
+    /// Each part copies on its own; part one is the moods alone, not the whole
+    /// document — the "Copy Part 1" button used to hand over everything.
+    func testPartOneIsTheMoodsAlone() {
+        let one = ThemePromptBuilder.partOne(for: brief)
+        XCTAssertTrue(one.contains("The four moods"))
+        XCTAssertFalse(one.contains("capInsets"), "part one must not leak the frame")
+        XCTAssertFalse(one.contains("cornerDecorations"), "or part three")
+    }
+
     /// Alpha must survive into the manifest: the default divider is fully
     /// transparent, and a 6-digit value would make hairlines appear.
     func testTransparentDefaultsKeepTheirAlpha() throws {
