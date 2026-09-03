@@ -48,6 +48,9 @@ extension ThemeBuilderWindowController {
 
         statusLabel.font = .systemFont(ofSize: 10)
         statusLabel.textColor = .secondaryLabelColor
+        statusLabel.lineBreakMode = .byTruncatingTail
+        statusLabel.maximumNumberOfLines = 1
+        statusLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         let buttons = buttonRow()
         buttons.translatesAutoresizingMaskIntoConstraints = false
@@ -340,6 +343,13 @@ extension ThemeBuilderWindowController {
         label.lineBreakMode = .byWordWrapping
         label.maximumNumberOfLines = 0
         label.preferredMaxLayoutWidth = Self.formWidth
+        // preferredMaxLayoutWidth only bites after a layout pass; on the first
+        // pass the label reports its whole unwrapped line as its intrinsic
+        // width and the resizable window grows to fit it — and never shrinks
+        // back. A hard width constraint removes the runaway measurement.
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.widthAnchor.constraint(equalToConstant: Self.formWidth).isActive = true
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }
 

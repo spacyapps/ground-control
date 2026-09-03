@@ -29,7 +29,7 @@ final class ThemeBuilderWindowController: NSWindowController {
         self.onThemesChanged = onThemesChanged
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 620, height: 560),
+            contentRect: NSRect(x: 0, y: 0, width: 720, height: 560),
             styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false
@@ -37,7 +37,9 @@ final class ThemeBuilderWindowController: NSWindowController {
         window.title = "Create a Theme"
         // The prompt is the point of this window, and shrinking it below this
         // squeezed that box down to two visible lines.
-        window.minSize = NSSize(width: 620, height: 560)
+        // Wide enough for the five buttons on one row — below this the button
+        // row overflowed and the window grew itself back out to fit it.
+        window.minSize = NSSize(width: 720, height: 560)
         window.isReleasedWhenClosed = false
         window.center()
 
