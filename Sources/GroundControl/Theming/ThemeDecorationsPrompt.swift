@@ -70,8 +70,12 @@ enum ThemeDecorationsPrompt {
       own height again." This sets how wide the canvas has to be and where the
       subject sits at rest — I draw the whole journey into one image and never
       move it myself.
-    - Either way: gif/apng (I key the background out) or video (must carry its
-      own clean alpha — I cannot key a video)?
+    - **Format: APNG if it moves, PNG if it is still — GIF only as a fallback.**
+      APNG is the one to reach for: an image tool can output it, and it carries
+      the true 8-bit alpha that keys cleanly against the key colour. A GIF's
+      1-bit alpha leaves a hard fringe, so use it only for flat, hard-edged art
+      where that cannot show. Do **not** hand me a video — MP4 and MOV are not
+      read from a decoration's `image`, and the app cannot key a clip.
     """
 
     private static func closing(key: String) -> String {
@@ -84,10 +88,11 @@ enum ThemeDecorationsPrompt {
         - **Everything that is not the decoration is the key colour** — the same
           flat `\(key)` as the frame, and the same warnings from part two: a
           near-miss colour is not removed, a glint in the key hue is erased, hand
-          it to me un-keyed. A video instead needs true transparency.
+          it to me un-keyed. Deliver it as an APNG (or GIF); never a video.
         - **A travelling decoration is one wide canvas.** Crop it tight to the
           whole path of travel — do not pad it out to a square. An animated
-          corner is the heaviest file a theme ships.
+          APNG corner is the heaviest file a theme ships, so keep it lean:
+          roughly 60–120 frames, and no more pixels than it covers on screen.
         - **If it moves, close the loop** — the last frame flows back into the
           first — and keep the resting anchor point still between frames, or it
           jitters against the corner.
@@ -101,7 +106,7 @@ enum ThemeDecorationsPrompt {
         - **A quiet easter egg, if you want one:** `image` can be a *list* of
           filenames instead of one. While a session is working the corner
           plays through the list end to end and loops — each entry for its own
-          natural length: a gif runs its whole loop, a still holds a few
+          natural length: an animation runs its whole loop, a still holds a few
           seconds, then the next takes over. It freezes when work stops and
           picks up from there. Two or three distinct poses is the idea; skip
           this unless I ask.
