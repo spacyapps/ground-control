@@ -71,11 +71,14 @@ enum ThemeDecorationsPrompt {
       subject sits at rest — I draw the whole journey into one image and never
       move it myself.
     - **Format: APNG if it moves, PNG if it is still — GIF only as a fallback.**
-      APNG is the one to reach for: an image tool can output it, and it carries
-      the true 8-bit alpha that keys cleanly against the key colour. A GIF's
-      1-bit alpha leaves a hard fringe, so use it only for flat, hard-edged art
-      where that cannot show. Do **not** hand me a video — MP4 and MOV are not
-      read from a decoration's `image`, and the app cannot key a clip.
+      Give the APNG or PNG a **real transparent alpha channel** — the area
+      around the decoration genuinely empty, not filled with any colour. That
+      is the whole reason to use these formats here: their 8-bit alpha keeps a
+      soft, anti-aliased edge that a colour key cannot. Only if you can output
+      nothing but GIF, flood the background with the flat key colour instead
+      and I will key it on load — a GIF's 1-bit alpha then leaves a hard
+      fringe, which is why it is the lesser option. Never a video: MP4 and MOV
+      are not read from a decoration's `image`, and I cannot key a clip.
     """
 
     private static func closing(key: String) -> String {
@@ -85,10 +88,13 @@ enum ThemeDecorationsPrompt {
         - **Draw each one at the size it should occupy on screen.** No box to fit
           into, no Retina doubling — its pixels are its points. If you drew the
           moods at 2x for sharpness, do the same here and set `scale` to `0.5`.
-        - **Everything that is not the decoration is the key colour** — the same
-          flat `\(key)` as the frame, and the same warnings from part two: a
-          near-miss colour is not removed, a glint in the key hue is erased, hand
-          it to me un-keyed. Deliver it as an APNG (or GIF); never a video.
+        - **Hand it to me transparent.** An APNG or PNG carries its own alpha,
+          so the area around the decoration is simply empty — do not fill it,
+          and do not set `removeBackground`. The key colour is only for the GIF
+          fallback: there, flood everything that is not the decoration with the
+          flat `\(key)` and add `"removeBackground": "\(key)"` so I strip it on
+          load — and the part-two warnings apply, a near-miss colour is not
+          removed and a glint in the key hue is erased. Never a video.
         - **A travelling decoration is one wide canvas.** Crop it tight to the
           whole path of travel — do not pad it out to a square. An animated
           APNG corner is the heaviest file a theme ships, so keep it lean:
@@ -117,12 +123,14 @@ enum ThemeDecorationsPrompt {
         "cornerDecorations": {
           "topRight": {
             "image": "antenna.apng",
-            "removeBackground": "\(key)",
             "scale": 0.5,
             "offset": { "x": 12, "y": -40 }
           }
         }
         ```
+
+        No `removeBackground` — the APNG is already transparent. Add
+        `"removeBackground": "\(key)"` only if `antenna` is the GIF fallback.
 
         `offset` moves it from the corner in screen terms — `x` right, `y` down —
         measured after `scale`. `{0,0}` sets its own matching corner exactly on
