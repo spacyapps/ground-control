@@ -119,12 +119,20 @@ enum ThemeDecorationsPrompt {
 
         ## The block
 
+        Add one `"cornerDecorations"` key at the **top level of `theme.json`** —
+        a sibling of `"window"` and `"avatar"`, not nested inside either. One
+        entry per corner you are using, keyed by corner name:
+
         ```json
-        "cornerDecorations": {
-          "topRight": {
-            "image": "antenna.apng",
-            "scale": 0.5,
-            "offset": { "x": 12, "y": -40 }
+        {
+          "window": { "…": "…" },
+          "avatar": { "…": "…" },
+          "cornerDecorations": {
+            "topRight": {
+              "image": "antenna.apng",
+              "scale": 0.5,
+              "offset": { "x": 12, "y": -40 }
+            }
           }
         }
         ```
