@@ -309,6 +309,10 @@ AGPL-3.0-or-later — see `LICENSE`.
 - **Themes are not covered.** They are plain folders of images and JSON, not a
   derivative of the code. Artwork carries whatever licence its author gives it —
   ask whoever made a theme before redistributing it.
+- **The name and the artwork are reserved.** "Ground Control", "SpacyApps", and
+  the theme characters are SpacyApps trademarks; the theme images are
+  all-rights-reserved. A fork ships under its own name and its own art — see
+  `TRADEMARK.md`.
 - **Need different terms for your organization?** Copyright is held by one
   person specifically so this is possible — email spacyapps@gmail.com to ask.
 
