@@ -16,15 +16,8 @@ final class PanelController {
     private var theme: Theme = DefaultTheme.theme
     private var resizeStart: CGSize = .zero
     private var frameObserver: NSObjectProtocol?
-    private var spaceObserver: NSObjectProtocol?
     private var elapsedTimer: Timer?
     private var hasAppeared = false
-
-    /// The user's own show/hide intent, kept apart from `panel.isVisible`
-    /// because the panel also hides itself while another app is full-screen
-    /// (unless "always on top" is on) and restores when that ends.
-    private var wantsToBeVisible = false
-    private var autoHiddenForFullscreen = false
 
     init(preferences: Preferences = .shared) {
         self.preferences = preferences
@@ -50,9 +43,6 @@ final class PanelController {
     deinit {
         elapsedTimer?.invalidate()
         if let frameObserver { NotificationCenter.default.removeObserver(frameObserver) }
-        if let spaceObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(spaceObserver)
-        }
     }
 
     /// Elapsed times advance with the clock, not with events, so they need
@@ -68,8 +58,7 @@ final class PanelController {
         elapsedTimer = timer
     }
 
-    /// Visible *to the user*: ordered in, and not blanked for a full-screen app.
-    var isVisible: Bool { (panel?.isVisible ?? false) && !autoHiddenForFullscreen }
+    var isVisible: Bool { panel?.isVisible ?? false }
 
     func toggle() {
         if isVisible { hide() } else { show() }
@@ -77,16 +66,7 @@ final class PanelController {
 
     func show() {
         let panel = existingOrNewPanel()
-        wantsToBeVisible = true
-        // An explicit "show" wins over the full-screen auto-hide until the next
-        // Spaces change re-evaluates — so clicking it from the menu while
-        // full-screen actually shows it.
-        autoHiddenForFullscreen = false
-        panel.alphaValue = 1
-        panel.apply(
-            alwaysOnTop: preferences.alwaysOnTop,
-            showOnAllSpaces: preferences.showOnAllSpaces
-        )
+        applyWindowBehaviour()
         panel.orderFrontRegardless()
         // First appearance after launch is fitted like a theme switch: the
         // saved frame's height can be from a different skin, and a `free`
@@ -98,83 +78,7 @@ final class PanelController {
     }
 
     func hide() {
-        wantsToBeVisible = false
-        autoHiddenForFullscreen = false
         panel?.orderOut(nil)
-    }
-
-    /// Get out of the way of a full-screen app.
-    ///
-    /// "Always on top" is the opt-out: with it on the panel is meant to float
-    /// over everything, full-screen included. Otherwise, when another app takes
-    /// a full-screen space the panel blanks itself and comes back when that
-    /// space is left — but only if the user had it open.
-    ///
-    /// It goes to `alphaValue = 0` rather than `orderOut`: a window returned
-    /// from `orderOut` is only placed on the active Space, not every Space, so
-    /// ordering out here broke "show on all Spaces" for good. Invisible-but-
-    /// present keeps the Space membership intact, and the panel never takes a
-    /// click anyway (`hitTest` returns nil).
-    ///
-    /// AppKit has no notification for a Space becoming full-screen, so this is
-    /// re-checked on every Spaces change, slightly delayed because the
-    /// full-screen window is not at its final size the instant that fires.
-    private func evaluateFullscreenAutoHide() {
-        guard let panel, wantsToBeVisible else { return }
-
-        let hideForFullscreen = !preferences.alwaysOnTop && Self.anotherAppIsFullscreen()
-        guard hideForFullscreen != autoHiddenForFullscreen else { return }
-
-        autoHiddenForFullscreen = hideForFullscreen
-        panel.alphaValue = hideForFullscreen ? 0 : 1
-        if !hideForFullscreen { panel.orderFrontRegardless() }
-    }
-
-    /// Whether another app currently holds a full-screen space on any display.
-    ///
-    /// AppKit has no notification or property for this, so it is read from the
-    /// window list. A full-screen app decomposes into several windows (a tab
-    /// strip, the content, a bar over the menu-bar area), so no single window
-    /// matches the display — but their **union** covers it corner to corner,
-    /// reaching `y = 0` over the space the menu bar occupies. A merely zoomed
-    /// or tiled window stops below the menu bar and above the Dock, so its
-    /// union never touches the top edge.
-    private static func anotherAppIsFullscreen() -> Bool {
-        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
-        guard let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID)
-            as? [[String: Any]] else { return false }
-
-        let ourPID = Int(getpid())
-        let systemOwners: Set<String> = [
-            "Window Server", "Dock", "WindowManager", "Control Center",
-            "SystemUIServer", "Spotlight", "Notification Center",
-        ]
-
-        var coverage: [Int: CGRect] = [:]
-        for window in list {
-            guard let pid = window[kCGWindowOwnerPID as String] as? Int, pid != ourPID,
-                  let owner = window[kCGWindowOwnerName as String] as? String,
-                  !systemOwners.contains(owner),
-                  // The desktop sits at a deeply negative layer; a full-screen
-                  // app's own bar over the menu-bar area is a small positive
-                  // one. Only real window layers count.
-                  let layer = window[kCGWindowLayer as String] as? Int, layer >= 0,
-                  let bounds = window[kCGWindowBounds as String] as? [String: CGFloat],
-                  let x = bounds["X"], let y = bounds["Y"],
-                  let width = bounds["Width"], let height = bounds["Height"],
-                  width > 40, height > 20 else { continue }
-            let rect = CGRect(x: x, y: y, width: width, height: height)
-            coverage[pid] = coverage[pid].map { $0.union(rect) } ?? rect
-        }
-
-        for screen in NSScreen.screens {
-            let width = screen.frame.width, height = screen.frame.height
-            for box in coverage.values
-            where box.minX <= 2 && box.minY <= 2 && box.maxX >= width - 2 && box.maxY >= height - 2 {
-                return true
-            }
-        }
-        return false
     }
 
     func apply(theme: Theme) {
@@ -293,9 +197,6 @@ final class PanelController {
             alwaysOnTop: preferences.alwaysOnTop,
             showOnAllSpaces: preferences.showOnAllSpaces
         )
-        // Turning "always on top" on mid-full-screen should bring the panel
-        // straight back; turning it off in full-screen should send it away.
-        evaluateFullscreenAutoHide()
     }
 
     // MARK: - Panel lifecycle
@@ -328,24 +229,6 @@ final class PanelController {
             object: panel,
             queue: .main
         ) { [weak self] _ in self?.saveFrame() }
-
-        // A full-screen space is its own Space, so entering or leaving one
-        // fires this. The re-check is delayed: the full-screen window is not
-        // yet at its final size the instant the notification lands.
-        spaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
-            forName: NSWorkspace.activeSpaceDidChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                self?.evaluateFullscreenAutoHide()
-            }
-        }
-        // No Spaces change fires if the app launches already inside a
-        // full-screen space, so seed the check once.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.evaluateFullscreenAutoHide()
-        }
 
         self.panel = panel
         root.apply(theme: theme)
