@@ -710,6 +710,22 @@ event mapping. Nothing in the Swift should need to change.
 - **Per-project theming is out** for v1 (SPEC §6), by choice.
 - **The app never reads `~/.claude/` or any CLI's state.** Everything arrives
   through the JSON lines. A CLI update can only ever break the script.
+- **The panel and other apps' full-screen spaces.** With **Always on top on** the
+  panel floats over another app's full-screen space — that is the switch's
+  purpose. With it **off** the panel is absent from full-screen spaces and
+  reappears when you leave. There is no public API to detect another app's
+  full-screen state, so this is WindowServer-driven via `.fullScreenNone` /
+  withholding `.fullScreenAuxiliary`, not something the app decides frame by
+  frame. `.fullScreenNone` keeping a `.canJoinAllSpaces` window off a full-screen
+  space is community-standard and Apple-DTS-suggested, but not a written API
+  contract — re-verify on a macOS bump. Toggling "always on top" off *while
+  already inside* another app's full-screen space may not evict the panel until
+  the next Space change.
+- **Z-order flash on Space entry** (while `.canJoinAllSpaces` is in use):
+  arriving on a new Space with "Show on all Spaces" on, the panel can render
+  behind an overlapping window for a frame or two before returning to its level.
+  A WindowServer transition artefact, accepted. Only affects the Always-on-top +
+  all-Spaces user.
 
 ---
 

@@ -92,10 +92,24 @@ final class FloatingPanel: NSPanel {
     }
 
     /// Applies the two user-facing window behaviours (docs/SPEC.md §5).
+    ///
+    /// "Always on top" is the master switch for whether the panel joins another
+    /// app's full-screen space. On: `.fullScreenAuxiliary` lets it float there.
+    /// Off: `.fullScreenNone` keeps it out — a plain window that yields to any
+    /// full-screen app and reappears when you leave. The two are the mutually
+    /// exclusive members of AppKit's full-screen group.
+    ///
+    /// "Show on all Spaces" is orthogonal: `.canJoinAllSpaces` (every Space) vs
+    /// `.moveToActiveSpace` (follows you). With it on and "always on top" off
+    /// the panel is on every *regular* Space and absent from full-screen ones —
+    /// `.canJoinAllSpaces` alone does not reliably stay off a full-screen space,
+    /// so `.fullScreenNone` is what makes that combination hold.
     func apply(alwaysOnTop: Bool, showOnAllSpaces: Bool) {
         level = alwaysOnTop ? .floating : .normal
-        collectionBehavior = showOnAllSpaces
-            ? [.canJoinAllSpaces, .fullScreenAuxiliary]
-            : [.moveToActiveSpace, .fullScreenAuxiliary]
+
+        var behavior: NSWindow.CollectionBehavior =
+            showOnAllSpaces ? [.canJoinAllSpaces] : [.moveToActiveSpace]
+        behavior.insert(alwaysOnTop ? .fullScreenAuxiliary : .fullScreenNone)
+        collectionBehavior = behavior
     }
 }

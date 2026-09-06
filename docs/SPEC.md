@@ -211,9 +211,18 @@ session needs action. Opens the panel.
 **Free-floating panel** (`NSPanel`):
 - `.nonactivatingPanel` + `isFloatingPanel = true` so clicking it never steals
   focus from the terminal.
-- Toggleable **Always on top** (`level = .floating` vs `.normal`) and
-  **Show on all Spaces** (`collectionBehavior` includes `.canJoinAllSpaces`
-  vs `.moveToActiveSpace`; always include `.fullScreenAuxiliary`).
+- Toggleable **Always on top** — the master switch for full-screen intrusion:
+  - **On** — `level = .floating`, `collectionBehavior` includes
+    `.fullScreenAuxiliary`; floats over everything, including another app's
+    full-screen space.
+  - **Off** — `level = .normal`, `.fullScreenNone` (never `.fullScreenAuxiliary`);
+    a normal window, simply absent from other apps' full-screen spaces and back
+    when you leave.
+- Toggleable **Show on all Spaces**: `.canJoinAllSpaces` (on) vs
+  `.moveToActiveSpace` (off). Orthogonal to Always on top — with Always on top
+  **off** and this **on**, the panel is on every *regular* Space and absent from
+  full-screen ones (`.fullScreenNone` is what makes that hold; `.canJoinAllSpaces`
+  alone does not reliably stay off a full-screen space).
 - **Remember panel position** across launches (save frame to UserDefaults).
 
 **Rows** (vertical stack; WinAmp-style):
