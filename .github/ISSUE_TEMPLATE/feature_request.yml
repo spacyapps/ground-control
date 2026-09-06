@@ -1,0 +1,40 @@
+name: Feature request
+description: Ask for something Ground Control does not do yet
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Code contributions are not accepted (see the PR template for why), but
+        feature requests are genuinely wanted — especially "I expected X to
+        work". The clearer the description, the more likely it gets built.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation you are in when you wish Ground Control did this. Not the feature — the problem behind it.
+      placeholder: I run agents on two machines and I can't tell from one which one needs me.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would it look like?
+      description: How you picture it working. A rough idea is fine; it does not have to be the final design.
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What do you do instead today?
+      description: The current workaround, if any — it says how much the gap costs.
+    validations:
+      required: false
+  - type: input
+    id: setup
+    attributes:
+      label: Your setup
+      description: Which CLI(s), which terminal(s), which macOS — only if the request depends on them.
+      placeholder: Claude Code + Grok CLI, iTerm2, macOS 15.1
+    validations:
+      required: false

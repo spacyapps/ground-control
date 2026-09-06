@@ -1,0 +1,59 @@
+name: Bug report
+description: Something Ground Control did wrong, late, or not at all
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        For anything exploitable, stop — email spacyapps@gmail.com instead (see
+        SECURITY.md). For everything else, the most useful thing you can send is
+        a clear account of what happened.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what Ground Control did, and what you expected instead.
+      placeholder: |
+        1. Started Claude Code in a new Terminal tab
+        2. It asked for permission to run a command
+        3. The row stayed grey — expected it to turn red
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Which agent / CLI
+      placeholder: Claude Code 2.1.x  ·  Grok CLI  ·  opencode  ·  Cursor
+    validations:
+      required: true
+  - type: input
+    id: terminal
+    attributes:
+      label: Which terminal or editor
+      placeholder: Terminal.app  ·  iTerm2  ·  VS Code  ·  Warp
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "15.1"
+    validations:
+      required: true
+  - type: input
+    id: gc-version
+    attributes:
+      label: Ground Control version
+      description: Menu-bar icon → About Ground Control, or the .zip filename.
+      placeholder: "0.7.2"
+    validations:
+      required: false
+  - type: textarea
+    id: hooks
+    attributes:
+      label: Hooks status
+      description: >-
+        Menu-bar icon → Hooks — the line under each agent. Paste it if a row is
+        not appearing at all.
+    validations:
+      required: false

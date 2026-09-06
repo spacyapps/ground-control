@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/spacyapps/ground-control/security/policy
+    about: >-
+      Found something exploitable? Do not open a public issue — email
+      spacyapps@gmail.com with "Ground Control security" in the subject.
+  - name: A theme you made
+    url: https://www.spacyapps.com/apps/ground-control
+    about: >-
+      Themes are yours and stay yours — the code licence does not cover
+      artwork. Share a link; there is no submission process.
