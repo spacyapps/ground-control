@@ -13,6 +13,28 @@ enum Brand {
     static let name = "SpacyApps"
     static let website = URL(string: "https://www.spacyapps.com")
 
+    /// The running version as `0.7.3 (8)` — marketing version, then the build
+    /// number in parentheses, the macOS convention.
+    ///
+    /// Read from the app bundle's `Info.plist`, which `build-app.sh` copies from
+    /// `Packaging/Info.plist`. A `swift run` executable carries neither key, so
+    /// that case says so rather than showing a blank.
+    static var versionLine: String {
+        versionLine(
+            short: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+            build: Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        )
+    }
+
+    /// The formatting, split out so a test can pin it without a bundle.
+    static func versionLine(short: String?, build: String?) -> String {
+        switch (short, build) {
+        case let (short?, build?): return "\(short) (\(build))"
+        case let (short?, nil): return short
+        default: return "dev build"
+        }
+    }
+
     static func openWebsite() {
         guard let website else { return }
         NSWorkspace.shared.open(website)

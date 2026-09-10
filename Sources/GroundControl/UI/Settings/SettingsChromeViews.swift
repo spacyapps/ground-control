@@ -29,7 +29,18 @@ extension SettingsView {
 
         column.addArrangedSubview(mark)
         column.addArrangedSubview(websiteLink())
+        column.addArrangedSubview(versionLabel())
         return column
+    }
+
+    /// Version and build number, under the wordmark. Selectable so it can be
+    /// copied straight into a bug report.
+    func versionLabel() -> NSTextField {
+        let label = NSTextField(labelWithString: Brand.versionLine)
+        label.font = .systemFont(ofSize: 10)
+        label.textColor = SettingsChrome.dim
+        label.isSelectable = true
+        return label
     }
 
     func websiteLink() -> NSButton {
