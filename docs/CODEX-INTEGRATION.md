@@ -8,19 +8,21 @@ look is a read, not another evening. Built and shipped the same day —
 
 ## Verdict
 
-Codex gives Ground Control **working / done**, real cwd, real thread names —
-but **never red**. Its one real "needs you" moment, a command needing
-escalated permission, writes nothing to any file while it waits: confirmed
-live, watching a real approval prompt sit on screen while the transcript's
-size and mtime stayed frozen the entire time. That signal only exists live,
-over Codex's own app-server socket — a materially different integration than
-this one, not attempted here.
+**What shipped tonight** (`CodexWatcher`) gives Ground Control **working /
+done**, real cwd, real thread names, but never red — a file-reading producer,
+no hook, no config written into Codex at all, same posture as
+`GrokBotWatcher`. Unlike Grok Bot, Codex threads are **not** grouped under one
+parent; each is its own independent CLI session, the same as Claude Code or
+Grok CLI's own rows.
 
-Shape shipped: `CodexWatcher` reads Codex's own local files directly, no
-hook, no config written into Codex at all — same posture as `GrokBotWatcher`.
-Unlike Grok Bot, Codex threads are **not** grouped under one parent; each is
-its own independent CLI session, the same as Claude Code or Grok CLI's own
-rows.
+**What was believed impossible turned out not to be.** Codex's real "needs
+you" moment — a command needing escalated permission — genuinely writes
+nothing to any file while it waits (confirmed live, a real approval prompt
+frozen on screen the whole time its transcript's size and mtime sat
+unchanged). That part still holds. But **hooks are real and do fire** —
+confirmed live the same evening, after the file-based investigation above was
+already written up as the final word. The alarm is reachable after all, just
+not through the file `CodexWatcher` reads. See "Hooks, resolved" below.
 
 ---
 
@@ -37,13 +39,13 @@ rows.
 
 ---
 
-## Hooks — real, stable, syntax still unconfirmed
+## Hooks, resolved
 
 `codex features list` shows `hooks` as **`stable`**, on by default — not the
 `experimental, needs a flag` state an earlier pass assumed from Codex's public
-docs (that note was wrong; fixed in `docs/LIMITATIONS.md`). Its schema
-(`codex app-server generate-json-schema`) gives the **real, confirmed** event
-vocabulary without any live probing at all:
+docs (that note was wrong; fixed in `docs/LIMITATIONS.md`). Its app-server
+schema (`codex app-server generate-json-schema`, no login needed) gives the
+**real, confirmed** event vocabulary:
 
 ```
 "enum": ["preToolUse", "permissionRequest", "postToolUse", "preCompact",
@@ -51,16 +53,60 @@ vocabulary without any live probing at all:
          "subagentStart", "subagentStop", "stop", "interrupt"]
 ```
 
-CamelCase — same dialect as Grok and Cursor, not Claude's snake_case. Two
-events neither Claude nor Grok has: `permissionRequest`, `interrupt`.
+That's the wire casing (camelCase — same dialect as Grok and Cursor, not
+Claude's snake_case) and two events neither Claude nor Grok has:
+`permissionRequest`, `interrupt`.
 
-**What is still genuinely unknown:** the TOML syntax to actually *register* a
-hook command. Checked OpenAI's own `openai/codex` repo directly (`docs/`
-folder, `config.md`) — the only mention is one paragraph about admin-managed
-`requirements.toml` policy, not the schema a normal user would write. Not
-guessed at and not built on — this project's own rule, broken twice already
-on Grok, is to measure a real payload before writing an adapter, and there is
-no real payload to measure yet.
+**The TOML registration syntax — not in OpenAI's public docs, found in the
+open-source Rust instead.** `codex-rs/config/src/hook_config.rs` and its test
+suite (`hooks_tests.rs`) give the real, `serde`/`toml`-verified shape — not
+guessed, read straight from the struct definitions and a passing unit test:
+
+```toml
+[[hooks.Stop]]
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = "echo fired >> /tmp/marker"
+```
+
+Two things the flat-string guess below got wrong: **event names in TOML are
+PascalCase** (`Stop`, `SessionStart`, `PermissionRequest` — matching Claude's
+own convention; the codebase even has a Claude/Cursor hooks *migration* tool),
+not the wire protocol's camelCase. And a handler is a structured array of
+`MatcherGroup`s (`matcher: Option<String>` + `hooks: Vec<HookHandlerConfig>`),
+tagged by `type` (`command`/`mcp_tool`/`prompt`/`agent`) — never a bare
+string. `HooksToml`'s events are `#[serde(flatten)]`, so they sit directly
+under `[hooks.<EventName>]` in `config.toml`, confirmed against
+`config_toml.rs`'s own field: `pub hooks: Option<HooksToml>`.
+
+**Tested with the exact verified shape — still didn't fire non-interactively.**
+The reason is real, not another dead end: the schema also has
+`HookStateToml { enabled, trusted_hash }`, and the source has an actual
+`startup_hooks_review.rs` — a hook needs a one-time interactive **trust**
+step before Codex will run it, the same idea as a workspace-trust prompt.
+`codex exec` (non-interactive) never shows it, so a hook configured that way
+stays permanently untrusted there — matching `--dangerously-bypass-hook-trust`
+existing specifically for automation.
+
+**Confirmed live, same evening.** Ran interactive `codex` (not `exec`) with
+the `[[hooks.Stop]]` block above in place — a real trust prompt appeared on
+startup ("trust the hooks"), was accepted, and the hook fired: the marker
+file appeared, and `config.toml` grew a real trust record —
+
+```toml
+[hooks.state."/Users/waltermak/.codex/config.toml:stop:0:0"]
+trusted_hash = "sha256:b3849a6bc93ee3ce358bfe954e5367ac14470b8931b390c653059b46444f6b6f"
+```
+
+So: **hooks are real, the syntax is known, and the alarm is reachable** —
+`permissionRequest` should cover the exact "needs you" moment the file-based
+approach can't see. What's left is building it: a `cc-notify` dialect for
+Codex's real payload shape (never captured — the test above proved `Stop`
+fires, not what its payload looks like), and `install-hooks.sh` writing the
+`[[hooks.X]]` blocks plus walking the one-time interactive trust step during
+setup. Not attempted tonight; a real next session's work, not a code change
+squeezed in at the end of this one.
 
 ---
 
@@ -166,35 +212,37 @@ is not installed).
 
 ## What did not ship
 
-- Any alarm at all — see above; nothing to build it on yet without the
-  app-server socket.
-- Hook-based anything — the registration syntax was never found, and this
-  project's rule is not to guess one.
+- The hook-based alarm — the mechanism is now confirmed real (above), but
+  building it (a `cc-notify` dialect, `install-hooks.sh` writing the TOML and
+  walking the trust step) is real work, not attempted tonight.
+- A flat-string `[hooks]` shape — ruled out live, 2026-09-11: `stop = "echo
+  fired >> marker"` is accepted without error by `codex doctor` or a real
+  `codex exec` turn, and is silently ignored, never fires. Not a parse
+  error — `doctor` and `exec` alike say nothing is wrong with it. The
+  correct shape (above) was found in the Rust source once this one failed.
+- The app-server socket — a real, viable *alternative* path (below), but
+  hooks turned out to be reachable first, so this wasn't needed tonight.
 - The SQLite-backed state (`thread_history`, `queue`, `goals`, `memories`,
-  `logs`) — untouched; the two plain JSONL files were enough.
+  `logs`) — untouched; the plain JSONL files were enough.
 
 ## Open, for whenever it's picked back up
 
-- **The real fix would be the app-server socket**, not a bigger file reader.
-  `codex app-server daemon start` / `--remote ws://…` and a subscription to
+- **Build the real hook-based alarm.** The mechanism is confirmed (above);
+  what's missing is Codex's actual hook *payload* shape — the live test
+  proved `Stop` fires, not what its JSON looks like on stdin. Register
+  `permissionRequest` + `stop` + `sessionStart`/`sessionEnd`, capture a real
+  payload the way every other CLI here was measured (`docs/HOOK-PAYLOADS.md`
+  method), then extend `cc-notify` and `install-hooks.sh` to write the
+  `[[hooks.X]]` TOML and handle the one-time interactive trust step (which
+  a scripted installer cannot click through itself — worth checking whether
+  `--dangerously-bypass-hook-trust` or pre-seeding a `trusted_hash` in
+  `[hooks.state]` is the sanctioned way to automate that for an installer,
+  rather than always requiring one manual interactive run first).
+- **The app-server socket** remains the other real option — `codex
+  app-server daemon start` / `--remote ws://…`, subscribing to
   `TurnStartedNotification`/`TurnCompletedNotification`/whatever an approval
   request actually notifies as (the schema has `AskForApproval`,
   `GuardianApprovalReview`, `PermissionsRequestApprovalResponse` — none
-  triggered live yet, so their exact shape is still unconfirmed) would be a
-  genuinely different, bigger integration: a persistent connection, not a
-  poll. Not scoped here.
-- **Hook config syntax** — one real shape ruled out live, 2026-09-11:
-  `[hooks]` / `stop = "echo fired >> marker"` (a flat string) writes to
-  `~/.codex/config.toml`, is accepted without error by `codex doctor` or a
-  real `codex exec` turn, and is **silently ignored** — the marker file never
-  appeared. Not a parse error, just dead config: `doctor` and `exec` alike
-  say nothing is wrong with it. So this is not "unknown key rejected", it is
-  "unknown key tolerated" — consistent with a config parser that does not
-  reject extra fields, which narrows nothing about the right shape but does
-  rule out this one for good. Given `HookHandlerType` in the app-server
-  schema (`command` / `mcpTool` / `prompt` / `agent`), the real shape is
-  almost certainly a structured table per event — something closer to
-  `[[hooks.stop]]` with its own `type` — not a bare command string. Worth
-  trying that shape next, or watching `~/.codex/config.toml` after Codex's
-  own UI ever writes a hook block itself, rather than continuing to guess
-  TOML from nothing.
+  triggered live yet). A persistent connection instead of a poll or a hook —
+  worth it only if the hook path turns out to have a real gap the socket
+  doesn't.
