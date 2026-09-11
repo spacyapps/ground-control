@@ -24,6 +24,7 @@ final class Preferences {
         static let renames = "renames"
         static let showsInternalAgents = "showsInternalAgents"
         static let showsGrokBot = "showsGrokBot"
+        static let showsGrokSubagentGrouping = "showsGrokSubagentGrouping"
         static let showsAnalyser = "showsAnalyser"
         static let analyserTint = "analyserTint"
     }
@@ -59,6 +60,19 @@ final class Preferences {
     var showsGrokBot: Bool {
         get { defaults.object(forKey: Key.showsGrokBot) as? Bool ?? true }
         set { defaults.set(newValue, forKey: Key.showsGrokBot) }
+    }
+
+    /// Folds a Grok CLI session's `spawn_subagent` children under their
+    /// parent, the same "N subagents" treatment Claude Code's real subagents
+    /// already get (docs/HOOK-PAYLOADS.md, "Follow-up, same evening"). On by
+    /// default — reading `subagents/<id>/meta.json` is cheap and only ever
+    /// active for `source == "grok"` sessions — but the link comes from an
+    /// undocumented, no-contract Grok-internal file, so `defaults write
+    /// GroundControl showsGrokSubagentGrouping -bool NO` turns it off if that
+    /// shape ever drifts.
+    var showsGrokSubagentGrouping: Bool {
+        get { defaults.object(forKey: Key.showsGrokSubagentGrouping) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Key.showsGrokSubagentGrouping) }
     }
 
     var panelFrame: String? {

@@ -491,7 +491,12 @@ def handle_subagent(payload, root, now, finished):
     down. The app groups them by the session id prefix.
 
     Grok fires SubagentStart as well as SubagentStop, so its children can show
-    up while they are still running; Claude Code only announces the stop."""
+    up while they are still running; Claude Code only announces the stop.
+
+    Unconfirmed for Grok's `spawn_subagent` tool specifically: a live test
+    2026-09-10 (two real subagents, completed successfully) fired neither
+    event — everything surfaced as PreToolUse on the parent row instead, and
+    this function was never even called. See docs/HOOK-PAYLOADS.md."""
     agent_id = safe_id(get(payload, "agent_id", "agentId"))
     session_id = safe_id(get(payload, "session_id", "sessionId"))
     if not agent_id or not session_id:
