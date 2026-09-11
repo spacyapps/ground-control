@@ -76,6 +76,19 @@ final class CodexWatcherTests: XCTestCase {
         XCTAssertEqual(session.message, "This directory is empty.")
     }
 
+    /// Caught live: a real `last_agent_message` was a numbered list and
+    /// rendered as several stacked lines in the panel — the only row in the
+    /// app that did not collapse to one, until this was fixed.
+    func testAMultilineMarkdownMessageCollapsesToOneCleanLine() throws {
+        let raw = #"Select the **1st**, **2nd**, or **3rd** item:\n1. ember\n2. meadow\n3. quartz"#
+        try writeRollout(id: "t4", cwd: "/Users/you/repo", completed: raw)
+        try writeIndex([#"{"id":"t4","thread_name":"Pick one","updated_at":"2026-09-11T21:55:00.000000Z"}"#])
+
+        let session = try XCTUnwrap(CodexWatcher.sessions(fromIndexAt: indexURL, sessionsRoot: sessionsRoot, now: now).first)
+        XCTAssertEqual(session.message, "Select the 1st, 2nd, or 3rd item:")
+        XCTAssertFalse(session.message.contains("\n"))
+    }
+
     /// The load-bearing limit: a frozen file (mid-approval-prompt, nothing
     /// new written) must never be misread as done just because it is quiet.
     func testAFrozenTranscriptStaysWorkingNeverGuessedDone() throws {
