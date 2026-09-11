@@ -29,8 +29,21 @@ permission.replied  "Done"
 ```
 
 `question.asked` is forwarded too — "which database?" rather than "may I run
-this" — though nothing has been seen to fire it yet: a model that asks in prose
-never reaches it.
+this". Measured live 2026-09-11, opencode 1.18.27 against a local model
+(Qwen3.5, via `mlx_lm.server`): the row correctly went red and needy, but the
+message read the generic "Needs your input" instead of the real question —
+the field this looked for, `properties.question`, does not exist. The actual
+text is one level deeper: `properties.questions[0].question` (an array — a
+turn can ask more than one at once), with `.header` as a shorter fallback.
+Fixed the same day; both fields are now tried.
+
+**The other half of "two different ways", now confirmed for opencode too.**
+The same live test also produced a question asked in plain prose ("17, 42,
+89 — which one would you like to pick?") rather than through the question
+tool. No event distinguishes that from a genuinely finished turn — the row
+read green, "Done", while it sat waiting. This was predicted by analogy to
+Grok's identical gap but never actually observed until now; nothing to fix,
+since there is genuinely no event on the wire that tells the two apart.
 
 **What is not covered.** Only the four lifecycle events are forwarded; opencode
 emits well over a hundred per turn and the rest is noise. A session started
@@ -362,6 +375,8 @@ the alarm like any other blocked session. Full design: `docs/GROK-BOT-GROUPING.m
 | **The red alarm, end to end** | a blocked session turned the row red, the click landed on its tab, and the alarm cleared — watched, not derived | 2026-08-12 |
 | opencode plugin API and events | probe plugin logged a real turn; 4 of >100 events matter | 2026-08-19 |
 | **opencode's alarm, end to end** | row turned red carrying "List files with details in current directory", and cleared on reply | 2026-08-19 |
+| opencode's `question.asked` fires and carries the real question | live against 1.18.27 + a local model; found the field was nested one level deeper than assumed, fixed | 2026-09-11 |
+| opencode's prose-question gap, same as Grok's | same live test: a question asked in prose read "Done", green, while waiting on an answer | 2026-09-11 |
 | opencode respects `XDG_CONFIG_HOME` | probed in a scratch config; the user's own was never touched | 2026-08-19 |
 | A plugin's shell has no writable stdin | `.stdin(json)` hung twice for five minutes; piping works | 2026-08-19 |
 | Only `session.created` carries the directory | later events gave an id alone, and rows arrived named `/` | 2026-08-19 |

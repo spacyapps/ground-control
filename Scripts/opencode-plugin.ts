@@ -12,6 +12,9 @@
 // Every event name and field below was measured against opencode 1.17.8 on
 // 2026-08-19 by logging a real session, not read from documentation. The record
 // is in docs/HOOK-PAYLOADS.md.
+//
+// question.asked's real shape was only confirmed 2026-09-11, against 1.18.27
+// — see the note beside `properties.questions` below.
 
 // No import. The type would come from @opencode-ai/plugin, and requiring a
 // package to be installed before a monitor can watch you is a poor trade — this
@@ -30,8 +33,7 @@ const FORWARD = new Set([
   "permission.replied",
   // Asking a question is the other way an agent stops and waits for you, and it
   // is the one people actually mind missing — "which database?" rather than
-  // "may I run this". Present in the SDK; not yet seen fired, because a model
-  // that asks in prose instead never reaches it.
+  // "may I run this".
   "question.asked",
   "question.replied",
   "question.rejected",
@@ -94,10 +96,19 @@ export const GroundControl = async ({ $, directory, worktree }: any) => {
         session_id: sessionID,
         cwd: folders.get(sessionID) || fallback,
         // The command it wants to run is the truest thing a red row can say,
-        // and it is right there in the payload.
+        // and it is right there in the payload — for `permission.asked`.
+        // `question.asked` nests one level deeper than the flat
+        // `properties.question` this used to look for: the real text is
+        // `properties.questions[0].question` (an array — opencode can ask
+        // more than one at once, though only the first is shown here), with
+        // `.header` as a shorter fallback. Measured live 2026-09-11 against
+        // opencode 1.18.27 + a local model: every prior field came up empty,
+        // and the row silently read the generic "Needs your input" instead.
         message: asking
           ? metadata.description
             || metadata.command
+            || properties.questions?.[0]?.question
+            || properties.questions?.[0]?.header
             || properties.question
             || properties.permission
           : properties.info?.title,

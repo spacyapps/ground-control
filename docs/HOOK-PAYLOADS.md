@@ -143,6 +143,33 @@ cannot. It arrives with the command in it:
 So the row says *"Echo hello to terminal"* rather than "needs your permission".
 `permission.replied` clears it.
 
+`question.asked` was in the code since the first version but never actually
+fired until 2026-09-11, opencode 1.18.27, a local Qwen3.5 model via
+`mlx_lm.server`. It nests one level deeper than the plugin assumed:
+
+```json
+{ "type": "question.asked",
+  "properties": {
+    "id": "que_0925812280010KVya6UA5SUrcH",
+    "sessionID": "ses_f6da8997affeiH058PRU70pKjm",
+    "questions": [
+      { "question": "Choose one of these text options:",
+        "header": "Pick a text option",
+        "options": [
+          { "label": "The quick brown fox", "description": "Classic pangram sentence" },
+          { "label": "Hello, world!", "description": "Traditional programming greeting" },
+          { "label": "To be or not to be", "description": "Famous Shakespeare quote" } ],
+        "multiple": false } ],
+    "tool": { "messageID": "msg_09257de16001WlAQkTFjLRPOvj", "callID": "…" } } }
+```
+
+`properties.question` — the field the plugin looked for — does not exist; the
+real text is `properties.questions[0].question`, an **array** (a turn can ask
+more than one question in one tool call), with `.header` as a shorter
+fallback. The row read the generic "Needs your input" until this was found
+and fixed. Same test also confirmed the prose-question gap already known from
+Grok now applies to opencode too — see `docs/LIMITATIONS.md`.
+
 ### How the plugin works
 
 **Why a plugin and not a hook**
