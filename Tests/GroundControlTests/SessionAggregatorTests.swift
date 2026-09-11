@@ -8,16 +8,22 @@ import XCTest
 final class SessionAggregatorTests: XCTestCase {
     private var root = FileManager.default.temporaryDirectory
     private var grokDir = FileManager.default.temporaryDirectory
+    private var codexDir = FileManager.default.temporaryDirectory
 
     override func setUpWithError() throws {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("Aggregator-\(UUID().uuidString)")
         root = base.appendingPathComponent("sessions")
         grokDir = base.appendingPathComponent("grok")
+        // Isolated and left empty on purpose — CodexWatcher's default init
+        // points at this machine's real ~/.codex/, which would otherwise leak
+        // whatever Codex sessions actually exist here into every assertion.
+        codexDir = base.appendingPathComponent("codex")
         try FileManager.default.createDirectory(
             at: root.appendingPathComponent("agents"), withIntermediateDirectories: true
         )
         try FileManager.default.createDirectory(at: grokDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: codexDir, withIntermediateDirectories: true)
     }
 
     override func tearDownWithError() throws {
@@ -27,7 +33,8 @@ final class SessionAggregatorTests: XCTestCase {
     private func makeAggregator() -> SessionAggregator {
         SessionAggregator(
             store: SessionStore(root: root, agentsRoot: root.appendingPathComponent("agents")),
-            grok: GrokBotWatcher(directory: grokDir)
+            grok: GrokBotWatcher(directory: grokDir),
+            codex: CodexWatcher(root: codexDir)
         )
     }
 
@@ -92,6 +99,7 @@ final class SessionAggregatorTests: XCTestCase {
         let aggregator = SessionAggregator(
             store: SessionStore(root: root, agentsRoot: root.appendingPathComponent("agents")),
             grok: GrokBotWatcher(directory: grokDir),
+            codex: CodexWatcher(root: codexDir),
             preferences: Preferences(defaults: defaults)
         )
         aggregator.start()

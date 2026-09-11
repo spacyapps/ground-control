@@ -378,6 +378,11 @@ the alarm like any other blocked session. Full design: `docs/GROK-BOT-GROUPING.m
 | **opencode + a fully local model — a new tested combo** | opencode 1.18.27, Qwen3.5-9B-OptiQ-4bit served locally via `mlx_lm.server`, no cloud API in the loop at all; both question styles produced correct GC behaviour (one needing the fix below) | 2026-09-11 |
 | opencode's `question.asked` fires and carries the real question | live against the combo above; found the field was nested one level deeper than assumed, fixed | 2026-09-11 |
 | opencode's prose-question gap, same as Grok's | same live test: a question asked in prose read "Done", green, while waiting on an answer | 2026-09-11 |
+| Codex's `hooks` feature is stable, not experimental | `codex features list` — `stable`, `true`, contradicting the 2026-08-11 guess | 2026-09-11 |
+| Codex's real event casing/names | dumped straight from `codex app-server generate-json-schema`, no login needed | 2026-09-11 |
+| Codex's basic chat has no structured question tool | asked twice, differently phrased; both times it said outright it cannot render a picker | 2026-09-11 |
+| Codex's approval gate writes nothing to any file while pending | a real `curl` approval prompt sat on screen; the transcript's size and mtime were frozen the entire time, and no approval-shaped event exists anywhere in its whole history | 2026-09-11 |
+| Codex rows in the real app | built, tested, launched; real cwd/thread name/working-done state read correctly from live disk data | 2026-09-11 |
 | opencode respects `XDG_CONFIG_HOME` | probed in a scratch config; the user's own was never touched | 2026-08-19 |
 | A plugin's shell has no writable stdin | `.stdin(json)` hung twice for five minutes; piping works | 2026-08-19 |
 | Only `session.created` carries the directory | later events gave an id alone, and rows arrived named `/` | 2026-08-19 |
@@ -704,22 +709,28 @@ change.
 |---|---|---|---|---|
 | Claude Code | ✓ | snake_case | canonical | **working** |
 | Grok | ✓ — reads `~/.claude/settings.json` | camelCase | same, lowercased | **working** |
-| Codex | ✓ experimental, `[features] codex_hooks = true` | unconfirmed | same as Claude | untested, likely works |
+| Codex | ✓ `stable`, on by default | camelCase, confirmed from its own schema | same idea as Claude's, plus `permissionRequest`/`interrupt` | **rows work, no alarm** — see below |
 | Gemini | ✓ `~/.gemini/settings.json` | snake_case, same names | **its own** | needs aliases |
 | Cursor | `~/.cursor/hooks.json`, schema `version: 1` | snake_case | **camelCase** (`sessionStart`, `preToolUse`, `stop`) | **working** — no alarm yet |
 | opencode | plugin API (`@opencode-ai/plugin`), `event` hook | n/a — TypeScript | n/a | would need a plugin, not a script |
 
-### Codex (researched 2026-08-11, not installed)
+### Codex — installed, tested, and integrated 2026-09-11 (not through hooks)
 
-Config: `~/.codex/hooks.json` or inline `[hooks]` in `~/.codex/config.toml`;
-project-level equivalents require trust. Needs `[features] codex_hooks = true`.
+Full record: `docs/CODEX-INTEGRATION.md`. The `2026-08-11` guesses above were
+wrong on two counts, now corrected: `hooks` is `stable` and on by default, not
+experimental behind a flag; casing is camelCase, confirmed straight from
+Codex's own JSON-RPC protocol schema (`codex app-server generate-json-schema`
+dumps it without even logging in) rather than measured live. What is still
+genuinely unconfirmed is the TOML syntax to *register* a hook — not in
+OpenAI's public docs, not guessed at.
 
-Event names reportedly match Claude's: `SessionStart`, `UserPromptSubmit`,
-`PreToolUse`, `PostToolUse`, `PermissionRequest`, `SubagentStart`,
-`SubagentStop`, `Stop`. Field casing was **not** confirmed — the official docs
-do not reproduce the input schema, and the only example shown is hook *output*
-(`permissionDecision`, camelCase). Since `cc-notify` reads both dialects, it may
-simply work; nobody has tried.
+Shipped anyway, reading Codex's own local session files instead
+(`CodexWatcher`, same posture as `GrokBotWatcher`): real cwd, real thread
+names, working/done — but never red. Confirmed live that Codex's one real
+"needs you" moment (a command needing escalated permission) writes nothing to
+any file while it waits, so there is no file-based signal to build an alarm
+from at all; that would need a live connection to Codex's app-server socket, a
+different kind of integration not attempted here.
 
 ### Gemini (researched 2026-08-11, not installed)
 

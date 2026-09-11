@@ -91,8 +91,10 @@ One exception to "the app reads; it does not probe" the diagram above doesn't
 show: Grok's `spawn_subagent` fires no hook at all, so its children never reach
 `agents/`. `SessionAggregator` folds them in separately, by reading a small file
 Grok already writes for itself — see `docs/GROK-SUBAGENT-GROUPING.md`. Same
-shape as Grok Bot's own group (`docs/GROK-BOT-GROUPING.md`): a second producer
-merged in beside `SessionStore`, never inside it.
+shape as Grok Bot's own group (`docs/GROK-BOT-GROUPING.md`) and OpenAI Codex's
+rows (`docs/CODEX-INTEGRATION.md`, no alarm — its one real "needs you" moment
+writes to no file at all): a producer merged in beside `SessionStore`, never
+inside it.
 
 ## Clicking a row goes back the other way
 
