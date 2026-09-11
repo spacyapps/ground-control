@@ -125,6 +125,38 @@ firing after every tool and repeating `PreToolUse` at twice the writes. It is
 the only registration in the installer that carries a matcher, and a test pins
 that.
 
+## Grok's `spawn_subagent` fires no hook — grouped by reading its own files instead, 2026-09-10
+
+`SubagentStart`/`SubagentStop` were believed to cover Grok's subagents — see
+the correction above. What a live test actually found, spawning real
+subagents against `~/github/lunararray`:
+
+Each subagent is its own **fully independent top-level Grok session** — own
+`session_id`, its own `Repo: /path` opener, its own `PreToolUse` stream, its
+own row in the panel, and it self-deletes on completion the same as any
+session's `SessionEnd`. Nothing links it to its parent in any hook payload
+`cc-notify` ever sees.
+
+The real link exists anyway, one layer outside any hook: Grok writes
+`<parent_session_dir>/subagents/<child_session_id>/meta.json` for itself —
+~1KB, not the parent's 500KB+ transcript, carrying `parent_session_id`,
+`child_session_id`, the task's `description`, `status` (`"running"` at spawn,
+confirmed live — not only once finished — then `"completed"`), and timing.
+It survives after the child's own hook-driven row self-deletes, so a
+finished subagent is still discoverable here even once its flat row is gone.
+
+`GrokSubagentReader` reads it and folds the child under its parent — the same
+"N subagents" treatment Claude's real subagents get via `AgentGrouper`, just
+sourced from a different kind of file. While the child's own row still
+exists, *that* row — not `meta.json` — remains the source of live state and
+`needsAction`, since `meta.json` carries no alarm signal at all and Grok is
+the one CLI here that alarms independent of `permission_mode: auto`. Full
+design: `docs/GROK-SUBAGENT-GROUPING.md`.
+
+| | Live while running | Survives the child's own row vanishing | Alarm-safe |
+|---|---|---|---|
+| **Grok subagents** | **yes** — child's own row drives state until it self-deletes | **yes** — `meta.json` is the fallback, time-boxed 30 min like Claude's own finished children | **yes** — never trusts `meta.json` alone while a real row exists |
+
 ## Claude for Desktop — reports fully, measured 2026-08-22
 
 The desktop app **bundles its own Claude Code** — a 317MB binary at
@@ -321,6 +353,9 @@ the alarm like any other blocked session. Full design: `docs/GROK-BOT-GROUPING.m
 | Four hosts told apart in one panel | Terminal, Cursor, VS Code and Claude for Desktop on screen together, each row naming its host | 2026-08-22 |
 | Cursor's two agents differ, side by side | Claude Code in its terminal went red while Composer sat "done" in the same panel | 2026-08-22 |
 | Real subagents carry `agent_type` | spawned two Explore agents; both `type="Explore"` while every internal one was `""` | 2026-08-11 |
+| Grok's `spawn_subagent` fires no `SubagentStart`/`SubagentStop` | two real subagents spawned, watched end to end on disk; neither event ever appeared | 2026-09-10 |
+| Grok's real subagent link lives in `subagents/<id>/meta.json` | read live against 5 real subagents across 3 separate test runs, all correct | 2026-09-10 |
+| Grok subagent grouping, end to end in the app | built, signed, launched; two live children plus one recovered-after-self-delete child all showed correctly nested under one parent row on screen | 2026-09-10 |
 | Background images render | a real theme with a starfield frame, on screen — and it was broken three ways until it was tried | 2026-08-11 |
 | Nine-slice cap insets | the frame holds its corners while the panel resizes | 2026-08-11 |
 | Jumping to a host app | VS Code session with no tty at all; clicking raised the editor | 2026-08-12 |
@@ -699,9 +734,13 @@ event mapping. Nothing in the Swift should need to change.
 
 ## Design limits (deliberate, not bugs)
 
-- **Live subagent tracking is Grok-only.** Claude Code has no start-side event
-  carrying an `agent_id`, so its children can only appear once finished. Grok's
-  `SubagentStart` does, and is used.
+- **Live subagent tracking is Grok-only, but not through `SubagentStart`.**
+  Claude Code has no start-side event carrying an `agent_id`, so its children
+  can only appear once finished. Grok's `spawn_subagent` was believed to fire
+  `SubagentStart` for exactly this reason — a live test (2026-09-10) showed it
+  fires **neither** `SubagentStart` nor `SubagentStop`, ever. Grok subagents
+  are still grouped live, just not through a hook: see
+  `docs/GROK-SUBAGENT-GROUPING.md`.
 - **Rows outlive their sessions on Claude.** Claude never says a session ended,
   so mtime and the 24h purge are the entire lifecycle. Grok's `SessionEnd`
   removes rows immediately; Claude rows linger until purge.

@@ -87,6 +87,13 @@ found its own row while being watched by it.
 grouped beneath their parent session. Files untouched for 24 hours are deleted,
 so a forgotten terminal does not haunt the panel forever.
 
+One exception to "the app reads; it does not probe" the diagram above doesn't
+show: Grok's `spawn_subagent` fires no hook at all, so its children never reach
+`agents/`. `SessionAggregator` folds them in separately, by reading a small file
+Grok already writes for itself — see `docs/GROK-SUBAGENT-GROUPING.md`. Same
+shape as Grok Bot's own group (`docs/GROK-BOT-GROUPING.md`): a second producer
+merged in beside `SessionStore`, never inside it.
+
 ## Clicking a row goes back the other way
 
 `TerminalFocuser` takes you to the session using what the script recorded:

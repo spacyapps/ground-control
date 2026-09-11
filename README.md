@@ -230,7 +230,7 @@ Every row below was tested on a real session, not inferred. Dates are when, and
 | Agent | Rows | Turns red | How we know |
 |---|---|---|---|
 | **Claude Code** | yes | **yes** | a blocked session turned red, the click landed on its tab, the alarm cleared · 2026-08-12 |
-| **Grok CLI** | yes | **yes**, partly | `elicitation_dialog` turned a row red carrying the question itself; a question asked in prose still reads as "done" · 2026-08-19. It reads `~/.claude/settings.json` by design, so one install covers both · 2026-08-11 |
+| **Grok CLI** | yes, subagents grouped | **yes**, partly | `elicitation_dialog` turned a row red carrying the question itself; a question asked in prose still reads as "done" · 2026-08-19. It reads `~/.claude/settings.json` by design, so one install covers both · 2026-08-11. `spawn_subagent` fires no hook at all — subagents are grouped by reading a small file Grok writes for itself instead · 2026-09-10 |
 | **Grok Bot** | yes, grouped | **yes** | every bot under one collapsible group; a decision card waiting on your answer turns that bot and the group red, checked live against Grok Bot's own cache · 2026-08-28 |
 | **opencode** | yes | **yes** | `permission.asked` carried "List files with details in current directory"; row went red and cleared on reply · 2026-08-19 |
 | **Cursor's own agent** (Composer) | yes | **no** | fires no hook while waiting for approval, so a blocked chat looks busy · 2026-08-14 |

@@ -306,7 +306,34 @@ convention works with no changes at all.
 - **`SubagentStart`** — carries an `agent_id` *before* the work happens, so
   Grok subagents can appear as children while running. Claude Code only
   announces the stop, which is why SPEC §10 lists live tracking as unresolved
-  there.
+  there. **Caveat this file's own rule flags: no raw payload was ever captured
+  for this one — it was asserted from Grok's documented event vocabulary, not
+  measured.** Tested live 2026-09-10 against a real `spawn_subagent` tool call
+  (two subagents, `~/github/lunararray`, Grok build, not the `grok` CLI's own
+  Task-equivalent if it has a separate one): **it never fired.** Both subagents
+  ran to completion — visible only as `PreToolUse` messages on the *parent* row
+  (`spawn_subagent: …`, `get_command_or_subagent_output`) — and zero files ever
+  appeared under `agents/`. Whether this is a genuine regression since
+  2026-08-11 or `spawn_subagent` was always a different, non-hooked mechanism
+  from whatever prompted this line originally is unconfirmed — re-test if a
+  differently-invoked Grok subagent (not via `spawn_subagent`) is ever tried.
+
+  **Follow-up, same evening:** `spawn_subagent` subagents are real, groupable
+  children — just not through a hook. Each one is its own fully independent
+  top-level Grok *session* (own `session_id`, fires its own `PreToolUse`
+  stream, appears in the panel as its own flat row, self-deletes via
+  `SessionEnd` on completion, same as any session) — confirmed live,
+  `~/github/lunararray`, two subagents, watched end to end. The parent/child
+  link genuinely exists, just one layer away from any hook: Grok's own local
+  transcript, `~/.grok/sessions/<url-encoded-cwd>/<session_id>/updates.jsonl`,
+  carries a `session/update` event with `sessionUpdate: "subagent_spawned"` —
+  `parent_session_id`, `child_session_id` (= `subagent_id`), a human-readable
+  `description` ("Count LOC by extension"), `subagent_type`, `role`, `model`.
+  None of it reaches `cc-notify`. Grouping these would mean a transcript-
+  tailing watcher (same shape as `GrokBotWatcher`, a side-file parser, not a
+  hook adapter) mapping `child_session_id → parent_session_id` into the
+  existing `Session.children`. Not built — a real, well-evidenced option for
+  whenever it's wanted, not a hooks-path fix.
 
 Grok additionally offers `PostToolUse`, `PostToolUseFailure`, `PermissionDenied`,
 `StopFailure`, `PreCompact` and `PostCompact`, none of them wired up.
