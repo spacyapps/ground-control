@@ -143,7 +143,7 @@ final class CodexWatcher {
         for line in lines.reversed() {
             guard let completed = decodeTaskComplete(String(line)) else { continue }
             state = .done
-            message = completed.lastAgentMessage ?? "Finished"
+            message = condense(completed.lastAgentMessage) ?? "Finished"
             break
         }
 
@@ -188,6 +188,37 @@ final class CodexWatcher {
               decoded.payload.type == "task_complete"
         else { return nil }
         return decoded.payload
+    }
+
+    private static let maxMessageLength = 240
+
+    /// Collapses a possibly-multiline, possibly-markdown blob to one row
+    /// line — mirrors `Scripts/cc-notify`'s own `condense()` exactly, since
+    /// every other producer's message already goes through it and a Codex
+    /// row should read no differently. Missing this was visible live: a real
+    /// `last_agent_message` (a numbered list, several lines) rendered as
+    /// several stacked lines in the panel — the one row in the whole app
+    /// that did not collapse to a single line, breaking "a row is a
+    /// channel, not a log" (docs/ARCHITECTURE.md).
+    private static func condense(_ text: String?) -> String? {
+        guard let text else { return nil }
+        for raw in text.split(separator: "\n", omittingEmptySubsequences: false) {
+            var line = raw.trimmingCharacters(in: .whitespaces)
+            guard !line.isEmpty else { continue }
+            if line.hasPrefix("```") { continue }
+            while let first = line.unicodeScalars.first, CharacterSet(charactersIn: "#> ").contains(first) {
+                line.removeFirst()
+            }
+            line = line.trimmingCharacters(in: .whitespaces)
+                .replacingOccurrences(of: "**", with: "")
+                .replacingOccurrences(of: "`", with: "")
+            guard !line.isEmpty else { continue }
+            if line.count > maxMessageLength {
+                return String(line.prefix(maxMessageLength - 1)) + "…"
+            }
+            return line
+        }
+        return nil
     }
 }
 
