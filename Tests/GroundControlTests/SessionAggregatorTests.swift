@@ -9,6 +9,7 @@ final class SessionAggregatorTests: XCTestCase {
     private var root = FileManager.default.temporaryDirectory
     private var grokDir = FileManager.default.temporaryDirectory
     private var codexDir = FileManager.default.temporaryDirectory
+    private var preferences = Preferences(defaults: .standard)
 
     override func setUpWithError() throws {
         let base = FileManager.default.temporaryDirectory
@@ -24,6 +25,10 @@ final class SessionAggregatorTests: XCTestCase {
         )
         try FileManager.default.createDirectory(at: grokDir, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: codexDir, withIntermediateDirectories: true)
+        // A real scratch suite, not .standard — remove() now writes
+        // dismissedSessions through Preferences, and .standard would be this
+        // machine's real, persisted app settings.
+        preferences = Preferences(defaults: try XCTUnwrap(UserDefaults(suiteName: "Aggregator-\(UUID().uuidString)")))
     }
 
     override func tearDownWithError() throws {
@@ -32,9 +37,10 @@ final class SessionAggregatorTests: XCTestCase {
 
     private func makeAggregator() -> SessionAggregator {
         SessionAggregator(
-            store: SessionStore(root: root, agentsRoot: root.appendingPathComponent("agents")),
+            store: SessionStore(root: root, agentsRoot: root.appendingPathComponent("agents"), preferences: preferences),
             grok: GrokBotWatcher(directory: grokDir),
-            codex: CodexWatcher(root: codexDir)
+            codex: CodexWatcher(root: codexDir),
+            preferences: preferences
         )
     }
 
@@ -105,5 +111,69 @@ final class SessionAggregatorTests: XCTestCase {
         aggregator.start()
 
         XCTAssertTrue(aggregator.sessions.isEmpty)
+    }
+
+    // MARK: - Removing a row with no file behind it
+
+    private func writeCodexThread(id: String, cwd: String, updatedAt: String) throws {
+        let dir = codexDir.appendingPathComponent("sessions/2026/09/11", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let rollout = #"{"type":"session_meta","payload":{"session_id":"\#(id)","cwd":"\#(cwd)"}}"#
+            + "\n" + #"{"type":"event_msg","payload":{"type":"task_complete","last_agent_message":"done"}}"#
+        try rollout.write(to: dir.appendingPathComponent("rollout-2026-09-11T14-00-00-\(id).jsonl"),
+                           atomically: true, encoding: .utf8)
+        let index = #"{"id":"\#(id)","thread_name":"Thread","updated_at":"\#(updatedAt)"}"#
+        try (index + "\n").write(to: codexDir.appendingPathComponent("session_index.jsonl"),
+                                  atomically: true, encoding: .utf8)
+    }
+
+    func testRemovingAHookSessionDeletesItsFile() throws {
+        try writeSession("alpha", needsAction: false, ts: 100)
+        let aggregator = makeAggregator()
+        aggregator.start()
+        XCTAssertEqual(aggregator.sessions.map(\.id), ["alpha"])
+
+        aggregator.remove(sessionID: "alpha")
+        aggregator.reload()
+
+        XCTAssertTrue(aggregator.sessions.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("alpha.jsonl").path))
+    }
+
+    func testRemovingTheGrokBotGroupDismissesItRatherThanNoOping() throws {
+        try writeRoster(pendingCard: false)
+        let aggregator = makeAggregator()
+        aggregator.start()
+        XCTAssertEqual(aggregator.sessions.map(\.id), [GrokBotWatcher.groupID])
+
+        aggregator.remove(sessionID: GrokBotWatcher.groupID)
+
+        XCTAssertTrue(aggregator.sessions.isEmpty, "the group has no file to delete, but remove() must still hide it")
+    }
+
+    func testRemovingACodexThreadDismissesItRatherThanNoOping() throws {
+        try writeCodexThread(id: "t1", cwd: "/Users/you/repo", updatedAt: "2026-09-11T21:00:00.000000Z")
+        let aggregator = makeAggregator()
+        aggregator.start()
+        XCTAssertEqual(aggregator.sessions.map(\.id), ["t1"])
+
+        aggregator.remove(sessionID: "t1")
+
+        XCTAssertTrue(aggregator.sessions.isEmpty)
+    }
+
+    func testADismissedCodexThreadReappearsOnceSomethingGenuinelyNewHappens() throws {
+        try writeCodexThread(id: "t1", cwd: "/Users/you/repo", updatedAt: "2026-09-11T21:00:00.000000Z")
+        let aggregator = makeAggregator()
+        aggregator.start()
+        aggregator.remove(sessionID: "t1")
+        XCTAssertTrue(aggregator.sessions.isEmpty)
+
+        // A later updated_at is real new activity — the same "reappears on
+        // its next event" rule a deleted hook session already gets.
+        try writeCodexThread(id: "t1", cwd: "/Users/you/repo", updatedAt: "2026-09-11T22:00:00.000000Z")
+        aggregator.reload()
+
+        XCTAssertEqual(aggregator.sessions.map(\.id), ["t1"])
     }
 }
