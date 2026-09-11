@@ -36,6 +36,8 @@ GroundControl/
 │   │   ├── AgentGrouper.swift    # agents/*.jsonl -> children, keyed by session
 │   │   ├── GrokBotWatcher.swift  # Grok Bot producer: its local cache -> one group (docs/GROK-BOT-GROUPING.md)
 │   │   ├── GrokBotRoster.swift   # parses the undocumented roster blob, tolerant of drift
+│   │   ├── GrokSubagentReader.swift # spawn_subagent fires no hook; folds children by reading
+│   │   │                         # Grok's own subagents/<id>/meta.json (docs/GROK-SUBAGENT-GROUPING.md)
 │   │   ├── Base32.swift          # RFC 4648 decode, for the cache's filenames
 │   │   └── PurgeService.swift    # deletes files untouched > window (timer)
 │   │
@@ -158,7 +160,9 @@ GroundControl/
 │   ├── PUBLISHING.md   # going public: what was decided and what is left
 │   ├── THEME-DELIVERY.md         # proposal: shipping themes outside the app
 │   ├── HOOK-PAYLOADS.md          # measured hook payloads — the data SPEC rests on
-│   └── LIMITATIONS.md            # what is verified vs assumed; other-CLI status
+│   ├── LIMITATIONS.md            # what is verified vs assumed; other-CLI status
+│   ├── GROK-BOT-GROUPING.md      # Grok Bot: reading its cache, not a hook
+│   └── GROK-SUBAGENT-GROUPING.md # Grok CLI subagents: reading its own files, not a hook
 │
 ├── Packaging/
 │   ├── Info.plist                # bundle id, version, LSUIElement
