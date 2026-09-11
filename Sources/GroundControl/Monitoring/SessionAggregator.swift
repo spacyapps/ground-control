@@ -59,12 +59,27 @@ final class SessionAggregator {
     }
 
     /// Forwarded to the store — Grok and Codex ids never match anything
-    /// there, which is harmless. Neither can be acknowledged or removed from
-    /// here: a Grok "needs you" clears by answering the card in Grok Bot
-    /// (docs/GROK-BOT-GROUPING.md), and a Codex row has no alarm to clear at
-    /// all (docs/CODEX-INTEGRATION.md).
+    /// there, which is harmless. A Grok "needs you" clears by answering the
+    /// card in Grok Bot (docs/GROK-BOT-GROUPING.md), not by acknowledging
+    /// here — Codex has no alarm to clear at all (docs/CODEX-INTEGRATION.md).
     func acknowledge(sessionID: String) { store.acknowledge(sessionID: sessionID) }
-    func remove(sessionID: String) { store.remove(sessionID: sessionID) }
+
+    /// A hook session has a real file — `SessionStore` deletes it, and the
+    /// row is gone until a new event writes it again. Grok Bot's group and a
+    /// Codex thread have no file to delete; removing one of those instead
+    /// dismisses it in `Preferences`, keyed to its `lastActivity` at the
+    /// moment of removal, so it reappears the moment something genuinely new
+    /// happens — the same rule a deleted hook session already gets for free.
+    func remove(sessionID: String) {
+        if store.sessions.contains(where: { $0.id == sessionID }) {
+            store.remove(sessionID: sessionID)
+            return
+        }
+        guard let session = (grok.sessions + codex.sessions).first(where: { $0.id == sessionID }) else { return }
+        preferences.dismiss(sessionID: sessionID, lastActivity: session.lastActivity)
+        recombine()
+    }
+
     func reload() {
         store.reload()
         grok.reload()
@@ -92,7 +107,13 @@ final class SessionAggregator {
             )
         }
 
-        let merged = SessionStore.sorted(folded)
+        let dismissed = preferences.dismissedSessions
+        let visible = folded.filter { session in
+            guard let dismissedAt = dismissed[session.id] else { return true }
+            return session.lastActivity.timeIntervalSince1970 > dismissedAt
+        }
+
+        let merged = SessionStore.sorted(visible)
         guard merged != sessions else { return }
         sessions = merged
         onChange?(merged)

@@ -26,6 +26,7 @@ final class Preferences {
         static let showsGrokBot = "showsGrokBot"
         static let showsGrokSubagentGrouping = "showsGrokSubagentGrouping"
         static let showsCodex = "showsCodex"
+        static let dismissedSessions = "dismissedSessions"
         static let showsAnalyser = "showsAnalyser"
         static let analyserTint = "analyserTint"
     }
@@ -85,6 +86,25 @@ final class Preferences {
     var showsCodex: Bool {
         get { defaults.object(forKey: Key.showsCodex) as? Bool ?? true }
         set { defaults.set(newValue, forKey: Key.showsCodex) }
+    }
+
+    /// "Remove" for a row with no file to delete — Grok Bot's group, a Codex
+    /// thread. Keyed by session id, storing the row's own `lastActivity` at
+    /// the moment it was dismissed (epoch seconds): `SessionAggregator`
+    /// hides it only while nothing newer has happened, the same "reappears
+    /// on its next real event" rule `SessionStore.remove()` already gives a
+    /// live hook session. Persisted, unlike `SessionStore`'s in-memory
+    /// `acknowledged` — there is no file whose disappearance would otherwise
+    /// mark this permanent, so it must survive a relaunch on its own.
+    var dismissedSessions: [String: TimeInterval] {
+        get { defaults.dictionary(forKey: Key.dismissedSessions) as? [String: TimeInterval] ?? [:] }
+        set { defaults.set(newValue, forKey: Key.dismissedSessions) }
+    }
+
+    func dismiss(sessionID: String, lastActivity: Date) {
+        var current = dismissedSessions
+        current[sessionID] = lastActivity.timeIntervalSince1970
+        dismissedSessions = current
     }
 
     var panelFrame: String? {
