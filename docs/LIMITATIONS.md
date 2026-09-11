@@ -375,7 +375,8 @@ the alarm like any other blocked session. Full design: `docs/GROK-BOT-GROUPING.m
 | **The red alarm, end to end** | a blocked session turned the row red, the click landed on its tab, and the alarm cleared — watched, not derived | 2026-08-12 |
 | opencode plugin API and events | probe plugin logged a real turn; 4 of >100 events matter | 2026-08-19 |
 | **opencode's alarm, end to end** | row turned red carrying "List files with details in current directory", and cleared on reply | 2026-08-19 |
-| opencode's `question.asked` fires and carries the real question | live against 1.18.27 + a local model; found the field was nested one level deeper than assumed, fixed | 2026-09-11 |
+| **opencode + a fully local model — a new tested combo** | opencode 1.18.27, Qwen3.5-9B-OptiQ-4bit served locally via `mlx_lm.server`, no cloud API in the loop at all; both question styles produced correct GC behaviour (one needing the fix below) | 2026-09-11 |
+| opencode's `question.asked` fires and carries the real question | live against the combo above; found the field was nested one level deeper than assumed, fixed | 2026-09-11 |
 | opencode's prose-question gap, same as Grok's | same live test: a question asked in prose read "Done", green, while waiting on an answer | 2026-09-11 |
 | opencode respects `XDG_CONFIG_HOME` | probed in a scratch config; the user's own was never touched | 2026-08-19 |
 | A plugin's shell has no writable stdin | `.stdin(json)` hung twice for five minutes; piping works | 2026-08-19 |
