@@ -183,6 +183,18 @@ is not installed).
   triggered live yet, so their exact shape is still unconfirmed) would be a
   genuinely different, bigger integration: a persistent connection, not a
   poll. Not scoped here.
-- **Hook config syntax** — worth a `-c` experiment (`codex -c
-  'hooks.stop=...'`) or watching `~/.codex/config.toml` after Codex's own UI
-  ever writes a hook block, rather than guessing TOML from nothing.
+- **Hook config syntax** — one real shape ruled out live, 2026-09-11:
+  `[hooks]` / `stop = "echo fired >> marker"` (a flat string) writes to
+  `~/.codex/config.toml`, is accepted without error by `codex doctor` or a
+  real `codex exec` turn, and is **silently ignored** — the marker file never
+  appeared. Not a parse error, just dead config: `doctor` and `exec` alike
+  say nothing is wrong with it. So this is not "unknown key rejected", it is
+  "unknown key tolerated" — consistent with a config parser that does not
+  reject extra fields, which narrows nothing about the right shape but does
+  rule out this one for good. Given `HookHandlerType` in the app-server
+  schema (`command` / `mcpTool` / `prompt` / `agent`), the real shape is
+  almost certainly a structured table per event — something closer to
+  `[[hooks.stop]]` with its own `type` — not a bare command string. Worth
+  trying that shape next, or watching `~/.codex/config.toml` after Codex's
+  own UI ever writes a hook block itself, rather than continuing to guess
+  TOML from nothing.

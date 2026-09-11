@@ -383,6 +383,7 @@ the alarm like any other blocked session. Full design: `docs/GROK-BOT-GROUPING.m
 | Codex's basic chat has no structured question tool | asked twice, differently phrased; both times it said outright it cannot render a picker | 2026-09-11 |
 | Codex's approval gate writes nothing to any file while pending | a real `curl` approval prompt sat on screen; the transcript's size and mtime were frozen the entire time, and no approval-shaped event exists anywhere in its whole history | 2026-09-11 |
 | Codex rows in the real app | built, tested, launched; real cwd/thread name/working-done state read correctly from live disk data | 2026-09-11 |
+| A flat-string `[hooks]` TOML shape does nothing | `stop = "echo fired >> marker"` in `config.toml`, a real turn run end to end — no error from `doctor` or `exec`, marker never appeared | 2026-09-11 |
 | opencode respects `XDG_CONFIG_HOME` | probed in a scratch config; the user's own was never touched | 2026-08-19 |
 | A plugin's shell has no writable stdin | `.stdin(json)` hung twice for five minutes; piping works | 2026-08-19 |
 | Only `session.created` carries the directory | later events gave an id alone, and rows arrived named `/` | 2026-08-19 |
