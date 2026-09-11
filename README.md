@@ -12,8 +12,8 @@
   <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
 </p>
 
-**Say you've got three Claude Code sessions running.** Here's how Ground Control
-shows them:
+**Say you've got three CLI sessions running.** Here's how Ground Control shows
+them:
 
 - name and current line, per session
 - a dot that goes **red** the moment one is blocked and waiting on you
