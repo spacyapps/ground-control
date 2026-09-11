@@ -25,6 +25,7 @@ final class Preferences {
         static let showsInternalAgents = "showsInternalAgents"
         static let showsGrokBot = "showsGrokBot"
         static let showsGrokSubagentGrouping = "showsGrokSubagentGrouping"
+        static let showsCodex = "showsCodex"
         static let showsAnalyser = "showsAnalyser"
         static let analyserTint = "analyserTint"
     }
@@ -73,6 +74,17 @@ final class Preferences {
     var showsGrokSubagentGrouping: Bool {
         get { defaults.object(forKey: Key.showsGrokSubagentGrouping) as? Bool ?? true }
         set { defaults.set(newValue, forKey: Key.showsGrokSubagentGrouping) }
+    }
+
+    /// OpenAI Codex rows (`docs/CODEX-INTEGRATION.md`). On by default — reading
+    /// its own local session files costs nothing when Codex is not installed
+    /// — but they are read-only history the same way Grok Bot's are, so a
+    /// switch of its own: `defaults write GroundControl showsCodex -bool NO`.
+    /// Codex rows never turn red; see the doc for why that is a real limit,
+    /// not an oversight.
+    var showsCodex: Bool {
+        get { defaults.object(forKey: Key.showsCodex) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Key.showsCodex) }
     }
 
     var panelFrame: String? {
