@@ -183,11 +183,19 @@ final class StatusMenu: NSObject {
     ///
     /// `withSymbolConfiguration(paletteColors:)` because a template image
     /// ignores a fill colour and comes out the menu's own grey.
+    ///
+    /// **No ellipsis.** On macOS "…" promises a dialog that will ask you
+    /// something before anything happens, and this asks nothing — it hands you
+    /// to a browser. The trailing ↗ is the ordinary mark for leaving the app,
+    /// and the tooltip names the destination, so hovering answers "where does
+    /// this go" without anyone having to click to find out.
     private func getMoreThemes() -> NSMenuItem {
-        let entry = NSMenuItem(title: "Get More Themes…", action: #selector(openThemeStore), keyEquivalent: "")
+        let title = "Get More Themes ↗"
+        let entry = NSMenuItem(title: title, action: #selector(openThemeStore), keyEquivalent: "")
         entry.target = self
+        entry.toolTip = Brand.themeStore?.absoluteString
         entry.attributedTitle = NSAttributedString(
-            string: "Get More Themes…",
+            string: title,
             attributes: [
                 // Semibold at the menu's own size — a hard-coded point size
                 // would ignore the system's menu-text setting.

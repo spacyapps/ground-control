@@ -91,14 +91,14 @@ extension SettingsView {
     /// button would tint it the same way and also bind Return to leaving the
     /// app, which is not what Return should do in a settings window.
     func getMoreThemesButton() -> NSButton {
-        let button = NSButton(title: "Get More Themes", target: self, action: #selector(openThemeStore))
+        let button = NSButton(title: "Get More Themes ↗", target: self, action: #selector(openThemeStore))
         button.bezelStyle = .rounded
         button.bezelColor = SettingsChrome.heading
         button.contentTintColor = SettingsChrome.deepSpace
         // The tint alone is not enough on a busy star field; the weight is what
         // makes it read as a button rather than as a coloured label.
         button.attributedTitle = NSAttributedString(
-            string: "Get More Themes",
+            string: "Get More Themes ↗",
             attributes: [
                 .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
                 .foregroundColor: SettingsChrome.deepSpace
