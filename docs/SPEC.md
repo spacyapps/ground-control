@@ -109,6 +109,14 @@ existing hooks on the same events survive):
 | `Stop` | done, dot **off** | `last_assistant_message` |
 | `SubagentStop` | (child row) | `last_assistant_message` |
 
+Other CLIs map onto the same table under their own spellings; `cc-notify`'s
+`ALIASES` holds the translations and `docs/HOOK-PAYLOADS.md` the measured
+payloads. One event exists nowhere else and is worth naming here: Codex's
+**`PermissionRequest`**, which fires the instant it blocks on an approval and
+carries the request already written as prose in `tool_input.description`. It
+maps to the `Notification` row above. Codex writes nothing to any file while
+it waits, so that event is the only way its alarm can be raised at all.
+
 **Why `idle_prompt` is dropped.** It means "Claude finished and is waiting for
 your next message", not "Claude is blocked on you". Writing it turned every
 completed session red — which makes red mean nothing — and replaced the real
@@ -159,7 +167,9 @@ data rather than only in the script.
 Subagents share the orchestrator's process, tty **and `session_id`**, so they
 cannot be separated by session key alone. But `SubagentStop` carries
 **`agent_id`** — a stable per-subagent identifier — which is exactly the
-unlock the original spec said Option B required.
+unlock the original spec said Option B required. Codex sends the same pair on
+`SubagentStart` as well, which is what makes a live child row possible there
+and not elsewhere (below).
 
 `cc-notify` therefore writes each subagent to its own file under `agents/`,
 named `<session_id>__<agent_id>.jsonl`. The file ⇔ row invariant holds one
@@ -177,11 +187,22 @@ the red dot if any child needs action.
 
 **Why B is not on by default.** Two measured problems:
 
-1. **Only a stop event exists.** There is no `SubagentStart` carrying an
-   `agent_id`, so a child row can only appear once the subagent has *finished*
-   — useless for a live monitor. A live count can be approximated by counting
-   `PreToolUse` events with `tool_name` of `Task`/`Agent` and subtracting
-   `SubagentStop`s, but the two cannot be correlated by id.
+1. **Only a stop event exists — on Claude Code.** It carries no
+   `SubagentStart` with an `agent_id`, so a child row can only appear once the
+   subagent has *finished* — useless for a live monitor. A live count can be
+   approximated by counting `PreToolUse` events with `tool_name` of
+   `Task`/`Agent` and subtracting `SubagentStop`s, but the two cannot be
+   correlated by id.
+
+   **This is no longer true of every CLI.** Measured 2026-09-11: Codex fires
+   `SubagentStart` *before* the child runs, carrying the child's `agent_id` and
+   the parent's `session_id` in one payload, plus `agent_transcript_path` on
+   the stop. Its children therefore appear live, named from their own
+   transcripts (`agent_type` is the constant `"default"` there, so the name is
+   lifted out of the transcript instead — see `docs/CODEX-INTEGRATION.md`).
+   Grok documents a `subagentStart` and, tested against two real
+   `spawn_subagent` children, never fired it at all; its subagents are grouped
+   by a different route entirely (`docs/GROK-SUBAGENT-GROUPING.md`).
 2. ~~**Internal agents fire it too.**~~ **Filtered.** Claude Code emits
    `SubagentStop` for its own background agents, not only ones you spawned, and
    their text is not part of the visible conversation — observed live as child
@@ -393,9 +414,11 @@ need a rename at all.
    heuristically.** Empty `agent_type` is treated as internal and hidden (§4).
    Still worth revisiting if a payload ever exposes something definitive; the
    raw files are kept so the rule can be re-evaluated against real data.
-5. **Live subagent tracking.** No start-side event carries an `agent_id`, so
-   children only appear on completion. Decide whether an approximate live count
-   is worth it, or whether B waits for a start event.
+5. **Live subagent tracking.** ~~No start-side event carries an `agent_id`~~ —
+   **solved for Codex, still open for Claude Code.** Codex's `SubagentStart`
+   carries one and its children appear while they work; Claude Code's still
+   only appear on completion. Whether an approximate live count is worth it
+   there remains undecided.
 6. **Video avatar cost** in an always-on panel — measure; cap to GIF/APNG if
    needed. §6.
 7. **iTerm2 tab focus** — the script is written but has never run against

@@ -57,9 +57,9 @@ The cost was never the waiting. It was the checking.
   itself for VS Code, Cursor, Warp, Ghostty and WezTerm.
 - **A menu-bar icon** that badges the instant anything needs you.
 - **Skinnable, WinAmp-style** — swap the whole look in seconds.
-- **Runs on the CLIs you already use** — Claude Code and Grok CLI today,
-  opencode and Cursor covered too. → **[full compatibility, tested on real
-  sessions](#what-it-works-with)**
+- **Runs on the CLIs you already use** — Claude Code, Grok CLI and OpenAI
+  Codex today, opencode and Cursor covered too. → **[full compatibility, tested
+  on real sessions](#what-it-works-with)**
 
 # See it in action
 
@@ -136,12 +136,18 @@ under each saying whether anything has arrived from it yet.
   (its Code tab bundles Claude Code).
 - Using **Cursor**? It also writes `~/.cursor/hooks.json` — **restart Cursor**
   afterwards. Nothing else needs restarting.
+- Using **OpenAI Codex**? It writes `~/.codex/config.toml` too, and Codex is
+  the one CLI that asks permission to run hooks at all: **start `codex` once
+  and accept the trust prompt**. Until you do it runs none of them, and no
+  Codex row will ever appear. The prompt only shows in interactive `codex`,
+  never in `codex exec`.
 
 ## 3. Start a session
 
 - Open a **new** terminal — a CLI that was already running has not loaded the
   hooks.
-- Start Claude Code or Grok CLI. A row appears the moment it does anything.
+- Start Claude Code, Grok CLI or Codex. A row appears the moment it does
+  anything.
 
 ![A session appears in the panel](docs/images/install-3-a-session-appears.png)
 
@@ -164,9 +170,9 @@ under each saying whether anything has arrived from it yet.
 
 *Everything below is for building from source and the technical detail. Status:
 alpha — the app is built and notarised, and the hook side is verified against
-live payloads from Claude Code, Grok CLI, Cursor and opencode. `docs/SPEC.md` is
-the event contract, `docs/STRUCTURE.md` the code layout, `docs/LIMITATIONS.md`
-what is proven versus merely believed.*
+live payloads from Claude Code, Grok CLI, Cursor, opencode and Codex.
+`docs/SPEC.md` is the event contract, `docs/STRUCTURE.md` the code layout,
+`docs/LIMITATIONS.md` what is proven versus merely believed.*
 
 # Build (from source)
 

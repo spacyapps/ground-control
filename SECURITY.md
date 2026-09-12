@@ -29,10 +29,23 @@ Ground Control is a menu-bar monitor. Its whole job is to read a folder of
   path (it goes into an AppleScript string), and files past a generous size cap
   are not read. The assistant's message text is shown in a label and never
   reaches an execution path.
+- **One path in a payload is opened, and it is fenced.** Codex names its
+  sub-agents only inside the child's own transcript, so `cc-notify` reads that
+  file to label a child row. The path comes from the hook payload, so it is
+  resolved and required to sit under `~/.codex/`, and only the first 64KB is
+  scanned. A hook is not a way to make the emitter open an arbitrary file.
 - **The hook installer merges, and backs up first.** `install-hooks.sh` edits
   `~/.claude/settings.json`, `~/.cursor/hooks.json` and the opencode config
   with `json.load` / `json.dump` — not text substitution — and copies each file
   to a timestamped `.bak-` before touching it. Your existing hooks are kept.
+- **Codex's config is TOML, and is the one exception to that.**
+  `~/.codex/config.toml` is appended to between sentinel comments, and only the
+  lines between them are ever rewritten or removed — your model choice,
+  per-project trust levels, and the `[hooks.state]` trust record Codex writes
+  for itself are never touched. Verified by round trip: three
+  install/uninstall cycles leave the file byte-identical. Codex also asks your
+  permission before running any hook at all, which no other CLI here does — the
+  installer cannot and does not answer that prompt for you.
 - **`cc-notify` reads the process tree, narrowly.** To name the app that owns a
   session it walks up its own parent chain with `ps -o ppid=,tty=,comm= -p
   <pid>` — parent pid, controlling tty, command name, one ancestor at a time.

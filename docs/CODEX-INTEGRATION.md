@@ -147,13 +147,15 @@ trusted_hash = "sha256:b3849a6bc93ee3ce358bfe954e5367ac14470b8931b390c653059b464
 ```
 
 So: **hooks are real, the syntax is known, and the alarm is reachable** —
-`permissionRequest` should cover the exact "needs you" moment the file-based
-approach can't see. What's left is building it: a `cc-notify` dialect for
-Codex's real payload shape (never captured — the test above proved `Stop`
-fires, not what its payload looks like), and `install-hooks.sh` writing the
-`[[hooks.X]]` blocks plus walking the one-time interactive trust step during
-setup. Not attempted tonight; a real next session's work, not a code change
-squeezed in at the end of this one.
+`PermissionRequest` covers the exact "needs you" moment the file-based approach
+cannot see.
+
+**All of it was then built and shipped the same evening**, once
+`Scripts/probe-codex-hooks.sh` captured the payloads: see "What shipped"
+below, and `docs/HOOK-PAYLOADS.md` for what a Codex hook actually sends. The
+one thing this paragraph got wrong while predicting the work is worth keeping
+— it expected "a `cc-notify` dialect for Codex's real payload shape". There is
+no Codex dialect. The payload turned out to be Claude's, field for field.
 
 ---
 
@@ -277,20 +279,25 @@ than ever guessing done.
 
 ## What shipped
 
-`CodexWatcher` (`Monitoring/`) — pure `sessions(fromIndexAt:sessionsRoot:now:)`
-mapping, tested in isolation (9 tests: shape, cwd/name/state reading, the
-frozen-file-stays-working guarantee, multiple independent threads, the
-24h relevance cutoff, malformed input). Wired into `SessionAggregator` as a
-third full producer beside `SessionStore` and `GrokBotWatcher` — concatenated
-in, `SessionStore`'s file ⇔ row invariant untouched, same as Grok Bot.
-`Preferences.showsCodex`, on by default (read-only, costs nothing when Codex
-is not installed).
+`Scripts/cc-notify` — the same emitter every other CLI uses. Codex needed
+three additions to it and no fourth: `source_of()` telling it apart from
+Claude (by `/.codex/` in the transcript path, or `turn_id`), the
+`permissionrequest` -> `notification` alias, and `codex_agent_name()` lifting a
+child's name out of its own transcript. 16 tests, every payload in them
+verbatim from a live capture.
+
+`Scripts/install-hooks.sh codex` writes nine `[[hooks.X]]` blocks into
+`~/.codex/config.toml` between sentinels; `uninstall-hooks.sh codex` takes only
+those lines back out. Round-tripped three times against a sandboxed HOME,
+leaving the file byte-identical. Codex gets its own switch in the Hooks menu
+beside opencode's, whose caveat says the thing nothing else has to: registering
+is not enough, because Codex asks permission to run hooks and only an
+interactive start offers the prompt.
+
+`CodexWatcher` and `CodexLiveProcess` — **deleted**. See the Verdict.
 
 ## What did not ship
 
-- The hook-based alarm — the mechanism is now confirmed real (above), but
-  building it (a `cc-notify` dialect, `install-hooks.sh` writing the TOML and
-  walking the trust step) is real work, not attempted tonight.
 - A flat-string `[hooks]` shape — ruled out live, 2026-09-11: `stop = "echo
   fired >> marker"` is accepted without error by `codex doctor` or a real
   `codex exec` turn, and is silently ignored, never fires. Not a parse
