@@ -142,9 +142,17 @@ final class StatusMenu: NSObject {
         let parent = NSMenuItem(title: "Theme", action: nil, keyEquivalent: "")
         let submenu = NSMenu()
 
+        // Near the top, not at the bottom. Under however many themes are
+        // installed — eight on this machine — the one item that leads anywhere
+        // new was the easiest in the menu to miss.
+        //
+        // Grouped with the built-in rather than given a section of its own:
+        // above the rule is what you have before you have anything, and where
+        // to get more; below it is what you have installed.
         let usingDefault = preferences.themeName == nil
         let builtIn = item(title: "Default (built-in)", action: #selector(selectDefaultTheme), isOn: usingDefault)
         submenu.addItem(builtIn)
+        submenu.addItem(getMoreThemes())
 
         let themes = ThemeLoader.availableThemes()
         if !themes.isEmpty { submenu.addItem(.separator()) }
@@ -160,12 +168,47 @@ final class StatusMenu: NSObject {
         }
 
         submenu.addItem(.separator())
-        submenu.addItem(item(title: "Get More Themes…", action: #selector(openThemeStore)))
         submenu.addItem(item(title: "Open Themes Folder…", action: #selector(openThemesFolder)))
 
         parent.submenu = submenu
         return parent
     }
+
+    /// The way out to where themes come from.
+    ///
+    /// A menu cannot hold a bright button, so the weight is carried by a tinted
+    /// symbol and a semibold title — enough to read as a different kind of
+    /// thing from the eight folder names under it, without shouting in a system
+    /// menu that is otherwise plain text.
+    ///
+    /// `withSymbolConfiguration(paletteColors:)` because a template image
+    /// ignores a fill colour and comes out the menu's own grey.
+    private func getMoreThemes() -> NSMenuItem {
+        let entry = NSMenuItem(title: "Get More Themes…", action: #selector(openThemeStore), keyEquivalent: "")
+        entry.target = self
+        entry.attributedTitle = NSAttributedString(
+            string: "Get More Themes…",
+            attributes: [
+                // Semibold at the menu's own size — a hard-coded point size
+                // would ignore the system's menu-text setting.
+                .font: NSFont.systemFont(
+                    ofSize: NSFont.menuFont(ofSize: 0).pointSize, weight: .semibold
+                ),
+                .foregroundColor: Self.storeTint
+            ]
+        )
+        if let symbol = NSImage(systemSymbolName: "paintpalette.fill",
+                                accessibilityDescription: "Get more themes") {
+            entry.image = symbol.withSymbolConfiguration(
+                NSImage.SymbolConfiguration(paletteColors: [Self.storeTint])
+            )
+        }
+        return entry
+    }
+
+    /// The same violet Settings uses for its headings and its own Get More
+    /// Themes button, so the two entry points read as one thing.
+    private static let storeTint = NSColor(srgbRed: 0.725, green: 0.640, blue: 0.890, alpha: 1)
 
     private func item(title: String,
                       action: Selector,
