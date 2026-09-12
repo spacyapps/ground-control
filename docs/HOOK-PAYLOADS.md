@@ -401,6 +401,84 @@ LIMITATIONS.md; it cost 147 seconds of false red before anyone noticed.
 which arrives as an ordinary `stop` — same shape as a finished task, with
 nothing to distinguish them.
 
+## Codex (`codex` CLI v0.154.0, measured 2026-09-11)
+
+Captured with `Scripts/probe-codex-hooks.sh` against a real interactive
+session — all twelve events registered observe-only, one turn run through a
+network approval and out the other side. Everything below is verbatim from
+`~/.codex/gc-hook-probe.log`.
+
+**Registering them is the awkward part, not reading them.** Three different
+casings live in one product, and only the third is what arrives here:
+
+| Where | Casing | Example |
+|---|---|---|
+| `config.toml` registration | PascalCase | `[[hooks.PermissionRequest]]` |
+| app-server wire schema | camelCase | `"permissionRequest"` |
+| **the payload itself** | **snake_case** | `"hook_event_name":"PermissionRequest"` |
+
+Plus a one-time interactive **trust** prompt at startup before any hook runs
+at all — see `docs/CODEX-INTEGRATION.md` for the TOML shape and the
+`[hooks.state]` record it writes.
+
+The payload is JSON on stdin, and the field names are **Claude's**, not
+Grok's — so `cc-notify`'s existing `get(payload, "session_id", "sessionId")`
+reading needs nothing added for Codex:
+
+```json
+{"session_id":"01a09373-…","turn_id":"01a09373-dbe0-…",
+ "transcript_path":"/Users/…/rollout-2026-09-11T19-30-01-01a09373-….jsonl",
+ "cwd":"/Users/waltermak/github/empty2","hook_event_name":"SessionStart",
+ "model":"gpt-5.6-terra","permission_mode":"default","source":"startup"}
+```
+
+`session_id` is the same id that names the rollout file, so a hook payload and
+the file `CodexWatcher` already reads join without guessing.
+
+### `PermissionRequest` — the event neither Claude nor Grok has
+
+This is the one worth the whole exercise. Codex writes **nothing to any file**
+while it waits on an approval, which is why a blocked Codex row sat on
+"Working…" instead of turning red. Measured: `PermissionRequest` at 19:30:45,
+`PostToolUse` at 19:32:05 — 80 seconds of silence on disk, announced by a hook
+at second zero.
+
+```json
+{"session_id":"01a09373-…","turn_id":"01a09373-dbe0-…","cwd":"…",
+ "hook_event_name":"PermissionRequest","model":"gpt-5.6-terra",
+ "permission_mode":"default","tool_name":"Bash",
+ "tool_input":{"command":"curl -I -L --max-time 20 https://www.macrumors.com",
+   "description":"May I enable network access to fetch headers from www.macrumors.com?"}}
+```
+
+`tool_input.description` is a written-out question — a row message needing no
+condensing. Note also that `PreToolUse` fires *first*, at the same second, for
+the same `tool_use_id`; the approval is a second event, not a variant of the
+first. And `permission_mode` is on every payload, so the
+`alarm-invisible-in-auto-mode` trap is checkable here rather than assumed.
+
+**The answer is visible too.** `PostToolUse` carries the matching
+`tool_use_id`, so unlike Grok — where no "question answered" event exists and
+the alarm outlived the answer by 147 seconds — clearing the red state needs no
+heuristic.
+
+### The rest of the lifecycle
+
+| Event | Carries | Worth |
+|---|---|---|
+| `SessionStart` | `source: "startup"` | a row at the moment it opens |
+| `UserPromptSubmit` | `prompt` (unwrapped — no `<user_query>` tags) | the row title |
+| `PreToolUse` | `tool_name`, `tool_input`, `tool_use_id` | real activity detail instead of "Working…" |
+| `PostToolUse` | the above plus `tool_response` | clears an alarm by `tool_use_id` |
+| `Stop` | `last_assistant_message`, `stop_hook_active` | same field, same meaning as Claude's |
+| `SessionEnd` | `reason` (`"other"` on a clean quit) | retires `CodexWatcher.showEndedFor`'s by-folder guess |
+
+Not observed in this run, and still unmeasured: `SubagentStart`, `SubagentStop`,
+`PreCompact`, `PostCompact`, `Interrupt`. Codex sub-agents are inline items in
+the parent transcript (`docs/CODEX-INTEGRATION.md`), so whether the subagent
+events fire at all — and whether they carry an id that outlives the turn —
+is the open question for grouping them.
+
 ## Fields the script adds itself
 
 Not every field comes from a payload. These are resolved by `cc-notify`, because

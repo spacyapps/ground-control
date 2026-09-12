@@ -263,16 +263,16 @@ is not installed).
 
 ## Open, for whenever it's picked back up
 
-- **Build the real hook-based alarm.** The mechanism is confirmed (above);
-  what's missing is Codex's actual hook *payload* shape — the live test
-  proved `Stop` fires, not what its JSON looks like on stdin.
-  **`Scripts/probe-codex-hooks.sh` is written and waiting**: it registers all
-  twelve events observe-only, captures argv, `CODEX_*` environment and stdin
-  (whichever turns out to carry the payload), and appends to `config.toml`
-  between sentinels so `--uninstall` takes the probe back out without
-  disturbing the model choice, the per-project trust, or the `[hooks.state]`
-  record Codex itself writes. One interactive run with a permission prompt in
-  it answers the question. Then extend `cc-notify` and `install-hooks.sh` to write the
+- **Build the real hook-based alarm.** The mechanism is confirmed (above) and
+  **the payload is now measured too** — captured 2026-09-11 with
+  `Scripts/probe-codex-hooks.sh`, recorded in full in `docs/HOOK-PAYLOADS.md`.
+  Nothing is unknown any more: the JSON arrives on stdin in *Claude's*
+  snake_case (`session_id`, `cwd`, `transcript_path`, `hook_event_name`,
+  `last_assistant_message`), so `cc-notify` needs no new dialect;
+  `PermissionRequest` fires the instant Codex blocks, carrying a written-out
+  question in `tool_input.description`; `PostToolUse` clears it by
+  `tool_use_id`; `SessionEnd` ends the row precisely. What remains is the
+  writing: extend `cc-notify` and `install-hooks.sh` to write the
   `[[hooks.X]]` TOML and handle the one-time interactive trust step (which
   a scripted installer cannot click through itself — worth checking whether
   `--dangerously-bypass-hook-trust` or pre-seeding a `trusted_hash` in
