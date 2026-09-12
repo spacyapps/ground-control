@@ -134,7 +134,6 @@ GroundControl/
 ├── Scripts/                     # cc-notify and install-hooks.sh are also copied
 │   │                             # into the .app, so a dmg needs no checkout
 │   ├── cc-notify                 # hook emitter (python3, reads Claude + Grok)
-│   ├── cc-notify.zip             # the emitter alone, for a machine without the repo
 │   ├── install-hooks.sh          # MERGES hook entries into ~/.claude/settings.json
 │   ├── theme-preview.sh          # one fake row per state, for theming
 │   ├── make-icon.sh              # logo -> AppIcon.icns

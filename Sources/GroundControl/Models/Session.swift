@@ -152,6 +152,22 @@ struct AgentRow: Identifiable, Equatable {
             message: latest.message,
             state: latest.state,
             needsAction: latest.needsAction,
+            // **Known wrong, deliberately left.** Children come from Claude,
+            // Grok and Codex, and all three are filed here as Claude, because
+            // `agents/*.jsonl` records no source — `cc-notify` writes one on
+            // session lines only.
+            //
+            // Harmless today, and the reason is worth writing down rather than
+            // rediscovering: the single reader of a child's source is
+            // `GroupRowView`'s dot, via `StatusDotView.Mark.forSource`, which
+            // maps everything except `cursor` and `grokbot` to the same round
+            // mark — and neither of those has children. Children also carry no
+            // source tag of their own; the parent row's is the one on screen.
+            //
+            // It becomes a real bug the moment a child's dot, tag or behaviour
+            // depends on which CLI it came from. The fix is to add `source` to
+            // `AgentEvent` and have the emitter write it, which is more churn
+            // than the problem currently earns.
             source: "claude",
             lastActivity: latest.timestamp
         )

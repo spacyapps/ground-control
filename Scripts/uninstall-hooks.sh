@@ -143,8 +143,13 @@ unregister_codex() {
 
   cp "$config" "${config}.bak-$(date +%Y%m%d-%H%M%S)"
   ls -t "$config".bak-* 2>/dev/null | tail -n +4 | while read -r old; do rm -f "$old"; done
+  # Trailing blanks are trimmed as well as the block: the installer writes a
+  # blank line before its sentinel, so without this, toggling the switch a few
+  # times leaves a growing stack of empty lines at the end of someone's config.
   awk -v b="# >>> ground-control >>>" -v e="# <<< ground-control <<<" '
-    $0 == b { skip = 1 } skip != 1 { print } $0 == e { skip = 0 }
+    $0 == b { skip = 1 }
+    skip != 1 { if ($0 == "") { blanks++ } else { while (blanks-- > 0) print ""; blanks = 0; print } }
+    $0 == e { skip = 0 }
   ' "$config" > "${config}.gc-tmp"
   mv "${config}.gc-tmp" "$config"
   echo "  Codex: removed our block from config.toml"
