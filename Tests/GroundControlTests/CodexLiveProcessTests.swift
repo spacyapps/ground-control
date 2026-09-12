@@ -127,4 +127,41 @@ final class CodexLiveProcessTests: XCTestCase {
         let match = CodexLiveProcess.terminal(forPID: 99, tty: nil, runner: runner)
         XCTAssertNil(match.hostApp)
     }
+
+    // MARK: - Not asking the system more than it is worth
+
+    func testASecondLookupInsideTheWindowIsServedFromCache() {
+        CodexLiveProcess.clearCache()
+        var calls = 0
+        let runner: ([String]) -> String? = { arguments in
+            calls += 1
+            if arguments.first == "/bin/ps" { return "33266 codex" }
+            return "codex 33266 you cwd DIR 1,18 64 1 /Users/you/repo"
+        }
+        let start = Date()
+        _ = CodexLiveProcess.all(now: start, runner: runner)
+        let afterFirst = calls
+        XCTAssertGreaterThan(afterFirst, 0, "the first lookup must actually ask")
+
+        _ = CodexLiveProcess.all(now: start.addingTimeInterval(1), runner: runner)
+        _ = CodexLiveProcess.all(now: start.addingTimeInterval(2), runner: runner)
+        XCTAssertEqual(calls, afterFirst, "polls inside the window must cost nothing")
+    }
+
+    func testThCacheExpiresSoANewlyStartedCodexIsStillFound() {
+        CodexLiveProcess.clearCache()
+        var calls = 0
+        let runner: ([String]) -> String? = { arguments in
+            calls += 1
+            if arguments.first == "/bin/ps" { return "33266 codex" }
+            return "codex 33266 you cwd DIR 1,18 64 1 /Users/you/repo"
+        }
+        let start = Date()
+        _ = CodexLiveProcess.all(now: start, runner: runner)
+        let afterFirst = calls
+        _ = CodexLiveProcess.all(
+            now: start.addingTimeInterval(CodexLiveProcess.cacheLifetime + 1), runner: runner
+        )
+        XCTAssertGreaterThan(calls, afterFirst, "past the window it must ask again")
+    }
 }

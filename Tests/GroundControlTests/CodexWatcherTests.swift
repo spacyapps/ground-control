@@ -169,6 +169,53 @@ final class CodexWatcherTests: XCTestCase {
         XCTAssertTrue(sessions.allSatisfy { $0.children.isEmpty })
     }
 
+    // MARK: - A session that has ended
+
+    /// With no `codex` running in its folder, a thread is over — its row
+    /// stays only while the result is still news, then goes.
+    func testAnEndedThreadDropsOffOnceItsResultIsNoLongerNews() throws {
+        try writeRollout(id: "gone", cwd: "/Users/you/repo", completed: "All done.")
+        let longAgo = now.addingTimeInterval(-CodexWatcher.showEndedFor - 60)
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+        try writeIndex([#"{"id":"gone","thread_name":"Old","updated_at":"\#(iso.string(from: longAgo))"}"#])
+
+        let sessions = CodexWatcher.sessions(
+            fromIndexAt: indexURL, sessionsRoot: sessionsRoot, now: now, liveProcesses: []
+        )
+        XCTAssertTrue(sessions.isEmpty, "no live codex and the result is stale — nothing worth showing")
+    }
+
+    func testAnEndedThreadStaysWhileItsResultIsStillNews() throws {
+        try writeRollout(id: "recent", cwd: "/Users/you/repo", completed: "All done.")
+        let justNow = now.addingTimeInterval(-60)
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+        try writeIndex([#"{"id":"recent","thread_name":"Recent","updated_at":"\#(iso.string(from: justNow))"}"#])
+
+        let sessions = CodexWatcher.sessions(
+            fromIndexAt: indexURL, sessionsRoot: sessionsRoot, now: now, liveProcesses: []
+        )
+        XCTAssertEqual(sessions.map(\.id), ["recent"], "you walked away, it finished — that is the point of the app")
+    }
+
+    /// A live `codex` keeps its row all day, however quiet it has gone.
+    func testALiveThreadKeepsItsRowAndGetsItsTerminal() throws {
+        try writeRollout(id: "live", cwd: "/Users/you/repo", completed: "Waiting on you.")
+        let hoursAgo = now.addingTimeInterval(-6 * 60 * 60)
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+        try writeIndex([#"{"id":"live","thread_name":"Still open","updated_at":"\#(iso.string(from: hoursAgo))"}"#])
+
+        let sessions = CodexWatcher.sessions(
+            fromIndexAt: indexURL, sessionsRoot: sessionsRoot, now: now,
+            liveProcesses: [(pid: 1, cwd: "/Users/you/repo", tty: "/dev/ttys012")]
+        )
+        let session = try XCTUnwrap(sessions.first)
+        XCTAssertEqual(session.id, "live")
+        XCTAssertEqual(session.tty, "/dev/ttys012", "a live session can be jumped to")
+    }
+
     // MARK: - History cutoff
 
     func testAThreadOlderThanTheRelevanceWindowIsDropped() throws {

@@ -43,10 +43,23 @@ struct CodexIndexEntry: Decodable, Equatable {
 final class CodexWatcher {
     static let source = "codex"
 
-    /// A thread updated longer ago than this is history, not a live row —
-    /// matches `AgentGrouper.showFinishedFor`'s spirit, generous because
-    /// Codex threads (unlike a hook session) carry no purge of their own.
+    /// A thread whose `codex` is **still running** stays a row all day — it
+    /// is a live session, however quiet, and Codex threads carry no purge of
+    /// their own.
     static let relevanceWindow: TimeInterval = 24 * 60 * 60
+
+    /// A thread with **no running `codex` in its folder** is over, and only
+    /// worth showing while its result is still news — same 30 minutes
+    /// `AgentGrouper.showFinishedFor` already gives a finished subagent.
+    ///
+    /// Not removed the instant the process exits, deliberately: liveness
+    /// here is known per *folder*, not per thread (see `CodexLiveProcess`),
+    /// so it cannot tell "this thread's session ended" from "some other
+    /// `codex` in that folder ended". A signal that imprecise should not be
+    /// allowed to delete a row outright — and the half hour also keeps the
+    /// case this app exists for, where you walk away, it finishes, and you
+    /// come back to find out what it said.
+    static let showEndedFor: TimeInterval = 30 * 60
 
     private(set) var sessions: [Session] = []
     var onChange: (([Session]) -> Void)?
@@ -115,6 +128,10 @@ final class CodexWatcher {
             guard now.timeIntervalSince(entry.updatedAt) <= relevanceWindow else { continue }
             guard let transcript = findRollout(id: entry.id, under: sessionsRoot) else { continue }
             guard let session = session(for: entry, transcript: transcript, live: live) else { continue }
+            // No `codex` running in its folder means the session is over —
+            // keep the row only while its result is still news.
+            let isLive = session.tty != nil
+            guard isLive || now.timeIntervalSince(session.lastActivity) <= showEndedFor else { continue }
             built.append(session)
         }
         return built

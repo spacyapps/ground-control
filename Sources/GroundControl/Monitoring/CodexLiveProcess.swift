@@ -52,9 +52,40 @@ enum CodexLiveProcess {
         let hostID: String?
     }
 
-    /// Every running `codex`, by pid and cwd — one `ps`, then one `lsof` each.
-    static func all(runner: (([String]) -> String?) = CodexLiveProcess.run) -> [(pid: Int32, cwd: String, tty: String?)] {
+    /// How long a lookup stands before it is worth asking the system again.
+    ///
+    /// The poll that drives this runs every 3s and mostly finds nothing has
+    /// changed; a terminal's tty does not move under a running process, and
+    /// a `codex` that starts is picked up on the next expiry at worst. So
+    /// this is the difference between a `ps` every 3 seconds forever and one
+    /// every 15 — for a value that changes when someone opens a terminal.
+    static let cacheLifetime: TimeInterval = 15
+
+    private static var cached: (taken: Date, processes: [(pid: Int32, cwd: String, tty: String?)])?
+
+    /// Every running `codex`, by pid and cwd — one `ps`, then one `lsof`
+    /// each, at most once per `cacheLifetime`. Main-thread only, like the
+    /// timer that calls it.
+    static func all(
+        now: Date = Date(),
+        runner: (([String]) -> String?) = CodexLiveProcess.run
+    ) -> [(pid: Int32, cwd: String, tty: String?)] {
+        if let cached, now.timeIntervalSince(cached.taken) < cacheLifetime {
+            return cached.processes
+        }
+        let found = lookUp(runner: runner)
+        cached = (now, found)
+        return found
+    }
+
+    /// Forgets the cache — for tests, and for anything that knows the world
+    /// just changed.
+    static func clearCache() { cached = nil }
+
+    private static func lookUp(runner: (([String]) -> String?)) -> [(pid: Int32, cwd: String, tty: String?)] {
         guard let listing = runner(["/bin/ps", "-eo", "pid=,comm="]) else { return [] }
+        // No `codex` running is the common case for a folder whose session
+        // has ended: one `ps`, no `lsof` at all, done.
         return pids(fromPS: listing).compactMap { pid in
             guard let lsof = runner(["/usr/sbin/lsof", "-p", String(pid)]),
                   let found = cwdAndTTY(fromLsof: lsof)
