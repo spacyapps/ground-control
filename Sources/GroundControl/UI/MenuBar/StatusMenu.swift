@@ -160,6 +160,7 @@ final class StatusMenu: NSObject {
         }
 
         submenu.addItem(.separator())
+        submenu.addItem(item(title: "Get More Themes…", action: #selector(openThemeStore)))
         submenu.addItem(item(title: "Open Themes Folder…", action: #selector(openThemesFolder)))
 
         parent.submenu = submenu
@@ -180,6 +181,7 @@ final class StatusMenu: NSObject {
     @objc private func toggleAlwaysOnTop() { actions.toggleAlwaysOnTop() }
     @objc private func toggleAllSpaces() { actions.toggleAllSpaces() }
     @objc private func openThemesFolder() { actions.openThemesFolder() }
+    @objc private func openThemeStore() { Brand.openThemeStore() }
     @objc private func openSettings() { actions.openSettings() }
     @objc private func quit() { actions.quit() }
     @objc private func selectDefaultTheme() { actions.selectTheme(nil) }

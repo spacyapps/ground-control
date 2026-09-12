@@ -20,4 +20,23 @@ final class BrandVersionTests: XCTestCase {
         XCTAssertEqual(Brand.versionLine(short: nil, build: nil), "dev build")
         XCTAssertEqual(Brand.versionLine(short: nil, build: "8"), "dev build")
     }
+
+    // MARK: - Where themes come from
+
+    /// The one route out of the app to anything for sale, and a typo in it
+    /// fails silently: the button still opens, the browser still loads, and
+    /// what a buyer lands on is a 404 nobody hears about.
+    func testTheThemeStoreURLIsTheOneWeMeant() throws {
+        let store = try XCTUnwrap(Brand.themeStore)
+        XCTAssertEqual(store.absoluteString, "https://www.spacyapps.com/apps/ground-control/themes")
+    }
+
+    /// Same host as the site, so moving the domain breaks both together and
+    /// gets noticed, rather than leaving the store pointing at the old one.
+    func testTheStoreLivesOnTheSameHostAsTheWebsite() throws {
+        let store = try XCTUnwrap(Brand.themeStore)
+        let site = try XCTUnwrap(Brand.website)
+        XCTAssertEqual(store.host, site.host)
+        XCTAssertEqual(store.scheme, "https", "it is a link handed to a buyer")
+    }
 }

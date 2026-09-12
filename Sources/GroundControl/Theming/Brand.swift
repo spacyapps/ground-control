@@ -13,6 +13,13 @@ enum Brand {
     static let name = "SpacyApps"
     static let website = URL(string: "https://www.spacyapps.com")
 
+    /// Where more themes come from.
+    ///
+    /// Named here beside the website rather than written into a button, because
+    /// it is the only route out of the app to anything for sale and it should
+    /// be findable in one place when it moves.
+    static let themeStore = URL(string: "https://www.spacyapps.com/apps/ground-control/themes")
+
     /// The running version as `0.7.3 (8)` — marketing version, then the build
     /// number in parentheses, the macOS convention.
     ///
@@ -38,6 +45,11 @@ enum Brand {
     static func openWebsite() {
         guard let website else { return }
         NSWorkspace.shared.open(website)
+    }
+
+    static func openThemeStore() {
+        guard let themeStore else { return }
+        NSWorkspace.shared.open(themeStore)
     }
 
     /// Full lockup — mark plus wordmark. Illegible below ~120pt wide.

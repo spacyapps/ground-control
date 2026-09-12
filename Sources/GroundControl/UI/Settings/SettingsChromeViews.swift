@@ -64,6 +64,7 @@ extension SettingsView {
         row.orientation = .horizontal
         row.spacing = 8
 
+        let more = getMoreThemesButton()
         let create = NSButton(title: "Create a Theme…", target: self, action: #selector(createTheme))
         create.bezelStyle = .rounded
         let open = NSButton(title: "Open Folder…", target: self, action: #selector(openFolder))
@@ -71,10 +72,40 @@ extension SettingsView {
         let refresh = NSButton(title: "Refresh", target: self, action: #selector(refreshThemes))
         refresh.bezelStyle = .rounded
 
+        row.addArrangedSubview(more)
         row.addArrangedSubview(create)
         row.addArrangedSubview(open)
         row.addArrangedSubview(refresh)
+        // A gap after the one button that leaves the app, so it reads as its own
+        // thing rather than as the first of four utilities.
+        row.setCustomSpacing(18, after: more)
         return row
+    }
+
+    /// The only route from the app to anywhere themes can be got.
+    ///
+    /// Deliberately the loudest control in Settings, and the only tinted one —
+    /// everything else here is a plain rounded button, so a single filled pill
+    /// carries the whole hierarchy without needing a second colour anywhere.
+    /// `bezelColor` rather than `keyEquivalent: "\r"`: making it the default
+    /// button would tint it the same way and also bind Return to leaving the
+    /// app, which is not what Return should do in a settings window.
+    func getMoreThemesButton() -> NSButton {
+        let button = NSButton(title: "Get More Themes", target: self, action: #selector(openThemeStore))
+        button.bezelStyle = .rounded
+        button.bezelColor = SettingsChrome.heading
+        button.contentTintColor = SettingsChrome.deepSpace
+        // The tint alone is not enough on a busy star field; the weight is what
+        // makes it read as a button rather than as a coloured label.
+        button.attributedTitle = NSAttributedString(
+            string: "Get More Themes",
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+                .foregroundColor: SettingsChrome.deepSpace
+            ]
+        )
+        button.toolTip = Brand.themeStore?.absoluteString
+        return button
     }
 
     /// Section headers double as the dividers, so the old separator boxes are

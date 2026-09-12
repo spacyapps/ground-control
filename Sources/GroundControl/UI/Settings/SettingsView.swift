@@ -324,6 +324,10 @@ final class SettingsView: NSView {
         actions.createTheme()
     }
 
+    @objc func openThemeStore() {
+        Brand.openThemeStore()
+    }
+
     /// The builder may have just written a new folder.
     func themesDidChangeOnDisk() {
         reloadThemes()
