@@ -132,10 +132,19 @@ final class CodexWatcher {
     /// state from its last decodable `event_msg` — `task_complete` means
     /// done, anything else means working. Whole-file, same technique
     /// `SessionFileParser` already uses for GC's own `.jsonl` files.
+    ///
+    /// `lastActivity` comes from the transcript's own last line, **not**
+    /// `entry.updatedAt` — confirmed live 2026-09-11 that the index field can
+    /// sit frozen through an entire long turn (and a second one after it,
+    /// 25+ minutes and two `task_complete`s with no change to `updated_at`
+    /// at all). Trusting it would age a genuinely active row past
+    /// `ElapsedFormatter.staleAfter` (30 min) into looking idle while Codex
+    /// was still visibly working — the transcript's own timestamps, unlike
+    /// the index's, track every real write.
     private static func session(for entry: CodexIndexEntry, transcript: URL) -> Session? {
         guard let text = BoundedRead.string(at: transcript, limit: BoundedRead.sessionFileLimit) else { return nil }
         let lines = text.split(separator: "\n")
-        guard let first = lines.first else { return nil }
+        guard let first = lines.first, let last = lines.last else { return nil }
         guard let meta = decodeSessionMeta(String(first)) else { return nil }
 
         var state: SessionState = .working
@@ -147,6 +156,8 @@ final class CodexWatcher {
             break
         }
 
+        let lastActivity = max(decodeLineTimestamp(String(last)) ?? entry.updatedAt, entry.updatedAt)
+
         let event = SessionEvent(
             sessionID: entry.id,
             source: source,
@@ -154,7 +165,7 @@ final class CodexWatcher {
             cwd: meta.cwd,
             state: state,
             message: message,
-            timestamp: entry.updatedAt
+            timestamp: lastActivity
         )
         return Session(id: entry.id, latest: event, children: [], acknowledgedAt: nil)
     }
@@ -163,6 +174,20 @@ final class CodexWatcher {
         let type: String
         let payload: Payload
         struct Payload: Decodable { let cwd: String? }
+    }
+
+    private struct TimestampedLine: Decodable {
+        let timestamp: Date
+    }
+
+    /// Every line in a rollout file carries its own top-level `timestamp`,
+    /// regardless of `type` — this is what actually advances on every write,
+    /// unlike `session_index.jsonl`'s `updated_at`.
+    private static func decodeLineTimestamp(_ line: String) -> Date? {
+        guard let data = line.data(using: .utf8) else { return nil }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601WithFractionalSeconds
+        return try? decoder.decode(TimestampedLine.self, from: data).timestamp
     }
 
     private static func decodeSessionMeta(_ line: String) -> SessionMeta.Payload? {

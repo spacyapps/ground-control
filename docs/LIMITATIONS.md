@@ -385,6 +385,7 @@ the alarm like any other blocked session. Full design: `docs/GROK-BOT-GROUPING.m
 | Codex rows in the real app | built, tested, launched; real cwd/thread name/working-done state read correctly from live disk data | 2026-09-11 |
 | A flat-string `[hooks]` TOML shape does nothing | `stop = "echo fired >> marker"` in `config.toml`, a real turn run end to end — no error from `doctor` or `exec`, marker never appeared | 2026-09-11 |
 | **Codex hooks are real and do fire** | the verified `[[hooks.Stop]]` shape, run *interactively* (not `exec`): a real trust prompt appeared, was accepted, the marker file appeared, and `config.toml` grew a genuine `trusted_hash` entry | 2026-09-11 |
+| `session_index.jsonl`'s `updated_at` is unreliable mid-turn | ran Codex's multi-agent tool twice in one thread; `updated_at` sat frozen 25+ minutes and two `task_complete`s while the transcript kept growing correctly — fixed by reading the transcript's own last-line timestamp instead | 2026-09-11 |
 | opencode respects `XDG_CONFIG_HOME` | probed in a scratch config; the user's own was never touched | 2026-08-19 |
 | A plugin's shell has no writable stdin | `.stdin(json)` hung twice for five minutes; piping works | 2026-08-19 |
 | Only `session.created` carries the directory | later events gave an id alone, and rows arrived named `/` | 2026-08-19 |
