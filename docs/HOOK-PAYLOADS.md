@@ -473,11 +473,44 @@ heuristic.
 | `Stop` | `last_assistant_message`, `stop_hook_active` | same field, same meaning as Claude's |
 | `SessionEnd` | `reason` (`"other"` on a clean quit) | retires `CodexWatcher.showEndedFor`'s by-folder guess |
 
-Not observed in this run, and still unmeasured: `SubagentStart`, `SubagentStop`,
-`PreCompact`, `PostCompact`, `Interrupt`. Codex sub-agents are inline items in
-the parent transcript (`docs/CODEX-INTEGRATION.md`), so whether the subagent
-events fire at all — and whether they carry an id that outlives the turn —
-is the open question for grouping them.
+Still unmeasured: `PreCompact`, `PostCompact`, `Interrupt`.
+
+### `SubagentStart` / `SubagentStop` — measured firing, a second run
+
+The best subagent signal of any CLI here, and the one that overturned this
+repo's own conclusion that Codex sub-agents were unfollowable.
+
+```json
+{"session_id":"01a09377-e440-…","turn_id":"01a09378-2957-…",
+ "transcript_path":"…/rollout-…-01a09378-293d-….jsonl",
+ "cwd":"/Users/waltermak/github/empty2","hook_event_name":"SubagentStart",
+ "agent_id":"01a09378-293d-78f2-85bd-178acb5a7d87","agent_type":"default"}
+
+{"session_id":"01a09377-e440-…","turn_id":"01a09378-2957-…",
+ "transcript_path":"…/rollout-…-01a09377-e440-….jsonl",
+ "agent_transcript_path":"…/rollout-…-01a09378-293d-….jsonl",
+ "hook_event_name":"SubagentStop","stop_hook_active":false,
+ "agent_id":"01a09378-293d-78f2-85bd-178acb5a7d87","agent_type":"default",
+ "last_assistant_message":"hello"}
+```
+
+- `session_id` is the **parent's** on both events, `agent_id` the child's —
+  the parent link is explicit, needing none of the `meta.json` archaeology
+  Grok's subagents required (`grok-cli-subagent-sessions`).
+- **`SubagentStart` fires before the work.** Claude Code announces only the
+  stop (SPEC §10), and Grok's `subagentStart` was asserted from docs and then
+  measured as never firing at all. This one is measured as firing.
+- `agent_transcript_path` on stop names the child's own rollout — a real file,
+  merely absent from `session_index.jsonl`.
+- `agent_type` is `"default"` and there is no name field, so a child row has
+  no label of its own.
+
+**The trap: `transcript_path` means different things on the two events.** On
+`SubagentStart` it is the *child's* rollout; on `SubagentStop` it is the
+*parent's*, with the child moved to `agent_transcript_path`. Anything keying a
+session file by `transcript_path` would file the two halves of one child under
+two different sessions. Key on `session_id` + `agent_id`, which are consistent
+across both.
 
 ## Fields the script adds itself
 

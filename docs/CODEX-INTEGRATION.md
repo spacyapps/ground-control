@@ -38,16 +38,37 @@ not through the file `CodexWatcher` reads. See "Hooks, resolved" below.
 | Also has | a local **app-server daemon** (`codex app-server`) — a fully typed JSON-RPC protocol, `codex app-server generate-json-schema` dumps it to disk without even logging in |
 
 Codex's own multi-agent tool ("create N sub agents...") is **not** the same
-shape as Grok's `spawn_subagent`, confirmed live 2026-09-11: it never creates
-a separate top-level thread at all. It runs as `SubAgentActivity`/
-`CollabAgentToolCall` items — `kind: started/interacted/completed`, a
-`"wait"` tool call while the parent blocks — logged **inline in the parent's
-own rollout file**, with no `session_index.jsonl` entry or rollout of their
-own. So `CodexWatcher` needs no special handling for this at all: the parent
-row correctly reads `working` for the whole exchange and `done` with the real
-summary once it ends, because from the file's perspective it always was one
-continuous turn. A genuinely different mechanism from Grok's, worth not
-confusing the two by name alone.
+shape as Grok's `spawn_subagent`. The parent's `spawn_agent`/`wait_agent`
+tool calls appear **inline in its own rollout file** as `SubAgentActivity`
+items (`kind: started/completed`, an `agent_thread_id`, an `agent_path` like
+`/root/hello_one` — a sandboxed container path, not a macOS one) and a
+`CollabAgentToolCall` that blocks the parent while they run. So `CodexWatcher`
+needs no special handling to stay *correct*: the parent row reads `working`
+for the whole exchange and `done` with the real summary at the end, because
+from the file's perspective it was one continuous turn.
+
+**Corrected 2026-09-11 (same evening, by the hook probe).** An earlier pass
+here concluded the children had no files of their own and that their
+`agent_thread_id`s were ephemeral, "nothing else on disk ever references them
+again". Both wrong, and wrong in the useful direction. Each child gets its own
+full rollout file, named by that very id:
+
+```
+SubAgentActivity  agent_thread_id  01a09378-293d-78f2-85bd-178acb5a7d87
+SubagentStart     agent_id         01a09378-293d-78f2-85bd-178acb5a7d87
+on disk           rollout-2026-09-11T19-35-20-01a09378-293d-….jsonl   47,949 bytes
+```
+
+What misled the earlier pass: the children are **absent from
+`session_index.jsonl`** (checked: 0 entries each, against 1 for the parent).
+Not being indexed was read as not existing. That absence is itself load-bearing
+good news — it is why an unmodified `CodexWatcher`, which reads the index,
+never turned them into stray top-level rows.
+
+So grouping them is reachable two ways now: resolve `agent_thread_id` to its
+rollout file from the parent's own transcript, or — far more cheaply — take
+`agent_id` straight off the `SubagentStart`/`SubagentStop` hooks, which also
+carry the *parent's* `session_id`. See `docs/HOOK-PAYLOADS.md`.
 
 ---
 
@@ -287,25 +308,25 @@ is not installed).
   worth it only if the hook path turns out to have a real gap the socket
   doesn't.
 - **Show Codex's own "create N sub agents" tool as grouped children, the way
-  Claude's real subagents already show under their parent.** Not built.
-  Claude's mechanism relies on a real, structural signal this doesn't have —
-  each Claude subagent fires its own hook with a real `agent_id`, and
-  `cc-notify` writes it to its own file, `agents/<parent>__<agent_id>.jsonl`,
-  which `AgentGrouper` reads. **Codex's collab tool creates no such file at
-  all.** Confirmed live 2026-09-11: it never creates a separate thread, a
-  `session_index.jsonl` entry, or any file of its own — the whole thing is
-  logged as more lines *inside the parent's own transcript*:
-  `SubAgentActivity` items (`kind: started/interacted/completed`, an
-  `agent_thread_id`, an `agent_path` like `/root/dialogue_one` — a sandboxed
-  container path, not a macOS one) and `CollabAgentToolCall` items
-  (`tool: "wait"`, blocking the parent turn while they run). Those
-  `agent_thread_id`s are ephemeral; nothing else on disk ever references
-  them again. So this needs a genuinely different mechanism than
-  `AgentGrouper`'s file-per-child pattern: `CodexWatcher` would have to
-  actively parse `SubAgentActivity`/`CollabAgentToolCall` lines out of the
-  parent's own transcript and synthesize `AgentRow` children from them
-  directly — real, scoped work (the exact JSON shape above is already
-  measured), just a different code path than everything else here uses.
+  Claude's real subagents already show under their parent.** Not built — but
+  **no longer the special case this section used to describe.** The hook probe
+  (2026-09-11) measured `SubagentStart` and `SubagentStop` firing for real,
+  and they carry exactly the signal `AgentGrouper` already runs on: an
+  `agent_id` for the child *and* the parent's `session_id` in the same
+  payload, with `agent_transcript_path` naming the child's own rollout on
+  `SubagentStop`. That is the same structural shape Claude's subagents have,
+  so this becomes the ordinary `cc-notify` path —
+  `agents/<parent>__<agent_id>.jsonl`, read by `AgentGrouper` — rather than a
+  bespoke transcript parser.
+
+  Two things it is better at than either neighbour: `SubagentStart` fires
+  **before** the work (Claude Code only announces the stop, which is why SPEC
+  §10 lists live tracking as unresolved there), and unlike Grok's
+  `subagentStart` — asserted from docs, then measured as never firing — this
+  one is measured as firing. The gap: `agent_type` is `"default"` and there is
+  no name field, so a child row has no label of its own; `agent_path`
+  (`/root/hello_one`) is the closest thing, and it lives in the parent's
+  transcript, not the payload.
 - **Give a Codex row somewhere to jump to, instead of always Finder.**
   `CodexWatcher` never sets `tty`/`hostApp`/`hostID` — it has no way to,
   since it only reads static files and (unlike a hook, which runs *inside*
