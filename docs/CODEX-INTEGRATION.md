@@ -37,6 +37,18 @@ not through the file `CodexWatcher` reads. See "Hooks, resolved" below.
 | Local state | mostly **SQLite** (`state_*.sqlite`, `thread_history_*.sqlite`, `queue_*.sqlite`, `goals_*.sqlite`, `memories_*.sqlite`, `logs_*.sqlite`) — a real structural difference from every other CLI examined here, all of which use plain JSON/JSONL |
 | Also has | a local **app-server daemon** (`codex app-server`) — a fully typed JSON-RPC protocol, `codex app-server generate-json-schema` dumps it to disk without even logging in |
 
+Codex's own multi-agent tool ("create N sub agents...") is **not** the same
+shape as Grok's `spawn_subagent`, confirmed live 2026-09-11: it never creates
+a separate top-level thread at all. It runs as `SubAgentActivity`/
+`CollabAgentToolCall` items — `kind: started/interacted/completed`, a
+`"wait"` tool call while the parent blocks — logged **inline in the parent's
+own rollout file**, with no `session_index.jsonl` entry or rollout of their
+own. So `CodexWatcher` needs no special handling for this at all: the parent
+row correctly reads `working` for the whole exchange and `done` with the real
+summary once it ends, because from the file's perspective it always was one
+continuous turn. A genuinely different mechanism from Grok's, worth not
+confusing the two by name alone.
+
 ---
 
 ## Hooks, resolved
