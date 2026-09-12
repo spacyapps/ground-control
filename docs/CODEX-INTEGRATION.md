@@ -162,13 +162,26 @@ message and timing:
  "started_at": 1789162332, "completed_at": 1789162339, "duration_ms": 7404}}
 ```
 
-`CodexWatcher` reads the first line for `cwd`, scans from the end for the
-last `task_complete` — present means **done** with the real message; absent
-means **working**, generically. Same whole-file, scan-from-the-end technique
-`SessionFileParser` already uses for GC's own files — Codex transcripts grow
-large (162KB after ten minutes of testing), so this is genuinely doing real
-work, not free, but it is the same trade this codebase already made
-elsewhere.
+`CodexWatcher` reads the first line for `cwd`; state comes from checking
+whether the transcript's **true last line** — not any `task_complete` found
+scanning backward — is itself a `task_complete`. Present there means
+**done** with the real message; anything else means **working**,
+generically. Same whole-file technique `SessionFileParser` already uses for
+GC's own files — Codex transcripts grow large (162KB after ten minutes of
+testing), so this is genuinely doing real work, not free, but it is the same
+trade this codebase already made elsewhere.
+
+**Checking only the last line matters, and got it wrong the first time.**
+The shipped version scanned backward for the first `task_complete` it found
+and stopped — correct for a thread that has only ever had one turn, wrong the
+moment a second one starts. Caught live: asked a status question (a real
+`task_complete` landed, a real answer), then immediately asked for two
+sub-agents — the row kept reporting `done` with the *status question's*
+now-stale answer the entire time the terminal plainly read `Working (19s)`,
+because that old `task_complete` was still sitting further back in the file
+and the backward scan found it first. Fixed by checking only the file's true
+final line: any of the new turn's own lines, however many, of whatever type,
+immediately stop the old `task_complete` from being read as current.
 
 **`lastActivity` comes from the transcript's own last line, not the index's
 `updated_at` — found live the same evening, after shipping.** Ran the

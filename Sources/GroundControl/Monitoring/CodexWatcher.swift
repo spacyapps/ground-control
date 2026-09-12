@@ -129,11 +129,26 @@ final class CodexWatcher {
     }
 
     /// `cwd` comes from the transcript's first line (`session_meta`); current
-    /// state from its last decodable `event_msg` — `task_complete` means
-    /// done, anything else means working. Whole-file, same technique
-    /// `SessionFileParser` already uses for GC's own `.jsonl` files.
+    /// state from its very last line — `task_complete` there means done,
+    /// with the real message; anything else means working. Whole-file, same
+    /// technique `SessionFileParser` already uses for GC's own `.jsonl` files.
     ///
-    /// `lastActivity` comes from the transcript's own last line, **not**
+    /// **The last line specifically, not "a `task_complete` found scanning
+    /// backward."** An earlier version scanned from the end for the first
+    /// `task_complete` it found and stopped there — which is wrong the
+    /// moment a *new* turn starts after an old one finished: the old
+    /// `task_complete` is still sitting further back in the file, so the row
+    /// kept reporting `done` with the previous turn's stale message the
+    /// entire time a new turn was visibly running in the terminal. Caught
+    /// live: asked for a status check, got a real answer (a real
+    /// `task_complete`), then immediately asked for two sub-agents — the row
+    /// kept showing the *status check's* answer as "done" while the
+    /// terminal plainly read "Working (19s)". Checking only the true last
+    /// line fixes it: a new turn's own fresh lines (however many, whatever
+    /// their type) always overtake the prior `task_complete` as soon as
+    /// anything gets appended after it.
+    ///
+    /// `lastActivity` comes from the same last line's own timestamp, **not**
     /// `entry.updatedAt` — confirmed live 2026-09-11 that the index field can
     /// sit frozen through an entire long turn (and a second one after it,
     /// 25+ minutes and two `task_complete`s with no change to `updated_at`
@@ -149,11 +164,9 @@ final class CodexWatcher {
 
         var state: SessionState = .working
         var message = "Working…"
-        for line in lines.reversed() {
-            guard let completed = decodeTaskComplete(String(line)) else { continue }
+        if let completed = decodeTaskComplete(String(last)) {
             state = .done
             message = condense(completed.lastAgentMessage) ?? "Finished"
-            break
         }
 
         let lastActivity = max(decodeLineTimestamp(String(last)) ?? entry.updatedAt, entry.updatedAt)

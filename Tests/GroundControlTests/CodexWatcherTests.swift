@@ -86,6 +86,32 @@ final class CodexWatcherTests: XCTestCase {
         XCTAssertEqual(session.message, "This directory is empty.")
     }
 
+    /// Caught live: asked a status question (a real `task_complete` landed),
+    /// then immediately asked for two sub-agents — the row kept reporting
+    /// `done` with the *status question's* stale answer the whole time the
+    /// terminal plainly read "Working (19s)". The bug was scanning backward
+    /// for the first `task_complete` found anywhere, which is still the old
+    /// one sitting further back in the file. Only the file's true last line
+    /// may decide `done`.
+    func testANewTurnStartingAfterAnOldTaskCompleteReadsAsWorkingNotStaleDone() throws {
+        let dir = sessionsRoot.appendingPathComponent("2026/09/11", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let lines = [
+            #"{"type":"session_meta","payload":{"session_id":"t6","cwd":"/Users/you/repo"}}"#,
+            #"{"type":"event_msg","payload":{"type":"task_complete","last_agent_message":"We are in an empty repo."}}"#,
+            // A brand-new turn starts after that — no task_complete of its own yet.
+            #"{"type":"event_msg","payload":{"type":"task_started"}}"#,
+            #"{"type":"event_msg","payload":{"type":"item_completed","item":{"type":"SubAgentActivity","kind":"started"}}}"#,
+        ]
+        try (lines.joined(separator: "\n") + "\n")
+            .write(to: dir.appendingPathComponent("rollout-2026-09-11T14-00-00-t6.jsonl"), atomically: true, encoding: .utf8)
+        try writeIndex([#"{"id":"t6","thread_name":"Clarify current status","updated_at":"2026-09-11T21:55:00.000000Z"}"#])
+
+        let session = try XCTUnwrap(CodexWatcher.sessions(fromIndexAt: indexURL, sessionsRoot: sessionsRoot, now: now).first)
+        XCTAssertEqual(session.latest.state, .working, "a task_complete from an earlier, finished turn must not win once a new turn has started")
+        XCTAssertEqual(session.message, "Working…")
+    }
+
     /// Caught live 2026-09-11: `session_index.jsonl`'s `updated_at` sat
     /// frozen through an entire long turn (and a second one after it) while
     /// the transcript kept growing — 25+ minutes of real activity the index
@@ -177,3 +203,4 @@ final class CodexWatcherTests: XCTestCase {
         XCTAssertTrue(CodexWatcher.sessions(fromIndexAt: indexURL, sessionsRoot: sessionsRoot, now: now).isEmpty)
     }
 }
+
