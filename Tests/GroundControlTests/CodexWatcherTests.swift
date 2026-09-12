@@ -27,8 +27,13 @@ final class CodexWatcherTests: XCTestCase {
     }
 
     /// Writes a minimal rollout transcript: a `session_meta` first line, then
-    /// optionally a `task_complete` last line.
-    private func writeRollout(id: String, cwd: String, completed: String? = nil) throws {
+    /// optionally a `task_complete` last line. `lastLineTimestamp`, when
+    /// given, is stamped on the very last line — real rollout lines all
+    /// carry a top-level `timestamp`, which is what `CodexWatcher` now reads
+    /// for `lastActivity` instead of the index's own unreliable `updated_at`.
+    private func writeRollout(
+        id: String, cwd: String, completed: String? = nil, lastLineTimestamp: String? = nil
+    ) throws {
         let dir = sessionsRoot.appendingPathComponent("2026/09/11", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         var lines = [
@@ -37,6 +42,11 @@ final class CodexWatcherTests: XCTestCase {
         ]
         if let completed {
             lines.append(#"{"type":"event_msg","payload":{"type":"task_complete","last_agent_message":"\#(completed)"}}"#)
+        }
+        if let lastLineTimestamp {
+            let last = lines.removeLast()
+            let withTimestamp = last.replacingOccurrences(of: "{", with: #"{"timestamp":"\#(lastLineTimestamp)","#, options: [], range: last.range(of: "{"))
+            lines.append(withTimestamp)
         }
         let text = lines.joined(separator: "\n") + "\n"
         try text.write(to: dir.appendingPathComponent("rollout-2026-09-11T14-00-00-\(id).jsonl"), atomically: true, encoding: .utf8)
@@ -61,7 +71,7 @@ final class CodexWatcherTests: XCTestCase {
         let session = try XCTUnwrap(sessions.first)
         XCTAssertEqual(session.id, "t1")
         XCTAssertEqual(session.cwd, "/Users/you/repo")
-        XCTAssertEqual(session.state, .working)
+        XCTAssertEqual(session.latest.state, .working)
         XCTAssertEqual(session.displayName(renames: [:]), "List files here")
         XCTAssertEqual(session.source, "codex")
         XCTAssertTrue(session.children.isEmpty)
@@ -72,8 +82,29 @@ final class CodexWatcherTests: XCTestCase {
         try writeIndex([#"{"id":"t2","thread_name":"List files here","updated_at":"2026-09-11T21:55:00.000000Z"}"#])
 
         let session = try XCTUnwrap(CodexWatcher.sessions(fromIndexAt: indexURL, sessionsRoot: sessionsRoot, now: now).first)
-        XCTAssertEqual(session.state, .done)
+        XCTAssertEqual(session.latest.state, .done)
         XCTAssertEqual(session.message, "This directory is empty.")
+    }
+
+    /// Caught live 2026-09-11: `session_index.jsonl`'s `updated_at` sat
+    /// frozen through an entire long turn (and a second one after it) while
+    /// the transcript kept growing — 25+ minutes of real activity the index
+    /// never reflected. Trusting it for `lastActivity` would age a
+    /// genuinely-working row past the 30-minute staleness window into
+    /// looking idle. The transcript's own last-line timestamp must win.
+    func testLastActivityComesFromTheTranscriptNotTheStaleIndex() throws {
+        try writeRollout(id: "t5", cwd: "/Users/you/repo", lastLineTimestamp: "2026-09-11T21:59:00.000000Z")
+        // The index claims this thread went quiet an hour before `now` —
+        // well past the 30-minute staleness window on its own, exactly what
+        // was observed live for a thread that was genuinely still working.
+        try writeIndex([#"{"id":"t5","thread_name":"Long turn","updated_at":"2026-09-11T21:00:00.000000Z"}"#])
+
+        let session = try XCTUnwrap(CodexWatcher.sessions(fromIndexAt: indexURL, sessionsRoot: sessionsRoot, now: now).first)
+        XCTAssertEqual(session.lastActivity, ISO8601DateFormatter().date(from: "2026-09-11T21:59:00Z"))
+        XCTAssertFalse(
+            ElapsedFormatter.isStale(since: session.lastActivity, now: now),
+            "the transcript's own fresher timestamp must win over the index's stale one"
+        )
     }
 
     /// Caught live: a real `last_agent_message` was a numbered list and
@@ -96,7 +127,7 @@ final class CodexWatcherTests: XCTestCase {
         try writeIndex([#"{"id":"t3","thread_name":"Needs approval","updated_at":"2026-09-11T21:55:00.000000Z"}"#])
 
         let session = try XCTUnwrap(CodexWatcher.sessions(fromIndexAt: indexURL, sessionsRoot: sessionsRoot, now: now).first)
-        XCTAssertEqual(session.state, .working)
+        XCTAssertEqual(session.latest.state, .working)
         XCTAssertFalse(session.needsAction, "Codex rows never alarm — there is no signal to alarm from")
     }
 

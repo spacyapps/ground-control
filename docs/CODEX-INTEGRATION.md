@@ -170,6 +170,17 @@ large (162KB after ten minutes of testing), so this is genuinely doing real
 work, not free, but it is the same trade this codebase already made
 elsewhere.
 
+**`lastActivity` comes from the transcript's own last line, not the index's
+`updated_at` — found live the same evening, after shipping.** Ran the
+multi-agent tool twice in the same thread; `session_index.jsonl`'s
+`updated_at` sat frozen through both entire turns, 25+ minutes and two
+`task_complete`s later, while the transcript kept growing correctly the
+whole time. The index field just does not reliably track ongoing activity —
+trusting it would have aged a genuinely-active row past
+`ElapsedFormatter.staleAfter` (30 minutes) into looking idle. Fixed: every
+rollout line carries its own top-level `timestamp`, unrelated to `type`, and
+that — the transcript's own last line — is what `lastActivity` reads now.
+
 ---
 
 ## "Needs you" — confirmed absent from the basic chat, confirmed silent in the file
