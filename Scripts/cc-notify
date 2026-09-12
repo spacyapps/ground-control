@@ -6,12 +6,15 @@ cc-notify — agent-CLI hook emitter for GroundControl.
 
 Reads a hook payload on stdin and appends one JSON line to that session's
 file. Field names below are not guesses: they were captured from live hook
-payloads on Claude Code 2.1.226 and Grok. See docs/HOOK-PAYLOADS.md for the
-raw dumps and docs/LIMITATIONS.md for which CLIs are proven.
+payloads on Claude Code 2.1.226, Grok, Cursor and Codex. See
+docs/HOOK-PAYLOADS.md for the raw dumps and docs/LIMITATIONS.md for which
+CLIs are proven.
 
 Serves several CLIs from one script. Claude Code uses snake_case and Grok
 camelCase, but the events and their meanings are identical, so `get()` reads
-either spelling rather than shipping an adapter per vendor.
+either spelling rather than shipping an adapter per vendor. Codex turned out
+to speak Claude's dialect exactly, which is why it needed no new reading at
+all — only `source_of()` learning to tell the two apart.
 
 (The name is historical — it predates Grok support. Renaming it would break
 every installed settings.json that points at ~/bin/cc-notify.)
@@ -581,13 +584,14 @@ def handle_subagent(payload, root, now, finished):
     file under agents/ — keeping the file <-> row invariant intact one level
     down. The app groups them by the session id prefix.
 
-    Grok fires SubagentStart as well as SubagentStop, so its children can show
-    up while they are still running; Claude Code only announces the stop.
-
-    Unconfirmed for Grok's `spawn_subagent` tool specifically: a live test
-    2026-09-10 (two real subagents, completed successfully) fired neither
-    event — everything surfaced as PreToolUse on the parent row instead, and
-    this function was never even called. See docs/HOOK-PAYLOADS.md."""
+    **Codex is the one that actually delivers on SubagentStart.** Measured
+    2026-09-11: it fires before the child runs, carrying the child's agent_id
+    and the *parent's* session_id together, so a child row can appear while it
+    is still working. Claude Code announces only the stop. Grok documents a
+    `subagentStart` and, tested live 2026-09-10 against two real
+    `spawn_subagent` children, never fired either event — everything surfaced
+    as PreToolUse on the parent row and this function was not called at all.
+    See docs/HOOK-PAYLOADS.md."""
     agent_id = safe_id(get(payload, "agent_id", "agentId"))
     session_id = safe_id(get(payload, "session_id", "sessionId"))
     if not agent_id or not session_id:

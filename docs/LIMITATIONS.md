@@ -719,7 +719,7 @@ change.
 |---|---|---|---|---|
 | Claude Code | ✓ | snake_case | canonical | **working** |
 | Grok | ✓ — reads `~/.claude/settings.json` | camelCase | same, lowercased | **working** |
-| Codex | ✓ `stable`, on by default, **confirmed firing live** | camelCase (wire); TOML config is PascalCase | same idea as Claude's, plus `permissionRequest`/`interrupt` | **rows work; hook alarm confirmed reachable, not yet built** — see below |
+| Codex | ✓ `stable`, on by default — **but needs a one-time interactive trust prompt** | **snake_case, identical to Claude's** (its *wire* schema is camelCase and its TOML config PascalCase; neither is what a hook receives) | same idea as Claude's, plus `PermissionRequest`/`Interrupt` | **working, alarm and all** — see below |
 | Gemini | ✓ `~/.gemini/settings.json` | snake_case, same names | **its own** | needs aliases |
 | Cursor | `~/.cursor/hooks.json`, schema `version: 1` | snake_case | **camelCase** (`sessionStart`, `preToolUse`, `stop`) | **working** — no alarm yet |
 | opencode | plugin API (`@opencode-ai/plugin`), `event` hook | n/a — TypeScript | n/a | would need a plugin, not a script |
@@ -732,38 +732,40 @@ experimental behind a flag; wire casing is camelCase, confirmed straight from
 Codex's own JSON-RPC protocol schema (`codex app-server generate-json-schema`
 dumps it without even logging in).
 
-Shipped first, reading Codex's own local session files instead
-(`CodexWatcher`, same posture as `GrokBotWatcher`): real cwd, real thread
-names, working/done — but never red. Confirmed live that Codex's one real
-"needs you" moment (a command needing escalated permission) writes nothing to
-any file while it waits — that finding still stands.
+**Shipped twice.** First as a file-reading producer (`CodexWatcher`, same
+posture as `GrokBotWatcher`) because hooks were believed unavailable: real cwd,
+real thread names, working/done, but never red. Confirmed live at the time that
+Codex's one real "needs you" moment writes nothing to any file while it waits —
+that finding still stands, and is exactly why a watcher could never raise the
+alarm.
 
-**Then, later the same evening, the hook path itself got resolved.** The TOML
-registration syntax — never in OpenAI's public docs — was found in the
-open-source `codex-rs` (`config/src/hook_config.rs` + its test suite): TOML
-event names are PascalCase (`Stop`, `PermissionRequest`, matching Claude's
-own convention), and a handler is `[[hooks.EventName]]` /
-`[[hooks.EventName.hooks]]`, tagged `type = "command"` — never a bare string
-(a flat-string guess was tried first and confirmed silently ignored). Tested
-with the verified shape non-interactively — still nothing, for a real reason:
-hooks need a one-time interactive **trust** prompt Codex only shows in
-interactive mode (`--dangerously-bypass-hook-trust` exists for exactly this
-gap). Run interactively, the trust prompt appeared, was accepted, and the
-hook fired — confirmed on disk, both the test marker and a real
-`trusted_hash` Codex wrote into `config.toml`'s own `[hooks.state]`.
+**Then the hook path got resolved, the same evening.** The TOML registration
+syntax — never in OpenAI's public docs — was found in the open-source
+`codex-rs` (`config/src/hook_config.rs` + its test suite): event names are
+PascalCase, and a handler is `[[hooks.EventName]]` / `[[hooks.EventName.hooks]]`
+tagged `type = "command"`, never a bare string. Non-interactively it still did
+nothing, for a real reason: hooks need a one-time interactive **trust** prompt
+Codex only shows in interactive mode. Run interactively, it appeared, was
+accepted, and the hook fired.
 
-So: the alarm is reachable through a real, now-known hook path — building it
-(a `cc-notify` dialect for Codex's actual payload shape, `install-hooks.sh`
-support) is what's left, not a technical unknown. The app-server socket
-remains a viable alternative, just no longer the only option.
+**And then the payload was measured** (`Scripts/probe-codex-hooks.sh`, all
+twelve events, one real turn) and turned out to be *Claude's* — snake_case,
+same field names — so `cc-notify` needed no new dialect at all.
+`PermissionRequest` fires the instant Codex blocks, carrying the request
+already written out as prose; `PostToolUse` clears it by `tool_use_id`;
+`SessionEnd` retires the row precisely; `SubagentStart` fires *before* a
+sub-agent runs, carrying its `agent_id` alongside the parent's `session_id`.
 
-**Two more logged as follow-ups, not built:** Codex's own "create N sub
-agents" tool doesn't create the per-child file Claude's grouping needs — it
-logs entirely inside the parent's own transcript instead, so it can't be
-shown as grouped children without a genuinely different parsing path. And a
-Codex row always jumps to Finder, never a terminal — `CodexWatcher` has no
-live process to find a tty from, unlike a hook, which runs inside the CLI
-itself. Both detailed in `docs/CODEX-INTEGRATION.md`'s "Open" section.
+**So `CodexWatcher` and `CodexLiveProcess` were deleted.** Once hooks worked
+the watcher was a second, disagreeing source of truth for sessions the store
+already had — the same session appearing twice, named from the thread index by
+one producer and from the folder by the other. The app's only `ps`/`lsof`
+probe went with it, and with that the "Codex rows always jump to Finder"
+follow-up, which existed only because a watcher cannot know a tty. The
+standing rule: **a watcher is for a CLI that cannot be hooked**, and Grok Bot
+is the only one.
+
+The app-server socket remains a viable alternative that is no longer needed.
 
 ### Gemini (researched 2026-08-11, not installed)
 
