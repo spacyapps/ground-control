@@ -197,6 +197,63 @@ print("  registered the plugin in %s" % path)
 OPENCODE
 fi
 
+# --- OpenAI Codex --------------------------------------------------------
+#
+# Codex reads none of the files above: its hooks live in ~/.codex/config.toml,
+# registered in TOML rather than JSON, and under PascalCase event names. Its
+# payloads, though, are Claude's own dialect — snake_case, same field names —
+# so cc-notify needs no Codex branch beyond telling the two apart. Measured
+# 2026-09-11; docs/HOOK-PAYLOADS.md.
+#
+# Two things here are not like the others:
+#
+#   1. config.toml is a file people write by hand — model choice, per-project
+#      trust — so the block is appended between sentinels and only what lies
+#      between them is ever rewritten.
+#   2. **Codex asks permission to run hooks at all.** A one-time interactive
+#      trust prompt appears at the next `codex` startup, and until it is
+#      accepted no hook runs. Nothing scripted can click it; `codex exec` never
+#      shows it. So this prints the instruction and stops, rather than pretending
+#      the install is finished.
+if { [ "$TARGET" = "codex" ] || [ "$TARGET" = "all" ]; } && [ -d "$HOME/.codex" ]; then
+  CODEX_CONFIG="$HOME/.codex/config.toml"
+  [ -f "$CODEX_CONFIG" ] || echo "" > "$CODEX_CONFIG"
+  cp "$CODEX_CONFIG" "${CODEX_CONFIG}.bak-$(date +%Y%m%d-%H%M%S)"
+  prune "$CODEX_CONFIG"
+
+  CODEX_BEGIN="# >>> ground-control >>>"
+  CODEX_END="# <<< ground-control <<<"
+
+  # Replace our previous block rather than appending beside it — two
+  # registrations would run two emitters into one session file, writing every
+  # line twice. Everything outside the sentinels is kept exactly as it was,
+  # including the [hooks.state] trust record Codex writes for itself.
+  awk -v b="$CODEX_BEGIN" -v e="$CODEX_END" '
+    $0 == b { skip = 1 } skip != 1 { print } $0 == e { skip = 0 }
+  ' "$CODEX_CONFIG" > "${CODEX_CONFIG}.gc-tmp"
+
+  # PostToolUse carries no matcher here, unlike Claude's. It is what ends a
+  # PermissionRequest alarm, and Codex's approval gate fires on any tool at
+  # all — not only the question tools Claude's matcher names.
+  {
+    cat "${CODEX_CONFIG}.gc-tmp"
+    printf '\n%s\n' "$CODEX_BEGIN"
+    printf '# Ground Control. Remove with: ~/.groundcontrol/bin/uninstall-hooks.sh\n'
+    for event in SessionStart UserPromptSubmit PreToolUse PostToolUse \
+                 PermissionRequest Stop SubagentStart SubagentStop SessionEnd; do
+      printf '\n[[hooks.%s]]\n\n[[hooks.%s.hooks]]\ntype = "command"\ncommand = "%s"\n' \
+        "$event" "$event" "$BIN_DIR/cc-notify"
+    done
+    printf '%s\n' "$CODEX_END"
+  } > "$CODEX_CONFIG"
+  rm -f "${CODEX_CONFIG}.gc-tmp"
+
+  echo "Registered Codex in ~/.codex/config.toml"
+  echo "  Start \`codex\` once and ACCEPT the trust prompt — until you do, Codex"
+  echo "  runs no hooks and Ground Control will show no Codex rows. Interactive"
+  echo "  \`codex\` only; \`codex exec\` never offers the prompt."
+fi
+
 # --- Cursor's own agent -------------------------------------------------
 #
 # Composer is not a terminal process, so nothing above reaches it: Cursor reads

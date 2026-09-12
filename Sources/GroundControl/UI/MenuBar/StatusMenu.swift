@@ -92,6 +92,7 @@ final class StatusMenu: NSObject {
         var rows = [SetupStatus.summary(sessions: sessions)]
         // A second switch only when there is a second decision to make.
         if let opencode = SetupStatus.opencode(sessions: sessions) { rows.append(opencode) }
+        if let codex = SetupStatus.codex(sessions: sessions) { rows.append(codex) }
 
         for agent in rows {
             let entry = NSMenuItem()

@@ -1,28 +1,42 @@
 # OpenAI Codex — integration notes
 
 Everything learned probing OpenAI's **Codex CLI** on 2026-09-11, so the next
-look is a read, not another evening. Built and shipped the same day —
-`Sources/GroundControl/Monitoring/CodexWatcher.swift`.
+look is a read, not another evening. Codex is an ordinary hook integration:
+`Scripts/cc-notify`, registered by `Scripts/install-hooks.sh codex`.
 
 ---
 
 ## Verdict
 
-**What shipped tonight** (`CodexWatcher`) gives Ground Control **working /
-done**, real cwd, real thread names, but never red — a file-reading producer,
-no hook, no config written into Codex at all, same posture as
-`GrokBotWatcher`. Unlike Grok Bot, Codex threads are **not** grouped under one
-parent; each is its own independent CLI session, the same as Claude Code or
-Grok CLI's own rows.
+**Codex has hooks, they speak Claude's dialect, and they carry an alarm.**
+Rows appear at `SessionStart`, turn red on `PermissionRequest` with Codex's own
+sentence, clear on `PostToolUse`, and disappear on `SessionEnd`. Its sub-agents
+group under their parent and are named from their own transcripts. The full
+measured payloads are in `docs/HOOK-PAYLOADS.md`.
 
-**What was believed impossible turned out not to be.** Codex's real "needs
-you" moment — a command needing escalated permission — genuinely writes
-nothing to any file while it waits (confirmed live, a real approval prompt
-frozen on screen the whole time its transcript's size and mtime sat
-unchanged). That part still holds. But **hooks are real and do fire** —
-confirmed live the same evening, after the file-based investigation above was
-already written up as the final word. The alarm is reachable after all, just
-not through the file `CodexWatcher` reads. See "Hooks, resolved" below.
+**The one thing that is not like the others: Codex asks permission to run
+hooks at all.** A one-time interactive trust prompt appears at the next `codex`
+startup, and until it is accepted nothing fires. Nothing scripted can click it,
+and `codex exec` never offers it. So the installer prints the instruction and
+the menu row says it too.
+
+### How this doc got here, which is the useful part
+
+The first pass concluded Codex could not be hooked, and shipped a file-reading
+producer instead — `CodexWatcher` plus `CodexLiveProcess`, the only place this
+app ever ran `ps` and `lsof` against the live system. Both are **deleted**.
+
+The deletion was not tidiness. Once hooks worked, the watcher was a second,
+disagreeing source of truth for sessions the store already had: the same Codex
+session appeared twice, named from the thread index by one producer and from
+the folder by the other, both re-sorting as they updated. The rule worth
+keeping: **a watcher is the answer for a CLI that cannot be hooked** — Grok Bot
+is the only one of those — not for one that can.
+
+Three separate things in this file were also asserted and later measured false:
+that `hooks` was experimental, that Codex's sub-agents left no files behind,
+and that its approval gate was unreachable. All three are corrected in place
+below rather than deleted, because the pattern is the lesson.
 
 ---
 
@@ -145,8 +159,13 @@ squeezed in at the end of this one.
 
 ## The local files
 
-Two plain JSONL files carry everything `CodexWatcher` needs, despite all the
-SQLite:
+**Historical.** This section describes what `CodexWatcher` read, and that
+producer is deleted (see Verdict). It is kept because the files themselves are
+still there and still correct, and because the next person to wonder "could we
+just read Codex's own files?" deserves the measured answer rather than having
+to re-derive it: yes, and it is not worth a second source of truth.
+
+Two plain JSONL files carried everything it needed, despite all the SQLite:
 
 ### `~/.codex/session_index.jsonl` — the roster
 
@@ -327,22 +346,12 @@ is not installed).
   no name field, so a child row has no label of its own; `agent_path`
   (`/root/hello_one`) is the closest thing, and it lives in the parent's
   transcript, not the payload.
-- **Give a Codex row somewhere to jump to, instead of always Finder.**
-  `CodexWatcher` never sets `tty`/`hostApp`/`hostID` — it has no way to,
-  since it only reads static files and (unlike a hook, which runs *inside*
-  the CLI's own process and can walk straight up from itself) never touches
-  a live process at all. With both nil, `TerminalFocuser.destination()` has
-  exactly three paths (`docs/ARCHITECTURE.md`) and falls straight to the
-  last one: revealing `cwd` in Finder. Confirmed this was never a
-  regression — checked the full git history of `CodexWatcher.swift` (three
-  commits, all from the same evening) and none of them ever set those
-  fields; the destination logic has no fourth, cwd-only path that could
-  land on a terminal without one. A real fix would mean `CodexWatcher`
-  actively searching the running process list for a live `codex` matching
-  the thread's `cwd`, then walking its process tree for the controlling
-  tty — the exact technique `cc-notify` already uses, just run from inside
-  the app instead of from a hook. That would be the first time GC's own
-  Swift code searches for a process on its own initiative — a genuine,
-  deliberate exception to "the app reads; it does not probe"
-  (`docs/ARCHITECTURE.md`), not a small tweak, and worth deciding on
-  explicitly rather than building quietly.
+- ~~**Give a Codex row somewhere to jump to, instead of always Finder.**~~
+  **Solved by deletion, 2026-09-11.** `CodexWatcher` could not set
+  `tty`/`hostApp`/`hostID`, so every Codex row fell to the bottom of
+  `TerminalFocuser`'s matrix and revealed its folder in Finder. This was
+  briefly fixed by `CodexLiveProcess` — searching the process list for a live
+  `codex` and walking its tree — which was the app's only deliberate exception
+  to "the app reads; it does not probe". A hook runs *inside* `codex` and can
+  walk straight up from itself, so it records a real tty at no cost and keeps
+  it. Both the problem and the exception are gone.

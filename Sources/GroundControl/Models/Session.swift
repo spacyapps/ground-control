@@ -137,12 +137,18 @@ struct AgentRow: Identifiable, Equatable {
         self.lastActivity = lastActivity
     }
 
-    /// From a subagent's event. `agent_type` is empty for Claude Code's
-    /// internal agents, so it cannot yet be used as a label — see docs/SPEC.md §10.
+    /// From a subagent's event.
+    ///
+    /// A real name wins where there is one — only Codex gives them, and there
+    /// `agent_type` is the constant `"default"`, which would label every child
+    /// of every parent identically. Failing that, `agent_type` is the label
+    /// Claude's named subagents carry; it is empty for Claude Code's internal
+    /// agents (docs/SPEC.md §10), which is why the id is the last resort.
     init(id: String, latest: AgentEvent) {
         self.init(
             id: id,
-            displayName: latest.agentType.isEmpty ? "agent \(id.prefix(6))" : latest.agentType,
+            displayName: [latest.agentName, latest.agentType]
+                .first(where: { !$0.isEmpty }) ?? "agent \(id.prefix(6))",
             message: latest.message,
             state: latest.state,
             needsAction: latest.needsAction,

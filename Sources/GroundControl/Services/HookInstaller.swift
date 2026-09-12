@@ -32,6 +32,7 @@ enum HookInstaller {
         case claude
         case cursor
         case opencode
+        case codex
 
         var label: String {
             switch self {
@@ -39,6 +40,7 @@ enum HookInstaller {
             case .claude: return "Claude Code and Grok"
             case .cursor: return "Cursor"
             case .opencode: return "opencode"
+            case .codex: return "Codex"
             }
         }
     }

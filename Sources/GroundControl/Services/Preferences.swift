@@ -25,7 +25,6 @@ final class Preferences {
         static let showsInternalAgents = "showsInternalAgents"
         static let showsGrokBot = "showsGrokBot"
         static let showsGrokSubagentGrouping = "showsGrokSubagentGrouping"
-        static let showsCodex = "showsCodex"
         static let dismissedSessions = "dismissedSessions"
         static let showsAnalyser = "showsAnalyser"
         static let analyserTint = "analyserTint"
@@ -77,19 +76,8 @@ final class Preferences {
         set { defaults.set(newValue, forKey: Key.showsGrokSubagentGrouping) }
     }
 
-    /// OpenAI Codex rows (`docs/CODEX-INTEGRATION.md`). On by default — reading
-    /// its own local session files costs nothing when Codex is not installed
-    /// — but they are read-only history the same way Grok Bot's are, so a
-    /// switch of its own: `defaults write GroundControl showsCodex -bool NO`.
-    /// Codex rows never turn red; see the doc for why that is a real limit,
-    /// not an oversight.
-    var showsCodex: Bool {
-        get { defaults.object(forKey: Key.showsCodex) as? Bool ?? true }
-        set { defaults.set(newValue, forKey: Key.showsCodex) }
-    }
-
-    /// "Remove" for a row with no file to delete — Grok Bot's group, a Codex
-    /// thread. Keyed by session id, storing the row's own `lastActivity` at
+    /// "Remove" for a row with no file to delete — Grok Bot's group. Keyed by
+    /// session id, storing the row's own `lastActivity` at
     /// the moment it was dismissed (epoch seconds): `SessionAggregator`
     /// hides it only while nothing newer has happened, the same "reappears
     /// on its next real event" rule `SessionStore.remove()` already gives a

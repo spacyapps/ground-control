@@ -5,15 +5,22 @@ import Foundation
 
 /// The panel's single source of rows, merging every producer.
 ///
-/// Three full producers: `SessionStore` (hook-driven `.jsonl` files, the bulk
-/// of it), `GrokBotWatcher` (Grok Bot's local cache), and `CodexWatcher`
-/// (OpenAI Codex's own local session files — no hook, same shape as Grok Bot).
-/// Each stays honest to its own model and knows nothing about the others;
-/// this concatenates their output and applies the one existing sort.
+/// Two producers: `SessionStore` (hook-driven `.jsonl` files, nearly all of
+/// it) and `GrokBotWatcher` (Grok Bot's local cache). Each stays honest to its
+/// own model and knows nothing about the other; this concatenates their output
+/// and applies the one existing sort.
 ///
-/// `SessionStore` keeps its file ⇔ row invariant intact — neither Grok Bot
-/// nor Codex rows ever enter it. See docs/GROK-BOT-GROUPING.md,
-/// docs/CODEX-INTEGRATION.md.
+/// There was briefly a third. `CodexWatcher` read Codex's own session files
+/// because Codex was believed unhookable; once its hooks were measured
+/// (2026-09-11) it became a second producer for sessions the store already
+/// had, and the two disagreed visibly — the watcher named a row from the
+/// thread index, the hook path from the folder, and both re-sorted as they
+/// updated. Deleted rather than deduplicated: a watcher is the answer for a
+/// CLI that cannot be hooked, which is Grok Bot, and not for one that can.
+/// See docs/CODEX-INTEGRATION.md.
+///
+/// `SessionStore` keeps its file ⇔ row invariant intact — Grok Bot rows never
+/// enter it. See docs/GROK-BOT-GROUPING.md.
 ///
 /// A third thing happens here too, not a new producer but a fold on top of
 /// `SessionStore`'s own output: `GrokSubagentReader` finds any live Grok
@@ -26,7 +33,6 @@ import Foundation
 final class SessionAggregator {
     let store: SessionStore
     private let grok: GrokBotWatcher
-    private let codex: CodexWatcher
     private let preferences: Preferences
 
     private(set) var sessions: [Session] = []
@@ -35,12 +41,10 @@ final class SessionAggregator {
     init(
         store: SessionStore = SessionStore(),
         grok: GrokBotWatcher = GrokBotWatcher(),
-        codex: CodexWatcher = CodexWatcher(),
         preferences: Preferences = .shared
     ) {
         self.store = store
         self.grok = grok
-        self.codex = codex
         self.preferences = preferences
     }
 
@@ -51,31 +55,26 @@ final class SessionAggregator {
             grok.onChange = { [weak self] _ in self?.recombine() }
             grok.start()
         }
-        if preferences.showsCodex {
-            codex.onChange = { [weak self] _ in self?.recombine() }
-            codex.start()
-        }
         recombine()
     }
 
-    /// Forwarded to the store — Grok and Codex ids never match anything
-    /// there, which is harmless. A Grok "needs you" clears by answering the
-    /// card in Grok Bot (docs/GROK-BOT-GROUPING.md), not by acknowledging
-    /// here — Codex has no alarm to clear at all (docs/CODEX-INTEGRATION.md).
+    /// Forwarded to the store — Grok Bot ids never match anything there, which
+    /// is harmless. A Grok "needs you" clears by answering the card in Grok Bot
+    /// (docs/GROK-BOT-GROUPING.md), not by acknowledging here.
     func acknowledge(sessionID: String) { store.acknowledge(sessionID: sessionID) }
 
     /// A hook session has a real file — `SessionStore` deletes it, and the
-    /// row is gone until a new event writes it again. Grok Bot's group and a
-    /// Codex thread have no file to delete; removing one of those instead
-    /// dismisses it in `Preferences`, keyed to its `lastActivity` at the
-    /// moment of removal, so it reappears the moment something genuinely new
-    /// happens — the same rule a deleted hook session already gets for free.
+    /// row is gone until a new event writes it again. Grok Bot's group has no
+    /// file to delete; removing it instead dismisses it in `Preferences`,
+    /// keyed to its `lastActivity` at the moment of removal, so it reappears
+    /// the moment something genuinely new happens — the same rule a deleted
+    /// hook session already gets for free.
     func remove(sessionID: String) {
         if store.sessions.contains(where: { $0.id == sessionID }) {
             store.remove(sessionID: sessionID)
             return
         }
-        guard let session = (grok.sessions + codex.sessions).first(where: { $0.id == sessionID }) else { return }
+        guard let session = grok.sessions.first(where: { $0.id == sessionID }) else { return }
         preferences.dismiss(sessionID: sessionID, lastActivity: session.lastActivity)
         recombine()
     }
@@ -83,11 +82,10 @@ final class SessionAggregator {
     func reload() {
         store.reload()
         grok.reload()
-        codex.reload()
     }
 
     private func recombine() {
-        let base = store.sessions + grok.sessions + codex.sessions
+        let base = store.sessions + grok.sessions
         var grokChildren: [String: [AgentRow]] = [:]
         if preferences.showsGrokSubagentGrouping {
             grokChildren = GrokSubagentReader.childrenBySession(liveSessions: store.sessions)

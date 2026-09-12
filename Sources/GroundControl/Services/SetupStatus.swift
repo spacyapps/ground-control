@@ -50,7 +50,7 @@ enum SetupStatus {
             name: "Hooks",
             detected: true,
             registered: mentionsEmitter(claudeSettings),
-            lastEvent: latest(in: sessions, sources: ["claude", "grok", "cursor", "opencode"]),
+            lastEvent: latest(in: sessions, sources: ["claude", "grok", "cursor", "opencode", "codex"]),
             caveat: nil,
             target: .all
         )
@@ -72,6 +72,30 @@ enum SetupStatus {
             target: .opencode
         )
     }
+
+    /// Codex, when it is on the machine. Its own switch for the same reason
+    /// opencode has one — a separate config file, in a different language, and
+    /// a genuinely separate decision.
+    ///
+    /// The caveat is the important part. Codex is the only CLI here that asks
+    /// permission to run hooks at all: registering them is not enough, and
+    /// until someone starts `codex` and accepts a one-time trust prompt, this
+    /// row will read as registered while nothing whatsoever arrives. Nothing
+    /// can click that prompt on their behalf, so the switch says so instead.
+    static func codex(sessions: [Session]) -> Agent? {
+        guard exists(home.appendingPathComponent(".codex")) else { return nil }
+        return Agent(
+            name: "Codex",
+            detected: true,
+            registered: mentionsEmitter(codexConfig),
+            lastEvent: latest(in: sessions, sources: ["codex"]),
+            caveat: "Start codex once and accept its trust prompt — until you do, "
+                + "it runs no hooks. Its rows do turn red.",
+            target: .codex
+        )
+    }
+
+    private static var codexConfig: URL { home.appendingPathComponent(".codex/config.toml") }
 
     private static var opencodeConfig: URL {
         let dir = home.appendingPathComponent(".config/opencode")

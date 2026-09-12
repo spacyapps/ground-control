@@ -38,8 +38,6 @@ GroundControl/
 │   │   ├── GrokBotRoster.swift   # parses the undocumented roster blob, tolerant of drift
 │   │   ├── GrokSubagentReader.swift # spawn_subagent fires no hook; folds children by reading
 │   │   │                         # Grok's own subagents/<id>/meta.json (docs/GROK-SUBAGENT-GROUPING.md)
-│   │   ├── CodexWatcher.swift    # OpenAI Codex producer: its own local session files -> rows,
-│   │   │                         # no hook, never alarms (docs/CODEX-INTEGRATION.md)
 │   │   ├── Base32.swift          # RFC 4648 decode, for the cache's filenames
 │   │   └── PurgeService.swift    # deletes files untouched > window (timer)
 │   │
@@ -165,7 +163,7 @@ GroundControl/
 │   ├── LIMITATIONS.md            # what is verified vs assumed; other-CLI status
 │   ├── GROK-BOT-GROUPING.md      # Grok Bot: reading its cache, not a hook
 │   ├── GROK-SUBAGENT-GROUPING.md # Grok CLI subagents: reading its own files, not a hook
-│   └── CODEX-INTEGRATION.md      # OpenAI Codex: reading its own files, rows but no alarm
+│   └── CODEX-INTEGRATION.md      # OpenAI Codex: its hooks, its trust prompt, its sub-agents
 │
 ├── Packaging/
 │   ├── Info.plist                # bundle id, version, LSUIElement

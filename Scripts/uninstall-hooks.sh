@@ -130,9 +130,32 @@ print("  opencode: removed the plugin")
 OPENCODE
 }
 
+# Codex's registration is TOML in a file people also keep their model choice
+# and per-project trust in, so only the sentinel block is taken out. The
+# [hooks.state] trust record Codex wrote for itself is left alone deliberately:
+# it names a hash of what was registered, becomes inert the moment the block is
+# gone, and re-installing later then needs no second trip through the prompt.
+unregister_codex() {
+  local config="${HOME}/.codex/config.toml"
+  [ -f "$config" ] || { echo "  Codex: nothing to remove"; return 0; }
+  grep -qF "# >>> ground-control >>>" "$config" || {
+    echo "  Codex: nothing of ours registered"; return 0; }
+
+  cp "$config" "${config}.bak-$(date +%Y%m%d-%H%M%S)"
+  ls -t "$config".bak-* 2>/dev/null | tail -n +4 | while read -r old; do rm -f "$old"; done
+  awk -v b="# >>> ground-control >>>" -v e="# <<< ground-control <<<" '
+    $0 == b { skip = 1 } skip != 1 { print } $0 == e { skip = 0 }
+  ' "$config" > "${config}.gc-tmp"
+  mv "${config}.gc-tmp" "$config"
+  echo "  Codex: removed our block from config.toml"
+}
+
 echo "==> Unregistering"
 case "$TARGET" in
   claude|all) unregister "${HOME}/.claude/settings.json" "Claude Code / Grok" ;;
+esac
+case "$TARGET" in
+  codex|all) unregister_codex ;;
 esac
 case "$TARGET" in
   cursor|all) unregister "${HOME}/.cursor/hooks.json" "Cursor" ;;

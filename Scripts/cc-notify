@@ -82,6 +82,15 @@ def source_of(payload):
     if "hookEventName" in payload:
         return "grok"
     if "hook_event_name" in payload:
+        # Codex speaks Claude's dialect almost exactly — snake_case, the same
+        # `hook_event_name` key, the same field names (measured 2026-09-11,
+        # docs/HOOK-PAYLOADS.md) — which is most of why it needs no emitter of
+        # its own, and all of why it cannot be told apart without asking. Its
+        # transcript always lives under ~/.codex/sessions/; `turn_id` is a
+        # second tell, on every event of its that has a turn.
+        transcript = payload.get("transcript_path") or ""
+        if "/.codex/" in transcript or "turn_id" in payload:
+            return "codex"
         return "claude"
     return "unknown"
 
@@ -109,6 +118,13 @@ ALIASES = {
     # opencode. The plugin only ever forwards the busy half of session.status —
     # see its own comment — so this always means "generation just started".
     "session.status": "posttooluse",       # opencode -> working
+
+    # Codex. Its approval gate is an event in its own right rather than a
+    # notification type — the only CLI here with one — and it is the whole
+    # reason Codex rows can turn red at all: measured 2026-09-11, Codex writes
+    # nothing to any file for the entire time it sits blocked (80 seconds, in
+    # the capture), so nothing a watcher reads can ever see it.
+    "permissionrequest": "notification",   # Codex -> needsInput (red, shows the request)
 
     # Claude Code and Grok need no entries: both already speak in the spelling
     # (flattened, lowercased) that interpret() reads directly — see source_of()
@@ -351,6 +367,35 @@ def last_line(path):
         return None
 
 
+def permission_request(payload):
+    """Codex's approval gate, phrased as a row line, or None.
+
+    Every other CLI here announces "I need you" as a Notification with a
+    `message` already written for a human. Codex instead has a whole event,
+    `PermissionRequest`, and puts the words in `tool_input.description` —
+    measured verbatim 2026-09-11:
+
+        "description": "May I enable network access to fetch headers from
+                        www.macrumors.com?"
+
+    Which is better prose than a Notification ever carried, so it is used as
+    the row's message directly. `command` is the fallback: the gate can fire
+    on a tool call that came with no description, and the command itself still
+    says what is being asked.
+    """
+    raw = get(payload, "hook_event_name", "hookEventName") or ""
+    if raw != "PermissionRequest":
+        return None
+    tool_input = get(payload, "tool_input", "toolInput")
+    if not isinstance(tool_input, dict):
+        return None
+    for key in ("description", "command"):
+        value = tool_input.get(key)
+        if isinstance(value, str) and value.strip():
+            return condense(value)
+    return None
+
+
 def asked_question(payload):
     """The question an agent is putting to you, or None.
 
@@ -362,6 +407,9 @@ def asked_question(payload):
     Only the question. The options belong to whoever is answering, and they
     answer in the terminal — a row exists to tell you whether to get up.
     """
+    request = permission_request(payload)
+    if request:
+        return request
     tool_input = get(payload, "tool_input", "toolInput")
     if not isinstance(tool_input, dict):
         return None
@@ -485,6 +533,49 @@ def emit(path, record):
         handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
+_AGENT_PATH = re.compile(r'"agent_path"\s*:\s*"([^"\\]{1,120})"')
+
+
+def codex_agent_name(payload):
+    """A readable name for a Codex sub-agent, or None.
+
+    Codex names its sub-agents — `/root/hello_one`, `/root/hello_two` — but
+    not in the hook payload, where `agent_type` is the constant `"default"`
+    and no name field exists at all. Three children would otherwise render as
+    `agent 01a093`, `agent 01a093`, `agent 01a093`.
+
+    The name is in the child's own transcript, as `agent_path` on the
+    `SubAgentActivity` items. Which field points at that transcript **changes
+    between the two events**, and getting it wrong reads the parent's file
+    instead: `SubagentStart` puts the child's rollout in `transcript_path`,
+    while `SubagentStop` puts the *parent's* there and moves the child to
+    `agent_transcript_path`. So the child-specific field is preferred and
+    `transcript_path` is only the fallback.
+
+    Bounded and fenced. Only paths under `~/.codex/` are opened — the path
+    arrives in a payload, and a hook should not be a way to make this script
+    read an arbitrary file — and only the first 64KB is scanned, since the
+    activity items appear at the top and a long transcript must not slow a
+    hook down.
+    """
+    path = (get(payload, "agent_transcript_path", "agentTranscriptPath")
+            or get(payload, "transcript_path", "transcriptPath"))
+    if not isinstance(path, str) or not path:
+        return None
+    codex_root = os.path.realpath(os.path.join(os.path.expanduser("~"), ".codex"))
+    if os.path.realpath(path).startswith(codex_root + os.sep) is False:
+        return None
+    try:
+        with open(path, "r", errors="ignore") as handle:
+            head = handle.read(64 * 1024)
+    except OSError:
+        return None
+    found = _AGENT_PATH.search(head)
+    if not found:
+        return None
+    return os.path.basename(found.group(1).rstrip("/")) or None
+
+
 def handle_subagent(payload, root, now, finished):
     """Subagents share the parent's tty and session id, so they get their own
     file under agents/ — keeping the file <-> row invariant intact one level
@@ -508,6 +599,7 @@ def handle_subagent(payload, root, now, finished):
         "session_id": session_id,
         "agent_id": agent_id,
         "agent_type": get(payload, "agent_type", "agentType") or "",
+        "agent_name": (codex_agent_name(payload) or "") if source_of(payload) == "codex" else "",
         "state": "done" if finished else "working",
         "message": condense(message) or ("Finished" if finished else "Working…"),
         "needs_action": False,

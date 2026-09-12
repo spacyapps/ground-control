@@ -91,10 +91,17 @@ One exception to "the app reads; it does not probe" the diagram above doesn't
 show: Grok's `spawn_subagent` fires no hook at all, so its children never reach
 `agents/`. `SessionAggregator` folds them in separately, by reading a small file
 Grok already writes for itself — see `docs/GROK-SUBAGENT-GROUPING.md`. Same
-shape as Grok Bot's own group (`docs/GROK-BOT-GROUPING.md`) and OpenAI Codex's
-rows (`docs/CODEX-INTEGRATION.md`, no alarm — its one real "needs you" moment
-writes to no file at all): a producer merged in beside `SessionStore`, never
-inside it.
+shape as Grok Bot's own group (`docs/GROK-BOT-GROUPING.md`): a producer merged
+in beside `SessionStore`, never inside it.
+
+OpenAI Codex was briefly a third such producer, and for a while the only place
+the app ran `ps` and `lsof` against the live system. Both are gone: Codex's
+hooks were measured on 2026-09-11 and turned out to speak Claude's own dialect,
+so it now arrives through `cc-notify` like everything else —
+`docs/CODEX-INTEGRATION.md`. Worth keeping as a rule rather than an anecdote: a
+watcher is the answer for a CLI that **cannot** be hooked, and Grok Bot is the
+only one of those. Reading files a CLI happens to leave lying about is a
+second, disagreeing source of truth for a session the store already has.
 
 ## Clicking a row goes back the other way
 
