@@ -282,3 +282,42 @@ is not installed).
   triggered live yet). A persistent connection instead of a poll or a hook —
   worth it only if the hook path turns out to have a real gap the socket
   doesn't.
+- **Show Codex's own "create N sub agents" tool as grouped children, the way
+  Claude's real subagents already show under their parent.** Not built.
+  Claude's mechanism relies on a real, structural signal this doesn't have —
+  each Claude subagent fires its own hook with a real `agent_id`, and
+  `cc-notify` writes it to its own file, `agents/<parent>__<agent_id>.jsonl`,
+  which `AgentGrouper` reads. **Codex's collab tool creates no such file at
+  all.** Confirmed live 2026-09-11: it never creates a separate thread, a
+  `session_index.jsonl` entry, or any file of its own — the whole thing is
+  logged as more lines *inside the parent's own transcript*:
+  `SubAgentActivity` items (`kind: started/interacted/completed`, an
+  `agent_thread_id`, an `agent_path` like `/root/dialogue_one` — a sandboxed
+  container path, not a macOS one) and `CollabAgentToolCall` items
+  (`tool: "wait"`, blocking the parent turn while they run). Those
+  `agent_thread_id`s are ephemeral; nothing else on disk ever references
+  them again. So this needs a genuinely different mechanism than
+  `AgentGrouper`'s file-per-child pattern: `CodexWatcher` would have to
+  actively parse `SubAgentActivity`/`CollabAgentToolCall` lines out of the
+  parent's own transcript and synthesize `AgentRow` children from them
+  directly — real, scoped work (the exact JSON shape above is already
+  measured), just a different code path than everything else here uses.
+- **Give a Codex row somewhere to jump to, instead of always Finder.**
+  `CodexWatcher` never sets `tty`/`hostApp`/`hostID` — it has no way to,
+  since it only reads static files and (unlike a hook, which runs *inside*
+  the CLI's own process and can walk straight up from itself) never touches
+  a live process at all. With both nil, `TerminalFocuser.destination()` has
+  exactly three paths (`docs/ARCHITECTURE.md`) and falls straight to the
+  last one: revealing `cwd` in Finder. Confirmed this was never a
+  regression — checked the full git history of `CodexWatcher.swift` (three
+  commits, all from the same evening) and none of them ever set those
+  fields; the destination logic has no fourth, cwd-only path that could
+  land on a terminal without one. A real fix would mean `CodexWatcher`
+  actively searching the running process list for a live `codex` matching
+  the thread's `cwd`, then walking its process tree for the controlling
+  tty — the exact technique `cc-notify` already uses, just run from inside
+  the app instead of from a hook. That would be the first time GC's own
+  Swift code searches for a process on its own initiative — a genuine,
+  deliberate exception to "the app reads; it does not probe"
+  (`docs/ARCHITECTURE.md`), not a small tweak, and worth deciding on
+  explicitly rather than building quietly.

@@ -751,6 +751,14 @@ So: the alarm is reachable through a real, now-known hook path — building it
 support) is what's left, not a technical unknown. The app-server socket
 remains a viable alternative, just no longer the only option.
 
+**Two more logged as follow-ups, not built:** Codex's own "create N sub
+agents" tool doesn't create the per-child file Claude's grouping needs — it
+logs entirely inside the parent's own transcript instead, so it can't be
+shown as grouped children without a genuinely different parsing path. And a
+Codex row always jumps to Finder, never a terminal — `CodexWatcher` has no
+live process to find a tty from, unlike a hook, which runs inside the CLI
+itself. Both detailed in `docs/CODEX-INTEGRATION.md`'s "Open" section.
+
 ### Gemini (researched 2026-08-11, not installed)
 
 Config: `~/.gemini/settings.json` (same shape as Claude's). Input fields are
