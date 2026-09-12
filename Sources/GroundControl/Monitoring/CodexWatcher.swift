@@ -92,10 +92,19 @@ final class CodexWatcher {
 
     // MARK: - Pure mapping, tested in isolation
 
-    static func sessions(fromIndexAt indexURL: URL, sessionsRoot: URL, now: Date) -> [Session] {
+    static func sessions(
+        fromIndexAt indexURL: URL,
+        sessionsRoot: URL,
+        now: Date,
+        liveProcesses: [(pid: Int32, cwd: String, tty: String?)]? = nil
+    ) -> [Session] {
         guard let text = BoundedRead.string(at: indexURL, limit: BoundedRead.sessionFileLimit) else { return [] }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601WithFractionalSeconds
+
+        // Once per reload, not once per thread: a `ps` plus one `lsof` per
+        // running `codex`, and nothing at all when none are running.
+        let live = liveProcesses ?? CodexLiveProcess.all()
 
         var built: [Session] = []
         for line in text.split(separator: "\n") {
@@ -105,7 +114,7 @@ final class CodexWatcher {
             else { continue }
             guard now.timeIntervalSince(entry.updatedAt) <= relevanceWindow else { continue }
             guard let transcript = findRollout(id: entry.id, under: sessionsRoot) else { continue }
-            guard let session = session(for: entry, transcript: transcript) else { continue }
+            guard let session = session(for: entry, transcript: transcript, live: live) else { continue }
             built.append(session)
         }
         return built
@@ -156,7 +165,11 @@ final class CodexWatcher {
     /// `ElapsedFormatter.staleAfter` (30 min) into looking idle while Codex
     /// was still visibly working — the transcript's own timestamps, unlike
     /// the index's, track every real write.
-    private static func session(for entry: CodexIndexEntry, transcript: URL) -> Session? {
+    private static func session(
+        for entry: CodexIndexEntry,
+        transcript: URL,
+        live: [(pid: Int32, cwd: String, tty: String?)]
+    ) -> Session? {
         guard let text = BoundedRead.string(at: transcript, limit: BoundedRead.sessionFileLimit) else { return nil }
         let lines = text.split(separator: "\n")
         guard let first = lines.first, let last = lines.last else { return nil }
@@ -171,11 +184,22 @@ final class CodexWatcher {
 
         let lastActivity = max(decodeLineTimestamp(String(last)) ?? entry.updatedAt, entry.updatedAt)
 
+        // A thread whose `codex` is still running can be jumped to; one whose
+        // terminal has since closed keeps no tty and falls back to its folder,
+        // which is the honest answer for a session that no longer exists.
+        // See `CodexLiveProcess` for why this is the app's one exception to
+        // reading rather than probing.
+        let running = meta.cwd.flatMap { cwd in live.first(where: { $0.cwd == cwd }) }
+        let terminal = running.map { CodexLiveProcess.terminal(forPID: $0.pid, tty: $0.tty) }
+
         let event = SessionEvent(
             sessionID: entry.id,
             source: source,
             name: entry.threadName,
             cwd: meta.cwd,
+            tty: terminal?.tty,
+            hostApp: terminal?.hostApp,
+            hostID: terminal?.hostID,
             state: state,
             message: message,
             timestamp: lastActivity
