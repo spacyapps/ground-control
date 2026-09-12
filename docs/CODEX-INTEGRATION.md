@@ -265,10 +265,14 @@ is not installed).
 
 - **Build the real hook-based alarm.** The mechanism is confirmed (above);
   what's missing is Codex's actual hook *payload* shape — the live test
-  proved `Stop` fires, not what its JSON looks like on stdin. Register
-  `permissionRequest` + `stop` + `sessionStart`/`sessionEnd`, capture a real
-  payload the way every other CLI here was measured (`docs/HOOK-PAYLOADS.md`
-  method), then extend `cc-notify` and `install-hooks.sh` to write the
+  proved `Stop` fires, not what its JSON looks like on stdin.
+  **`Scripts/probe-codex-hooks.sh` is written and waiting**: it registers all
+  twelve events observe-only, captures argv, `CODEX_*` environment and stdin
+  (whichever turns out to carry the payload), and appends to `config.toml`
+  between sentinels so `--uninstall` takes the probe back out without
+  disturbing the model choice, the per-project trust, or the `[hooks.state]`
+  record Codex itself writes. One interactive run with a permission prompt in
+  it answers the question. Then extend `cc-notify` and `install-hooks.sh` to write the
   `[[hooks.X]]` TOML and handle the one-time interactive trust step (which
   a scripted installer cannot click through itself — worth checking whether
   `--dangerously-bypass-hook-trust` or pre-seeding a `trusted_hash` in
