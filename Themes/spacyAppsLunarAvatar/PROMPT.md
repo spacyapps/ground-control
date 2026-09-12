@@ -1,5 +1,10 @@
-I want you to design a theme for **SkinTerminal**, a macOS menu-bar app that
-shows my running Claude Code sessions as rows in a small floating panel.
+I want you to design a theme for **Ground Control**, a macOS menu-bar app that
+shows my running AI agent sessions as rows in a small floating panel.
+
+*This is the brief that produced the Lunar Avatar theme in this folder —
+shipped as a worked example, so you can see exactly what was asked for and
+compare it against what came out. Change the four answers under "What I want"
+and the rest applies unaltered.*
 
 A theme is ONE FOLDER containing a `theme.json` manifest plus the image or
 video files it references. Paths in the manifest are relative to that folder,
@@ -10,10 +15,11 @@ default, so the manifest only needs the keys we actually want to change.
 
 ## What I want
 
-- **Theme name:** DemonAvatar
-- **Character / mascot:** Demon AI Character
-- **Visual style:** Realistic character
-- **Mood and colours:** Purple theme
+- **Theme name:** spacyAppsLunarAvatar
+- **Character / mascot:** a woman working a night shift on an orbital station
+- **Visual style:** realistic, photographic rather than drawn
+- **Mood and colours:** the room's lighting carries the mood — blue asleep,
+  violet working, red blocked, green finished — rather than her expression
 - **Animation:** yes, animate working and needs-input
 
 ## 1. Four avatar images
@@ -23,9 +29,9 @@ One per session state. Use exactly these filenames:
 | file | state | shown when |
 |---|---|---|
 | `idle.png` | idle | the session is quiet |
-| `working.gif` | working | Claude is actively running tools |
-| `needs-input.gif` | needsInput | Claude is blocked and needs me |
-| `done.png` | done | Claude just finished its turn |
+| `working.gif` | working | the agent is actively running tools |
+| `needs-input.gif` | needsInput | the agent is blocked and needs me |
+| `done.png` | done | the agent just finished its turn |
 
 Requirements:
 
@@ -94,8 +100,8 @@ artwork. Keep the filenames consistent with the images above.
 ```json
 {
   "manifestVersion": 1,
-  "name": "DemonAvatar",
-  "description": "Demon AI Character — Realistic character",
+  "name": "SpacyApps Lunar Avatar",
+  "description": "A space station drawn in front of the rows: window.overlay with a green-keyed middle, so the hull and its dishes overlap the panel edges.",
 
   "colors": {
     "windowBackground":   "#0e0e12",
@@ -185,7 +191,8 @@ the panel from across the room, and `messageDim` has to stay readable.
 ## 4. How to hand it back
 
 Give me the four image files and the `theme.json` contents. I will drop them
-all into a folder named `demonavatar` inside SkinTerminal's Themes folder,
-then pick "DemonAvatar" in Settings. Saving `theme.json` afterwards
+all into a folder named `spacyAppsLunarAvatar` inside Ground Control's Themes
+folder — the menu-bar icon's **Theme > Open Themes Folder…** opens it — then
+pick it in Settings. Saving `theme.json` afterwards
 re-skins the panel instantly, so iterating is cheap — feel free to suggest
 tweaks once I tell you how it looks.
