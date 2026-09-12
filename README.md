@@ -126,7 +126,7 @@ The panel stays empty until an agent reports in. Either run:
 …or click the menu-bar icon and open **Hooks** — a switch per agent, and a line
 under each saying whether anything has arrived from it yet.
 
-![The menu-bar icon's Hooks submenu](docs/images/install-2-enable-hooks.png)
+![The menu-bar icon's Hooks submenu: three switches — Hooks ("working — last seen 26s ago"), opencode and Codex — each with a line underneath saying what it covers and whether anything has arrived, above a grey list of what the install reaches and what it cannot](docs/images/install-2-enable-hooks.png)
 
 - **Run it once.** Later versions of the app keep the installed emitter up to
   date on their own.
