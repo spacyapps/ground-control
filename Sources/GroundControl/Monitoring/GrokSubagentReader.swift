@@ -91,7 +91,8 @@ struct GrokSubagentMeta: Codable, Equatable {
     /// label, though — a live row just reads "lunararray" like any other
     /// session; only `description` says what the task actually is.
     func agentRow(overriding live: Session? = nil) -> AgentRow {
-        let label = (description?.isEmpty == false ? description! : (subagentType ?? "subagent"))
+        let described = description.flatMap { $0.isEmpty ? nil : $0 }
+        let label = described ?? subagentType ?? "subagent"
         if let live {
             return AgentRow(
                 id: childSessionID,

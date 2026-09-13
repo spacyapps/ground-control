@@ -6,7 +6,7 @@ import XCTest
 
 final class GrokSubagentReaderTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 2_000_000)
-    private var root: URL!
+    private var root = FileManager.default.temporaryDirectory
 
     override func setUpWithError() throws {
         root = FileManager.default.temporaryDirectory
@@ -16,6 +16,16 @@ final class GrokSubagentReaderTests: XCTestCase {
 
     override func tearDownWithError() throws {
         try? FileManager.default.removeItem(at: root)
+    }
+
+    /// The call under test, at every call site — spelled once so the tests read
+    /// as what they assert rather than as the same 120 columns of plumbing.
+    private func children(for sessions: [Session]) -> [String: [AgentRow]] {
+        GrokSubagentReader.childrenBySession(
+            liveSessions: sessions,
+            now: now,
+            sessionsRoot: root
+        )
     }
 
     private func session(
@@ -30,8 +40,13 @@ final class GrokSubagentReaderTests: XCTestCase {
         Session(
             id: id,
             latest: SessionEvent(
-                sessionID: id, source: source, cwd: cwd, state: state, message: message,
-                needsAction: needsAction, timestamp: Date(timeIntervalSince1970: seconds)
+                sessionID: id,
+                source: source,
+                cwd: cwd,
+                state: state,
+                message: message,
+                needsAction: needsAction,
+                timestamp: Date(timeIntervalSince1970: seconds)
             ),
             children: [],
             acknowledgedAt: nil
@@ -52,9 +67,14 @@ final class GrokSubagentReaderTests: XCTestCase {
             .appendingPathComponent(childID, isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let meta = GrokSubagentMeta(
-            subagentID: childID, parentSessionID: parentID, childSessionID: childID,
-            subagentType: "explore", description: description, status: status,
-            startedAt: Date(timeIntervalSince1970: 1_000_000), completedAt: completedAt
+            subagentID: childID,
+            parentSessionID: parentID,
+            childSessionID: childID,
+            subagentType: "explore",
+            description: description,
+            status: status,
+            startedAt: Date(timeIntervalSince1970: 1_000_000),
+            completedAt: completedAt
         )
         let data = try JSONEncoder().encode(meta)
         try data.write(to: dir.appendingPathComponent("meta.json"))
@@ -64,13 +84,13 @@ final class GrokSubagentReaderTests: XCTestCase {
 
     func testNoSubagentsFolderMeansNoChildren() {
         let sessions = [session("parent")]
-        XCTAssertTrue(GrokSubagentReader.childrenBySession(liveSessions: sessions, now: now, sessionsRoot: root).isEmpty)
+        XCTAssertTrue(children(for: sessions).isEmpty)
     }
 
     func testOnlyGrokSessionsAreConsidered() throws {
         try writeMeta(parentID: "parent", childID: "child")
         let sessions = [session("parent", source: "claude")]
-        XCTAssertTrue(GrokSubagentReader.childrenBySession(liveSessions: sessions, now: now, sessionsRoot: root).isEmpty)
+        XCTAssertTrue(children(for: sessions).isEmpty)
     }
 
     func testAChildFoldsUnderItsParent() throws {
@@ -84,7 +104,7 @@ final class GrokSubagentReaderTests: XCTestCase {
     func testChildrenSortNewestFirst() throws {
         try writeMeta(parentID: "parent", childID: "older", completedAt: Date(timeIntervalSince1970: 1_999_910))
         try writeMeta(parentID: "parent", childID: "newer", completedAt: Date(timeIntervalSince1970: 1_999_990))
-        let children = GrokSubagentReader.childrenBySession(liveSessions: [session("parent")], now: now, sessionsRoot: root)
+        let children = children(for: [session("parent")])
         XCTAssertEqual(children["parent"]?.map(\.id), ["newer", "older"])
     }
 
@@ -108,9 +128,12 @@ final class GrokSubagentReaderTests: XCTestCase {
     }
 
     func testACompletedChildWithNoLiveRowFallsBackToMetaJSON() throws {
-        try writeMeta(parentID: "parent", childID: "child", status: "completed",
-                      completedAt: Date(timeIntervalSince1970: 1_999_000))
-        let children = GrokSubagentReader.childrenBySession(liveSessions: [session("parent")], now: now, sessionsRoot: root)
+        try writeMeta(
+            parentID: "parent",
+            childID: "child",
+            status: "completed",
+            completedAt: Date(timeIntervalSince1970: 1_999_000))
+        let children = children(for: [session("parent")])
         let row = try XCTUnwrap(children["parent"]?.first)
         XCTAssertEqual(row.state, .done)
         XCTAssertFalse(row.needsAction)
@@ -133,7 +156,7 @@ final class GrokSubagentReaderTests: XCTestCase {
     func testAnOldCompletedChildWithNoLiveRowIsDroppedAfterShowFinishedFor() throws {
         let longAgo = now.addingTimeInterval(-GrokSubagentReader.showFinishedFor - 1)
         try writeMeta(parentID: "parent", childID: "child", status: "completed", completedAt: longAgo)
-        let children = GrokSubagentReader.childrenBySession(liveSessions: [session("parent")], now: now, sessionsRoot: root)
+        let children = children(for: [session("parent")])
         XCTAssertNil(children["parent"])
     }
 
@@ -159,7 +182,7 @@ final class GrokSubagentReaderTests: XCTestCase {
             .appendingPathComponent("child", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         try "not json".write(to: dir.appendingPathComponent("meta.json"), atomically: true, encoding: .utf8)
-        let children = GrokSubagentReader.childrenBySession(liveSessions: [session("parent")], now: now, sessionsRoot: root)
+        let children = children(for: [session("parent")])
         XCTAssertNil(children["parent"])
     }
 }

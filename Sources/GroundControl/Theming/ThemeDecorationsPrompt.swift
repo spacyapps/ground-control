@@ -81,7 +81,14 @@ enum ThemeDecorationsPrompt {
       are not read from a decoration's `image`, and I cannot key a clip.
     """
 
+    /// Split in two only to stay under the 60-line function limit. The seam is
+    /// the heading the prose already breaks on — what to draw, then the JSON to
+    /// write — so neither half reads as having been cut mid-thought.
     private static func closing(key: String) -> String {
+        drawingNotes(key: key) + "\n" + blockNotes(key: key)
+    }
+
+    private static func drawingNotes(key: String) -> String {
         """
         ## Once I have answered
 
@@ -116,7 +123,11 @@ enum ThemeDecorationsPrompt {
           seconds, then the next takes over. It freezes when work stops and
           picks up from there. Two or three distinct poses is the idea; skip
           this unless I ask.
+        """
+    }
 
+    private static func blockNotes(key: String) -> String {
+        """
         ## The block
 
         Add one `"cornerDecorations"` key at the **top level of `theme.json`** —

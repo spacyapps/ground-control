@@ -31,7 +31,11 @@ final class SessionAggregatorTests: XCTestCase {
 
     private func makeAggregator() -> SessionAggregator {
         SessionAggregator(
-            store: SessionStore(root: root, agentsRoot: root.appendingPathComponent("agents"), preferences: preferences),
+            store: SessionStore(
+                root: root,
+                agentsRoot: root.appendingPathComponent("agents"),
+                preferences: preferences
+            ),
             grok: GrokBotWatcher(directory: grokDir),
             preferences: preferences
         )
