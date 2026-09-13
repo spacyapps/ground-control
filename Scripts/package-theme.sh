@@ -44,6 +44,12 @@ rm -rf "build/theme-stage" "$DEST"
 mkdir -p "$STAGE"
 cp -R "$SRC"/. "$STAGE/"
 
+# The Finder leaves .DS_Store in any folder it has looked at, and four of the
+# five themes were carrying one. It records icon positions and window sizes for
+# a folder on this Mac; it means nothing to a buyer and looks like debris in
+# something they paid for.
+find "$STAGE" -name '.DS_Store' -delete
+
 # Travels with the artwork, because a folder of PNGs tells you nothing about
 # where it belongs.
 cat > "$ROOT/INSTALL.txt" <<TXT
@@ -69,9 +75,16 @@ TXT
 # sees when they open it, and a theme should look like a folder of pictures.
 xattr -cr "$ROOT" 2>/dev/null || true
 
-# No --sequesterRsrc here, unlike the app: that flag is what writes __MACOSX,
-# and these are plain images with nothing to preserve.
-( cd build/theme-stage && ditto -c -k --keepParent "${NAME}-theme" "$DEST" )
+# --norsrc --noextattr, and no --sequesterRsrc.
+#
+# The comment that used to be here was half right and the zips proved it:
+# leaving out --sequesterRsrc does avoid a __MACOSX/ folder, but ditto then
+# writes the same metadata as ._INSTALL.txt, ._theme.json, ._preview.png
+# sitting beside every real file — worse, if anything, because it is scattered
+# rather than in one folder a person can ignore. Telling ditto not to carry
+# resource forks or extended attributes at all is what actually produces a
+# clean archive. These are plain images and JSON; there is nothing to preserve.
+( cd build/theme-stage && ditto --norsrc --noextattr -c -k --keepParent "${NAME}-theme" "$DEST" )
 rm -rf "build/theme-stage"
 
 echo "==> $DEST  ($(du -h "$DEST" | cut -f1))"
