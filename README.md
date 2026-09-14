@@ -12,12 +12,24 @@
   <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
 </p>
 
-**Say you've got three CLI sessions running.** Here's how Ground Control shows
-them:
+## The desktop this is actually for
 
-- name and current line, per session
-- a dot that goes **red** the moment one is blocked and waiting on you
-- click a row → its terminal tab jumps to the front
+A handful of terminals, each running something, scattered across more than one
+Desktop. One of them is waiting on your approval. You don't know which one.
+
+> *"I waste time checking whether my session is done, or waiting on me."*
+
+You start an agent so you can go do something else. Then it needs a decision,
+and you're caught between two ways of losing:
+
+- **You don't check.** It sits blocked for twenty minutes, waiting on one word.
+- **You do check.** Every check is a context switch away from whatever you moved
+  on to — and most turn up nothing.
+
+**The cost was never the waiting. It was the checking.**
+
+Ground Control floats above all of it — one row per agent, on every Desktop at
+once. See an update, tap the row, land in the terminal that wants you.
 
 <div align="center">
 
@@ -33,21 +45,6 @@ images and JSON — so it can look like this instead:
 https://github.com/user-attachments/assets/adfacf3a-ce9b-4c9b-a915-0e2d8dc0865f
 
 </div>
-
-# Why
-
-> *"I waste time checking whether my session is done, or waiting on me."*
-
-You start an agent so you can go do something else. Then it needs a decision,
-and you're caught between two ways of losing:
-
-- **You don't check.** It sits blocked for twenty minutes, waiting on one word.
-- **You do check.** Every check is a context switch away from whatever you moved
-  on to — and most turn up nothing.
-
-The cost was never the waiting. It was the checking.
-
-> **Ground Control is the third option — a glance instead of a context switch.**
 
 # How
 
