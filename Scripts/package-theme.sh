@@ -5,6 +5,11 @@
 # Packages one theme folder as a zip anybody can install by hand.
 #
 #   ./Scripts/package-theme.sh ~/Documents/Projects/GroundControlThemes/spacyAppsUnicornOverlord
+#   ./Scripts/package-theme.sh <folder> <output-dir>
+#
+# Without an output directory the zip lands on the Desktop, which is right for
+# packaging one theme by hand. Anything batching them wants its own folder —
+# see GroundControlThemes/bin/package-for-sale.sh.
 #
 # Deliberately plain. A `.gcTheme` bundle with a document type, a UTI and an
 # in-app installer would be nicer to double-click and worse in every other way:
@@ -18,8 +23,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 SRC="${1:-}"
+OUT_DIR="${2:-$HOME/Desktop}"
 if [ -z "$SRC" ] || [ ! -f "$SRC/theme.json" ]; then
-  echo "usage: package-theme.sh <folder containing theme.json>" >&2
+  echo "usage: package-theme.sh <folder containing theme.json> [output-dir]" >&2
   exit 2
 fi
 
@@ -38,7 +44,8 @@ NAME="$(basename "$SRC")"
 # whatever the staging directory happened to be called.
 ROOT="build/theme-stage/${NAME}-theme"
 STAGE="$ROOT/$NAME"
-DEST="$HOME/Desktop/${NAME}-theme.zip"
+mkdir -p "$OUT_DIR"
+DEST="$OUT_DIR/${NAME}-theme.zip"
 
 rm -rf "build/theme-stage" "$DEST"
 mkdir -p "$STAGE"

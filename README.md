@@ -33,6 +33,14 @@ once. See an update, tap the row, land in the terminal that wants you.
 
 <div align="center">
 
+<img src="docs/images/the-desk.gif" alt="Two Desktops side by side. Desktop 1 holds a Mail window and two terminals, Desktop 2 holds a third. The Ground Control panel stands to the right, spanning both, listing Terminal 1, Terminal 2 and Terminal 5 with the Desktop each is on. A dashed line connects the highlighted row to its window, moving between all three in turn — including Terminal 2, which is red and buried under Mail until it is the one selected" width="900">
+
+</div>
+
+And this is the panel itself, up close:
+
+<div align="center">
+
 <img src="docs/images/gc-default.png" alt="The Ground Control panel: three rows under a green title-bar analyser — a working session with a gear avatar, a Grok Bot group, and a finished one with a sleeping-moon avatar" width="900">
 
 </div>
