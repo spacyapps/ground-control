@@ -142,7 +142,7 @@ startup ("trust the hooks"), was accepted, and the hook fired: the marker
 file appeared, and `config.toml` grew a real trust record —
 
 ```toml
-[hooks.state."/Users/waltermak/.codex/config.toml:stop:0:0"]
+[hooks.state."/Users/you/.codex/config.toml:stop:0:0"]
 trusted_hash = "sha256:b3849a6bc93ee3ce358bfe954e5367ac14470b8931b390c653059b46444f6b6f"
 ```
 

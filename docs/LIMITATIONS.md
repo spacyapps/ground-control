@@ -113,8 +113,8 @@ elicitation alone.
 That makes Grok the **only** agent here that can turn a row red on a machine
 running auto-approve — Claude's `permission_prompt` and opencode's
 `permission.asked` are both gates, and both go quiet in `auto`. Worth knowing on
-this machine specifically, where everything is set to auto and the alarm has
-otherwise never been seen in ordinary use.
+the development machine specifically, where every CLI is set to auto-approve
+and the alarm is otherwise never seen in ordinary use.
 
 The empty log before 2026-08-19 is therefore evidence of nothing at all: Grok
 simply had not chosen to ask.
@@ -142,7 +142,7 @@ that.
 
 `SubagentStart`/`SubagentStop` were believed to cover Grok's subagents — see
 the correction above. What a live test actually found, spawning real
-subagents against `~/github/lunararray`:
+subagents against a real project checkout:
 
 Each subagent is its own **fully independent top-level Grok session** — own
 `session_id`, its own `Repo: /path` opener, its own `PreToolUse` stream, its
@@ -419,9 +419,9 @@ that `idle_prompt` was the only `notification_type` ever seen, and that the
 alarm path was therefore correct-by-construction and unproven.
 
 It is proven now. The reason it stayed unproven for so long is worth keeping:
-`~/.claude/settings.json` on this machine carries `permissions.defaultMode:
-"auto"` and `skipAutoPermissionPrompt: true`, so Claude never asks and the path
-never runs. The first attempt at this test failed for exactly that reason — the
+the development machine's `~/.claude/settings.json` carries
+`permissions.defaultMode: "auto"`, so Claude never asks and the path never
+runs. The first attempt at this test failed for exactly that reason — the
 session read the file without a murmur.
 
 Running one session with `claude --permission-mode manual` and asking it for a
@@ -442,10 +442,13 @@ tab**, and the alarm cleared on arrival. That last part is the rule that a click
 only silences an alarm if it went somewhere — acknowledgement lives in memory
 and never on disk, so it could only ever be confirmed by looking.
 
-One honesty remains. Anyone running in `auto` mode — this machine's default —
-will essentially never see an alarm, so the feature is largely untested by its
-own author in ordinary use. A machine with prompting left on is the better test
-bed.
+One honesty remains, and it is about exposure rather than proof. The path above
+was watched end to end — red, click, correct tab, alarm cleared — so it is
+verified. What it does not get is *daily* use: anyone running in `auto` mode,
+which is the development machine's default, will essentially never see an
+alarm, so the code that matters most runs least often where it is being
+written. A machine with prompting left on is the better test bed, and bugs
+found there are the ones to expect.
 
 Grok's `PermissionDenied` remains a candidate trigger, still unmeasured — but
 Grok is no longer alarm-less: see "Grok asks two different ways" above, where
@@ -502,7 +505,7 @@ touches — 0.46%, which settled an argument that would otherwise have been tast
 corners, layer background colours. A probe drawing a red square with a corner
 radius came back fully transparent, and a panel rendered byte-identical with
 `maskedCorners` set either way. So `layout.contentCornerRadius` is the one piece
-of this work verified only on screen, by Walter, and it is marked as such in the
+of this work verified only on screen, by eye, and it is marked as such in the
 code.
 
 ### 3b. Jumping to a non-terminal host — **measured 2026-08-12**

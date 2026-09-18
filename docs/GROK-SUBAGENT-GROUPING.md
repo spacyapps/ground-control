@@ -137,7 +137,7 @@ existing row model one layer above the file⇔row invariant, never inside it.
     `"Working…"`, `needsAction` always `false` (nothing to recover an alarm
     from once the row is gone).
   - Either way, the **label** always comes from `meta.json`'s `description`
-    — a live row just reads the session's own name (`"lunararray"`, say),
+    — a live row just reads the session's own name (`"my-project"`, say),
     never the task. Only this file says what the subagent was actually for.
   - A recovered (no live row) child older than `showFinishedFor` (30
     minutes, matching `AgentGrouper`'s own constant for Claude's finished

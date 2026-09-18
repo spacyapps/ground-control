@@ -88,7 +88,7 @@ struct GrokSubagentMeta: Codable, Equatable {
     /// the one CLI in this app that alarms independent of `permission_mode:
     /// auto`, so trusting this file alone while a child is still running
     /// would silently drop a real alarm. This file always supplies the
-    /// label, though — a live row just reads "lunararray" like any other
+    /// label, though — a live row just reads "my-project" like any other
     /// session; only `description` says what the task actually is.
     func agentRow(overriding live: Session? = nil) -> AgentRow {
         let described = description.flatMap { $0.isEmpty ? nil : $0 }

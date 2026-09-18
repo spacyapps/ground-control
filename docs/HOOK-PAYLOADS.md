@@ -336,7 +336,7 @@ convention works with no changes at all.
   there. **Caveat this file's own rule flags: no raw payload was ever captured
   for this one — it was asserted from Grok's documented event vocabulary, not
   measured.** Tested live 2026-09-10 against a real `spawn_subagent` tool call
-  (two subagents, `~/github/lunararray`, Grok build, not the `grok` CLI's own
+  (two subagents in a real project checkout, Grok build, not the `grok` CLI's own
   Task-equivalent if it has a separate one): **it never fired.** Both subagents
   ran to completion — visible only as `PreToolUse` messages on the *parent* row
   (`spawn_subagent: …`, `get_command_or_subagent_output`) — and zero files ever
@@ -350,7 +350,7 @@ convention works with no changes at all.
   top-level Grok *session* (own `session_id`, fires its own `PreToolUse`
   stream, appears in the panel as its own flat row, self-deletes via
   `SessionEnd` on completion, same as any session) — confirmed live,
-  `~/github/lunararray`, two subagents, watched end to end. The parent/child
+  in a real project checkout, two subagents, watched end to end. The parent/child
   link genuinely exists, just one layer away from any hook: Grok's own local
   transcript, `~/.grok/sessions/<url-encoded-cwd>/<session_id>/updates.jsonl`,
   carries a `session/update` event with `sessionUpdate: "subagent_spawned"` —
@@ -428,7 +428,7 @@ reading needs nothing added for Codex:
 ```json
 {"session_id":"01a09373-…","turn_id":"01a09373-dbe0-…",
  "transcript_path":"/Users/…/rollout-2026-09-11T19-30-01-01a09373-….jsonl",
- "cwd":"/Users/waltermak/github/empty2","hook_event_name":"SessionStart",
+ "cwd":"/Users/you/github/empty2","hook_event_name":"SessionStart",
  "model":"gpt-5.6-terra","permission_mode":"default","source":"startup"}
 ```
 
@@ -483,7 +483,7 @@ repo's own conclusion that Codex sub-agents were unfollowable.
 ```json
 {"session_id":"01a09377-e440-…","turn_id":"01a09378-2957-…",
  "transcript_path":"…/rollout-…-01a09378-293d-….jsonl",
- "cwd":"/Users/waltermak/github/empty2","hook_event_name":"SubagentStart",
+ "cwd":"/Users/you/github/empty2","hook_event_name":"SubagentStart",
  "agent_id":"01a09378-293d-78f2-85bd-178acb5a7d87","agent_type":"default"}
 
 {"session_id":"01a09377-e440-…","turn_id":"01a09378-2957-…",

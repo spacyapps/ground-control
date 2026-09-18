@@ -27,7 +27,7 @@ Terminal"*. True and surprising is the same as wrong here.
 | **AGPL-3.0-or-later** | Every file carries the SPDX header; `LICENSE` is the FSF text verbatim |
 | **Sole copyright, no outside patches** | The licence stays changeable. One merged contribution ends that forever — say so if anyone proposes accepting a PR |
 | **Themes are outside the code licence** | Artwork is not a derivative. Never let a licence statement imply it is |
-| **Never ship keystroke injection** | Standing instruction from Walter, 2026-08-14. Navigation-only AppleScript (`set selected of t`, `activate`) is the line. Anything that types is a refusal, not a discussion |
+| **Never ship keystroke injection** | Standing product rule, set 2026-08-14. Navigation-only AppleScript (`set selected of t`, `activate`) is the line. Anything that types is a refusal, not a discussion |
 | **"Collects no data" is a lie** | Up to 240 characters of prompts are stored locally. The true, stronger claim is that none of it leaves the machine and all of it expires |
 
 ## The audit — run it, never recall it
