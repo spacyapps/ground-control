@@ -52,7 +52,7 @@ and those are the interesting part.
 
 ## Quick start
 
-Four themes ship with the app and are copied into your themes folder the first
+Three themes ship with the app and are copied into your themes folder the first
 time it runs, so they are in the picker straight away — and editable, because
 they are now yours. An existing folder is never overwritten, so anything you
 change stays changed.
@@ -71,15 +71,15 @@ as defaults rather than asked about; every one of them is a line in the manifest
 that can be changed afterwards. A scaled-whole frame still *loads* — the keys in
 this document are unchanged — it is simply no longer the thing we teach, because
 being the easy default meant most themes learnt nothing that survives a resize.
-| `spacyAppsUnicornOverlord/` | a frame drawn *in front* of the rows — `window.overlay`, four-sided insets, an animated loop |
 
-Copy whichever is closest to what you want.
+Copy whichever is closest to what you want. The lunar station is the fullest of
+the three: if you are unsure, start there and delete what you don't need.
 
-The unicorn theme lives outside this repository, at
-`~/Documents/Projects/GroundControlThemes`, and ships only in alpha builds — it is
-3.6 MB, most of it one avatar, and a release should not make everyone download a
-theme they may never pick. It is still checked by the test suite, and still the
-worked example of `window.overlay`.
+`window.overlay` — a frame drawn *in front* of the rows, with four-sided insets
+— has no bundled example, because the themes that use it are artwork licensed
+separately from this code and so live outside the repository. The keys are all
+documented below and the mode is fully supported; you are reading the spec
+rather than copying a folder.
 
 Themes live in `~/Library/Application Support/GroundControl/Themes/`. The
 menu-bar menu has **Theme → Open Themes Folder…** if you'd rather not type it.

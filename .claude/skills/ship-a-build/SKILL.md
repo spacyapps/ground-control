@@ -144,5 +144,4 @@ way to see what a tester sees. Still outstanding as of 2026-08-18.
   reach anyone who only replaces the app. Whenever the installer's event list
   changes, say so explicitly.
 - A release goes on GitHub Releases with the notarised zip attached; the theme
-  zip is a separate asset. The going-public checklist is private notes, at
-  `~/Documents/Projects/GroundControl/notes/PUBLISHING.md`.
+  zip is a separate asset.

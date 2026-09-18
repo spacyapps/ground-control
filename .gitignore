@@ -38,9 +38,7 @@ Secrets.xcconfig
 # Removed from history 2026-08-16 before the repo was first published.
 ExtraThemes/
 
-# Private notes that must not be public, guarded against walking back in.
-# Both live at ~/Documents/Projects/GroundControl/notes/ instead:
-# PUBLISHING.md is an internal pre-flight runbook, and THEME-DELIVERY.md
-# proposes giving paid themes away free on Releases — true in alpha, wrong now.
+# Working notes that were never written for a reader — kept off the repo on
+# purpose 2026-09-17, and listed here so they cannot walk back in.
 docs/PUBLISHING.md
 docs/THEME-DELIVERY.md

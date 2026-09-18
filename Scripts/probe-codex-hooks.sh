@@ -118,7 +118,7 @@ LOG="$HOME/.codex/gc-hook-probe.log"
   env | grep -i '^CODEX' | sed 's/^/--- env:  /'
   printf '%s\n' '--- stdin:'
   # Guarded: if Codex attaches no pipe, stdin is the terminal, and a bare
-  # `cat` would sit there reading Walter's keystrokes and hang the turn.
+  # `cat` would sit there reading your keystrokes and hang the turn.
   if [ -t 0 ]; then printf '(no pipe — stdin is a tty)\n'; else cat; fi
   printf '\n'
 } >> "$LOG" 2>/dev/null

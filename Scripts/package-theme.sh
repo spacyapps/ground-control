@@ -4,12 +4,11 @@
 #
 # Packages one theme folder as a zip anybody can install by hand.
 #
-#   ./Scripts/package-theme.sh ~/Documents/Projects/GroundControlThemes/spacyAppsUnicornOverlord
+#   ./Scripts/package-theme.sh ~/path/to/themes/myTheme
 #   ./Scripts/package-theme.sh <folder> <output-dir>
 #
 # Without an output directory the zip lands on the Desktop, which is right for
-# packaging one theme by hand. Anything batching them wants its own folder —
-# see GroundControlThemes/bin/package-for-sale.sh.
+# packaging one theme by hand. Anything batching them wants its own folder.
 #
 # Deliberately plain. A `.gcTheme` bundle with a document type, a UTI and an
 # in-app installer would be nicer to double-click and worse in every other way:

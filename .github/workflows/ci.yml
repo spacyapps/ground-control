@@ -24,6 +24,6 @@ jobs:
       - name: Install SwiftLint
         run: brew install swiftlint
 
-      # Walter's rule: the Swift must be lint-clean, so warnings fail the build.
+      # The rule here: the Swift must be lint-clean, so warnings fail the build.
       - name: Lint
         run: swiftlint lint --strict --reporter github-actions-logging
