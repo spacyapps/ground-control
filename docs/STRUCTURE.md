@@ -156,13 +156,14 @@ GroundControl/
 │   ├── ARCHITECTURE.md           # how a hook event becomes a row (start here)
 │   ├── SPEC.md                   # the full build brief
 │   ├── THEMING.md                # theme authoring guide
-│   ├── PUBLISHING.md   # going public: what was decided and what is left
-│   ├── THEME-DELIVERY.md         # proposal: shipping themes outside the app
+│   ├── MATRIX-CUSTOMISATION.md   # theme-driven analyser motion; tiers 3-4 unbuilt
 │   ├── HOOK-PAYLOADS.md          # measured hook payloads — the data SPEC rests on
 │   ├── LIMITATIONS.md            # what is verified vs assumed; other-CLI status
+│   ├── GROK-BOT-INTEGRATION.md   # Grok Bot: what its cache does and doesn't say
 │   ├── GROK-BOT-GROUPING.md      # Grok Bot: reading its cache, not a hook
 │   ├── GROK-SUBAGENT-GROUPING.md # Grok CLI subagents: reading its own files, not a hook
-│   └── CODEX-INTEGRATION.md      # OpenAI Codex: its hooks, its trust prompt, its sub-agents
+│   ├── CODEX-INTEGRATION.md      # OpenAI Codex: its hooks, its trust prompt, its sub-agents
+│   └── CONTRIBUTING-NOTES.md     # the two local git hooks; why the trailers stay
 │
 ├── Packaging/
 │   ├── Info.plist                # bundle id, version, LSUIElement
@@ -179,8 +180,10 @@ GroundControl/
 > Themes licensed separately from the code live **outside this repository**, at
 > `~/Documents/Projects/GroundControlThemes`, and are never bundled — they ship
 > as their own zips via `Scripts/package-theme.sh`. Only the repo's `Themes/`
-> (`default`, `example-avatars`, the lunar station) goes into a build. See
-> `docs/THEME-DELIVERY.md`.
+> (`default`, `example-avatars`, the lunar station) goes into a build. A public
+> clone carrying only an AGPL `LICENSE` would read as licensing everything
+> inside it, artwork included, which is why the artwork is not inside it. See
+> `TRADEMARK.md`.
 
 ## Layering rules (keep dependencies pointing one way)
 

@@ -37,3 +37,10 @@ Secrets.xcconfig
 # Sellable artwork — lives on disk, ships as its own zip, never in git.
 # Removed from history 2026-08-16 before the repo was first published.
 ExtraThemes/
+
+# Private notes that must not be public, guarded against walking back in.
+# Both live at ~/Documents/Projects/GroundControl/notes/ instead:
+# PUBLISHING.md is an internal pre-flight runbook, and THEME-DELIVERY.md
+# proposes giving paid themes away free on Releases — true in alpha, wrong now.
+docs/PUBLISHING.md
+docs/THEME-DELIVERY.md

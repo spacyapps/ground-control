@@ -30,8 +30,8 @@ if [ -z "$SRC" ] || [ ! -f "$SRC/theme.json" ]; then
 fi
 
 # A `private/` folder marks themes that are personal and never distributed —
-# one machine, not for sale, not for sharing (docs/THEME-DELIVERY.md). Packaging
-# one is always a mistake, so refuse rather than produce a zip nobody should send.
+# one machine, not for sale, not for sharing. Packaging one is always a
+# mistake, so refuse rather than produce a zip nobody should send.
 case "/$SRC/" in
   */private/*)
     echo "refusing: $SRC is under a private/ folder — those themes are not for distribution" >&2

@@ -11,7 +11,7 @@ import AppKit
 /// `Themes/` ships inside the app and inside this repository. Everything else
 /// is artwork licensed separately from the code, kept outside the repository
 /// entirely so that a public clone cannot be read as licensing it under the
-/// AGPL — see `docs/THEME-DELIVERY.md`.
+/// AGPL — see `TRADEMARK.md`.
 ///
 /// The consequence for tests: extra themes are present on the machine that
 /// draws them and absent everywhere else, so a test that needs one must skip

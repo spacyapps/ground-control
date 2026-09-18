@@ -66,7 +66,8 @@ install -m 0644 Scripts/opencode-plugin.ts "$APP/Contents/Resources/opencode-plu
 # living in the bundle could never be. Only what is in the repo's Themes/ ships:
 # default, example-avatars and the lunar station. Extra/paid themes are artwork
 # licensed separately, live outside the repo, and are distributed as their own
-# zips via Scripts/package-theme.sh — see docs/THEME-DELIVERY.md.
+# zips via Scripts/package-theme.sh — see TRADEMARK.md for what that split
+# reserves.
 mkdir -p "$APP/Contents/Resources/Themes"
 cp -R Themes/* "$APP/Contents/Resources/Themes/"
 
