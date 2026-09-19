@@ -31,6 +31,18 @@ if ! command -v create-dmg >/dev/null; then
   exit 1
 fi
 
+# The dmg is the download the website points at, so the same gate as
+# build-zip.sh applies: nothing crosses to another Mac carrying claims that
+# have stopped being true. SKIP_LICENCE_AUDIT=1 to skip it deliberately.
+if [ "${SKIP_LICENCE_AUDIT:-0}" != "1" ]; then
+  bash Scripts/licence-audit.sh || {
+    echo "Refusing to build a release on claims that are not true." >&2
+    echo "Fix them, or SKIP_LICENCE_AUDIT=1 if you know why this is wrong." >&2
+    exit 1
+  }
+  echo
+fi
+
 bash Scripts/build-app.sh
 
 # A dmg that is not signed with Developer ID can never be notarised, and a

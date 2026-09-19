@@ -33,6 +33,21 @@ else
   DEST="$HOME/Desktop/GroundControl-${VERSION}.zip"
 fi
 
+# This zip is the copy that crosses to other people's Macs, carrying the pages
+# in Settings that say what the app does with their machine. Checking those
+# claims belongs here rather than on somebody's memory: the audit has caught a
+# permission prompt nobody had written down, and two other applications' files
+# being read by a page that still described hooks alone. It costs a second.
+# SKIP_LICENCE_AUDIT=1 to skip it, the way --no-verify skips the commit hook.
+if [ "${SKIP_LICENCE_AUDIT:-0}" != "1" ]; then
+  bash Scripts/licence-audit.sh || {
+    echo "Refusing to build a release on claims that are not true." >&2
+    echo "Fix them, or SKIP_LICENCE_AUDIT=1 if you know why this is wrong." >&2
+    exit 1
+  }
+  echo
+fi
+
 # build-app.sh bundles the repo's Themes/ and nothing else — default,
 # example-avatars, the lunar station. Extra/paid themes are packaged separately
 # by Scripts/package-theme.sh, so a heavy demo skin exists without every

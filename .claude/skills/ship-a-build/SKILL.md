@@ -23,6 +23,30 @@ Every build ships the same thing: `Themes/` from the repo — `default`,
 `example-avatars`, the lunar station — and nothing else. There is no
 alpha-vs-public switch any more.
 
+## The licence gate
+
+`build-zip.sh` and `build-dmg.sh` both run `Scripts/licence-audit.sh` first and
+refuse to build if it fails. That is deliberate: the two release paths are the
+copies that cross to other people's Macs, carrying the pages in Settings that
+say what the app does with their machine.
+
+The script checks what a machine can: `LICENSE` byte-for-byte, no stale
+GPL-3.0 strings, SPDX headers, **no networking API anywhere**, `MAX_MESSAGE`
+still 240, the purge still 24h, and the size of the three lists the pages claim
+are exhaustive — entitlements, usage descriptions, and every call that reaches
+outside the app.
+
+**It cannot check whether the prose still describes the product**, and that is
+where both real findings came from: a permission prompt nobody had written
+down, and two other applications' files being read by a page that still
+described hooks alone. So a green audit is a floor, not a pass.
+
+Read the pages with `.claude/skills/license-guru` whenever the release includes
+any of: a new entitlement or usage description, a new `NSWorkspace.open` /
+`Process()` / `NSAppleScript` call, a new file the app reads that something
+else owns, a change to `MAX_MESSAGE` or the purge, or **any** network call at
+all. `SKIP_LICENCE_AUDIT=1` exists for when you mean it, like `--no-verify`.
+
 ## Before you build
 
 - **Quit the running app.** `build-app.sh` starts with `rm -rf` on the bundle.

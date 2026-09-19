@@ -21,6 +21,14 @@ jobs:
       - name: Test
         run: swift test -v
 
+      # The pages in Settings are the only reason a stranger trusts a monitor
+      # sitting beside their terminal, and every claim on them maps to
+      # something checkable. The release scripts gate on this too; running it
+      # here catches the drift on the commit that caused it rather than on the
+      # day of a release.
+      - name: Licence audit
+        run: ./Scripts/licence-audit.sh
+
       - name: Install SwiftLint
         run: brew install swiftlint
 
