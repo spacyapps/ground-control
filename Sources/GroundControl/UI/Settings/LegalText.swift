@@ -19,11 +19,14 @@ import Foundation
 /// the code. It is the one place in the project where a stale comment is a
 /// false statement to a user rather than a note to a developer.
 ///
-/// Two things belong here that are easy to leave out because no line of code
-/// says them: the Apple Events permission macOS prompts for, and every place
-/// the app can open something. Both were missing from the first draft — the
-/// text was true and still left someone surprised, which for a page whose job
-/// is trust is the same as being wrong.
+/// Three things belong here that are easy to leave out because no line of code
+/// says them: the Apple Events permission macOS prompts for, every place the
+/// app can open something, and every file it reads that another application
+/// owns. The first two were missing from the first draft; the third went
+/// missing when `GrokBotWatcher` and `GrokSubagentReader` shipped on by
+/// default and this page still described hooks alone. Each time the text was
+/// true and still left someone surprised, which for a page whose job is trust
+/// is the same as being wrong.
 enum LegalText {
     static let privacyTitle = "What this app does, and does not do"
 
@@ -38,6 +41,14 @@ enum LegalText {
         can run a command of your choosing when something happens — a \
         documented feature, configured in their own settings files. Ground \
         Control registers there, with your permission.
+        - **Two tools are read from disk instead, because they run no such \
+        command.** Grok Bot writes its status to a cache file, and Grok records \
+        its sub-agents inside its own session folder. Ground Control opens \
+        those files to draw a row and takes nothing else from them: read-only, \
+        never written to, never sent anywhere, and only on a Mac where those \
+        tools are installed. Either can be switched off in Terminal: defaults \
+        write GroundControl showsGrokBot -bool NO, and the same for \
+        showsGrokSubagentGrouping.
         - **What gets written.** One line per event: the session's folder and \
         name, its state, which terminal or editor it belongs to, and up to 240 \
         characters of the prompt or question so the row can say what is \
@@ -106,8 +117,9 @@ enum LegalText {
         a change, or judge whether something should have happened. Whatever \
         your assistant does, it does with the permissions you gave it, and the \
         responsibility for that stays with you.
-        - **Ground Control is not affiliated** with Anthropic, Cursor, xAI, \
-        Google, or any other maker of the tools it observes. Product names \
-        belong to their owners and are used only to say what works with what.
+        - **Ground Control is not affiliated** with Anthropic, OpenAI, Cursor, \
+        xAI, Google, the opencode project, or any other maker of the tools it \
+        observes. Product names belong to their owners and are used only to \
+        say what works with what.
         """
 }
