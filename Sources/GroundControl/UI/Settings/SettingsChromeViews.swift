@@ -59,12 +59,24 @@ extension SettingsView {
         return link
     }
 
+    /// Two rows, not one: the store button above the three local utilities.
+    ///
+    /// All four on one line need roughly 474pt and the column is 360, so one of
+    /// them was always going to be crushed — and AppKit picked the first
+    /// arranged view, which is the store. It rendered as a tinted stub showing
+    /// half an arrow: the only control that leads to a paid theme, unreadable.
+    /// The window is not resizable, so no amount of priority fixes this; it
+    /// only chooses whose label gets eaten instead. Wrapping is the fix, and it
+    /// says what the 18pt gap was already trying to say — the button that
+    /// leaves the app is its own thing, not the first of four utilities.
     func buttonRow() -> NSView {
-        let row = NSStackView()
-        row.orientation = .horizontal
-        row.spacing = 8
-
         let more = getMoreThemesButton()
+        // Stops the pill stretching the width of the column: on its own line a
+        // filled button with nothing beside it would otherwise fill the row.
+        let storeRow = NSStackView(views: [more])
+        storeRow.orientation = .horizontal
+        storeRow.alignment = .leading
+
         let create = NSButton(title: "Create a Theme…", target: self, action: #selector(createTheme))
         create.bezelStyle = .rounded
         let open = NSButton(title: "Open Folder…", target: self, action: #selector(openFolder))
@@ -72,14 +84,17 @@ extension SettingsView {
         let refresh = NSButton(title: "Refresh", target: self, action: #selector(refreshThemes))
         refresh.bezelStyle = .rounded
 
-        row.addArrangedSubview(more)
-        row.addArrangedSubview(create)
-        row.addArrangedSubview(open)
-        row.addArrangedSubview(refresh)
-        // A gap after the one button that leaves the app, so it reads as its own
-        // thing rather than as the first of four utilities.
-        row.setCustomSpacing(18, after: more)
-        return row
+        // ~316pt of buttons and spacing in a 360pt column, so these three fit
+        // with room to spare and nothing truncates.
+        let utilities = NSStackView(views: [create, open, refresh])
+        utilities.orientation = .horizontal
+        utilities.spacing = 8
+
+        let column = NSStackView(views: [storeRow, utilities])
+        column.orientation = .vertical
+        column.alignment = .leading
+        column.spacing = 12
+        return column
     }
 
     /// The only route from the app to anywhere themes can be got.
