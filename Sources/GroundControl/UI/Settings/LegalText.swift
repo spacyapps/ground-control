@@ -97,7 +97,7 @@ enum LegalText {
         "SpacyApps" and the theme characters are trademarks, and the theme \
         images are all rights reserved. A fork ships under its own name and \
         its own art — the project's TRADEMARK.md has the detail.
-        - Copyright © 2026 Walter Mak.
+        - Copyright © 2026 Walter Mak (SpacyApps).
         """
 
     static let disclaimerTitle = "Disclaimer"

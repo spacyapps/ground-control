@@ -4,9 +4,11 @@ Ground Control's **source code** is free software under AGPL-3.0-or-later (see
 `LICENSE`). The names and the artwork are not part of that grant. This file
 says what is reserved and what a fork may do.
 
-Everything below is owned by **Walter Mak**, who publishes as **SpacyApps**. The
-™ symbol marks a claim of common-law rights from use in commerce; nothing here
-asserts a registration.
+Everything below is owned by **Walter Mak**, trading as **SpacyApps**, a
+registered sole proprietorship. A sole proprietorship is not a separate legal
+person, so there is one owner here rather than two — permission for anything
+on this page comes from one place. The ™ symbol marks a claim of common-law
+rights from use in commerce; nothing here asserts a registered trademark.
 
 ## Names and marks
 
@@ -23,7 +25,7 @@ is distributed under.
 Every theme's **images** — station frames, avatar faces, corner decorations,
 animations — and the **characters** they depict are:
 
-> Copyright © 2026 Walter Mak. All rights reserved.
+> Copyright © 2026 Walter Mak (SpacyApps). All rights reserved.
 
 Artwork is not a derivative of the program, so the program's licence does not
 travel to it. Each shipped theme folder also carries its own `LICENSE` saying
