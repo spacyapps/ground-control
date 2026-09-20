@@ -233,22 +233,23 @@ better security model than we could have justified building.
 
 # What it works with
 
-Every row below was tested on a real session, not inferred. Dates are when, and
-`docs/LIMITATIONS.md` says how.
+Every row below was tested on a real session, not inferred. **Last tested** is
+the date and the version it was tested against; `docs/LIMITATIONS.md` says how,
+and what is still unknown.
 
 ## Agents
 
-| Agent | Rows | Turns red | How we know |
-|---|---|---|---|
-| **Claude Code ** | yes, subagents grouped | **yes** | a blocked session turned red, the click landed on its tab, the alarm cleared · 2026-08-12. Subagents nest under their parent — this is where the grouping was built — but only once they **finish**: Claude Code fires `SubagentStop` and no matching start event, so a running subagent is invisible until it is done. Its own internal background agents fire that event too and are hidden by a heuristic (empty `agent_type`); `defaults write GroundControl showsInternalAgents -bool YES` shows them · Last Tested: 2026-09-19 (2.1.277) |
-| **Grok CLI** | yes, subagents grouped | **yes (input prompt selection)** | `elicitation_dialog` turned a row red carrying the question itself (E.g. input prompt from a user controlled selection list); a question asked in prose still reads as "done" · 2026-08-19. It reads `~/.claude/settings.json` by design, so one install covers both · 2026-08-11. `spawn_subagent` fires no hook at all — subagents are grouped by reading a small file Grok writes for itself instead · Last Tested: 2026-09-19 (1.0.34) |
-| **Grok Bot** | yes, Bots grouped and named | **no (v4)** | every bot under one collapsible group; a decision card waiting on your answer turns that bot and the group red, checked live against Grok Bot's own cache · 2026-08-28. A bot reads as **working** while it owes you a reply or has spoken in the last minute, including one woken by another bot; its name brightens so the state reads without hunting for the dot · 2026-09-19. It runs in xAI's cloud and fires no local hooks, so all of this comes from an undocumented cache — when that cache moved from schemaVersion 3 to 4 the alarm went blind until the reader was taught both shapes, which is the risk of reading a format nobody promised · Last Tested: 2026-09-19 (v4) |
-| **OpenAI Codex CLI** | yes, sub-agents grouped | **yes** | `PermissionRequest` turned a row red carrying Codex's own sentence — "May I enable network access to fetch headers from…" — and `PostToolUse` cleared it on reply. Its hooks speak Claude's dialect, so one emitter covers both. Sub-agents fire `SubagentStart` *before* they run, and are named from their own transcripts. **Needs a one-time trust prompt**: start `codex` once after installing and accept it, or no hooks run at all · Last Tested: 2026-09-11 (0.154.0) |
-| **opencode** | yes | **yes** | `permission.asked` carried "List files with details in current directory"; row went red and cleared on reply · 2026-08-19 |
-| **Cursor's own agent** (Composer) | yes | **no** | fires no hook while waiting for approval, so a blocked chat looks busy · 2026-08-14 |
-| **Claude for Desktop** — Code tab | yes | **yes** | it bundles its own Claude Code and spawns it as a child, so hooks run; a permission prompt turned the row red · 2026-08-22 |
-| **Claude for Desktop** — Home tab | **no** | no | ordinary chat in Electron; no process is spawned, so there is nothing to hook — and nothing to miss, since a chat cannot block you unnoticed · 2026-08-22 |
-| **Xcode's Claude Agent** | **no** | no | it *is* Claude Code (`sdk-cli`) and can see both the config and the emitter, but that entrypoint does not run hooks · 2026-08-19 |
+| Agent | Rows | Turns red | Last tested | What we found |
+|---|---|---|---|---|
+| **Claude Code** | yes, subagents grouped | **yes** | 2026-09-19 · 2.1.277 | • red end to end: a blocked session went red, the click landed on its tab, the alarm cleared (2026-08-12)<br>• subagents nest under their parent, but only once they **finish** — `SubagentStop` fires with no matching start, so a running one is invisible<br>• its own internal agents fire that event too and are hidden by a heuristic (empty `agent_type`); `defaults write GroundControl showsInternalAgents -bool YES` shows them |
+| **Grok CLI** | yes, subagents grouped | **yes** — input prompts only | 2026-09-19 · 1.0.34 | • `elicitation_dialog` turns a row red carrying the question itself, e.g. a user-controlled selection list (2026-08-19)<br>• a question asked in **prose** still reads "done" — no event tells the two apart<br>• reads `~/.claude/settings.json` by design, so one install covers Claude Code and Grok<br>• `spawn_subagent` fires no hook; subagents are grouped by reading a file Grok writes for itself |
+| **Grok Bot** | yes, bots grouped and named | **no** on v4 | 2026-09-19 · cache v4 | • one collapsible group, one row per bot, plus the bots another bot wakes<br>• **the alarm is blind on v4**: the cache dropped the field a pending decision card lived in. It worked on v3 (2026-08-28) and the reader now takes both shapes, but no card has appeared since<br>• **working is readable**: a bot owes you a reply, or spoke in the last minute. Its name brightens, so the state reads without hunting for the dot<br>• runs in xAI's cloud and fires no local hooks — all of this comes from an undocumented cache, which is why a format change could silence it |
+| **OpenAI Codex CLI** | yes, sub-agents grouped | **yes** | 2026-09-11 · 0.154.0 | • `PermissionRequest` turned a row red carrying Codex's own sentence — "May I enable network access to fetch headers from…" — and `PostToolUse` cleared it on reply<br>• its hooks speak Claude's dialect, so one emitter covers both<br>• sub-agents fire `SubagentStart` *before* they run, and are named from their own transcripts<br>• **needs a one-time trust prompt**: start `codex` once after installing and accept it, or no hooks run at all |
+| **opencode** | yes | **yes** | 2026-09-11 · 1.18.27 | • `permission.asked` carried "List files with details in current directory"; the row went red and cleared on reply (2026-08-19)<br>• a plugin rather than hooks — opencode runs no script on an event<br>• prose questions read "done", the same gap Grok CLI has<br>• tested against a fully local model (Qwen3.5 via `mlx_lm.server`), no cloud in the loop |
+| **Cursor's own agent** (Composer) | yes | **no** | 2026-08-14 | • fires no hook while waiting for approval, so a blocked chat looks busy<br>• Cursor's docs list no waiting-or-blocked event; it is an open feature request |
+| **Claude for Desktop** — Code tab | yes | **yes** | 2026-08-22 | • bundles its own Claude Code and spawns it as a child, so hooks run normally<br>• no terminal, so a click raises the app rather than a tab |
+| **Claude for Desktop** — Home tab | **no** | no | 2026-08-22 | • ordinary chat in Electron; no process is spawned, so there is nothing to hook<br>• nothing to miss either — a chat cannot block you unnoticed |
+| **Xcode's Claude Agent** | **no** | no | 2026-08-19 · Xcode 26 | • it *is* Claude Code, and can see both the config and the emitter<br>• it runs as `sdk-cli`, and that entrypoint does not execute hooks. Nothing on this side can change that |
 
 ## Terminals
 
