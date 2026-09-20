@@ -20,6 +20,9 @@ enum TerminalFocuser {
     enum Destination: Equatable {
         /// An exact tab in a terminal we can script.
         case terminalTab(tty: String, bundleID: String)
+        /// One named conversation inside Claude for Desktop, which has no
+        /// terminal and no tab but does answer a `claude://` URL.
+        case claudeDesktopSession(localID: String)
         /// The application hosting the terminal. No tab, but the right window
         /// manager, and better than a file browser.
         case application(bundleID: String)
@@ -36,6 +39,12 @@ enum TerminalFocuser {
         }
         var bundleID: (String) -> String? = { path in
             Bundle(url: URL(fileURLWithPath: path))?.bundleIdentifier
+        }
+        /// Claude for Desktop's own id for a hook session, read from its
+        /// storage. Returns nil whenever anything is missing, which is what
+        /// keeps this from becoming a dependency.
+        var claudeDesktopSession: (String) -> String? = { sessionID in
+            ClaudeDesktopSessions.localSessionID(for: sessionID)
         }
     }
 
@@ -61,8 +70,19 @@ enum TerminalFocuser {
                             hostApp: String?,
                             hostID: String?,
                             fallbackPath: String?,
+                            sessionID: String? = nil,
                             probe: Probe = Probe()) -> Destination {
         let host = hostBundleID(hostApp: hostApp, hostID: hostID, probe: probe)
+
+        // Claude for Desktop has no tty to find and several conversations in
+        // one window, so raising it lands on whichever was last open. Its own
+        // URL handler will open a named one, if its id can be found; if it
+        // cannot, this falls through and the app is raised as before.
+        if host == ClaudeDesktopSessions.bundleID,
+           let sessionID,
+           let local = probe.claudeDesktopSession(sessionID) {
+            return .claudeDesktopSession(localID: local)
+        }
 
         // A tty belongs to whichever app opened it, so a session hosted by VS
         // Code has no tab in Terminal however many tabs Terminal has. Searching
@@ -121,8 +141,15 @@ enum TerminalFocuser {
     static func focus(tty: String?,
                       hostApp: String?,
                       hostID: String?,
-                      fallbackPath: String?) -> Bool {
-        let target = destination(tty: tty, hostApp: hostApp, hostID: hostID, fallbackPath: fallbackPath)
+                      fallbackPath: String?,
+                      sessionID: String? = nil) -> Bool {
+        let target = destination(
+            tty: tty,
+            hostApp: hostApp,
+            hostID: hostID,
+            fallbackPath: fallbackPath,
+            sessionID: sessionID
+        )
         switch target {
         case .terminalTab(let tty, let bundleID):
             if let terminal = supported.first(where: { $0.bundleID == bundleID }),
@@ -134,6 +161,13 @@ enum TerminalFocuser {
             // terminal we just failed to find it in.
             Log.integration.notice("No tab matched \(tty, privacy: .public); trying the host")
             return focus(tty: nil, hostApp: hostApp, hostID: hostID, fallbackPath: fallbackPath)
+
+        case .claudeDesktopSession(let localID):
+            guard let url = ClaudeDesktopSessions.continueURL(localSessionID: localID) else {
+                return activate(bundleID: ClaudeDesktopSessions.bundleID)
+            }
+            NSWorkspace.shared.open(url)
+            return true
 
         case .application(let bundleID):
             return activate(bundleID: bundleID)
@@ -152,7 +186,7 @@ enum TerminalFocuser {
     /// costs a display-name lookup for it.
     static func canReach(tty: String?, hostApp: String?, hostID: String?) -> Bool {
         switch destination(tty: tty, hostApp: hostApp, hostID: hostID, fallbackPath: nil) {
-        case .terminalTab, .application: return true
+        case .terminalTab, .application, .claudeDesktopSession: return true
         case .finder, .nowhere: return false
         }
     }
@@ -167,6 +201,12 @@ enum TerminalFocuser {
     /// Code" for something every person calls Visual Studio Code.
     static func destinationName(tty: String?, hostApp: String?, hostID: String?) -> String? {
         switch destination(tty: tty, hostApp: hostApp, hostID: hostID, fallbackPath: nil) {
+        // Not passed a session id, so this never resolves to a named
+        // conversation — the menu says "Jump to Claude", which is true of
+        // either landing and does not promise the exact one.
+        case .claudeDesktopSession:
+            return FileManager.default.displayName(atPath: "/Applications/Claude.app")
+                .replacingOccurrences(of: ".app", with: "")
         case .terminalTab(_, let bundleID), .application(let bundleID):
             let running = NSRunningApplication
                 .runningApplications(withBundleIdentifier: bundleID)

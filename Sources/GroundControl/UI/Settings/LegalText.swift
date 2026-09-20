@@ -41,14 +41,18 @@ enum LegalText {
         can run a command of your choosing when something happens — a \
         documented feature, configured in their own settings files. Ground \
         Control registers there, with your permission.
-        - **Two tools are read from disk instead, because they run no such \
-        command.** Grok Bot writes its status to a cache file, and Grok records \
-        its sub-agents inside its own session folder. Ground Control opens \
-        those files to draw a row and takes nothing else from them: read-only, \
+        - **Three tools are read from disk as well.** Grok Bot writes its \
+        status to a cache file and Grok records its sub-agents in its own \
+        session folder, neither of which runs a command on an event. Claude \
+        for Desktop does run one, but keeps several conversations in one \
+        window, so clicking a row could only raise the app — it also writes a \
+        small file naming each conversation, and reading that is what lets a \
+        click open the right one. Ground Control opens these files to draw a \
+        row or find a window and takes nothing else from them: read-only, \
         never written to, never sent anywhere, and only on a Mac where those \
-        tools are installed. Either can be switched off in Terminal: defaults \
-        write GroundControl showsGrokBot -bool NO, and the same for \
-        showsGrokSubagentGrouping.
+        tools are installed. The two Grok readers can be switched off in \
+        Terminal: defaults write GroundControl showsGrokBot -bool NO, and the \
+        same for showsGrokSubagentGrouping.
         - **What gets written.** One line per event: the session's folder and \
         name, its state, which terminal or editor it belongs to, and up to 240 \
         characters of the prompt or question so the row can say what is \
@@ -68,7 +72,8 @@ enum LegalText {
         the exact tab.
         - **The only other things it can open** are your themes folder, a \
         session's folder in Finder when you ask for it, the SpacyApps website, \
-        and the hook installer — each only when you choose it from a menu.
+        a conversation in Claude for Desktop when you click its row, and the \
+        hook installer — each only when you choose it.
         - **You can check every line of this.** The app is open source, and \
         the script it installs is a few hundred lines of readable Python at \
         ~/.groundcontrol/bin/cc-notify.

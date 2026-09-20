@@ -81,7 +81,8 @@ final class AppCoordinator {
             tty: session.tty,
             hostApp: session.hostApp,
             hostID: session.hostID,
-            fallbackPath: session.cwd
+            fallbackPath: session.cwd,
+            sessionID: session.id
         )
         if arrived {
             aggregator.acknowledge(sessionID: session.id)

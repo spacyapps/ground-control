@@ -217,6 +217,35 @@ to.
   differed. A session that was already open keeps the old value, since the
   emitter carries the last known host forward — start a new one to see it.
 
+### A click lands on the conversation, not just the app — 2026-09-20
+
+Raising Claude for Desktop opens whichever conversation was last shown, which
+is rarely the row that was clicked: the Code tab keeps several in one window.
+
+The app registers a `claude://` scheme. Reading its bundle turns up four routes
+— `code/new`, `code/continue?session=…`, `code/needs-input`, and
+`resume?session=<uuid>`. `continue` accepts `last` or the app's own id, which
+it validates against `^local_[A-Za-z0-9-]{1,64}$`; `needs-input` with no id
+opens the first session that wants you, which was confirmed live.
+
+The hook gives us the CLI's UUID, not that id. The join is a field the app
+writes for itself: one small JSON per session under
+`~/Library/Application Support/Claude/claude-code-sessions/<account>/<workspace>/local_<uuid>.json`,
+carrying **`cliSessionId`** beside its own `sessionId`, plus `title`, `cwd` and
+`isArchived`. Checked against a live panel on 2026-09-20: three Claude for
+Desktop rows, all three resolved to the right conversation.
+
+`ClaudeDesktopSessions` reads those files and `TerminalFocuser` opens
+`claude://code/continue?session=local_…`. **Archived sessions are skipped** —
+the app filters them out itself, so a link naming one opens nothing and reads
+as a dead click.
+
+**This is somebody else's undocumented storage**, the third such source after
+Grok Bot's cache and Grok's session folder, and it is named on the privacy page
+with them. Grok Bot's format moved under this project the day before, so every
+failure here falls back rather than breaks: no folder, no match, unreadable
+JSON or an unexpected id shape all raise the app exactly as before.
+
 ## Xcode's Claude Agent — measured 2026-08-19, does not report
 
 Xcode 26 embeds a Claude agent ("Message Claude Agent"). It **is** Claude Code —

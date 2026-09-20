@@ -31,7 +31,10 @@ AGPL_SHA256="0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0"
 # proves nothing.
 EXPECTED_ENTITLEMENTS=1
 EXPECTED_USAGE_DESCRIPTIONS=1
-EXPECTED_REACH_OUT_CALLS=10
+# 11 since 2026-09-20: opening `claude://code/continue` so a click on a Claude
+# for Desktop row lands on that conversation rather than whatever was last open.
+# Named on the privacy page with the rest.
+EXPECTED_REACH_OUT_CALLS=11
 
 fails=0
 
