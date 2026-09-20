@@ -90,4 +90,31 @@ final class StatusMarkTests: XCTestCase {
         XCTAssertGreaterThan(left.redComponent - right.redComponent, 0.4, "left half is idle, right is not")
         XCTAssertGreaterThan(right.blueComponent - left.blueComponent, 0.4, "right half is done, left is not")
     }
+
+    /// Since 2026-09-19 a Grok Bot row can know it is working — it owes the
+    /// user a reply, or it spoke seconds ago. A row that knows should look like
+    /// every other row that knows, or the split face reads as "asleep" while
+    /// the bot is mid-task.
+    func testAWorkingGrokBotRowGetsAnOrdinaryDot() {
+        XCTAssertEqual(StatusDotView.Mark.forSource("grokbot", state: .working), .round)
+    }
+
+    func testAWaitingGrokBotRowGetsAnOrdinaryDot() {
+        XCTAssertEqual(StatusDotView.Mark.forSource("grokbot", state: .needsInput), .round)
+    }
+
+    /// Quiet is the one state the cache genuinely cannot read: finished,
+    /// waiting on you, or tasked and not yet started. That is what the split
+    /// was invented for, and all it should still cover.
+    func testAQuietGrokBotRowKeepsTheSplitDot() {
+        XCTAssertEqual(StatusDotView.Mark.forSource("grokbot", state: .idle), .unknown)
+    }
+
+    /// Cursor's square is about the source, not the state: it can never say it
+    /// is blocked, whatever it is doing.
+    func testCursorStaysSquareInEveryState() {
+        for state in SessionState.allCases {
+            XCTAssertEqual(StatusDotView.Mark.forSource("cursor", state: state), .square)
+        }
+    }
 }

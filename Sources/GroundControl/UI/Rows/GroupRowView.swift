@@ -51,7 +51,7 @@ final class GroupRowView: NSView {
 
         dot.color = theme.colors.color(for: child.state)
         dot.altColor = theme.colors.color(for: .done)
-        dot.mark = .forSource(child.source)
+        dot.mark = .forSource(child.source, state: child.state)
         dot.isProminent = child.needsAction
 
         needsLayout = true

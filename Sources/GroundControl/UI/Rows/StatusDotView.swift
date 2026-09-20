@@ -17,10 +17,18 @@ final class StatusDotView: NSView {
     /// difference is worth a shape — it reads at a glance and survives every
     /// theme, since it costs no colour.
     ///
-    /// `.unknown` is Grok Bot: we can read "a card is waiting" (that row turns
-    /// red and round like any other), but between cards its cloud agent can be
-    /// working, idle or done and the local cache never says which. The dot
-    /// splits idle | done to show exactly that — never a guess at "working".
+    /// `.unknown` is Grok Bot **at rest**: between cards its cloud agent may be
+    /// finished, waiting on you, or tasked by another bot and not yet started,
+    /// and a quiet cache cannot say which. The dot splits idle | done to admit
+    /// exactly that.
+    ///
+    /// It is not the whole story any more. Since 2026-09-19 two Grok Bot states
+    /// *are* known — a card waiting on you, and working, which is either a
+    /// reply it owes you or something it said seconds ago
+    /// (docs/GROK-BOT-INTEGRATION.md). A row that knows what it is should look
+    /// like every other row that knows, so the split is reserved for the quiet
+    /// case it was invented for. Deciding this by source alone made a working
+    /// bot wear the same half-lit face as a sleeping one.
     enum Mark: Equatable {
         case round
         case square
@@ -29,10 +37,13 @@ final class StatusDotView: NSView {
         /// Which sources can be trusted to say they are blocked, and which
         /// cannot say what they are doing at all. Kept here so the rule has one
         /// home rather than being re-decided per view.
-        static func forSource(_ source: String) -> Mark {
+        static func forSource(_ source: String, state: SessionState = .idle) -> Mark {
             switch source {
             case "cursor": return .square
-            case "grokbot": return .unknown
+            // Grok Bot earns a normal dot the moment it has something true to
+            // say; `.idle` here means "quiet", which is the one state we cannot
+            // read.
+            case "grokbot": return state == .idle ? .unknown : .round
             default: return .round
             }
         }

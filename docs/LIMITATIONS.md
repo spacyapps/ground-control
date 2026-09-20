@@ -789,6 +789,47 @@ is the only one.
 
 The app-server socket remains a viable alternative that is no longer needed.
 
+### Cline (installed 2026-09-19, **could not be run** — read from docs only)
+
+Cline is an open-source agent (Apache-2.0, `cline/cline`, ~69k stars) that runs
+as an IDE sidebar and, since 2026, a CLI: `npm i -g cline`, 72k downloads a
+week. Its CLI has lifecycle hooks, which makes it the first new candidate for
+this table since Codex.
+
+**It would not start on this machine.** The npm package installs an 89MB
+ad-hoc-signed arm64 binary whose signature does not validate —
+`codesign --verify` says *"invalid signature (code or signature have been
+modified)"* — and macOS kills such a binary on launch with **no output, no
+error and no crash report**, exit 137. Not a sandbox problem: it behaves the
+same way run directly. The usual fix is to re-sign it locally
+(`codesign --force --sign - <binary>`), which is a deliberate security decision
+and so was left for Walter rather than taken.
+
+So everything below is **read from Cline's documentation, not measured**, and
+must not be built from. Two adapters written from docs have already failed
+silently here — see the rule at the top of "Other CLIs".
+
+| | What the docs say |
+|---|---|
+| Events | `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `TaskComplete`, `SessionShutdown`, plus `agent_start` / `resume` / `error` / `abort` |
+| Registration | **per project**, `.cline/hooks/<HookName>` — an executable file named exactly for the event, no extension |
+| Payload | JSON on stdin. Base fields `clineVersion`, `hookName`, `timestamp`, `taskId`, `workspaceRoots`, `userId`, plus per-event data |
+| Timeout | 60s, configurable |
+
+Three things to settle before any of this is worth building:
+
+- **`taskId`, not `session_id`; `workspaceRoots`, not `cwd`.** Cursor's payload
+  had the same `workspace_roots` shape, so the row-naming fix already exists —
+  but this is a genuine third axis of variation beyond casing and event names.
+- **Registration is per project.** Every other integration here installs once,
+  globally. A hook that must be dropped into each repo is a different
+  proposition for `install-hooks.sh`, and possibly a different answer.
+- **No known "waiting for you" event.** `PreToolUse` lets a hook *return*
+  `permissionDecision: ask`, which is the hook gating Cline, not Cline
+  reporting that it is blocked. Whether anything fires while Cline itself waits
+  is unknown, and it is the only question that decides whether a Cline row can
+  ever turn red. Ground Control must never be the thing that gates a tool call.
+
 ### Gemini (researched 2026-08-11, not installed)
 
 Config: `~/.gemini/settings.json` (same shape as Claude's). Input fields are

@@ -136,15 +136,19 @@ final class SessionRowView: NSView {
         dot.altColor = theme.colors.color(for: .done)
         dot.isProminent = session.needsAction
         dot.badge = theme.backgrounds.needsActionDot
-        dot.mark = .forSource(session.source)
+        dot.mark = .forSource(session.source, state: session.state)
         avatar.alphaValue = seen ? 0.4 : 1
         nameLabel.alphaValue = seen ? 0.55 : 1
 
         avatar.isHidden = theme.avatar.isHidden
         if !avatar.isHidden {
-            // A quiet Grok Bot row can't say which state it is in, so its face
-            // is split idle | done — the same admission the dot makes.
-            if StatusDotView.Mark.forSource(session.source) == .unknown, !session.needsAction {
+            // A *quiet* Grok Bot row can't say which state it is in, so its
+            // face is split idle | done — the same admission the dot makes.
+            // A working one can, and wears the theme's working face like any
+            // other row: the mood is what carries across the panel, where a
+            // dot two millimetres wide does not.
+            if StatusDotView.Mark.forSource(session.source, state: session.state) == .unknown,
+               !session.needsAction {
                 avatar.configureSplit(left: .idle, right: .done, theme: theme)
             } else {
                 avatar.configure(
