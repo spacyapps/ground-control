@@ -66,26 +66,44 @@ final class GrokBotWatcher {
     /// leaving `lastEntryText` alone is the user sending something. Until that
     /// text changes the bot owes an answer, which is the one moment "working"
     /// is certain rather than inferred from a clock.
-    private var awaitingReply: Set<String> = []
+    private var owedSince: [String: Date] = [:]
     private var lastSeen: [String: GrokBotRoster.Bot] = [:]
+
+    /// How long a bot may owe a reply before the row gives up and says nothing.
+    ///
+    /// "The clock moved and the bot stayed silent" is the user speaking — but
+    /// it is also every other roster write that does not touch `lastEntry`, and
+    /// Grok Bot rewrites that file for its own reasons. Without a bound, one
+    /// such write pins a row to "working" forever, which is what it did the
+    /// first evening this shipped: two bots finished at 18:12:28 and the panel
+    /// was still animating minutes later.
+    ///
+    /// Five minutes clears the longest measured mid-task silence (3m49s) and
+    /// still lets a row fall quiet while someone is watching it.
+    static let owedReplyWindow: TimeInterval = 300
 
     func reload() {
         let rosters = Self.readRosters(in: directory)
-        trackWhoSpokeLast(in: rosters)
-        let next = Self.sessions(from: rosters, at: clock(), awaitingReply: awaitingReply)
+        let now = clock()
+        trackWhoSpokeLast(in: rosters, at: now)
+        let owed = Set(owedSince.filter { now.timeIntervalSince($0.value) < Self.owedReplyWindow }.keys)
+        let next = Self.sessions(from: rosters, at: now, awaitingReply: owed)
         guard next != sessions else { return }
         sessions = next
         onChange?(next)
     }
 
-    private func trackWhoSpokeLast(in rosters: [Result<GrokBotRoster, GrokBotRoster.ParseError>]) {
+    private func trackWhoSpokeLast(
+        in rosters: [Result<GrokBotRoster, GrokBotRoster.ParseError>],
+        at now: Date
+    ) {
         for bot in rosters.compactMap({ try? $0.get() }).flatMap(\.bots) {
             defer { lastSeen[bot.id] = bot }
             guard let was = lastSeen[bot.id] else { continue }
             if bot.lastEntryText != was.lastEntryText {
-                awaitingReply.remove(bot.id)          // the bot spoke — it is answering
-            } else if bot.updatedAt > was.updatedAt {
-                awaitingReply.insert(bot.id)          // clock moved, bot silent — the user spoke
+                owedSince[bot.id] = nil               // the bot spoke — it is answering
+            } else if bot.updatedAt > was.updatedAt, owedSince[bot.id] == nil {
+                owedSince[bot.id] = now               // clock moved, bot silent — the user spoke
             }
         }
     }

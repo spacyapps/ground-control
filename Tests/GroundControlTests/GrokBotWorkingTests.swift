@@ -151,4 +151,77 @@ final class GrokBotWorkingTests: XCTestCase {
         XCTAssertEqual(group.latest.state, .working)
         XCTAssertFalse(group.latest.needsAction)
     }
+
+    // MARK: - The expiry, against a real folder
+
+    /// The pure mapping cannot show this: the rule that decides *when* a bot
+    /// owes a reply lives in `reload()`, and the bug was there. Two bots
+    /// finished at 18:12:28 on the first evening and the panel kept animating,
+    /// because "the clock moved and the bot stayed silent" is the user
+    /// speaking — and also every other write Grok Bot makes to that file.
+    ///
+    /// So this drives the watcher itself, through a folder on disk, with a
+    /// clock it can wind forward.
+    func testAnOwedReplyExpiresRatherThanPinningTheRowForever() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("grokbot-expiry-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        // base32 of "sand.client.slice.account.test.roster.last-roster".
+        let blob = folder.appendingPathComponent(
+            "onqw4zbomnwgszlooqxhg3djmnss4yldmnxxk3tufz2gk43ufzzg643umvzc43dbon2c24tpon2gk4q.blob"
+        )
+        func write(updatedAt: Int, text: String) throws {
+            try #"""
+            {"schemaVersion":4,"value":{"rows":[
+              {"id":"b1","name":"Nami","updatedAt":\#(updatedAt),
+               "lastEntry":{"kind":"text","text":"\#(text)"},
+               "awaitingUserResponse":null,"isHiddenFromSidebar":false,"isGroup":false}
+            ]}}
+            """#.write(to: blob, atomically: true, encoding: .utf8)
+        }
+
+        var clock = Date(timeIntervalSince1970: 1_000_000)
+        let watcher = GrokBotWatcher(directory: folder, clock: { clock })
+
+        // A bot that spoke long ago: quiet, claiming nothing.
+        try write(updatedAt: 900_000_000, text: "done then")
+        watcher.reload()
+        XCTAssertEqual(watcher.sessions.first?.children.first?.state, .idle)
+
+        // The clock moves and the text does not — the user has spoken, so the
+        // bot owes a reply and is working even though its own last word is old.
+        try write(updatedAt: 1_000_000_000, text: "done then")
+        watcher.reload()
+        XCTAssertEqual(
+            watcher.sessions.first?.children.first?.state,
+            .working,
+            "a bot that has not answered yet is working"
+        )
+
+        // Still owed a minute later: this is the deferral case worth covering.
+        clock = clock.addingTimeInterval(60)
+        watcher.reload()
+        XCTAssertEqual(watcher.sessions.first?.children.first?.state, .working)
+
+        // Past the window it gives up rather than animating forever.
+        clock = clock.addingTimeInterval(GrokBotWatcher.owedReplyWindow)
+        watcher.reload()
+        XCTAssertEqual(
+            watcher.sessions.first?.children.first?.state,
+            .idle,
+            "an owed reply must expire — one stray write pinned a row to working all evening"
+        )
+    }
+
+    /// The window has to clear the longest silence actually measured mid-task,
+    /// or a deferred bot is called finished.
+    func testTheOwedReplyWindowOutlastsTheMeasuredDeferral() {
+        XCTAssertGreaterThan(
+            GrokBotWatcher.owedReplyWindow,
+            229,
+            "a cloud agent went quiet for 3m49s mid-task; the window must clear it"
+        )
+    }
 }
