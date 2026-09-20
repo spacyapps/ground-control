@@ -184,6 +184,19 @@ for **thirty seconds** Hitomi was working and her row still read a day old.
 Nothing marks a bot that has been tasked but has not spoken yet, and "you spoke
 last" cannot cover it, because the user never spoke to her.
 
+**What watching it live added (2026-09-19, same evening).** Both rules needed a
+bound that reading the cache alone would not have suggested:
+
+- **The working tail is 60s, not 75.** A bot that had visibly finished kept its
+  working face for over a minute and read as a hung panel. 60 still clears the
+  widest measured mid-turn gap twice over.
+- **An owed reply expires after five minutes.** "The clock moved and the bot
+  stayed silent" is the user speaking *and* every other write Grok Bot makes to
+  that roster. Unbounded, one stray write pinned a row to working all evening.
+- **Scheduled bots emit unprompted.** One posted a check-in nobody asked for,
+  which lit the group up correctly and looks like a stuck row if you do not know
+  an automation is running.
+
 **Do not convert silence into "done" with a timer.** A cloud agent was measured
 going quiet for **3 min 49 s** mid-task. Any working window shorter than that
 will call a busy bot finished; any longer will call a finished bot busy. So:

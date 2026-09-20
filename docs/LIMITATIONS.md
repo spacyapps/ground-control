@@ -279,11 +279,24 @@ yet, so v4's card value is inferred rather than measured.
 **Working is now detectable, and honestly.** Two cases, neither a guess: the
 user's message moved the clock while `lastEntry` — which holds bot messages
 only, measured three times — stayed put, so the bot owes a reply; or the bot
-emitted something within 75 seconds. Anything else stays quiet, because quiet
+emitted something within 60 seconds. Anything else stays quiet, because quiet
 means finished, waiting on you, *or* tasked by another bot and not yet started.
 A bot woken by another bot does light up its own row, but only once it speaks:
 one measured hand-off left the second bot working and its row reading a day old
 for thirty seconds. Full timings in `docs/GROK-BOT-INTEGRATION.md`.
+
+**Two things watching it live changed.** A row kept its working face for the
+whole 75s tail after a bot had visibly finished and read as a hung panel rather
+than a busy one, so the tail is 60s — still twice the widest measured gap
+between a bot's own messages. And an owed reply now expires after five minutes:
+"the clock moved and the bot said nothing" is the user speaking *and* every
+other write Grok Bot makes to that file, so without a bound one stray write
+pinned a row to working for an evening.
+
+**Scheduled bots light the group up on their own.** One bot posted an
+unprompted check-in with nobody watching. That is working, correctly reported —
+but on a machine with automations the group will look busy at intervals all
+day, which is worth knowing before reading it as a bug.
 
 Grok Bot is a **Cursor fork** — `cursor-machine-id`, a bundled `cursor-proclist`
 native module, `api2.cursor.sh`, `anysphere.cursor-mcp`, and `~/.cursor/` as its
