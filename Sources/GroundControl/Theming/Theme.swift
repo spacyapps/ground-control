@@ -93,6 +93,18 @@ struct Theme {
         var accent: NSColor
         var divider: NSColor
 
+        /// A child row's name: bright while it is doing something, dim at rest.
+        ///
+        /// Every child used to be `messageDim` whatever it was doing, which
+        /// left a dot a couple of millimetres wide carrying the whole
+        /// difference — and a theme is free to pick two states a shade apart
+        /// (Unicorn Overlord's working and idle are both pale violet). Weight
+        /// reads where hue does not, needs no new colour from a theme, and
+        /// works the same in every one of them.
+        func childName(for state: SessionState) -> NSColor {
+            state == .idle ? messageDim : message
+        }
+
         /// The accent for a given row state — what the dot and tint use.
         func color(for state: SessionState) -> NSColor {
             switch state {

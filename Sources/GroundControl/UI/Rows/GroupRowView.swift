@@ -40,8 +40,16 @@ final class GroupRowView: NSView {
         self.theme = theme
 
         nameLabel.stringValue = child.displayName
-        nameLabel.font = NSFont.systemFont(ofSize: theme.typography.messageSize, weight: .medium)
-        nameLabel.textColor = theme.colors.messageDim
+        // Semibold and bright while it is doing something, medium and dim at
+        // rest: the name is the largest thing on a child row, so it is what
+        // carries across the panel. The dot alone could not — a theme may put
+        // its working and idle colours a shade apart, and two of them do.
+        let busy = child.state != .idle
+        nameLabel.font = NSFont.systemFont(
+            ofSize: theme.typography.messageSize,
+            weight: busy ? .semibold : .medium
+        )
+        nameLabel.textColor = theme.colors.childName(for: child.state)
 
         messageLabel.font = theme.typography.messageFont()
         messageLabel.textColor = theme.colors.messageDim
