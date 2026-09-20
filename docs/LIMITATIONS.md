@@ -789,7 +789,7 @@ is the only one.
 
 The app-server socket remains a viable alternative that is no longer needed.
 
-### Cline (installed 2026-09-19, **could not be run** — read from docs only)
+### Cline (source read 2026-09-19, binary would not run)
 
 Cline is an open-source agent (Apache-2.0, `cline/cline`, ~69k stars) that runs
 as an IDE sidebar and, since 2026, a CLI: `npm i -g cline`, 72k downloads a
@@ -800,35 +800,56 @@ this table since Codex.
 ad-hoc-signed arm64 binary whose signature does not validate —
 `codesign --verify` says *"invalid signature (code or signature have been
 modified)"* — and macOS kills such a binary on launch with **no output, no
-error and no crash report**, exit 137. Not a sandbox problem: it behaves the
-same way run directly. The usual fix is to re-sign it locally
-(`codesign --force --sign - <binary>`), which is a deliberate security decision
-and so was left for Walter rather than taken.
+error and no crash report**, exit 137. Not a sandbox artefact: it behaves
+identically run directly. The usual remedy is re-signing it locally
+(`codesign --force --sign - <binary>`), which is a security decision and so was
+left to the machine's owner.
 
-So everything below is **read from Cline's documentation, not measured**, and
-must not be built from. Two adapters written from docs have already failed
-silently here — see the rule at the top of "Other CLIs".
+So no payload has been measured. What follows is **read from Cline's own
+source** at `9a2512b`, which is better evidence than its documentation — and it
+contradicts that documentation on the point that mattered most.
 
-| | What the docs say |
-|---|---|
-| Events | `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `TaskComplete`, `SessionShutdown`, plus `agent_start` / `resume` / `error` / `abort` |
-| Registration | **per project**, `.cline/hooks/<HookName>` — an executable file named exactly for the event, no extension |
-| Payload | JSON on stdin. Base fields `clineVersion`, `hookName`, `timestamp`, `taskId`, `workspaceRoots`, `userId`, plus per-event data |
-| Timeout | 60s, configurable |
+**Hooks can be installed once, globally.** `resolveHooksConfigSearchPaths`
+(`sdk/packages/shared/src/storage/paths.ts:487`) searches, in order: a Documents
+extension path, **`~/.cline/hooks/`**, then `<workspace>/.clinerules/hooks/` and
+`<workspace>/.cline/hooks/`. The docs describe only the project directory, which
+would have made Cline the one integration needing per-repo installation. It is
+not. A hook is an **executable file named exactly for the event, no extension**.
 
-Three things to settle before any of this is worth building:
+**Ten events, and the file names are Claude's** (`hook-file-config.ts:19`):
 
-- **`taskId`, not `session_id`; `workspaceRoots`, not `cwd`.** Cursor's payload
-  had the same `workspace_roots` shape, so the row-naming fix already exists —
-  but this is a genuine third axis of variation beyond casing and event names.
-- **Registration is per project.** Every other integration here installs once,
-  globally. A hook that must be dropped into each repo is a different
-  proposition for `install-hooks.sh`, and possibly a different answer.
-- **No known "waiting for you" event.** `PreToolUse` lets a hook *return*
-  `permissionDecision: ask`, which is the hook gating Cline, not Cline
-  reporting that it is blocked. Whether anything fires while Cline itself waits
-  is unknown, and it is the only question that decides whether a Cline row can
-  ever turn red. Ground Control must never be the thing that gates a tool call.
+| File in `~/.cline/hooks/` | Internal event | Maps to |
+|---|---|---|
+| `TaskStart` / `TaskResume` | `agent_start` / `agent_resume` | session start |
+| `UserPromptSubmit` | `prompt_submit` | working |
+| `PreToolUse` / `PostToolUse` | `tool_call` / `tool_result` | working |
+| `TaskComplete` | `agent_end` | done |
+| `TaskError` / `TaskCancel` | `agent_error` / `agent_abort` | done, badly |
+| `SessionShutdown` | `session_shutdown` | remove the row |
+| `PreCompact` | — | no event |
+
+**There is no "waiting for you" event.** `HookEventNameSchema`
+(`sdk/packages/shared/src/hooks/events.ts:57`) is the complete vocabulary and
+holds nothing resembling Claude's `Notification`, Codex's `PermissionRequest` or
+opencode's `permission.asked`. A hook may *return* `permissionDecision: ask` to
+gate a tool itself — that is the hook blocking Cline, not Cline reporting that
+it is blocked, and Ground Control must never be the thing that gates a tool
+call. So the wait between `tool_call` and `tool_result` covers both "running a
+long command" and "asking the user", exactly the ambiguity that makes Cursor's
+Composer alarm-less. **Expect rows, and no red**, pending measurement.
+
+**The payload shape, from `basePayload` (`subprocess.ts:251`):** `clineVersion`,
+`hookName`, `timestamp` (ISO 8601 string, not epoch ms), `taskId` (the
+conversation id), `sessionContext`, `workspaceRoots` (an **array**, as Cursor's
+`workspace_roots` is), `workspaceInfo`, `userId` — and then, mixed into that
+camelCase, **`agent_id` and `parent_agent_id` in snake_case**, carrying a
+parent link. If those behave as the names suggest, `AgentGrouper` could nest
+Cline sub-agents with no new grouping code.
+
+None of this is built from. Two adapters written from documentation have failed
+silently here; source is stronger evidence and still not a captured payload.
+Next step, once the binary runs: register the probe in `~/.cline/hooks/`, run
+one real turn, and read what actually arrives.
 
 ### Gemini (researched 2026-08-11, not installed)
 
