@@ -91,7 +91,9 @@ active reply. Debounce.
 
 ## `roster.last-roster` field reference
 
-`schemaVersion: 3` as tested. Shape: `{ "schemaVersion": 3, "value": { "rows": [ … ] } }`.
+Shape: `{ "schemaVersion": N, "value": { "rows": [ … ] } }`. **Tested at v3
+(2026-08-28) and again at v4 (2026-09-19)** — the table below is v4, with the v3
+difference called out. See "Schema v3 → v4" below before trusting any field.
 
 | Field | Meaning / use |
 |---|---|
@@ -102,9 +104,9 @@ active reply. Debounce.
 | `createdAt` | bot creation (ms) |
 | `updatedAt` / `lastActivityAt` | **heartbeat** — advances on any bot output, including interim "on it…" notes. Recent movement ≈ active. Quiet ≈ **done *or* deferred** (see below) |
 | `path` | `/home/box/sand-data/agents/<id>/store.db` — cloud box, not local |
-| `lastEntry.kind` | `"text"` normally; the last thread item's kind |
-| `lastEntry.text` | preview text of the last item |
-| `lastEntry.sessionPreview.kind` | **small state machine — the needs-you tell for cards.** `"widget_options"` while a decision card is unanswered → `"widget_answered"` the instant it is tapped → back to `"text"` / absent on the next reply |
+| `lastEntry.kind` | **v4: this is the needs-you tell**, moved up from `sessionPreview`. `"text"` normally; `"widget_options"` is expected while a card waits, **unconfirmed under v4** — no card has been seen since the change |
+| `lastEntry.text` | preview text of the last item. **Measured three times: it holds the last BOT message only.** A message *you* send advances the timestamps and leaves this untouched — see "Working, and who spoke last" |
+| `lastEntry.sessionPreview.kind` | **v3 only. Gone in v4.** Was the same state machine now on `lastEntry.kind`: `"widget_options"` while a decision card is unanswered → `"widget_answered"` the instant it is tapped → back to `"text"` on the next reply |
 | `lastMessageId` / `newestEntryId` | last transcript entry id |
 | `hasUnread` / `unreadCount` | **focus-driven** — increments on a bot message while that bot's window is unfocused, resets to 0 on view. Not a clean "unseen" flag |
 | `lastViewedAt` | when the user last looked |
@@ -116,12 +118,87 @@ active reply. Debounce.
 
 ---
 
+## Schema v3 → v4 — measured 2026-09-19
+
+The format moved, exactly where this document warned it would. **v4 broke the
+alarm**: `GrokBotRoster` read `lastEntry.sessionPreview.kind`, which no longer
+exists, so no Grok Bot row could turn red until the parser was taught both
+shapes.
+
+```
+v3:  "lastEntry": { "sessionPreview": { "kind": "widget_options" }, … }
+v4:  "lastEntry": { "kind": "text", "text": "On it — packing the profile…" }
+```
+
+| | v3 (2026-08-28) | v4 (2026-09-19) |
+|---|---|---|
+| needs-you tell | `lastEntry.sessionPreview.kind` | `lastEntry.kind` — wrapper gone |
+| preview text | `lastEntry.text` | unchanged, and now known to be **bot messages only** |
+| `awaitingUserResponse` | always null | still always null |
+| new row fields | — | `harness`, `origin`, `lastViewedAt`, `lastMessageId`, `newestEntryId`, `isHiddenFromSidebar`, `notificationsEnabled`, `notifyOnUpdatesEnabled`, `voiceId` / `voiceLanguage` / `voiceSpeed` |
+| slices on disk | roster, transcripts, drafts, send-journal, selection, sidebar | **identical** — no approvals or pending slice appeared |
+| transcript schema | 1 | 1 |
+
+Three things that look useful and are not:
+
+- **`lastViewedAt`** reads like an "unseen" flag. It is not: on a bot actively
+  waiting for an answer it sat *equal* to `lastActivityAt`. It marks rendering,
+  not reading.
+- **Auto-review** (Settings → Bot) makes Grok Bot ask before more actions. It
+  writes nothing while it waits — approvals land in
+  `~/.grokbot/local-tool-approvals.json` *after* the fact — so more prompts buy
+  no signal and cost the user their automatic runs.
+- **`sendAcceptanceV1`** in `connection.last-host-capabilities` is about
+  acknowledging *outgoing* messages, not agent state. The `send-journal` slice
+  is `records: []` unless a send is in flight.
+
+Every `kind` value across every transcript on disk: `send-message`, `message`,
+`agent`, `user-attachment`, `event`, `label`. **No approval or widget
+vocabulary anywhere** — so nothing local describes a pending decision until one
+is actually open.
+
+## Working, and who spoke last — measured 2026-09-19
+
+Three live turns, watched second by second. The heartbeat survives v4:
+
+```
+17:16:25  you send            updatedAt moves, lastEntry.text UNCHANGED
+17:16:38  "On it — packing the full up-to-date Nami profile…"
+17:16:51  "Sent 1 archive"
+```
+
+**`lastEntry` holds the last bot message only** — confirmed on three separate
+sends. That gives two certainties from the roster alone, with no transcript
+read:
+
+| Roster says | Means |
+|---|---|
+| timestamps advanced, `lastEntry.text` unchanged | **you spoke, it has not answered** — working, certainly |
+| `lastEntry.text` changed moments ago | it just emitted — working |
+| `lastEntry.text` changed a while ago | done, waiting on you, **or tasked and not yet started** |
+
+**Bot-to-bot delegation is visible, with a blind head start.** Nami was asked to
+task Hitomi. Hitomi's row — untouched since the previous day — advanced on its
+own at 17:20:46, with no user message to her. But Nami said "Sent" at 17:20:16:
+for **thirty seconds** Hitomi was working and her row still read a day old.
+Nothing marks a bot that has been tasked but has not spoken yet, and "you spoke
+last" cannot cover it, because the user never spoke to her.
+
+**Do not convert silence into "done" with a timer.** A cloud agent was measured
+going quiet for **3 min 49 s** mid-task. Any working window shorter than that
+will call a busy bot finished; any longer will call a finished bot busy. So:
+claim *working* only while it is genuinely moving or while the user spoke last,
+and otherwise claim nothing.
+
+
 ## "Needs you" signals
 
 Three cases, in confidence order:
 
-1. **Decision card pending** — `lastEntry.sessionPreview.kind == "widget_options"`
-   as the *current* roster value. **Confirmed twice.** Clears to `widget_answered`
+1. **Decision card pending** — `"widget_options"` as the *current* roster value.
+   **Confirmed twice under v3**, at `lastEntry.sessionPreview.kind`. Under v4
+   that wrapper is gone and the value should now be at `lastEntry.kind`, which
+   is **unconfirmed** — no card has appeared since. Clears to `widget_answered`
    then `text` on answer. In the transcript the entry is
    `message.type == "widget"` (`{ prompt, options[], allowCustom, dismissOnMoveOn }`).
 2. **Blocked on a local command** — the transcript carries

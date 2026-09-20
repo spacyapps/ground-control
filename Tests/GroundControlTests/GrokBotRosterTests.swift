@@ -24,7 +24,11 @@ final class GrokBotRosterTests: XCTestCase {
         XCTAssertEqual(roster.bots.count, 1)
         let bot = try XCTUnwrap(roster.bots.first)
         XCTAssertEqual(bot.name, "Researcher")
-        XCTAssertNil(bot.sessionPreviewKind)
+        // Not nil: with no `sessionPreview` the reader falls through to
+        // `lastEntry.kind`, which a chatting bot sets to "text". What matters
+        // is that it is not the pending-card value, so no row goes red.
+        XCTAssertEqual(bot.lastEntryKind, "text")
+        XCTAssertNotEqual(bot.lastEntryKind, GrokBotRoster.cardPendingKind)
         XCTAssertFalse(bot.awaitingUser)
         XCTAssertEqual(bot.updatedAt, Date(timeIntervalSince1970: 1_787_981_744.887))
     }
@@ -39,7 +43,7 @@ final class GrokBotRosterTests: XCTestCase {
         ]}}
         """#).get()
 
-        XCTAssertEqual(roster.bots.first?.sessionPreviewKind, "widget_options")
+        XCTAssertEqual(roster.bots.first?.lastEntryKind, "widget_options")
     }
 
     func testReadsAHardBlockOnAwaitingUserResponse() throws {

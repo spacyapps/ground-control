@@ -59,11 +59,35 @@ final class GrokBotWatcher {
         }
     }
 
+    /// Bots whose last roster write was the user speaking, not the bot.
+    ///
+    /// `lastEntry` tracks the bot's messages only (measured three times,
+    /// docs/GROK-BOT-INTEGRATION.md), so a write that moves `updatedAt` while
+    /// leaving `lastEntryText` alone is the user sending something. Until that
+    /// text changes the bot owes an answer, which is the one moment "working"
+    /// is certain rather than inferred from a clock.
+    private var awaitingReply: Set<String> = []
+    private var lastSeen: [String: GrokBotRoster.Bot] = [:]
+
     func reload() {
-        let next = Self.sessions(from: Self.readRosters(in: directory), at: clock())
+        let rosters = Self.readRosters(in: directory)
+        trackWhoSpokeLast(in: rosters)
+        let next = Self.sessions(from: rosters, at: clock(), awaitingReply: awaitingReply)
         guard next != sessions else { return }
         sessions = next
         onChange?(next)
+    }
+
+    private func trackWhoSpokeLast(in rosters: [Result<GrokBotRoster, GrokBotRoster.ParseError>]) {
+        for bot in rosters.compactMap({ try? $0.get() }).flatMap(\.bots) {
+            defer { lastSeen[bot.id] = bot }
+            guard let was = lastSeen[bot.id] else { continue }
+            if bot.lastEntryText != was.lastEntryText {
+                awaitingReply.remove(bot.id)          // the bot spoke — it is answering
+            } else if bot.updatedAt > was.updatedAt {
+                awaitingReply.insert(bot.id)          // clock moved, bot silent — the user spoke
+            }
+        }
     }
 
     // MARK: - Reading
@@ -89,9 +113,20 @@ final class GrokBotWatcher {
 
     /// The pure part: rosters in, at most one `Session` out. Tested in
     /// isolation.
+    /// How long after a bot's own last word it still counts as working.
+    ///
+    /// Emits during a live turn came 2–30s apart when measured, so this covers
+    /// an ordinary cadence with room. It is deliberately **not** stretched to
+    /// cover the 3m49s mid-task silence that was also measured: a window long
+    /// enough for that would keep a finished bot animating for four minutes,
+    /// and the deferred case is caught by `awaitingReply` instead, which is a
+    /// fact rather than a guess. Past the window a quiet row claims nothing.
+    static let stillMovingWindow: TimeInterval = 75
+
     static func sessions(
         from rosters: [Result<GrokBotRoster, GrokBotRoster.ParseError>],
-        at now: Date
+        at now: Date,
+        awaitingReply: Set<String> = []
     ) -> [Session] {
         guard !rosters.isEmpty else { return [] }
 
@@ -114,15 +149,20 @@ final class GrokBotWatcher {
         let children = bots
             .sorted { $0.updatedAt > $1.updatedAt }
             .map { bot -> AgentRow in
-                let needy = bot.sessionPreviewKind == GrokBotRoster.cardPendingKind || bot.awaitingUser
-                // No message line: the red dot says "waiting", and the name
-                // gets the whole row. Everything else about a bot's state is
-                // unknowable from the cache anyway.
+                let needy = bot.lastEntryKind == GrokBotRoster.cardPendingKind || bot.awaitingUser
+                // Two ways to know a bot is working, and neither is a guess:
+                // it owes the user a reply, or it emitted something just now.
+                // Quiet still means done *or* deferred *or* tasked-but-silent,
+                // so a quiet row goes back to idle and claims nothing.
+                let working = awaitingReply.contains(bot.id)
+                    || now.timeIntervalSince(bot.updatedAt) < stillMovingWindow
+                // No message line: the dot and the avatar carry the state, and
+                // the name gets the whole row.
                 return AgentRow(
                     id: bot.id,
                     displayName: bot.name,
                     message: "",
-                    state: needy ? .needsInput : .idle,
+                    state: needy ? .needsInput : (working ? .working : .idle),
                     needsAction: needy,
                     source: source,
                     lastActivity: bot.updatedAt
@@ -133,6 +173,11 @@ final class GrokBotWatcher {
         // dot, alarm face, and it drives the title-bar alarm like any other
         // needy row (docs/GROK-BOT-GROUPING.md, decision 1).
         let anyWaiting = children.contains { $0.needsAction }
+        // Collapsed, the group inherits its busiest child: red if one is
+        // waiting on you, otherwise working while any bot is. A bot woken by
+        // another bot lights up its own row with no message from the user at
+        // all, so the group is how that shows when it is collapsed.
+        let anyWorking = children.contains { $0.state == .working }
         let latest = bots.map(\.updatedAt).max() ?? now
         let parent = SessionEvent(
             sessionID: groupID,
@@ -140,7 +185,7 @@ final class GrokBotWatcher {
             name: "Grok Bot",
             hostApp: appPath,
             hostID: bundleID,
-            state: anyWaiting ? .needsInput : .idle,
+            state: anyWaiting ? .needsInput : (anyWorking ? .working : .idle),
             message: "",
             needsAction: anyWaiting,
             timestamp: latest

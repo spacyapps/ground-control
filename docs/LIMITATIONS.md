@@ -259,12 +259,31 @@ own chats.
 Claude Code running in Xcode's *terminal* is unaffected and fully supported, as
 in every other editor.
 
-## Grok Bot — supported as a group, measured 2026-08-28
+## Grok Bot — supported as a group, measured 2026-08-28, re-measured 2026-09-19
 
 xAI's "Grok Bot" desktop app (`/Applications/Grok Bot.app`, Electron, v0.30.0)
 appears in the panel as one collapsible group, a row per bot, and a decision
 card waiting on your answer turns that bot and the group red. What it does not
-yet distinguish is working from done — that section is why.
+distinguish is *done* from *waiting on you* — that section is why.
+
+**The format moved, and it broke the alarm — 2026-09-19.** The cache went from
+`schemaVersion` 3 to 4 and dropped the `sessionPreview` wrapper the card signal
+lived in. Nothing threw: the field simply read nil on every bot, so no Grok Bot
+row could go red, for an unknown number of days. Found by looking, not by any
+test or log. The reader now prefers the v3 wrapper and falls back to v4's flat
+`lastEntry.kind`, because a v3 blob carries **both** and its flat field says
+`"text"` while a card is pending — reading the flat one first would have missed
+every v3 card. Both shapes are pinned by tests. No card has appeared under v4
+yet, so v4's card value is inferred rather than measured.
+
+**Working is now detectable, and honestly.** Two cases, neither a guess: the
+user's message moved the clock while `lastEntry` — which holds bot messages
+only, measured three times — stayed put, so the bot owes a reply; or the bot
+emitted something within 75 seconds. Anything else stays quiet, because quiet
+means finished, waiting on you, *or* tasked by another bot and not yet started.
+A bot woken by another bot does light up its own row, but only once it speaks:
+one measured hand-off left the second bot working and its row reading a day old
+for thirty seconds. Full timings in `docs/GROK-BOT-INTEGRATION.md`.
 
 Grok Bot is a **Cursor fork** — `cursor-machine-id`, a bundled `cursor-proclist`
 native module, `api2.cursor.sh`, `anysphere.cursor-mcp`, and `~/.cursor/` as its
@@ -347,7 +366,7 @@ the alarm like any other blocked session. Full design: `docs/GROK-BOT-GROUPING.m
 | | Turns red when it needs you | Tells working from done |
 |---|---|---|
 | Cursor's Composer | no — no hook while it waits | n/a |
-| **Grok Bot** | **yes — the decision card** | not yet; the cloud agent can go silent mid-task |
+| **Grok Bot** | **yes — the decision card** (blind 2026-09-19 when the cache format moved; reader now takes both shapes) | **working, yes** — it owes a reply, or it just emitted. Done vs waiting-on-you, no: the cloud agent can go silent mid-task |
 
 ## Verified (measured, not assumed)
 
