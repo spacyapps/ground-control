@@ -132,6 +132,9 @@ final class CornerDecorationGeometryTests: XCTestCase {
 
     /// A two-frame animated gif: red, then blue, a fast 0.03s apart — fast
     /// enough that a real, short wait reliably crosses a frame boundary.
+    /// Held for the life of the test: see `hosted`.
+    private var hostWindows: [NSWindow] = []
+
     private func animatedSwatch(side: Int = 20) throws -> URL {
         func frame(red: UInt8, blue: UInt8) throws -> CGImage {
             var pixels = [UInt8](repeating: 0, count: side * side * 4)
@@ -177,6 +180,15 @@ final class CornerDecorationGeometryTests: XCTestCase {
             contentRect: view.frame, styleMask: [.borderless], backing: .buffered, defer: false
         )
         window.contentView = view
+        // A window retains its content view and nothing retains the window, so
+        // letting this one go out of scope leaves the view unattached — and an
+        // unattached view never starts its timer, so the corner sits on frame
+        // one and the test fails with "should have moved past its first
+        // frame". It survived locally on release timing and did not on CI,
+        // which is the worst way for a test to be wrong: green here, red there,
+        // and the code under test innocent both times.
+        hostWindows.append(window)
+        XCTAssertNotNil(view.window, "the view must be attached or it cannot animate")
     }
 
     private func redComponent(_ view: CornerDecorationsView) throws -> CGFloat {
