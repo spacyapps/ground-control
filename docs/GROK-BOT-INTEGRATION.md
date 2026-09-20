@@ -174,7 +174,7 @@ read:
 | Roster says | Means |
 |---|---|
 | timestamps advanced, `lastEntry.text` unchanged | **you spoke, it has not answered** — working, certainly |
-| `lastEntry.text` changed moments ago | it just emitted — working |
+| `lastEntry.text` changed within 60s | it just emitted — working. 60 clears the widest measured mid-turn gap (30s) twice over; 75 was tried first and read as the panel being stuck once a bot finished |
 | `lastEntry.text` changed a while ago | done, waiting on you, **or tasked and not yet started** |
 
 **Bot-to-bot delegation is visible, with a blind head start.** Nami was asked to

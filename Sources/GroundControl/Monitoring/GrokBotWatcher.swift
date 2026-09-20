@@ -133,13 +133,17 @@ final class GrokBotWatcher {
     /// isolation.
     /// How long after a bot's own last word it still counts as working.
     ///
-    /// Emits during a live turn came 2–30s apart when measured, so this covers
-    /// an ordinary cadence with room. It is deliberately **not** stretched to
+    /// Emits during a live turn came 2–30s apart when measured, so this clears
+    /// an ordinary cadence twice over. It is deliberately **not** stretched to
     /// cover the 3m49s mid-task silence that was also measured: a window long
     /// enough for that would keep a finished bot animating for four minutes,
     /// and the deferred case is caught by `awaitingReply` instead, which is a
     /// fact rather than a guess. Past the window a quiet row claims nothing.
-    static let stillMovingWindow: TimeInterval = 75
+    ///
+    /// Every second here is also a second of lag after a bot genuinely
+    /// finishes — watched live, 75s read as the panel being stuck. 60 keeps
+    /// double the widest measured gap and takes a fifth off the tail.
+    static let stillMovingWindow: TimeInterval = 60
 
     static func sessions(
         from rosters: [Result<GrokBotRoster, GrokBotRoster.ParseError>],

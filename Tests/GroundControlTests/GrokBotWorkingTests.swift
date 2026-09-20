@@ -224,4 +224,21 @@ final class GrokBotWorkingTests: XCTestCase {
             "a cloud agent went quiet for 3m49s mid-task; the window must clear it"
         )
     }
+
+    /// The tail is a trade: too short and a thinking bot flickers to idle
+    /// between messages, too long and a finished one keeps animating. Emits
+    /// mid-turn were measured 2–30s apart, so the window must clear the widest
+    /// of those with room, and stay well under a minute and a half of lag.
+    func testTheWorkingTailClearsTheMeasuredEmitGapWithoutDragging() {
+        XCTAssertGreaterThanOrEqual(
+            GrokBotWatcher.stillMovingWindow,
+            60,
+            "mid-turn gaps of 30s were measured; a shorter tail flickers"
+        )
+        XCTAssertLessThanOrEqual(
+            GrokBotWatcher.stillMovingWindow,
+            75,
+            "watched live, a longer tail reads as the panel being stuck"
+        )
+    }
 }
