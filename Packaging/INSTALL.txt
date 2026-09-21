@@ -1,37 +1,75 @@
-Ground Control — alpha
-======================
+Ground Control 0.8.0
+====================
 
-1. Drag GroundControl.app to your Applications folder.
+A menu-bar app that shows which of your AI coding agents is waiting on you.
 
-   It is signed with a Developer ID and notarised by Apple, so it opens on a
-   double-click. No right-click, no warning, and it works offline.
+   What it is, with pictures    https://www.spacyapps.com/apps/ground-control
+   Source, and what works       https://github.com/spacyapps/ground-control
 
-2. Wire up your agent CLI.
+This file covers installing it. Everything else lives in those two places, so
+they stay right when this file cannot.
 
-   Easiest: click the menu-bar icon and choose "Set Up Hooks…".
 
-   Or from Terminal, if you prefer:
+1. Install
+----------
 
-      /Applications/GroundControl.app/Contents/Resources/install-hooks.sh
+Drag GroundControl.app to your Applications folder.
 
-   Either one installs the `cc-notify` emitter to
-   ~/.groundcontrol/bin/ and registers it in
-   ~/.claude/settings.json — and ~/.cursor/hooks.json if Cursor is installed.
-   It MERGES: hooks you already have keep working, and each file is backed up
-   first. Safe to run again at any time.
+It is signed with a Developer ID and notarised by Apple, so it opens on an
+ordinary double-click — no right-click, no trip to System Settings. The first
+launch asks "are you sure you want to open it?", which macOS asks of anything
+downloaded from the internet. Click Open; you will not see it again.
 
-   Claude Code and Grok both read the Claude settings file, so one run covers
-   both. Restart Cursor afterwards if it was open; it reads hooks at startup.
+It makes no network connections of any kind, and works offline.
 
-   Later versions of the app update the installed emitter themselves on launch,
-   so you only do this once.
 
-3. Open a NEW terminal and start Claude Code or Grok.
+2. Connect your agent
+---------------------
 
-   A CLI that is already running has not loaded the hooks. A row appears in the
-   panel as soon as the agent does anything.
+Click the menu-bar icon and choose "Set Up Hooks…".
 
-The panel lives in the menu bar — the ✦ icon. Click it to show or hide.
+Or from Terminal:
+
+   /Applications/GroundControl.app/Contents/Resources/install-hooks.sh
+
+It finds the agents you have — Claude Code, Grok, OpenAI Codex, Cursor,
+opencode — and registers with each. It MERGES: hooks you already have keep
+working, every file is backed up first, and it is safe to run again. Later
+versions update the emitter themselves, so this is a one-time job.
+
+Two things that catch people out:
+
+ * CODEX ASKS PERMISSION TO RUN HOOKS AT ALL. The next time you start `codex`
+   interactively, accept its one-time trust prompt. Until then no hooks run and
+   no Codex rows appear. Nothing can click it for you.
+
+ * RESTART WHAT WAS ALREADY OPEN. A CLI that is already running has not loaded
+   the hooks. Open a new terminal; restart Cursor if it was open.
+
+Then start an agent. A row appears as soon as it does anything, and clicking it
+takes you to that session.
+
+
+Which agents raise the alarm
+----------------------------
+
+Rows appear for every supported agent, but not all of them can tell you when
+they are stuck — some never say so, and no app on this side can invent it.
+
+The README has the full table, with the date and version each was tested
+against, including the ones that do not work and why:
+
+   https://github.com/spacyapps/ground-control#agents
+
+
+Themes
+------
+
+One ships with the app. More are separate downloads — unzip one, then
+Theme > Open Themes Folder… and drag the folder in. They are plain folders of
+JSON and images, so they cost nothing to try and nothing to remove.
+
+   https://www.spacyapps.com/apps/ground-control/themes
 
 
 Uninstalling
@@ -39,52 +77,25 @@ Uninstalling
 
 Menu-bar icon > "Remove Hooks…", then quit and drag the app to the Trash.
 
-Order does not matter: a copy of the uninstaller is kept beside the emitter, so
-if the app is already gone you can still run
+Order does not matter: a copy of the uninstaller sits beside the emitter, so if
+the app is already gone you can still run
 
    ~/.groundcontrol/bin/uninstall-hooks.sh
 
 It unregisters only Ground Control. Hooks belonging to anything else are left
-alone, and your themes are not touched — they stay in
-~/Library/Application Support/GroundControl/Themes if you want to keep them,
-or delete that folder to remove everything.
+alone, and your themes stay in
+~/Library/Application Support/GroundControl/Themes — keep them, or delete that
+folder to remove every trace.
 
 
-What to look at
----------------
+Something wrong?
+----------------
 
-- Clicking a row should jump to the terminal or editor that session is in.
-  Terminal.app and iTerm2 land on the exact tab; VS Code, Cursor and the rest
-  bring the app forward.
+Bugs and feature requests
+   https://github.com/spacyapps/ground-control/issues
 
-- A row turns RED when an agent is waiting on you. If you run Claude Code with
-  permissions set to `auto`, it never stops to ask, so you will not see this —
-  worth testing with the default permission mode.
+Anything exploitable — please do not open a public issue
+   spacyapps@gmail.com
 
-- Right-click a row, or use the ☰ mark above the status dot, for the menu.
-
-- Settings > Theme has the SpacyApps Lunar Avatar skin — a shaped window with
-  a nine-grid station frame. Drag the bottom-right corner to resize it.
-
-- More themes ship separately, as their own zips. Unzip one, then use
-  Theme > Open Themes Folder… and drag the folder in. They are plain folders
-  of JSON and images, so they cost nothing to try and nothing to remove.
-
-- Settings > Panel > "Show the analyser" turns off the moving bars.
-
-
-Known rough edges
------------------
-
-- Cursor's own agent (Composer) has LIMITED SUPPORT. Its chats appear as rows,
-  named after the question they started from, and clicking one raises Cursor.
-  But the red alarm cannot work there: Cursor fires no hook while its agent
-  waits for you to approve something, so a blocked Composer chat looks the same
-  as a busy one. Claude Code running in Cursor's TERMINAL is fully supported,
-  alarm included.
-
-- Codex and Gemini are not verified. Claude Code and Grok are.
-- Sessions inside tmux, over ssh, or from a launchd job have no app to jump to,
-  so clicking a row reveals the folder in Finder instead.
-
-Send anything odd to Walter, ideally with a screenshot.
+Free software under AGPL-3.0-or-later. Settings > About says exactly what the
+app stores, what it can reach, and what it cannot do.

@@ -9,7 +9,7 @@
   <img alt="macOS 13+" src="https://img.shields.io/badge/macOS-13%2B-111111">
   <img alt="Swift 5.9" src="https://img.shields.io/badge/Swift-5.9-F05138">
   <img alt="No third-party dependencies" src="https://img.shields.io/badge/dependencies-none-2ea44f">
-  <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
+  <img alt="Version 0.8.0" src="https://img.shields.io/badge/version-0.8.0-blue">
 </p>
 
 ## The desktop this is actually for
@@ -115,8 +115,10 @@ More video — the analyser, resizing, the whole theme flow — is on the
 
 - Download the `.zip` from the **Releases** page, unzip it, and drag
   **Ground Control** into Applications.
-- It is signed with a Developer ID and notarised by Apple, so it opens on a
-  double-click — no right-click, no warning.
+- It is signed with a Developer ID and notarised by Apple, so it opens on an
+  ordinary double-click — no right-click, no trip to System Settings. macOS
+  asks "are you sure you want to open it?" the first time, as it does for
+  anything downloaded from the internet. Click Open; it does not ask again.
 
 ![Drag GroundControl.app into Applications](docs/images/install-1-drag-to-applications.png)
 
@@ -173,8 +175,8 @@ under each saying whether anything has arrived from it yet.
 
 ---
 
-*Everything below is for building from source and the technical detail. Status:
-alpha — the app is built and notarised, and the hook side is verified against
+*Everything below is for building from source and the technical detail.
+0.8.0 — the app is built and notarised, and the hook side is verified against
 live payloads from Claude Code, Grok CLI, Cursor, opencode and Codex.
 `docs/SPEC.md` is the event contract, `docs/STRUCTURE.md` the code layout,
 `docs/LIMITATIONS.md` what is proven versus merely believed.*

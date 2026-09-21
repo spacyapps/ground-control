@@ -32,7 +32,8 @@ depends on.
   considered and dropped.)
 - **Distribution:** open-source (**AGPL-3.0-or-later**) on GitHub; a `.dmg`
   signed with a Developer ID, **notarised and stapled** (`Scripts/build-dmg.sh`),
-  so it opens on a double-click with no warning. The app bundle carries
+  so it opens on a double-click, with only the "downloaded from the internet"
+  confirmation macOS shows for anything fetched from the web. The app bundle carries
   `cc-notify` and `install-hooks.sh` in `Resources/`, so a download needs no
   checkout to wire up the hooks. No App Store (the sandbox would fight
   AppleScript + process launch).
