@@ -1,3 +1,10 @@
 # Shown as a "Sponsor" button on the repo.
-# ko_fi: <your-ko-fi-name>
-# github: waltermak
+#
+# The account is spacyapps, not waltermak — the Sponsors profile belongs to the
+# same account that owns this repository. Pointing it at the wrong username
+# gives a button that goes nowhere.
+#
+# Still commented: the profile was submitted on 2026-09-20 and is waiting on
+# GitHub's review. Uncomment the line below once their approval email arrives,
+# and the button appears on the repo with no other change.
+# github: spacyapps
