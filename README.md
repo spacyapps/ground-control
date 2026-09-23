@@ -1,4 +1,7 @@
-<h1 align="center">🛰&nbsp; Ground Control</h1>
+<p align="center">
+  <img src="docs/images/app-icon.png" alt="" width="104" height="104">
+</p>
+<h1 align="center">Ground Control</h1>
 
 <p align="center">
   <strong>Mission control for every AI agent you're running — and one click to jump to it.</strong>
