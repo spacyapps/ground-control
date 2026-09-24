@@ -27,6 +27,7 @@ final class GrokBotWorkingTests: XCTestCase {
             lastEntryKind: kind,
             lastEntryText: text,
             awaitingUser: false,
+            awaitingReason: nil,
             unreadCount: 0,
             isHidden: false,
             isChannel: false
@@ -240,5 +241,54 @@ final class GrokBotWorkingTests: XCTestCase {
             75,
             "watched live, a longer tail reads as the panel being stuck"
         )
+    }
+
+    // MARK: - The alarm, back from the dead
+
+    /// `awaitingUserResponse` was null through every test from August onward,
+    /// and the entry in LIMITATIONS said what it wrote was unconfirmed. Grok
+    /// Bot 0.58.0 fills it — measured live on 2026-09-23, captured whole:
+    /// a local-command approval, with the command written out as prose.
+    func testARealApprovalPromptTurnsTheRowRedAndSaysWhy() throws {
+        let json = #"""
+        {"schemaVersion":4,"value":{"rows":[
+          {"id":"2dac","name":"GC Pricing & Marketing","updatedAt":1790228744313,
+           "lastEntry":{"kind":"text","text":"Permission required: ls -la ~/xcode"},
+           "awaitingUserResponse":{"tabId":"auto-review",
+             "reason":"Permission needed on your computer: ls -la ~/xcode",
+             "since":1790228744387},
+           "isHiddenFromSidebar":false,"isGroup":false}
+        ]}}
+        """#
+        let bots = try GrokBotRoster.parse(Data(json.utf8)).get().bots
+        let row = try XCTUnwrap(
+            GrokBotWatcher.sessions(from: [.success(GrokBotRoster(bots: bots))], at: now)
+                .first?.children.first
+        )
+
+        XCTAssertEqual(row.state, .needsInput)
+        XCTAssertTrue(row.needsAction)
+        XCTAssertEqual(row.message, "Permission needed on your computer: ls -la ~/xcode")
+    }
+
+    /// Answering it sets the field back to null, so the row must go quiet.
+    /// Without this a row could sit red for the rest of the day.
+    func testAnsweringClearsTheAlarm() throws {
+        let json = #"""
+        {"schemaVersion":4,"value":{"rows":[
+          {"id":"2dac","name":"GC Pricing & Marketing","updatedAt":1790228851871,
+           "lastEntry":{"kind":"text","text":"I'm in ~/xcode on your MacBook Air."},
+           "awaitingUserResponse":null,
+           "isHiddenFromSidebar":false,"isGroup":false}
+        ]}}
+        """#
+        let bots = try GrokBotRoster.parse(Data(json.utf8)).get().bots
+        let row = try XCTUnwrap(
+            GrokBotWatcher.sessions(from: [.success(GrokBotRoster(bots: bots))], at: now)
+                .first?.children.first
+        )
+
+        XCTAssertFalse(row.needsAction)
+        XCTAssertEqual(row.message, "", "a quiet row says nothing")
     }
 }

@@ -178,12 +178,15 @@ final class GrokBotWatcher {
                 // so a quiet row goes back to idle and claims nothing.
                 let working = awaitingReply.contains(bot.id)
                     || now.timeIntervalSince(bot.updatedAt) < stillMovingWindow
-                // No message line: the dot and the avatar carry the state, and
-                // the name gets the whole row.
+                // A waiting bot now says what it wants: Grok Bot 0.58.0 fills
+                // `awaitingUserResponse.reason` with prose — "Permission
+                // needed on your computer: ls -la ~/xcode". A red row that
+                // names the command beats one that only glows. Everything
+                // else stays wordless, because nothing else here is knowable.
                 return AgentRow(
                     id: bot.id,
                     displayName: bot.name,
-                    message: "",
+                    message: needy ? (bot.awaitingReason ?? "") : "",
                     state: needy ? .needsInput : (working ? .working : .idle),
                     needsAction: needy,
                     source: source,

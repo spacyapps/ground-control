@@ -41,9 +41,21 @@ struct GrokBotRoster: Equatable {
         /// "you spoke, it has not answered" readable without opening a
         /// transcript.
         let lastEntryText: String?
-        /// A genuine mid-turn block (login wall, CAPTCHA). Stayed `null` through
-        /// every observed decision card — reserved for the hard case.
+        /// A genuine mid-turn block. Stayed `null` through every test from
+        /// August onwards — and then started being populated by Grok Bot
+        /// 0.58.0, measured 2026-09-23, for a local-command approval:
+        ///
+        ///     { "tabId": "auto-review",
+        ///       "reason": "Permission needed on your computer: ls -la ~/xcode",
+        ///       "since": 1790228744387 }
+        ///
+        /// It cleared back to null the moment the prompt was answered, so a row
+        /// cannot get stuck red on it.
         let awaitingUser: Bool
+        /// What it is waiting for, written out — the `reason` above. Worth
+        /// showing: it is the difference between a red row and a red row that
+        /// says which command wants approving.
+        let awaitingReason: String?
         /// The sidebar badge. Focus-driven, so a soft signal at best.
         let unreadCount: Int
         let isHidden: Bool
@@ -104,6 +116,7 @@ struct GrokBotRoster: Equatable {
                 lastEntryText: lastEntry?["text"] as? String,
                 awaitingUser: !(row["awaitingUserResponse"] is NSNull)
                     && row["awaitingUserResponse"] != nil,
+                awaitingReason: (row["awaitingUserResponse"] as? [String: Any])?["reason"] as? String,
                 unreadCount: row["unreadCount"] as? Int ?? 0,
                 isHidden: row["isHiddenFromSidebar"] as? Bool ?? false,
                 isChannel: row["isGroup"] as? Bool ?? false

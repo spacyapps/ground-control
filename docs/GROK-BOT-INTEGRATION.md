@@ -110,7 +110,7 @@ difference called out. See "Schema v3 → v4" below before trusting any field.
 | `lastMessageId` / `newestEntryId` | last transcript entry id |
 | `hasUnread` / `unreadCount` | **focus-driven** — increments on a bot message while that bot's window is unfocused, resets to 0 on view. Not a clean "unseen" flag |
 | `lastViewedAt` | when the user last looked |
-| `awaitingUserResponse` | **stayed `null` through every test, including a live unanswered card and both approval prompts.** Reserved for a genuine mid-turn block (login wall / CAPTCHA on the cloud desktop — xAI docs: "Computer View State"). Never triggered; **unconfirmed** what a hard block writes. The bot, asked directly, said it does not set this itself and *"widgets may never set it"* — informed but not authoritative |
+| `awaitingUserResponse` | **Null until 0.58.0; live from 0.58.0 (2026-09-23) for local-command approvals** — `{tabId: "auto-review", reason: "Permission needed on your computer: …", since: <ms>}`, cleared to null on answer. A decision card still does not set it. Originally: **stayed `null` through every test, including a live unanswered card and both approval prompts.** Reserved for a genuine mid-turn block (login wall / CAPTCHA on the cloud desktop — xAI docs: "Computer View State"). Never triggered; **unconfirmed** what a hard block writes. The bot, asked directly, said it does not set this itself and *"widgets may never set it"* — informed but not authoritative |
 | `notificationsEnabled` / `notifyOnUpdatesEnabled` | per-bot notification prefs |
 | `isHiddenFromSidebar` | user hid the row |
 | `origin` | `"user"` |

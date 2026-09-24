@@ -334,6 +334,30 @@ test or log. The reader now prefers the v3 wrapper and falls back to v4's flat
 every v3 card. Both shapes are pinned by tests. No card has appeared under v4
 yet, so v4's card value is inferred rather than measured.
 
+**The alarm came back — 0.58.0, measured 2026-09-23.** This entry said
+`awaitingUserResponse` "stayed null through every test" and that what a true
+hard block writes was unconfirmed. It is confirmed now. Grok Bot 0.58.0 fills
+it for a local-command approval:
+
+```json
+{ "tabId": "auto-review",
+  "reason": "Permission needed on your computer: ls -la ~/xcode …",
+  "since": 1790228744387 }
+```
+
+Watched end to end: the field appeared at 22:45:45 and the panel went red with
+"9 bots · 1 waiting"; the answer at 22:47:33 set it back to null and the row
+went quiet. **No code change was needed** — the reader had always watched that
+field for the hard case nobody could trigger. It simply started being written.
+
+The row now carries `reason` as its message, so a red Grok Bot row says which
+command wants approving rather than only glowing.
+
+**What still does not show:** a decision card, and a question typed in prose. v4
+dropped the field the card signal lived in, and neither sets
+`awaitingUserResponse` — the free-text prompt in the same session did not. So
+the alarm covers approvals and nothing else.
+
 **Working is now detectable, and honestly.** Two cases, neither a guess: the
 user's message moved the clock while `lastEntry` — which holds bot messages
 only, measured three times — stayed put, so the bot owes a reply; or the bot

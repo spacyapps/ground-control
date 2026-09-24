@@ -22,6 +22,7 @@ final class GrokBotWatcherTests: XCTestCase {
             lastEntryKind: preview,
             lastEntryText: nil,
             awaitingUser: awaiting,
+            awaitingReason: nil,
             unreadCount: 0,
             isHidden: hidden,
             isChannel: channel
