@@ -246,6 +246,35 @@ with them. Grok Bot's format moved under this project the day before, so every
 failure here falls back rather than breaks: no folder, no match, unreadable
 JSON or an unexpected id shape all raise the app exactly as before.
 
+## Claude for Desktop's cloud sessions — measured 2026-09-23, do not report
+
+The Code tab has two kinds of session and only one of them appears in the
+panel.
+
+A **local** session spawns a real Claude Code as a child process on this Mac,
+so the hooks run and a row appears like any other — that is the entry above.
+
+A **cloud session** (the app's own term; the tool is "Claude Code Remote")
+clones the repo into a container Anthropic manages and runs there. Its own
+words, asked directly: *"Claude Code running in a cloud container that
+Anthropic manages. It isn't running on your machine… the container is
+temporary. It gets reclaimed after the session goes idle."* Nothing executes
+here, so nothing runs a hook, and no row appears. Confirmed with one open at
+the time: three rows in the panel, all Terminal-hosted, none for it.
+
+**And unlike Grok Bot, there is no local cache to fall back on.** Grok Bot's
+desktop app mirrors its cloud agents into a file this app can read. Claude for
+Desktop does not mirror cloud sessions: its session store held three records,
+all `local_*`, and nothing anywhere under its Application Support folder named
+the cloud session or its repo. `claude-code-vm` looks promising and is a
+bundled Claude Code binary, not session state.
+
+So the only route would be asking claude.ai over the network, with an account
+and a token. That would falsify the strongest claim this app makes — no
+network code at all, nothing leaves the machine — and it is not worth the
+trade. A session running in someone else's data centre is, almost by
+definition, not on the desk this app watches.
+
 ## Xcode's Claude Agent — measured 2026-08-19, does not report
 
 Xcode 26 embeds a Claude agent ("Message Claude Agent"). It **is** Claude Code —
