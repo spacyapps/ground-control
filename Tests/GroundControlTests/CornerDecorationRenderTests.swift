@@ -130,11 +130,16 @@ final class CornerDecorationGeometryTests: XCTestCase {
         XCTAssertGreaterThan(bottomRight.greenComponent, 0.5, "bottomRight should be green")
     }
 
-    /// A two-frame animated gif: red, then blue, a fast 0.03s apart — fast
-    /// enough that a real, short wait reliably crosses a frame boundary.
     /// Held for the life of the test: see `hosted`.
     private var hostWindows: [NSWindow] = []
 
+    /// A two-frame animated gif: red, then blue, 0.1s each, looping — so blue
+    /// shows for 0.1s of every 0.2s. It used to be 0.03s a frame, a 60ms cycle,
+    /// and the test polled it every ~50-70ms: a strobe. A sampler that ticks at
+    /// roughly the loop's own period keeps landing on the same phase, so it can
+    /// see red ten times running while the gif animates perfectly. Here a step
+    /// of 60ms took up to eight samples to see blue; CI's ten, at ~70ms each,
+    /// never did. A frame five times the poll step cannot be stepped over.
     private func animatedSwatch(side: Int = 20) throws -> URL {
         func frame(red: UInt8, blue: UInt8) throws -> CGImage {
             var pixels = [UInt8](repeating: 0, count: side * side * 4)
@@ -162,8 +167,8 @@ final class CornerDecorationGeometryTests: XCTestCase {
         for image in [try frame(red: 255, blue: 0), try frame(red: 0, blue: 255)] {
             CGImageDestinationAddImage(destination, image, [
                 kCGImagePropertyGIFDictionary: [
-                    kCGImagePropertyGIFDelayTime: 0.03,
-                    kCGImagePropertyGIFUnclampedDelayTime: 0.03
+                    kCGImagePropertyGIFDelayTime: 0.1,
+                    kCGImagePropertyGIFUnclampedDelayTime: 0.1
                 ]
             ] as CFDictionary)
         }
@@ -219,17 +224,22 @@ final class CornerDecorationGeometryTests: XCTestCase {
         let before = try redComponent(view)
         XCTAssertGreaterThan(before, 0.5, "should start on the red first frame")
 
-        let settled = expectation(description: "a moment passes")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { settled.fulfill() }
-        wait(for: [settled], timeout: 2)
-
-        XCTAssertEqual(try redComponent(view), before, "an idle corner must not have moved on")
+        // Sampled across two full loops, not once: a single look at the end
+        // could land on red by phase alone even if the gif were running.
+        var moved = false
+        for _ in 0..<20 where !moved {
+            try settle(0.02)
+            moved = try redComponent(view) != before
+        }
+        XCTAssertFalse(moved, "an idle corner must not have moved on")
     }
 
     /// Working, the same gif must actually advance past its first frame at
     /// some point — sampled repeatedly rather than at one predicted instant,
     /// since the exact frame at an exact millisecond is timing-sensitive in a
-    /// way "did it ever move at all" is not.
+    /// way "did it ever move at all" is not. Polled every 20ms against a 3s
+    /// deadline, not a fixed count: a slow runner gets more samples, not fewer
+    /// chances, and a passing run still stops at the first blue.
     func testAdvancesPastFirstFrameWhileWorking() throws {
         let view = CornerDecorationsView()
         hosted(view, size: NSSize(width: 200, height: 200))
@@ -240,11 +250,10 @@ final class CornerDecorationGeometryTests: XCTestCase {
         view.update(isWorking: true)
 
         var sawBlue = false
-        for _ in 0..<10 {
-            let settled = expectation(description: "one tick")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { settled.fulfill() }
-            wait(for: [settled], timeout: 2)
-            if try redComponent(view) < 0.5 { sawBlue = true; break }
+        let deadline = Date().addingTimeInterval(3)
+        while !sawBlue, Date() < deadline {
+            try settle(0.02)
+            sawBlue = try redComponent(view) < 0.5
         }
         XCTAssertTrue(sawBlue, "working, the gif should have moved past its first frame at some point")
     }
