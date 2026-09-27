@@ -116,8 +116,11 @@ More video — the analyser, resizing, the whole theme flow — is on the
 
 ## 1. Install the app
 
-- Download the `.zip` from the **Releases** page, unzip it, and drag
-  **Ground Control** into Applications.
+- **[Download the `.dmg`](https://github.com/spacyapps/ground-control/releases/latest)**
+  from the latest release, open it, and drag **Ground Control** into
+  Applications. That's it.
+- Trouble with the `.dmg` on your Mac? The same release has a `.zip` — unzip
+  it and drag the app into Applications instead.
 - It is signed with a Developer ID and notarised by Apple, so it opens on an
   ordinary double-click — no right-click, no trip to System Settings. macOS
   asks "are you sure you want to open it?" the first time, as it does for
@@ -195,46 +198,8 @@ Requires macOS 13+ and Swift 5.9+. **No third-party dependencies** — the app
 imports only AppKit, AVFoundation, Foundation and os. Linting uses the
 standalone `swiftlint` binary (`brew install swiftlint`).
 
-# How it works
-
-Claude Code hooks call a small script (`Scripts/cc-notify`) that writes one
-`.jsonl` file per session into a temp folder, named by the session's id. The
-app watches that folder — **file exists ⇔ row exists** — and shows the last
-line of each file as that session's current state. Files untouched for 24h are
-purged automatically.
-
-Rows show what Claude actually said, not a generic status: the `Stop` hook
-hands over the full assistant message, and `Notification` carries the real
-"waiting for you" text.
-
-```bash
-./Scripts/install-hooks.sh    # installs cc-notify + merges into ~/.claude/settings.json
-```
-
-It **merges** — existing hooks on the same events keep working — and backs up
-your settings first. Hooks take effect immediately; no restart.
-
-# The one feature we built, proved, and then deleted
-
-The obvious next step was answering an agent from your phone. *Approve* or *deny*
-is the easy half. But approve and deny aren't what you actually need to send —
-you need words: *use Postgres, not SQLite.* The only route to words was scripting
-your terminal directly.
-
-We built that. It works.
-
-Which is exactly where it stops. Anything that can type into your terminal is a
-remote-execution capability, and a relay in that path turns one compromised
-server into every Mac connected to it. A *yes* tapped on a lock screen isn't the
-same *yes* — you can't see the working directory, the diff, or what the last
-three approvals already unlocked, and approvals chain.
-
-**No relay was ever built.** The app's `TerminalFocuser` only ever *navigates* —
-it brings a window forward. It cannot type, run a command, or do damage if it
-misfires. If you want remote answering, Claude Code ships it natively now, with a
-better security model than we could have justified building.
-
-> Finding out you can do something is not the same as finding a reason to.
+Works fine — but the [`.dmg`](https://github.com/spacyapps/ground-control/releases/latest)
+is faster, and more fun :)
 
 # What it works with
 
@@ -304,6 +269,47 @@ The title-bar analyser can run a theme's own bar-height formula
 ```
 swift run matrix-preview "0.5 + 0.5*sin(pos*7 - phase*2)"
 ```
+
+# How it works
+
+Claude Code hooks call a small script (`Scripts/cc-notify`) that writes one
+`.jsonl` file per session into a temp folder, named by the session's id. The
+app watches that folder — **file exists ⇔ row exists** — and shows the last
+line of each file as that session's current state. Files untouched for 24h are
+purged automatically.
+
+Rows show what Claude actually said, not a generic status: the `Stop` hook
+hands over the full assistant message, and `Notification` carries the real
+"waiting for you" text.
+
+```bash
+./Scripts/install-hooks.sh    # installs cc-notify + merges into ~/.claude/settings.json
+```
+
+It **merges** — existing hooks on the same events keep working — and backs up
+your settings first. Hooks take effect immediately; no restart.
+
+# The one feature we built, proved, and then deleted
+
+The obvious next step was answering an agent from your phone. *Approve* or *deny*
+is the easy half. But approve and deny aren't what you actually need to send —
+you need words: *use Postgres, not SQLite.* The only route to words was scripting
+your terminal directly.
+
+We built that. It works.
+
+Which is exactly where it stops. Anything that can type into your terminal is a
+remote-execution capability, and a relay in that path turns one compromised
+server into every Mac connected to it. A *yes* tapped on a lock screen isn't the
+same *yes* — you can't see the working directory, the diff, or what the last
+three approvals already unlocked, and approvals chain.
+
+**No relay was ever built.** The app's `TerminalFocuser` only ever *navigates* —
+it brings a window forward. It cannot type, run a command, or do damage if it
+misfires. If you want remote answering, Claude Code ships it natively now, with a
+better security model than we could have justified building.
+
+> Finding out you can do something is not the same as finding a reason to.
 
 # Uninstall
 
