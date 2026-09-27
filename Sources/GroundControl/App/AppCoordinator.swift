@@ -81,7 +81,7 @@ final class AppCoordinator {
             tty: session.tty,
             hostApp: session.hostApp,
             hostID: session.hostID,
-            fallbackPath: session.cwd,
+            fallbackPath: session.isBackground ? nil : session.cwd,
             sessionID: session.id
         )
         if arrived {

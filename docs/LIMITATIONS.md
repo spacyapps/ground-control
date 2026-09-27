@@ -463,6 +463,39 @@ the alarm like any other blocked session. Full design: `docs/GROK-BOT-GROUPING.m
 | Cursor's Composer | no — no hook while it waits | n/a |
 | **Grok Bot** | **yes — the decision card** (blind 2026-09-19 when the cache format moved; reader now takes both shapes) | **working, yes** — it owes a reply, or it just emitted. Done vs waiting-on-you, no: the cloud agent can go silent mid-task |
 
+## Claude Code's background sessions — measured 2026-09-26 on 2.1.283
+
+Claude Code's daemon runs sessions in a pty of its own, which no tab owns. Two
+kinds reached the panel, and both misbehaved:
+
+- **A session you background** hands its conversation to a new session id. The
+  old transcript's last line becomes `{"type":"continued-in",
+  "continuedInSessionId":<new>}`, the old id stops firing, and its row sat on
+  "working" for a day. The tab stays open as a viewer onto the new session.
+- **A session started in the background** (`claude --bg`, and ones the daemon
+  starts for itself) sent SessionStart and sometimes nothing more — a row that
+  only ever said "Session started".
+
+How a hook tells them apart: **`CLAUDE_JOB_DIR`** is set in a background
+session's hook environment and absent from a foreground one's, measured by
+dumping both. `CLAUDE_CODE_SESSION_KIND=bg` is on the *process* but never
+reaches the hook — code written against it did nothing live.
+
+What `cc-notify` does now: a background session makes no row until it does real
+work; on its first hook it looks for a transcript written in the last two
+minutes whose `continued-in` names it, and if one is found it takes that row's
+tab and removes the old row. Without one, it records no tty or host — the
+daemon's are no use — and the app ignores a click instead of opening Finder.
+The row reads "Background → <name>". Prompts Claude writes on its own
+(`<agent-message`, `<task-notification`, `<cross-session-message`) show as
+"Working…" rather than the raw tag.
+
+| Claim | Status |
+|---|---|
+| Spare skip, no-tab row, "Background" label, injected prompts | seen working on real `claude --bg` sessions |
+| Handoff from a backgrounded tab | **unverified live** — unit-tested against the measured `continued-in` line only |
+| The row survives being dismissed | **no** — dismissing a handed-off row loses the tab for good; the old row was the only record of it |
+
 ## Verified (measured, not assumed)
 
 | Thing | How it was proven | When |

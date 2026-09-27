@@ -36,7 +36,11 @@ struct Session: Identifiable, Equatable {
     /// "xcode". The host is the one thing that tells a desktop session from a
     /// terminal one, and it is already in every event.
     var hostName: String? {
-        guard let path = hostApp, !path.isEmpty else { return nil }
+        guard let path = hostApp, !path.isEmpty else {
+            // Claude Code's daemon, with no tab of its own to name. A handed-off
+            // session keeps the terminal it is still showing in instead.
+            return isBackground ? "Background" : nil
+        }
         let bundle = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
         return Session.shortHostNames[bundle] ?? bundle
     }
@@ -75,6 +79,7 @@ struct Session: Identifiable, Equatable {
     var tty: String? { latest.tty }
     var hostApp: String? { latest.hostApp }
     var hostID: String? { latest.hostID }
+    var isBackground: Bool { latest.isBackground }
     var source: String { latest.source }
     var cwd: String? { latest.cwd }
     var lastActivity: Date { latest.timestamp }

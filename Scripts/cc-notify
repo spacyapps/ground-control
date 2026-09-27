@@ -461,6 +461,87 @@ def opening_line(payload):
     return text
 
 
+# Prompts Claude Code writes into a session on its own, not text anyone typed.
+# Measured 2026-09-26 on 2.1.283: both arrive as UserPromptSubmit, and shown
+# as-is they put a raw tag on the row.
+INJECTED_PROMPTS = (
+    "<agent-message",       # -> "Working…" (a subagent reporting in)
+    "<task-notification",   # -> "Working…" (a background task finished)
+    "<cross-session-message",  # -> "Working…" (another session messaged it)
+)
+
+
+def is_injected(prompt):
+    return isinstance(prompt, str) and prompt.lstrip().startswith(INJECTED_PROMPTS)
+
+
+# Claude Code's daemon runs background sessions in a pty of its own. Their hooks
+# carry CLAUDE_JOB_DIR (~/.claude/jobs/<id>); a foreground session's do not.
+# Measured 2026-09-26 on 2.1.283 by dumping a hook's environment — the process
+# also has CLAUDE_CODE_SESSION_KIND=bg, but that one never reaches the hook.
+# Two things arrive that way:
+#
+#   a session you backgrounded -> a new session id; the old transcript's last
+#                                 line is {"type":"continued-in",
+#                                 "continuedInSessionId":<new>} and the old id
+#                                 never fires again
+#   a session started in the background -> SessionStart, then maybe nothing
+#
+# The first left the old row on "working" for 24h. The second made a row that
+# only ever said "Session started". Neither pty belongs to a terminal tab.
+HANDOFF_WINDOW = 120    # seconds; continued-in is written a moment before the
+                        # new session's first hook (0.4s, measured)
+
+
+def is_background():
+    return bool(os.environ.get("CLAUDE_JOB_DIR"))
+
+
+def tail_record(path, size=4096):
+    """The last decodable line of a possibly large file, reading only its end."""
+    try:
+        with open(path, "rb") as handle:
+            handle.seek(0, os.SEEK_END)
+            handle.seek(max(0, handle.tell() - size))
+            lines = handle.read().splitlines()
+    except OSError:
+        return None
+    for line in reversed(lines):
+        try:
+            return json.loads(line)
+        except ValueError:
+            continue
+    return None
+
+
+def predecessor(payload, session_id):
+    """The session this one was continued from, or None.
+
+    The link runs one way only — the old transcript names the new session, and
+    the new one never names the old — so it is found by looking at the
+    transcripts beside this one that changed in the last two minutes."""
+    transcript = get(payload, "transcript_path", "transcriptPath")
+    if not isinstance(transcript, str):
+        return None
+    folder = os.path.dirname(transcript)
+    try:
+        names = os.listdir(folder)
+    except OSError:
+        return None
+    for name in names:
+        path = os.path.join(folder, name)
+        try:
+            if not name.endswith(".jsonl") or time.time() - os.path.getmtime(path) > HANDOFF_WINDOW:
+                continue
+        except OSError:
+            continue
+        record = tail_record(path)
+        if (isinstance(record, dict) and record.get("type") == "continued-in"
+                and record.get("continuedInSessionId") == session_id):
+            return safe_id(record.get("sessionId"))
+    return None
+
+
 def strip_wrapper(text):
     """Grok wraps prompts in <user_query> tags; the row wants the words."""
     if not isinstance(text, str):
@@ -503,7 +584,10 @@ def interpret(payload):
         return "done", condense(message) or "Done", False
 
     if event == "userpromptsubmit":
-        return "working", condense(strip_wrapper(get(payload, "prompt"))) or "Working…", False
+        prompt = strip_wrapper(get(payload, "prompt"))
+        if is_injected(prompt):
+            return "working", "Working…", False
+        return "working", condense(prompt) or "Working…", False
 
     if event == "pretooluse":
         return "working", describe_tool(payload), False
@@ -691,6 +775,20 @@ def main():
     with session_lock(path):
         previous = last_line(path) or {}
 
+        # A background session's first hook: take over the row it continues —
+        # its tab and name now, its file once this line is written — or, with
+        # nothing to continue, wait for real work before making a row at all.
+        background = is_background()
+        continued_from = None
+        if background and not previous:
+            continued_from = predecessor(payload, session_id)
+            if continued_from:
+                old = last_line(os.path.join(os.path.dirname(path), "%s.jsonl" % continued_from)) or {}
+                previous = {key: old[key] for key in ("name", "tty", "host_app", "host_id")
+                            if old.get(key)}
+            elif event == "sessionstart":
+                return
+
         # opencode reliably emits one trailing session.status busy in the same
         # second as session.idle, on every turn — measured 2026-08-26, twice,
         # both times at identical timestamps. It is not a rare race to wait
@@ -759,10 +857,17 @@ def main():
         if state == "needsInput" and asked:
             message = asked
 
+        # A background session's own ancestry leads to the daemon, never to a
+        # tab: its pty matches none and it has no host app. Only what it
+        # inherited from the tab it was handed off from is kept; with nothing
+        # inherited, the app ignores a click rather than open Finder.
+        def pick(fresh, latched):
+            return latched if background else (fresh or latched)
+
         tree = ProcessTree()
-        tty = resolve_tty(tree) or previous.get("tty")
-        host_app = resolve_host_app(tree) or previous.get("host_app")
-        host_id = resolve_host_id() or previous.get("host_id")
+        tty = pick(resolve_tty(tree), previous.get("tty"))
+        host_app = pick(resolve_host_app(tree), previous.get("host_app"))
+        host_id = pick(resolve_host_id(), previous.get("host_id"))
 
         emit(path, {
             "schema": SCHEMA,
@@ -773,6 +878,7 @@ def main():
             "tty": tty,
             "host_app": host_app,
             "host_id": host_id,
+            "background": background,
             "event": get(payload, "hook_event_name", "hookEventName") or "",
             "state": state,
             "message": message,
@@ -782,6 +888,11 @@ def main():
             "transcript_path": get(payload, "transcript_path", "transcriptPath") or "",
             "ts": now,
         })
+
+        # The old id will never fire again, so its row goes the way a CLI's own
+        # SessionEnd would take it, subagents and all.
+        if continued_from:
+            handle_session_end(continued_from, os.path.dirname(path))
 
 
 if __name__ == "__main__":

@@ -28,6 +28,11 @@ struct SessionEvent: Decodable, Equatable {
     /// The same app's bundle id, inherited from `__CFBundleIdentifier`. A
     /// second opinion for when the process walk finds nothing.
     let hostID: String?
+    /// Run by Claude Code's background daemon, in a pty no tab owns. Such a
+    /// row carries a tty only when it inherited one from the tab it was
+    /// backgrounded from; with none, a click is ignored rather than sent to
+    /// Finder, which is not where the session is.
+    let isBackground: Bool
     let event: String?
     let state: SessionState
     let message: String
@@ -44,6 +49,7 @@ struct SessionEvent: Decodable, Equatable {
         case tty
         case hostApp = "host_app"
         case hostID = "host_id"
+        case isBackground = "background"
         case event
         case state
         case message
@@ -74,6 +80,7 @@ struct SessionEvent: Decodable, Equatable {
         tty: String? = nil,
         hostApp: String? = nil,
         hostID: String? = nil,
+        isBackground: Bool = false,
         event: String? = nil,
         state: SessionState,
         message: String,
@@ -89,6 +96,7 @@ struct SessionEvent: Decodable, Equatable {
         self.tty = tty
         self.hostApp = hostApp
         self.hostID = hostID
+        self.isBackground = isBackground
         self.event = event
         self.state = state
         self.message = message
@@ -123,6 +131,7 @@ struct SessionEvent: Decodable, Equatable {
         tty = try container.decodeIfPresent(String.self, forKey: .tty)
         hostApp = try container.decodeIfPresent(String.self, forKey: .hostApp)
         hostID = try container.decodeIfPresent(String.self, forKey: .hostID)
+        isBackground = try container.decodeIfPresent(Bool.self, forKey: .isBackground) ?? false
         event = try container.decodeIfPresent(String.self, forKey: .event)
         state = try container.decodeIfPresent(SessionState.self, forKey: .state) ?? .idle
         message = try container.decodeIfPresent(String.self, forKey: .message) ?? ""

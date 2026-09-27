@@ -112,11 +112,20 @@ final class HostAppResolutionTests: XCTestCase {
         XCTAssertNil(host(""))
     }
 
+    /// A session Claude Code's daemon runs has no app of its own, and says so
+    /// on the row — "Background → avaterm" — rather than looking like a
+    /// session nothing is known about. One handed off from a tab keeps the
+    /// terminal it is still showing in.
+    func testABackgroundSessionIsNamedAsOne() {
+        XCTAssertEqual(host(nil, background: true), "Background")
+        XCTAssertEqual(host("/System/Applications/Utilities/Terminal.app", background: true), "Terminal")
+    }
+
     /// Built by decoding, like the app does — the row only ever sees a host
     /// that arrived as JSON from the emitter.
-    private func host(_ path: String?) -> String? {
+    private func host(_ path: String?, background: Bool = false) -> String? {
         let field = path.map { "\"host_app\":\"\($0)\"," } ?? ""
-        let json = "{\"session_id\":\"s\",\"source\":\"claude\",\(field)\"ts\":1}"
+        let json = "{\"session_id\":\"s\",\"source\":\"claude\",\(field)\"background\":\(background),\"ts\":1}"
         guard let event = try? JSONDecoder().decode(SessionEvent.self, from: Data(json.utf8)) else {
             return nil
         }
