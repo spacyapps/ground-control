@@ -15,9 +15,9 @@
   <img alt="Version 0.8.0" src="https://img.shields.io/badge/version-0.8.0-blue">
 </p>
 
-## The desktop this is actually for
+## The desktop this is for those with...
 
-A handful of terminals, each running something, scattered across more than one
+Any number of terminals, each running something, scattered across more than one
 Desktop. One of them is waiting on your approval. You don't know which one.
 
 > *"I waste time checking whether my session is done, or waiting on me."*
