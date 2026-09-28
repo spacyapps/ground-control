@@ -4,6 +4,7 @@ description: >-
   Use when building, notarising, or handing out Ground Control — an alpha zip for
   a tester, a public release, or a dmg. Covers which script to run, what must not
   be bundled, and the specific ways this has gone wrong before.
+model: sonnet
 ---
 
 # Shipping a build
