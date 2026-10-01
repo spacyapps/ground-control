@@ -662,7 +662,7 @@ def codex_agent_name(payload):
     return os.path.basename(found.group(1).rstrip("/")) or None
 
 
-def handle_subagent(payload, root, now, finished):
+def handle_subagent(payload, root, now, finished, message=None):
     """Subagents share the parent's tty and session id, so they get their own
     file under agents/ — keeping the file <-> row invariant intact one level
     down. The app groups them by the session id prefix.
@@ -670,7 +670,9 @@ def handle_subagent(payload, root, now, finished):
     **Codex is the one that actually delivers on SubagentStart.** Measured
     2026-09-11: it fires before the child runs, carrying the child's agent_id
     and the *parent's* session_id together, so a child row can appear while it
-    is still working. Claude Code announces only the stop. Grok documents a
+    is still working. Claude Code announced only the stop until at least
+    2.1.277; on 2.1.286 (measured 2026-09-30) it fires the start too, and again
+    when a child wakes after its own background work. Grok documents a
     `subagentStart` and, tested live 2026-09-10 against two real
     `spawn_subagent` children, never fired either event — everything surfaced
     as PreToolUse on the parent row and this function was not called at all.
@@ -679,7 +681,8 @@ def handle_subagent(payload, root, now, finished):
     session_id = safe_id(get(payload, "session_id", "sessionId"))
     if not agent_id or not session_id:
         return
-    message = get(payload, "last_assistant_message", "lastAssistantMessage")
+    if message is None:
+        message = get(payload, "last_assistant_message", "lastAssistantMessage")
     path = os.path.join(root, "agents", "%s__%s.jsonl" % (session_id, agent_id))
     emit(path, {
         "schema": SCHEMA,
@@ -758,6 +761,16 @@ def main():
 
     if event == "subagentstart":
         handle_subagent(payload, root, now, finished=False)
+        return
+
+    # A subagent's own tool calls arrive with the parent's session_id, so they
+    # used to land on the parent row: it showed the child's work as its own
+    # while the child row sat on "Working…". Claude marks them with the
+    # child's agent_id (measured 2026-09-30, 2.1.286), so they go to the
+    # child's file instead. Claude only: Codex has not been probed for this.
+    if (event == "pretooluse" and source_of(payload) == "claude"
+            and get(payload, "agent_id", "agentId")):
+        handle_subagent(payload, root, now, finished=False, message=describe_tool(payload))
         return
 
     if event == "sessionend":

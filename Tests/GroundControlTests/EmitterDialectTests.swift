@@ -239,6 +239,42 @@ final class EmitterDialectTests: XCTestCase {
         XCTAssertEqual(line["state"] as? String, "idle")
     }
 
+    // MARK: - A subagent's own tool calls
+
+    /// Verbatim from a live Claude Code 2.1.286 subagent on 2026-09-30, ids
+    /// shortened. The parent's `session_id`, the child's `agent_id`.
+    private let childToolUse = """
+    {"session_id":"e6c335e0","transcript_path":"/Users/you/.claude/projects/probe/e6c335e0.jsonl",\
+    "cwd":"/Users/you/probe","prompt_id":"e0c0ff05","permission_mode":"default",\
+    "agent_id":"a502706d","agent_type":"general-purpose","effort":{"level":"high"},\
+    "hook_event_name":"PreToolUse","tool_name":"Bash",\
+    "tool_input":{"command":"echo probe-from-child","description":"Echo probe string"},\
+    "tool_use_id":"toolu_0117"}
+    """
+
+    /// The child's work belongs on the child's row. It used to land on the
+    /// parent's, which then showed a Read of the child's temp file as its own.
+    func testASubagentsToolCallGoesToItsOwnRow() throws {
+        XCTAssertEqual(try emit(childToolUse).count, 0, "the parent row must not be written")
+
+        let child = home.appendingPathComponent("groundcontrol/agents/e6c335e0__a502706d.jsonl")
+        let text = try String(contentsOf: child, encoding: .utf8)
+        let line = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any])
+        XCTAssertEqual(line["state"] as? String, "working")
+        XCTAssertEqual(line["message"] as? String, "Bash: Echo probe string")
+        XCTAssertEqual(line["agent_type"] as? String, "general-purpose")
+    }
+
+    /// And the parent's own calls, which carry no `agent_id`, stay where they were.
+    func testTheParentsToolCallStaysOnTheParent() throws {
+        let line = try emit("""
+        {"session_id":"e6c335e0","cwd":"/Users/you/probe","hook_event_name":"PreToolUse",\
+        "tool_name":"Agent","tool_input":{"description":"Run echo"}}
+        """)
+        XCTAssertEqual(line["message"] as? String, "Agent: Run echo")
+    }
+
     // MARK: - Notifications alarm by default
 
     /// Captured from a live Grok session on 2026-08-19, in `normal` mode.

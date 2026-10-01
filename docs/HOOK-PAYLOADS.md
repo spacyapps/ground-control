@@ -81,6 +81,34 @@ one carried text that was never part of the visible conversation. Rendering
 every `SubagentStop` as a child row produces phantom rows. Filtering rule is
 unresolved — see SPEC §10.
 
+### `SubagentStart`, and a subagent's own tool calls — measured 2026-09-30 on 2.1.286
+
+Sandboxed probe: a headless `claude -p` with its own `--settings` hooks file,
+one spawned subagent running one `echo`.
+
+| Event | `agent_id` | Notes |
+|---|---|---|
+| `PreToolUse` (`Agent`, the parent spawning it) | — | the parent's own call |
+| `SubagentStart` | yes | fires **before** the work; with `agent_type` |
+| `PreToolUse` (`Bash`, inside the subagent) | **yes** | parent's `session_id`, child's `agent_id` + `agent_type` |
+| `SubagentStop` | yes | adds `agent_transcript_path`, `background_tasks`, `session_crons`, `effort` |
+
+- **Claude Code now fires `SubagentStart`.** Up to at least 2.1.277 (2026-09-19)
+  it announced only the stop, so a running child was invisible. The version
+  that changed it is unknown.
+- **A child that stops with background work still running fires the pair
+  again** when that work finishes: `SubagentStart`, its tool calls, then
+  `SubagentStop`. Its row goes done → working → done, which is accurate.
+- **The child's tool calls carry its `agent_id`.** Before `cc-notify` routed
+  them by it, they landed on the parent row, which showed the child's work as
+  its own while the child row sat on "Working…".
+
+```json
+{"session_id":"e6c335e0-…","agent_id":"a502706d0dd5a54d0","agent_type":"general-purpose",
+ "effort":{"level":"high"},"hook_event_name":"PreToolUse","tool_name":"Bash",
+ "tool_input":{"command":"echo probe-from-child","description":"Echo probe string"}}
+```
+
 ---
 
 ## opencode — measured 2026-08-19 against 1.17.8
@@ -331,9 +359,8 @@ convention works with no changes at all.
   purge. `cc-notify` deletes the session file and its `agents/` children, and
   the file ⇔ row invariant makes the row disappear.
 - **`SubagentStart`** — carries an `agent_id` *before* the work happens, so
-  Grok subagents can appear as children while running. Claude Code only
-  announces the stop, which is why SPEC §10 lists live tracking as unresolved
-  there. **Caveat this file's own rule flags: no raw payload was ever captured
+  Grok subagents can appear as children while running. Claude Code announced
+  only the stop until it gained this event too (measured 2026-09-30, 2.1.286). **Caveat this file's own rule flags: no raw payload was ever captured
   for this one — it was asserted from Grok's documented event vocabulary, not
   measured.** Tested live 2026-09-10 against a real `spawn_subagent` tool call
   (two subagents in a real project checkout, Grok build, not the `grok` CLI's own
@@ -497,8 +524,8 @@ repo's own conclusion that Codex sub-agents were unfollowable.
 - `session_id` is the **parent's** on both events, `agent_id` the child's —
   the parent link is explicit, needing none of the `meta.json` archaeology
   Grok's subagents required (`grok-cli-subagent-sessions`).
-- **`SubagentStart` fires before the work.** Claude Code announces only the
-  stop (SPEC §10), and Grok's `subagentStart` was asserted from docs and then
+- **`SubagentStart` fires before the work.** Claude Code announced only the
+  stop until 2.1.286 or a little earlier, and Grok's `subagentStart` was asserted from docs and then
   measured as never firing at all. This one is measured as firing.
 - `agent_transcript_path` on stop names the child's own rollout — a real file,
   merely absent from `session_index.jsonl`.
