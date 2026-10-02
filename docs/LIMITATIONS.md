@@ -505,6 +505,7 @@ The row reads "Background → <name>". Prompts Claude writes on its own
 | Terminal.app jump-to-tab | clicked a row, landed on the right tab | 2026-08-10 |
 | Grok hook payloads | probe in `~/.grok/hooks/`, 4 events captured | 2026-08-11 |
 | Claude Code 2.1.286 keeps the hook contract | this session's own lines checked field by field after the upgrade; an `AskUserQuestion` turned the row red under `auto` and `PostToolUse` cleared it; a 45s subagent showed as a working child row, watched on the panel | 2026-09-30 |
+| Grok CLI 1.0.46 keeps the hook contract | a selection-list question fired `elicitation_dialog`, turned the row red, and `PostToolUse` cleared it; two `spawn_subagent` children still fired no hook, but wrote `subagents/<id>/meta.json` with every key `GrokSubagentReader` reads, and showed on the panel under their parent | 2026-10-02 |
 | **Claude Code fires `SubagentStart`**, and a subagent's tool calls carry its `agent_id` | sandboxed `claude -p` probe with its own `--settings` hooks, raw payloads dumped; table in `HOOK-PAYLOADS.md` | 2026-09-30 |
 | Grok reads `~/.claude/settings.json` | `/hooks` shows `Custom: ~/.claude (9 hooks)` | 2026-08-11 |
 | Grok `SessionEnd` removes a row | replayed the real payload; file deleted | 2026-08-11 |
