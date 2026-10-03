@@ -70,10 +70,23 @@ struct Session: Identifiable, Equatable {
         // before those were filtered out; Claude had finished.
         let written = latest.state == .needsInput && !latest.isActionable ? .done : latest.state
 
+        // A child at work keeps its parent working. Its tool calls go to its
+        // own file (cc-notify, 00b6cd4), so the parent's line goes quiet while
+        // it runs — "done" if the turn ended, "idle" after 30 minutes. An old
+        // `working` child is a dead one, and does not count. Grok Bot's group
+        // is a count of bots, not one conversation, so it keeps its own state.
+        if written != .needsInput, source != "grokbot", hasChildAtWork {
+            return .working
+        }
+
         if written != .needsInput, ElapsedFormatter.isStale(since: latest.timestamp) {
             return .idle
         }
         return written
+    }
+
+    private var hasChildAtWork: Bool {
+        children.contains { $0.state == .working && !ElapsedFormatter.isStale(since: $0.lastActivity) }
     }
 
     var tty: String? { latest.tty }
