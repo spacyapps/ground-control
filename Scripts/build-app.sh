@@ -60,6 +60,11 @@ install -m 0755 Scripts/uninstall-hooks.sh "$APP/Contents/Resources/uninstall-ho
 # opencode's integration is a plugin rather than a registration, so the file
 # itself has to travel with the app for the installer to have anything to place.
 install -m 0644 Scripts/opencode-plugin.ts "$APP/Contents/Resources/opencode-plugin.ts"
+# The context-meter mod is loaded by Claude Code from a folder the user names,
+# so the folder travels with the app (docs/CONTEXT-METER.md). Its test stays home.
+mkdir -p "$APP/Contents/Resources/Mods"
+cp -R Mods/context-meter "$APP/Contents/Resources/Mods/context-meter"
+rm -f "$APP/Contents/Resources/Mods/context-meter/hooks/register.test.ts" "$APP/Contents/Resources/Mods/context-meter/tsconfig.json"
 
 # The example themes ship inside the app and are copied to Application Support
 # on first launch — a theme has to be editable and hot-reloadable, which one

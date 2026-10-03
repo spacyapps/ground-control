@@ -42,3 +42,6 @@ ExtraThemes/
 # purpose 2026-09-17, and listed here so they cannot walk back in.
 docs/PUBLISHING.md
 docs/THEME-DELIVERY.md
+
+# Written by Claude Code when it loads a mod; extends types it generates itself
+Mods/*/tsconfig.json

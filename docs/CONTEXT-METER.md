@@ -31,7 +31,7 @@ the same number the status line shows as `used_percentage`.
 - The value is clamped to 0-100; a non-number is ignored.
 
 The app reads it as `SessionEvent.contextPercent` and draws it in
-`SessionRowView.drawContextBar`, under any theme overlay: a theme whose art
+`ContextMeter.draw`, under any theme overlay: a theme whose art
 covers the meter hides it.
 
 ## The mod
@@ -43,16 +43,32 @@ parent's window. Every failure is swallowed, so a meter can never get in the
 way of a turn. `claude plugin test Mods/context-meter` runs its tests.
 
 The app does not install it, for the same reason it never registers hooks: it
-only reads. To load it:
+only reads. The built app carries a copy at
+`GroundControl.app/Contents/Resources/Mods/context-meter`. To load it for
+every session, add one key to the `env` block of `~/.claude/settings.json` and
+restart Claude Code:
 
-    claude --plugin-dir /path/to/ground-control/Mods/context-meter
+    "env": { "CLAUDE_CODE_PLUGIN_DIRS": "/path/to/context-meter" }
 
-For every session, name the folder in `CLAUDE_CODE_PLUGIN_DIRS` in the `env`
-block of `~/.claude/settings.json` (an absolute path; `~` is allowed).
+Absolute path; `~` is allowed. From a checkout, point it at `Mods/context-meter`.
+For a single session instead: `claude --plugin-dir <folder>`.
+
+## How the loading route was checked
+
+2026-10-03, against a throwaway plugin that wrote a marker file when it loaded:
+
+| Route | Loaded |
+| --- | --- |
+| `claude --plugin-dir <folder>` | yes |
+| `CLAUDE_CODE_PLUGIN_DIRS` in the process environment | yes |
+| `CLAUDE_CODE_PLUGIN_DIRS` in the `env` block of `settings.json` | yes (a separate `CLAUDE_CONFIG_DIR`, and a control without the key did not) |
+| a copy in a project's `.claude/skills/<name>` | no (headless `claude -p`) |
+
+The `settings.json` route was then seen working on a real session: the meter
+drew on the row after one turn. The `env` block reaches every Claude Code the
+user starts, including the desktop app's, which a shell profile would not.
 
 ## Not verified
 
-Written 2026-10-02. Seen working live on one session: the mod reported, the
-number reached the row, and the meter drew at that width. Not yet confirmed:
-how the percent behaves across a compaction, and the `CLAUDE_CODE_PLUGIN_DIRS`
-route (from the mod API's documentation only).
+How the percent behaves across a compaction. Whether the app-bundle path keeps
+working if the app is moved out of `/Applications` (the line must be edited).

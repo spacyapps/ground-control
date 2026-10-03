@@ -169,6 +169,23 @@ under each saying whether anything has arrived from it yet.
 - The **menu-bar icon** toggles the panel and opens Settings, where you pick a
   theme. **Theme → Open Themes Folder…** is where your own themes go.
 
+## Optional: a context meter (Claude Code)
+
+A small meter under a Claude row's text that fills as that session's context
+window fills, and turns red near the top. It needs a Claude Code that supports
+mods, and it works for Claude Code only — no hook carries the figure, so a
+small mod reports it.
+
+Add one line to the `env` block of `~/.claude/settings.json`, then restart
+Claude Code:
+
+```json
+"env": { "CLAUDE_CODE_PLUGIN_DIRS": "/Applications/GroundControl.app/Contents/Resources/Mods/context-meter" }
+```
+
+If you already have an `env` block, add just that key to it. Details and the
+design are in [docs/CONTEXT-METER.md](docs/CONTEXT-METER.md).
+
 ## Nothing showing up?
 
 - Open the **Hooks** submenu — the line under each agent says whether anything

@@ -134,7 +134,7 @@ GroundControl/
 │
 ├── Mods/
 │   └── context-meter/            # Claude Code mod: reports context fill to cc-notify;
-│                                 # not installed by the app (docs/CONTEXT-METER.md)
+│                                 # copied into the app, loaded by Claude Code (docs/CONTEXT-METER.md)
 │
 ├── Scripts/                     # cc-notify and install-hooks.sh are also copied
 │   │                             # into the .app, so a dmg needs no checkout
