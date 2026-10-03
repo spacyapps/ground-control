@@ -1,0 +1,7 @@
+{
+  "name": "context-meter",
+  "version": "0.1.0",
+  "description": "Reports the context window's fill to Ground Control after each turn.",
+  "author": { "name": "Walter Mak" },
+  "license": "AGPL-3.0-or-later"
+}

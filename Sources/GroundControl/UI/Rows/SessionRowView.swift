@@ -36,6 +36,10 @@ final class SessionRowView: NSView {
     var isGroup = false
     private var isExpanded = false
     private var useAlternateBackground = false
+    /// Nil draws no meter: absent means unknown, never empty.
+    private var contextMeter: ContextMeter?
+    /// The meter's track, filled in during layout beside the text it runs under.
+    private var contextMeterRect: NSRect = .zero
     var trackingArea: NSTrackingArea?
 
     /// Where the menu mark sits, filled in during layout so the click test and
@@ -99,6 +103,7 @@ final class SessionRowView: NSView {
         self.isGroup = session.isGroup
         self.isExpanded = presentation.isExpanded
         self.useAlternateBackground = presentation.isAlternate
+        self.contextMeter = session.latest.contextPercent.map(ContextMeter.init(percent:))
 
         // "Claude → xcode", not a second row also called "xcode" — but not
         // "Grok Bot → Grok Bot" where the host is the name.
@@ -243,6 +248,15 @@ final class SessionRowView: NSView {
         let textWidth = max(0, bounds.width - textX - trailingInset)
 
         layoutText(textX: textX, textWidth: textWidth, trailingInset: trailingInset)
+
+        // Under the text, from where it starts to where it ends — short of the
+        // avatar's mood mark on the trailing side, never to the row's edge.
+        contextMeterRect = NSRect(
+            x: textX,
+            y: bounds.height - ContextMeter.height - 3,
+            width: textWidth,
+            height: ContextMeter.height
+        )
     }
 
     private func layoutText(textX: CGFloat, textWidth: CGFloat, trailingInset: CGFloat) {
@@ -333,6 +347,7 @@ final class SessionRowView: NSView {
             line.stroke()
         }
 
+        contextMeter?.draw(in: contextMeterRect, ink: theme.colors.sessionName)
         drawMenuMark()
     }
 

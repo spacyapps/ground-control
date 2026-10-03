@@ -31,6 +31,10 @@ Output layout (${TMPDIR}/groundcontrol/):
 
 Contract with the app: the LAST line of a file is that row's current state.
 
+One synthetic event is not a hook: `ContextUsage`, sent by the Claude Code mod
+in Mods/context-meter, sets `context_percent` on the row's last line and nothing
+else (docs/CONTEXT-METER.md).
+
 This script must never block Claude. Every failure path exits 0 silently.
 """
 
@@ -740,6 +744,29 @@ def session_lock(path):
             fcntl.flock(handle, fcntl.LOCK_UN)
 
 
+def handle_context_usage(payload, root, session_id):
+    """Sets how full a session's context window is, and nothing else.
+
+    Not a hook: Claude Code fires none for it, and no hook payload carries the
+    figure. A Claude Code mod sends this synthetic event after each turn, from
+    `$.session.usage()` (the same number as the status line's
+    `used_percentage`). The last line is the row's state, so the previous line
+    is re-emitted whole with only `context_percent` changed — and with its own
+    `ts`, so the row's elapsed time does not restart. No previous line means no
+    row yet; this never creates one.
+    """
+    percent = get(payload, "context_percent", "contextPercent")
+    if isinstance(percent, bool) or not isinstance(percent, (int, float)):
+        return
+    path = os.path.join(root, "%s.jsonl" % session_id)
+    with session_lock(path):
+        previous = last_line(path)
+        if not previous:
+            return
+        previous["context_percent"] = max(0, min(100, int(percent)))
+        emit(path, previous)
+
+
 def main():
     raw = sys.stdin.read()
     payload = json.loads(raw)
@@ -775,6 +802,10 @@ def main():
 
     if event == "sessionend":
         handle_session_end(session_id, root)
+        return
+
+    if event == "contextusage":
+        handle_context_usage(payload, root, session_id)
         return
 
     if event not in SESSION_EVENTS:
@@ -899,6 +930,9 @@ def main():
             "needs_action": needs_action,
             "notification_type": get(payload, "notification_type", "notificationType") or "",
             "transcript_path": get(payload, "transcript_path", "transcriptPath") or "",
+            # Latched like `asked`: no hook payload carries it, so without
+            # this the very next tool call would erase the bar.
+            "context_percent": previous.get("context_percent"),
             "ts": now,
         })
 

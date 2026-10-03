@@ -39,6 +39,10 @@ struct SessionEvent: Decodable, Equatable {
     let needsAction: Bool
     let notificationType: String?
     let transcriptPath: String?
+    /// How full the model's context window is, 0-100. Absent until a Claude
+    /// Code mod reports it (docs/CONTEXT-METER.md) and for every other CLI —
+    /// absent draws no bar, never an empty one.
+    let contextPercent: Int?
     let timestamp: Date
 
     enum CodingKeys: String, CodingKey {
@@ -56,6 +60,7 @@ struct SessionEvent: Decodable, Equatable {
         case needsAction = "needs_action"
         case notificationType = "notification_type"
         case transcriptPath = "transcript_path"
+        case contextPercent = "context_percent"
         case timestamp = "ts"
     }
 
@@ -87,6 +92,7 @@ struct SessionEvent: Decodable, Equatable {
         needsAction: Bool = false,
         notificationType: String? = nil,
         transcriptPath: String? = nil,
+        contextPercent: Int? = nil,
         timestamp: Date
     ) {
         self.sessionID = sessionID
@@ -103,6 +109,7 @@ struct SessionEvent: Decodable, Equatable {
         self.needsAction = needsAction
         self.notificationType = notificationType
         self.transcriptPath = transcriptPath
+        self.contextPercent = contextPercent
         self.timestamp = timestamp
     }
 
@@ -138,6 +145,8 @@ struct SessionEvent: Decodable, Equatable {
         needsAction = try container.decodeIfPresent(Bool.self, forKey: .needsAction) ?? false
         notificationType = try container.decodeIfPresent(String.self, forKey: .notificationType)
         transcriptPath = try container.decodeIfPresent(String.self, forKey: .transcriptPath)
+        contextPercent = try container.decodeIfPresent(Int.self, forKey: .contextPercent)
+            .map { min(100, max(0, $0)) }
         let seconds = try container.decodeIfPresent(Double.self, forKey: .timestamp) ?? 0
         timestamp = Date(timeIntervalSince1970: seconds)
     }

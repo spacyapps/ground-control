@@ -78,6 +78,7 @@ GroundControl/
 │   │   │   └── SessionListView.swift      # the scrolling stack of rows
 │   │   ├── Rows/
 │   │   │   ├── SessionRowView.swift       # one row: dot + name + message + avatar
+│   │   │   ├── ContextMeter.swift         # the context-fill meter's look (docs/CONTEXT-METER.md)
 │   │   │   ├── GroupRowView.swift         # one subagent child row
 │   │   │   ├── MarqueeLabel.swift         # auto-scroll on overflow only
 │   │   │   ├── StatusDotView.swift        # drawn dot or themed badge
@@ -131,6 +132,10 @@ GroundControl/
 │
 │   └── spacyAppsUnicornOverlord/ # a frame drawn in front of the rows
 │
+├── Mods/
+│   └── context-meter/            # Claude Code mod: reports context fill to cc-notify;
+│                                 # not installed by the app (docs/CONTEXT-METER.md)
+│
 ├── Scripts/                     # cc-notify and install-hooks.sh are also copied
 │   │                             # into the .app, so a dmg needs no checkout
 │   ├── cc-notify                 # hook emitter (python3, reads Claude + Grok)
@@ -157,6 +162,7 @@ GroundControl/
 │   ├── SPEC.md                   # the full build brief
 │   ├── THEMING.md                # theme authoring guide
 │   ├── MATRIX-CUSTOMISATION.md   # theme-driven analyser motion; tiers 3-4 unbuilt
+│   ├── CONTEXT-METER.md          # the context-fill meter: contract, mod, what is unverified
 │   ├── HOOK-PAYLOADS.md          # measured hook payloads — the data SPEC rests on
 │   ├── LIMITATIONS.md            # what is verified vs assumed; other-CLI status
 │   ├── GROK-BOT-INTEGRATION.md   # Grok Bot: what its cache does and doesn't say
