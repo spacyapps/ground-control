@@ -106,6 +106,9 @@ final class StatusMenu: NSObject {
         submenu.addItem(.separator())
         for line in SetupStatus.facts() { submenu.addItem(note(line)) }
 
+        submenu.addItem(.separator())
+        submenu.addItem(contextMeterLink())
+
         if let trouble = emitterTrouble() {
             submenu.addItem(.separator())
             submenu.addItem(note(trouble))
@@ -124,6 +127,32 @@ final class StatusMenu: NSObject {
             return "Reporting script is older than this app — relaunch to update it"
         }
         return nil
+    }
+
+    /// Where to learn about the context meter.
+    ///
+    /// The meter is a Claude Code mod the user loads themselves — the app only
+    /// reads what it reports, and installs nothing — so there is no switch to
+    /// offer, only somewhere to read how. Without this entry nobody who stops
+    /// at "a session appears" would learn the meter exists.
+    ///
+    /// A heading with the link indented under it, in the same column as the
+    /// integrations above, rather than a bare line at the menu's edge. The
+    /// trailing ↗ and the tooltip follow Get More Themes: it hands you to a
+    /// browser, and the tooltip names where.
+    private func contextMeterLink() -> NSMenuItem {
+        let entry = NSMenuItem()
+        entry.view = MenuLinkRow(
+            width: 340,
+            heading: "Claude Code",
+            // A plugin, which is what the meter is to Claude Code.
+            symbol: "puzzlepiece.extension.fill",
+            link: "Context meter: how to enable ↗",
+            toolTip: Brand.contextMeterGuide?.absoluteString,
+            onOpen: { Brand.openContextMeterGuide() }
+        )
+        entry.isEnabled = true
+        return entry
     }
 
     /// A line that explains rather than does — smaller and grey, so it never

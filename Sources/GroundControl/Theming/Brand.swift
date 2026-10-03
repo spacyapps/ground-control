@@ -42,6 +42,15 @@ enum Brand {
         }
     }
 
+    /// The README section for the context meter and its one-line setup.
+    ///
+    /// GitHub, not the website: the repo holds every fact that can change, and
+    /// the line to add to settings.json is one. The fragment is the heading's
+    /// anchor, so `ContextMeterLinkTests` fails if the heading is renamed.
+    static let contextMeterGuide = URL(
+        string: "https://github.com/spacyapps/ground-control#optional-a-context-meter-claude-code"
+    )
+
     static func openWebsite() {
         guard let website else { return }
         NSWorkspace.shared.open(website)
@@ -50,6 +59,11 @@ enum Brand {
     static func openThemeStore() {
         guard let themeStore else { return }
         NSWorkspace.shared.open(themeStore)
+    }
+
+    static func openContextMeterGuide() {
+        guard let contextMeterGuide else { return }
+        NSWorkspace.shared.open(contextMeterGuide)
     }
 
     /// Full lockup — mark plus wordmark. Illegible below ~120pt wide.

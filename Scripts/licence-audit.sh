@@ -34,7 +34,9 @@ EXPECTED_USAGE_DESCRIPTIONS=1
 # 11 since 2026-09-20: opening `claude://code/continue` so a click on a Claude
 # for Desktop row lands on that conversation rather than whatever was last open.
 # Named on the privacy page with the rest.
-EXPECTED_REACH_OUT_CALLS=11
+# 12 since 2026-10-03: the Hooks menu's "Claude context meter: how to enable"
+# opens the README section on GitHub. Named on the privacy page with the rest.
+EXPECTED_REACH_OUT_CALLS=12
 
 fails=0
 

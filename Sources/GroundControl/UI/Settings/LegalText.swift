@@ -72,8 +72,8 @@ enum LegalText {
         the exact tab.
         - **The only other things it can open** are your themes folder, a \
         session's folder in Finder when you ask for it, the SpacyApps website, \
-        a conversation in Claude for Desktop when you click its row, and the \
-        hook installer — each only when you choose it.
+        the project's page on GitHub, a conversation in Claude for Desktop when \
+        you click its row, and the hook installer — each only when you choose it.
         - **You can check every line of this.** The app is open source, and \
         the script it installs is a few hundred lines of readable Python at \
         ~/.groundcontrol/bin/cc-notify.
