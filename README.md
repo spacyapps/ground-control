@@ -176,6 +176,8 @@ window fills, and turns red near the top. It needs a Claude Code that supports
 mods, and it works for Claude Code only — no hook carries the figure, so a
 small mod reports it.
 
+<img src="docs/images/context-meter.png" alt="A Claude row in the panel with the context meter under its text: a thin pale-green bar filled about 30% of the way across" width="600">
+
 Add one line to the `env` block of `~/.claude/settings.json`, then restart
 Claude Code:
 
