@@ -14,7 +14,7 @@ rights from use in commerce; nothing here asserts a registered trademark.
 
 - **Ground Control™** — the name of this application.
 - **SpacyApps™** — the publisher name and brand.
-- **Lunar Avatar™**, **Unicorn Overlord™**, **Nami Star™**, and the names of any
+- **Lunar Avatar™**, **UniUniBliss™**, **Nami Star™**, and the names of any
   other SpacyApps themes or characters, released or not.
 
 These name a product and its origin. The AGPL covers the code, not the name it
@@ -23,9 +23,16 @@ is distributed under.
 ## Artwork and characters
 
 Every theme's **images** — station frames, avatar faces, corner decorations,
-animations — and the **characters** they depict are:
+animations — are generated with Grok Imagine, then edited, selected and
+arranged by Walter Mak (SpacyApps). Created with Grok.
 
-> Copyright © 2026 Walter Mak (SpacyApps). All rights reserved.
+> Copyright © 2026 Walter Mak (SpacyApps), in that human contribution.
+
+Raw AI output may not be protected by copyright on its own, so the claim is
+to the edits, the selection and the arrangement. The redistribution limit
+below is also a condition of using a theme, not only a copyright claim, and
+the **characters** the images depict are SpacyApps marks whatever the
+copyright position.
 
 Artwork is not a derivative of the program, so the program's licence does not
 travel to it. Each shipped theme folder also carries its own `LICENSE` saying

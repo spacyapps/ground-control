@@ -99,9 +99,11 @@ enum LegalText {
         its author gives it, which is not necessarily this one — check with \
         whoever made a theme before redistributing it.
         - **The name and the theme artwork are reserved.** "Ground Control", \
-        "SpacyApps" and the theme characters are trademarks, and the theme \
-        images are all rights reserved. A fork ships under its own name and \
-        its own art — the project's TRADEMARK.md has the detail.
+        "SpacyApps" and the theme characters are trademarks. The theme images \
+        are generated with Grok Imagine, then edited and arranged by hand; \
+        SpacyApps claims that work and does not permit redistribution. A fork \
+        ships under its own name and its own art — the project's TRADEMARK.md \
+        has the detail.
         - Copyright © 2026 Walter Mak (SpacyApps).
         """
 

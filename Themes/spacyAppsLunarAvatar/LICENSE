@@ -2,9 +2,14 @@ Artwork licence — SpacyApps Lunar Avatar
 ========================================
 
 The images in this folder (frame.gif, the avatar states, and any other
-artwork here) are:
+artwork here) were generated with Grok Imagine and then edited, selected and
+arranged by Walter Mak (SpacyApps). Created with Grok.
 
-    Copyright (c) 2026 Walter Mak (SpacyApps). All rights reserved.
+SpacyApps claims copyright in its own contribution — the edits, the selection
+and the arrangement — and in theme.json's layout. Raw AI output may not be
+protected by copyright on its own; these terms apply regardless:
+
+    Copyright (c) 2026 Walter Mak (SpacyApps).
 
 They are NOT covered by the AGPL that covers Ground Control's source code.
 Artwork is not a derivative of the program, and the program's licence does
@@ -17,7 +22,11 @@ You may:
   - use theme.json as a reference for writing your own manifest.
 
 You may not redistribute the images, in whole or in part, modified or
-unmodified, without written permission.
+unmodified, without written permission. That is a condition of using this
+theme, not only a claim of copyright.
+
+The name "Lunar Avatar" and the character are SpacyApps marks; see
+TRADEMARK.md.
 
 theme.json itself is a configuration file, not artwork. Copy it freely.
 
