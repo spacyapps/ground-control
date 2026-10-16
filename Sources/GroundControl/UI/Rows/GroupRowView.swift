@@ -77,10 +77,13 @@ final class GroupRowView: NSView {
         // Split the row with the message only when there is one. A subagent
         // always has a status line; a Grok bot's is empty, and then the name
         // takes the whole width instead of being clipped against a blank half.
+        //
+        // Sized from the cell, not `intrinsicContentSize`: that comes up a few
+        // points short (30 for "alpha", which needs 33.8) and the label then
+        // truncates itself to "al…" with room to spare beside it.
         let hasMessage = !messageLabel.text.isEmpty
-        let nameWidth = hasMessage
-            ? min(available * 0.45, nameLabel.intrinsicContentSize.width)
-            : available
+        let wanted = ceil(nameLabel.cell?.cellSize.width ?? nameLabel.intrinsicContentSize.width)
+        let nameWidth = hasMessage ? min(available * 0.45, wanted) : available
 
         let lineHeight = theme.typography.messageSize + 4
         nameLabel.frame = NSRect(
