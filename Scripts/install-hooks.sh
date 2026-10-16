@@ -83,7 +83,7 @@ QUESTION_TOOLS = "ask_user_question|AskUserQuestion"
 events = [
     ("SessionStart", ""), ("UserPromptSubmit", ""), ("PreToolUse", ""),
     ("PostToolUse", QUESTION_TOOLS), ("Notification", ""), ("Stop", ""),
-    ("SubagentStart", ""), ("SubagentStop", ""), ("SessionEnd", ""),
+    ("SubagentStart", ""), ("SubagentStop", ""), ("TeammateIdle", ""), ("SessionEnd", ""),
 ]
 added, moved, retired = [], [], set()
 

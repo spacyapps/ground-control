@@ -666,7 +666,7 @@ def codex_agent_name(payload):
     return os.path.basename(found.group(1).rstrip("/")) or None
 
 
-def handle_subagent(payload, root, now, finished, message=None):
+def handle_subagent(payload, root, now, finished, message=None, resting=False):
     """Subagents share the parent's tty and session id, so they get their own
     file under agents/ — keeping the file <-> row invariant intact one level
     down. The app groups them by the session id prefix.
@@ -687,6 +687,12 @@ def handle_subagent(payload, root, now, finished, message=None):
         return
     if message is None:
         message = get(payload, "last_assistant_message", "lastAssistantMessage")
+    # `resting` is a teammate between jobs (TeammateIdle). It is `idle`, not
+    # `done`, because the app lists a finished child for half an hour and then
+    # drops it, and a teammate is still alive after that.
+    state = "idle" if resting else ("done" if finished else "working")
+    if resting:
+        message = "Idle, waiting for work"
     path = os.path.join(root, "agents", "%s__%s.jsonl" % (session_id, agent_id))
     emit(path, {
         "schema": SCHEMA,
@@ -694,7 +700,7 @@ def handle_subagent(payload, root, now, finished, message=None):
         "agent_id": agent_id,
         "agent_type": get(payload, "agent_type", "agentType") or "",
         "agent_name": (codex_agent_name(payload) or "") if source_of(payload) == "codex" else "",
-        "state": "done" if finished else "working",
+        "state": state,
         "message": condense(message) or ("Finished" if finished else "Working…"),
         "needs_action": False,
         "ts": now,
@@ -788,6 +794,13 @@ def main():
 
     if event == "subagentstart":
         handle_subagent(payload, root, now, finished=False)
+        return
+
+    # A teammate (agent teams) fires this right after each SubagentStop, and
+    # only while it is still on the team: a teammate that was shut down gets
+    # the stop and nothing after (measured 2026-10-15, 2.1.301).
+    if event == "teammateidle":
+        handle_subagent(payload, root, now, finished=False, resting=True)
         return
 
     # A subagent's own tool calls arrive with the parent's session_id, so they

@@ -31,6 +31,22 @@ final class AgentGrouperTests: XCTestCase {
         )
     }
 
+    /// A teammate that is idle is alive, however long ago it last spoke, so the
+    /// half-hour limit is for finished children only.
+    func testIdleChildOutlivesTheFinishedLimit() throws {
+        let stamp = Int(Date().timeIntervalSince1970) - 3 * 60 * 60
+        let json = #"{"session_id":"s1","agent_id":"mate","agent_type":"alpha","state":"idle","#
+            + #""message":"Idle, waiting for work","needs_action":false,"ts":\#(stamp)}"#
+        try json.write(
+            to: directory.appendingPathComponent("s1__mate.jsonl"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let children = AgentGrouper.childrenBySession(in: directory)
+        XCTAssertEqual(children["s1"]?.map(\.id), ["mate"])
+    }
+
     /// Claude Code's own agents report no type and carry text that was never
     /// part of the conversation, so they must not become rows.
     func testInternalAgentsAreHiddenByDefault() throws {

@@ -81,6 +81,28 @@ one carried text that was never part of the visible conversation. Rendering
 every `SubagentStop` as a child row produces phantom rows. Filtering rule is
 unresolved — see SPEC §10.
 
+### `TeammateIdle` — agent teams, measured 2026-10-15 on 2.1.301
+
+Needs `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and an **interactive** session:
+a headless `claude -p` never makes a team (it spawns plain background agents,
+and no `TeammateIdle` fires). A real team writes `~/.claude/teams/<team>/` with
+a `config.json` and an inbox per member.
+
+```json
+{"session_id": "b33767d7-...", "agent_id": "abeta-062bcdeacf7e9609",
+ "agent_type": "beta", "hook_event_name": "TeammateIdle",
+ "teammate_name": "beta", "team_name": "session-b33767d7"}
+```
+
+- **Teammates are not separate sessions.** They share the lead's `session_id`
+  and carry their own `agent_id`, with `agent_type` set to the teammate's name.
+- **A live teammate fires `TeammateIdle` right after every `SubagentStop`.** A
+  teammate that was shut down fires the stop and nothing after it, and drops
+  out of `config.json`. That is the only hook-side way to tell a teammate that
+  is still alive from one that is gone; a plain subagent never fires it.
+- `cc-notify` writes the child as `idle`, not `done`, because `AgentGrouper`
+  drops a `done` child after 30 minutes and a teammate outlives that.
+
 ### `SubagentStart`, and a subagent's own tool calls — measured 2026-09-30 on 2.1.286
 
 Sandboxed probe: a headless `claude -p` with its own `--settings` hooks file,
