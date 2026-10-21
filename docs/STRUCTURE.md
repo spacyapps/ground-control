@@ -146,6 +146,8 @@ GroundControl/
 │   ├── cc-notify                 # hook emitter (python3, reads Claude + Grok)
 │   ├── install-hooks.sh          # MERGES hook entries into ~/.claude/settings.json
 │   ├── theme-preview.sh          # one fake row per state, for theming
+│   ├── probe-claude-hooks.sh     # re-measures Claude's hook payloads after an update,
+│   │                             # diffs vs claude-hook-keys.baseline (skill: verify-claude-upgrade)
 │   ├── make-icon.sh              # logo -> AppIcon.icns
 │   ├── build-app.sh              # assembles + signs GroundControl.app
 │   ├── build-dmg.sh              # dmg: styled drag-install window (create-dmg),

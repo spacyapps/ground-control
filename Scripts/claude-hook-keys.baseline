@@ -1,0 +1,10 @@
+# claude-hook-keys baseline — measured on Claude Code 2.1.306
+(env): CLAUDECODE,CLAUDE_CODE_BRIDGE_SESSION_ID,CLAUDE_CODE_CHILD_SESSION,CLAUDE_CODE_ENTRYPOINT,CLAUDE_CODE_EXECPATH,CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS,CLAUDE_CODE_MESSAGING_SOCKET,CLAUDE_CODE_MESSAGING_TOKEN,CLAUDE_CODE_PLUGIN_DIRS,CLAUDE_CODE_SESSION_ATTENDED,CLAUDE_CODE_SESSION_ID,CLAUDE_CODE_SUBAGENT_MODEL,CLAUDE_EFFORT,CLAUDE_ENV_FILE,CLAUDE_PID,CLAUDE_PROJECT_DIR
+PostToolUse: agent_id,agent_type,cwd,duration_ms,effort,hook_event_name,permission_mode,prompt_id,session_id,tool_input,tool_name,tool_response,tool_use_id,transcript_path
+PreToolUse: agent_id,agent_type,cwd,effort,hook_event_name,permission_mode,prompt_id,session_id,tool_input,tool_name,tool_use_id,transcript_path
+SessionEnd: cwd,hook_event_name,prompt_id,reason,session_id,transcript_path
+SessionStart: cwd,hook_event_name,session_id,source,transcript_path
+Stop: background_tasks,cwd,effort,hook_event_name,last_assistant_message,permission_mode,prompt_id,session_crons,session_id,stop_hook_active,transcript_path
+SubagentStart: agent_id,agent_type,cwd,hook_event_name,prompt_id,session_id,transcript_path
+SubagentStop: agent_id,agent_transcript_path,agent_type,background_tasks,cwd,effort,hook_event_name,last_assistant_message,permission_mode,prompt_id,session_crons,session_id,stop_hook_active,transcript_path
+UserPromptSubmit: cwd,hook_event_name,permission_mode,prompt,prompt_id,session_id,transcript_path
