@@ -4,6 +4,11 @@ Captured live from **Claude Code 2.1.226** on macOS by registering a probe
 script on every event and dumping raw stdin. Everything here is observed
 output, not documentation reading. Re-run the probe when the CLI updates.
 
+Re-checked on **2.1.306** (2026-10-20): the key set per event is unchanged apart
+from the fields noted below. `Scripts/probe-claude-hooks.sh` re-runs it and
+diffs against `Scripts/claude-hook-keys.baseline`; the `verify-claude-upgrade`
+skill is the whole checklist. Headless `claude -p` sends no `session_title`.
+
 ## How to re-capture
 
 ```bash
