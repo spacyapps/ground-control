@@ -47,8 +47,9 @@ final class Preferences {
     }
 
     /// Escape hatch for the internal-agent filter in `AgentGrouper`, which is a
-    /// heuristic on an empty `agent_type`. No UI: `defaults write GroundControl
-    /// showsInternalAgents -bool YES` if you want to see everything.
+    /// heuristic on an empty `agent_type`. No UI: `defaults write
+    /// com.spacyapps.groundcontrol showsInternalAgents -bool YES` if you want to
+    /// see everything.
     var showsInternalAgents: Bool {
         get { defaults.bool(forKey: Key.showsInternalAgents) }
         set { defaults.set(newValue, forKey: Key.showsInternalAgents) }
@@ -56,8 +57,8 @@ final class Preferences {
 
     /// The Grok Bot group (docs/GROK-BOT-GROUPING.md). On by default — it costs
     /// nothing when Grok Bot is not installed — but its status comes from an
-    /// undocumented cache, so `defaults write GroundControl showsGrokBot -bool NO`
-    /// turns it off.
+    /// undocumented cache, so `defaults write com.spacyapps.groundcontrol
+    /// showsGrokBot -bool NO` turns it off.
     var showsGrokBot: Bool {
         get { defaults.object(forKey: Key.showsGrokBot) as? Bool ?? true }
         set { defaults.set(newValue, forKey: Key.showsGrokBot) }
@@ -69,8 +70,8 @@ final class Preferences {
     /// default — reading `subagents/<id>/meta.json` is cheap and only ever
     /// active for `source == "grok"` sessions — but the link comes from an
     /// undocumented, no-contract Grok-internal file, so `defaults write
-    /// GroundControl showsGrokSubagentGrouping -bool NO` turns it off if that
-    /// shape ever drifts.
+    /// com.spacyapps.groundcontrol showsGrokSubagentGrouping -bool NO` turns it
+    /// off if that shape ever drifts.
     var showsGrokSubagentGrouping: Bool {
         get { defaults.object(forKey: Key.showsGrokSubagentGrouping) as? Bool ?? true }
         set { defaults.set(newValue, forKey: Key.showsGrokSubagentGrouping) }

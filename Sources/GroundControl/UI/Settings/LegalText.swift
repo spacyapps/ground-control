@@ -51,8 +51,8 @@ enum LegalText {
         row or find a window and takes nothing else from them: read-only, \
         never written to, never sent anywhere, and only on a Mac where those \
         tools are installed. The two Grok readers can be switched off in \
-        Terminal: defaults write GroundControl showsGrokBot -bool NO, and the \
-        same for showsGrokSubagentGrouping.
+        Terminal: defaults write com.spacyapps.groundcontrol showsGrokBot \
+        -bool NO, and the same for showsGrokSubagentGrouping.
         - **What gets written.** One line per event: the session's folder and \
         name, its state, which terminal or editor it belongs to, and up to 240 \
         characters of the prompt or question so the row can say what is \

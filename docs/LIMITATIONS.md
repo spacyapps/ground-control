@@ -615,7 +615,7 @@ their messages being echoes of the user's own prompts ("commit", "rename it to
 ground-control"), which is exactly what made them misleading on screen.
 
 Still a heuristic rather than a guarantee: a real subagent *could* report no
-type. `defaults write GroundControl showsInternalAgents -bool YES`, or the
+type. `defaults write com.spacyapps.groundcontrol showsInternalAgents -bool YES`, or the
 checkbox in Settings → Advanced, brings them back.
 
 ### 3. Background images — **verified 2026-08-11, and this entry was earned**
