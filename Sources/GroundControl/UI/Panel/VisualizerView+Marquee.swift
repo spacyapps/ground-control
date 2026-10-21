@@ -90,10 +90,11 @@ extension VisualizerView {
     /// One column of the sweeping word, drawn in the same cells the bars use.
     func drawLetterColumn(x originX: CGFloat, column: Int, usable: CGFloat, inset: CGFloat) {
         let cell = (usable - CGFloat(Self.rows - 1) * segmentGap) / CGFloat(Self.rows)
+        let ink = letterColor
         for row in 0..<Self.rows {
             let lit = MatrixFont.isLit(text: messageText, column: column, row: row)
             let y = inset + CGFloat(row) * (cell + segmentGap)
-            (lit ? letterColor : theme.matrix.unlit).setFill()
+            (lit ? ink : theme.matrix.unlit).setFill()
             NSRect(x: originX, y: y, width: barWidth, height: cell).fill()
         }
     }

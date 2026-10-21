@@ -24,7 +24,7 @@ final class VisualizerView: NSView {
     var levels: [CGFloat] = []
     private var peaks: [CGFloat] = []
     private var timer: Timer?
-    var theme: Theme = DefaultTheme.theme
+    var theme: Theme = DefaultTheme.theme { didSet { ramp = nil } }
 
     /// 0…1, smoothed towards `targetEnergy` so state changes ease in.
     private var energy: CGFloat = 0
@@ -35,7 +35,10 @@ final class VisualizerView: NSView {
     private var phaseClock: CGFloat = 0
     private var pattern: VisualizerPattern = .wave
     private var patternUntil = Date.distantPast
-    var isAlarmed = false
+    var isAlarmed = false { didSet { if isAlarmed != oldValue { ramp = nil } } }
+    /// One colour per row, floor to ceiling. Blending is a colour-space
+    /// conversion, and every lit segment paid it on every 24 fps frame.
+    private var ramp: [NSColor]?
     private var resolver = MatrixResolver()
     /// Advanced one tick per `step()` rather than read from the wall clock, so
     /// the escalation and bloom windows count frames — steady under scheduling
@@ -323,10 +326,9 @@ final class VisualizerView: NSView {
         let lit = max(floor, Int((level * CGFloat(steps)).rounded()))
 
         for step in 0..<steps {
-            let fraction = CGFloat(step) / CGFloat(max(1, steps - 1))
             let y = bounds.height - inset - CGFloat(step + 1) * (segment + segmentGap)
             let rect = NSRect(x: originX, y: y, width: barWidth, height: segment)
-            (step < lit ? color(at: fraction) : theme.matrix.unlit).setFill()
+            (step < lit ? rampColor(step) : theme.matrix.unlit).setFill()
             rect.fill()
         }
 
@@ -336,6 +338,12 @@ final class VisualizerView: NSView {
         let peakY = bounds.height - inset - CGFloat(peakStep + 1) * (segment + segmentGap)
         theme.matrix.peak.setFill()
         NSRect(x: originX, y: peakY, width: barWidth, height: 1).fill()
+    }
+
+    private func rampColor(_ step: Int) -> NSColor {
+        let colors = ramp ?? (0..<Self.rows).map { color(at: CGFloat($0) / CGFloat(max(1, Self.rows - 1))) }
+        ramp = colors
+        return colors[min(step, colors.count - 1)]
     }
 
     /// Green at the floor through to the alarm colour at the ceiling — and the
