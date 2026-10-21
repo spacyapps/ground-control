@@ -37,14 +37,6 @@ The probe leaves the user's own hooks out, so no stray row reaches the panel.
 When the diff is understood: `./Scripts/probe-claude-hooks.sh --accept` and
 commit the baseline.
 
-Then the context meter (also headless, a few cents):
-
-    ./Scripts/probe-context-meter.sh
-
-Three `claude -p` turns with the mod pointed at a spy: it must report after
-each turn and the reading must fall after a real `/compact`. `PASS` covers the
-Claude half. It leaves a scratch transcript under `~/.claude/projects/`.
-
 Known quirk: headless `-p` sends no `session_title` on `UserPromptSubmit`; the
 interactive payload in `HOOK-PAYLOADS.md` does. Absence there is not drift.
 
@@ -57,9 +49,10 @@ what you actually saw. Anything skipped goes in the "Not rerun" list.
       red, then clears on the answer.
 - [ ] **Interrupted permission prompt**: Esc at a prompt; the row must not stay
       red or working.
-- [ ] **Context meter, on screen**: the bar fills and drops on the panel. The
-      probe proves the numbers; only an idle compaction (interactive session
-      left alone) needs eyes.
+- [ ] **Context meter**: fills, then drops after `/compact`, and after an idle
+      compaction if the version touched compaction. (A headless version was
+      tried on 2.1.306 and dropped: it left a transcript folder per run in
+      `~/.claude/projects/`, and a throwaway `CLAUDE_CONFIG_DIR` loses auth.)
 - [ ] **Subagent**: a 30s+ subagent shows as a working child row.
 - [ ] **Background**: `claude --bg "<prompt>"`; hook env has `CLAUDE_JOB_DIR`,
       still no `CLAUDE_CODE_SESSION_KIND` (the probe's env list shows the same
