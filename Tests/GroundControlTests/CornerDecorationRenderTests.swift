@@ -258,6 +258,38 @@ final class CornerDecorationGeometryTests: XCTestCase {
         XCTAssertTrue(sawBlue, "working, the gif should have moved past its first frame at some point")
     }
 
+    /// Held still, the gif stays on its first frame however long it waits — and
+    /// moves again the moment the hold is lifted.
+    func testHeldDecorationStaysPutThenMovesOnRelease() throws {
+        let motion = MotionFixture()
+        defer { motion.restore() }
+        motion.pause()
+
+        let view = CornerDecorationsView()
+        hosted(view, size: NSSize(width: 200, height: 200))
+        var theme = DefaultTheme.theme
+        theme.cornerDecorations = Theme.CornerDecorations(bottomRight: decoration(url: try animatedSwatch()))
+        view.apply(theme: theme)
+        view.layoutSubtreeIfNeeded()
+        view.update(isWorking: true)
+
+        var sawBlue = false
+        let hold = Date().addingTimeInterval(1)
+        while Date() < hold {
+            try settle(0.02)
+            if try redComponent(view) < 0.5 { sawBlue = true }
+        }
+        XCTAssertFalse(sawBlue, "held, it must not leave its first frame")
+
+        motion.resume()
+        let deadline = Date().addingTimeInterval(3)
+        while !sawBlue, Date() < deadline {
+            try settle(0.02)
+            sawBlue = try redComponent(view) < 0.5
+        }
+        XCTAssertTrue(sawBlue, "released, it animates again")
+    }
+
     /// The easter egg: a decoration with several images flips through them
     /// while working, freezes at rest, and resumes where it left off.
     func testSeveralImagesFlipWhileWorking() throws {

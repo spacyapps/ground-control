@@ -65,9 +65,50 @@ final class VisualizerView: NSView {
 
     override var isFlipped: Bool { true }
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(motionPolicyChanged), name: MotionPolicy.didChange, object: nil
+        )
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("VisualizerView is created in code only")
+    }
+
     deinit {
         timer?.invalidate()
         messageTimer?.invalidate()
+    }
+
+    /// The panel was asked to hold still, or told it may move again.
+    @objc private func motionPolicyChanged() {
+        if MotionPolicy.shared.allowsMotion {
+            if targetEnergy > 0 || isAlarmed { start() }
+            if messageTimer == nil && !isShowingMessage { scheduleMessage() }
+        } else {
+            holdStill()
+        }
+    }
+
+    /// Stops the loop and the word, and paints where the bars would be right now.
+    /// The mood still reads — working holds a shape, calm sleeps, an alarm keeps
+    /// its lit floor — only the movement goes.
+    private func holdStill() {
+        timer?.invalidate()
+        timer = nil
+        messageTimer?.invalidate()
+        messageTimer = nil
+        messageScroll = nil
+        energy = targetEnergy
+        // No loop to ease the bars there, so run the easing out in one go. The
+        // cap is for a pattern whose jitter never lets two passes agree.
+        for _ in 0..<120 {
+            let before = levels
+            step()
+            if levels == before { break }
+        }
     }
 
     func apply(theme: Theme) {
@@ -111,12 +152,15 @@ final class VisualizerView: NSView {
         // The alarm colour can change while the bars are at rest and the timer
         // is stopped, so repaint regardless.
         needsDisplay = true
+        // Held still, the loop never runs to carry a new mood into the bars, so
+        // settle them here: the mood changes, without the movement.
+        if !MotionPolicy.shared.allowsMotion { holdStill() }
     }
 
     // MARK: - Animation
 
     func start() {
-        guard timer == nil, window != nil else { return }
+        guard timer == nil, window != nil, MotionPolicy.shared.allowsMotion else { return }
         let tick = 1.0 / 24.0
         let timer = Timer.scheduledTimer(withTimeInterval: tick, repeats: true) { [weak self] _ in
             self?.step()

@@ -53,6 +53,9 @@ final class AppCoordinator {
         }
 
         aggregator.onChange = { [weak self] sessions in
+            // Before the panel hears the sessions, so a row that needs input
+            // finds motion already allowed when it is drawn.
+            MotionPolicy.shared.update(hasAlarm: sessions.contains(where: \.needsAction))
             self?.panel.apply(sessions: sessions)
             self?.statusItem.update(sessions: sessions)
         }
@@ -60,6 +63,8 @@ final class AppCoordinator {
         themeStore.start()
         purge.start()
         aggregator.start()
+        MotionPolicy.shared.settingsDidChange()
+        MotionPolicy.shared.update(hasAlarm: aggregator.sessions.contains(where: \.needsAction))
 
         panel.apply(sessions: aggregator.sessions)
         statusItem.update(sessions: aggregator.sessions)
@@ -253,7 +258,8 @@ final class AppCoordinator {
                 openThemesFolder: { [weak self] in self?.openThemesFolder() },
                 resetPanelPosition: { [weak self] in self?.panel.resetPosition() },
                 createTheme: { [weak self] in self?.showThemeBuilder() },
-                currentSessions: { [weak self] in self?.aggregator.sessions ?? [] }
+                currentSessions: { [weak self] in self?.aggregator.sessions ?? [] },
+                applyMotionPolicy: { MotionPolicy.shared.settingsDidChange() }
             ))
         }
         settings?.present()

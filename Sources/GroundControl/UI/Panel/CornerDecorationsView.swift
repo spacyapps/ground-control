@@ -66,6 +66,15 @@ final class CornerDecorationsView: NSView {
     init() {
         super.init(frame: .zero)
         wantsLayer = true
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(motionPolicyChanged), name: MotionPolicy.didChange, object: nil
+        )
+    }
+
+    /// The panel was asked to hold still, or told it may move again.
+    @objc private func motionPolicyChanged() {
+        updateAnimation()
+        syncVideo()
     }
 
     @available(*, unavailable)
@@ -117,26 +126,26 @@ final class CornerDecorationsView: NSView {
             spellStart = nil
         }
         updateAnimation()
+        syncVideo()
+        // Back to the resting frame once the work is over, not merely held.
+        if !isWorking {
+            for state in videoStates.values { state.player.seek(to: .zero) }
+        }
+    }
+
+    /// Plays the clips only while work is on, the panel is on screen and
+    /// nothing has asked the panel to hold still; otherwise holds the frame.
+    private func syncVideo() {
+        let shouldPlay = isWorking && window != nil && MotionPolicy.shared.allowsMotion
         for state in videoStates.values {
-            if isWorking {
-                if window != nil { state.player.play() }
-            } else {
-                state.player.pause()
-                state.player.seek(to: .zero)
-            }
+            if shouldPlay { state.player.play() } else { state.player.pause() }
         }
     }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         updateAnimation()
-        for state in videoStates.values {
-            if window == nil {
-                state.player.pause()
-            } else if isWorking {
-                state.player.play()
-            }
-        }
+        syncVideo()
     }
 
     override func layout() {
@@ -211,7 +220,7 @@ final class CornerDecorationsView: NSView {
     }
 
     private func updateAnimation() {
-        guard isWorking, window != nil, needsAnimationTimer else {
+        guard isWorking, MotionPolicy.shared.allowsMotion, window != nil, needsAnimationTimer else {
             animationTimer?.invalidate()
             animationTimer = nil
             needsDisplay = true

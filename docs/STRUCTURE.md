@@ -83,7 +83,9 @@ GroundControl/
 │   │   │   ├── GroupRowView.swift         # one subagent child row
 │   │   │   ├── MarqueeLabel.swift         # auto-scroll on overflow only
 │   │   │   ├── StatusDotView.swift        # drawn dot or themed badge
-│   │   │   └── AvatarView.swift           # image / animated GIF / looping video
+│   │   │   ├── AvatarView.swift           # image / animated GIF / looping video
+│   │   │   ├── AvatarView+SplitFace.swift # the two-state seam face, drawn
+│   │   │   └── CALayer+Paused.swift       # freeze / resume a layer's animations without a jump
 │   │   ├── MenuBar/
 │   │   │   ├── StatusItemController.swift # NSStatusItem, badge on needs-action
 │   │   │   └── StatusMenu.swift           # right-click menu
@@ -100,6 +102,8 @@ GroundControl/
 │   ├── Services/                 # cross-cutting helpers
 │   │   ├── Preferences.swift     # UserDefaults wrapper
 │   │   ├── Paths.swift           # canonical folder locations
+│   │   ├── MotionPolicy.swift    # may the panel animate now? busy / low battery / alarm
+│   │   ├── SystemLoad.swift      # whole-Mac CPU load and battery, read locally
 │   │   └── Log.swift             # os.Logger wrapper
 │   │
 │   ├── Extensions/               # small, focused extensions

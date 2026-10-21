@@ -28,6 +28,21 @@ final class Preferences {
         static let dismissedSessions = "dismissedSessions"
         static let showsAnalyser = "showsAnalyser"
         static let analyserTint = "analyserTint"
+        static let pausesWhenBusy = "pausesWhenBusy"
+        static let pausesOnLowBattery = "pausesOnLowBattery"
+    }
+
+    /// Hold every animation still while the Mac is busy (`MotionPolicy`). Off by
+    /// default: it changes what people see, so it is theirs to choose.
+    var pausesWhenBusy: Bool {
+        get { defaults.bool(forKey: Key.pausesWhenBusy) }
+        set { defaults.set(newValue, forKey: Key.pausesWhenBusy) }
+    }
+
+    /// The same on a low battery or in Low Power Mode.
+    var pausesOnLowBattery: Bool {
+        get { defaults.bool(forKey: Key.pausesOnLowBattery) }
+        set { defaults.set(newValue, forKey: Key.pausesOnLowBattery) }
     }
 
     /// The analyser's colour, as `#rrggbb`, or nil to use whatever the theme

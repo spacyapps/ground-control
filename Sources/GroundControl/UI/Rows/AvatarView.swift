@@ -32,10 +32,13 @@ final class AvatarView: NSView {
 
     /// Decoded images are reused across rows and state flips — the same few
     /// files are asked for constantly.
-    private static let imageCache = NSCache<NSURL, NSImage>()
+    static let imageCache = NSCache<NSURL, NSImage>()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(applyMotion), name: MotionPolicy.didChange, object: nil
+        )
         wantsLayer = true
         layer?.masksToBounds = true
 
@@ -120,10 +123,27 @@ final class AvatarView: NSView {
         if window == nil {
             player?.pause()
         } else {
-            player?.play()
+            applyMotion()
             // The seam froze while the panel was hidden — catch it up.
             if splitPair != nil { renderSplitFace() }
         }
+    }
+
+    /// Whether this face may move. A row that needs input always may: the
+    /// movement is how it gets noticed. Everything else stops when the panel has
+    /// been asked to hold still — the face stays, the motion goes.
+    var mayMove: Bool {
+        !MotionPolicy.shared.isPaused || drawnState == .needsInput
+    }
+
+    /// Brings video, animated images and the gear train into line with `mayMove`.
+    @objc private func applyMotion() {
+        let moving = mayMove
+        imageView.animates = moving
+        if let player {
+            if moving, window != nil { player.play() } else { player.pause() }
+        }
+        for layer in [gears, imageView.layer].compactMap({ $0 }) { layer.setPaused(!moving) }
     }
 
     /// `asset` is the theme's artwork for this state, if it supplied any.
@@ -149,6 +169,8 @@ final class AvatarView: NSView {
         case .video(let url, let loop, let muted):
             show(videoAt: url, loop: loop, muted: muted)
         }
+        // The state may have just become one that always moves, or stopped being.
+        applyMotion()
     }
 
     /// The "we don't know which" face: the `left` state's still on one half,
@@ -188,78 +210,6 @@ final class AvatarView: NSView {
     func tickSplitSeam() {
         guard splitPair != nil, window != nil else { return }
         renderSplitFace()
-    }
-
-    /// Where the seam points: a clock's minute hand, one full turn an hour.
-    /// It moves because "we don't know" is a live guess, not a resting state —
-    /// docs/GROK-BOT-GROUPING.md.
-    static func clockSeamAngle(_ date: Date = Date()) -> CGFloat {
-        let seconds = date.timeIntervalSince(Calendar.current.startOfDay(for: date))
-        let intoHour = seconds.truncatingRemainder(dividingBy: 3600)
-        // A real minute hand: vertical at :00, horizontal (pointing at the 3)
-        // at :15, and sweeping clockwise — so the angle counts *down* from π/2.
-        return .pi / 2 - CGFloat(intoHour / 3600) * 2 * .pi
-    }
-
-    static func splitFace(left: SessionState,
-                          right: SessionState,
-                          theme: Theme,
-                          angle: CGFloat) -> NSImage {
-        let side = max(1, theme.avatar.size)
-        return NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
-            let centre = NSPoint(x: rect.midX, y: rect.midY)
-            let reach = rect.width * 4
-            let along = NSPoint(x: cos(angle), y: sin(angle))       // the seam's direction
-            let across = NSPoint(x: -sin(angle), y: cos(angle))     // its normal
-
-            for (state, sign) in [(left, CGFloat(1)), (right, CGFloat(-1))] {
-                NSGraphicsContext.current?.saveGraphicsState()
-                // The half-plane on one side of the seam, as a big quad.
-                let ends = (NSPoint(x: centre.x - along.x * reach, y: centre.y - along.y * reach),
-                            NSPoint(x: centre.x + along.x * reach, y: centre.y + along.y * reach))
-                let half = NSBezierPath()
-                half.move(to: ends.0)
-                half.line(to: ends.1)
-                half.line(to: NSPoint(x: ends.1.x + across.x * reach * sign,
-                                      y: ends.1.y + across.y * reach * sign))
-                half.line(to: NSPoint(x: ends.0.x + across.x * reach * sign,
-                                      y: ends.0.y + across.y * reach * sign))
-                half.close()
-                half.addClip()
-                face(for: state, theme: theme)?.draw(in: rect)
-                NSGraphicsContext.current?.restoreGraphicsState()
-            }
-
-            // The seam itself — a diameter at `angle`. `messageDim` is the
-            // avatar's own border colour, so the line belongs to the plate
-            // rather than sitting on the artwork like the old white one did.
-            let seam = NSBezierPath()
-            seam.lineWidth = max(2, rect.width * 0.05)
-            seam.move(to: NSPoint(x: centre.x - along.x * reach, y: centre.y - along.y * reach))
-            seam.line(to: NSPoint(x: centre.x + along.x * reach, y: centre.y + along.y * reach))
-            theme.colors.messageDim.withAlphaComponent(0.75).setStroke()
-            seam.stroke()
-            return true
-        }
-    }
-
-    /// One state's face as a plain image — the theme's still, or the built-in
-    /// symbol tinted and inset the way `layout()` insets a drawn avatar.
-    private static func face(for state: SessionState, theme: Theme) -> NSImage? {
-        switch theme.avatar.asset(for: state) {
-        case .image(let url):
-            return imageCache.object(forKey: url as NSURL) ?? NSImage(contentsOf: url)
-        case .video, .none:
-            guard let symbol = DrawnAvatar.symbol(for: state) else { return nil }
-            let colour = theme.colors.color(for: state)
-            let tinted = symbol.withSymbolConfiguration(
-                NSImage.SymbolConfiguration(paletteColors: [colour])
-            ) ?? symbol
-            return NSImage(size: NSSize(width: 100, height: 100), flipped: false) { rect in
-                tinted.draw(in: rect.insetBy(dx: rect.width * 0.2, dy: rect.height * 0.2))
-                return true
-            }
-        }
     }
 
     // MARK: - Backends
@@ -303,6 +253,7 @@ final class AvatarView: NSView {
         gears = train
         gearBox = box.size
         gearColour = colour
+        applyMotion()
     }
 
     private func teardownGears() {
@@ -359,7 +310,7 @@ final class AvatarView: NSView {
 
         self.player = player
         self.playerLayer = playerLayer
-        if window != nil { player.play() }
+        applyMotion()
     }
 
     // MARK: - Spin

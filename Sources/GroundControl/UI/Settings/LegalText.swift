@@ -65,6 +65,10 @@ enum LegalText {
         GroundControl so they can be drawn cheaply. It is only the theme's own \
         pictures, and it is emptied at launch, at quit, and whenever the theme \
         changes.
+        - **Two optional readings, only if you ask.** "Hold still" in Settings \
+        makes the app glance every couple of seconds at how busy the processors \
+        are overall, and at the battery level and Low Power Mode. It looks at \
+        no process, file or window, keeps nothing, and sends nothing.
         - **It does not act on your behalf.** It never types into your \
         terminal, never answers a prompt for you, and never runs a command \
         your agent proposed. Clicking a row brings that terminal or editor to \

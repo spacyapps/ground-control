@@ -26,7 +26,7 @@ extension VisualizerView {
         // the delay never actually elapsed.
         guard messageTimer?.isValid != true else { return }
         messageTimer?.invalidate()
-        guard window != nil, !isAlarmed else { return }
+        guard window != nil, !isAlarmed, MotionPolicy.shared.allowsMotion else { return }
         messageTimer = Timer.scheduledTimer(
             withTimeInterval: MatrixMessages.nextDelay(), repeats: false
         ) { [weak self] _ in
@@ -35,7 +35,7 @@ extension VisualizerView {
     }
 
     func beginMessage() {
-        guard window != nil, !isAlarmed else { return }
+        guard window != nil, !isAlarmed, MotionPolicy.shared.allowsMotion else { return }
         messageTurn += 1
         messageText = MatrixMessages.next(
             turn: messageTurn,

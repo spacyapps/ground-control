@@ -55,6 +55,21 @@ extension SettingsView {
         stack.setCustomSpacing(20, after: reset)
     }
 
+    func motionSection(in stack: NSStackView) {
+        stack.addArrangedSubview(header("Motion", width: SettingsView.sideWidth))
+
+        configure(pausesBusyBox, title: "Hold still when the Mac is busy", action: #selector(motionChanged))
+        configure(pausesBatteryBox, title: "Hold still on a low battery", action: #selector(motionChanged))
+        stack.addArrangedSubview(pausesBusyBox)
+        stack.addArrangedSubview(pausesBatteryBox)
+        stack.addArrangedSubview(caption(
+            "Stops the theme's animation, the avatars and the analyser. Moods still change, "
+            + "just without the movement. Anything waiting on you keeps moving. "
+            + "Low battery means Low Power Mode, or under 20% unplugged."
+        ))
+        if let last = stack.arrangedSubviews.last { stack.setCustomSpacing(20, after: last) }
+    }
+
     func advancedSection(in stack: NSStackView) {
         stack.addArrangedSubview(header("Advanced", width: SettingsView.sideWidth))
 

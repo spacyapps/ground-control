@@ -60,6 +60,14 @@ final class PanelBackgroundView: NSView {
         // `PanelRootView`, which owns them outside this view's shape mask.
         addSubview(skinOverlay)
         skinOverlay.elapsed = { [weak self] in self?.currentElapsed }
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(motionPolicyChanged), name: MotionPolicy.didChange, object: nil
+        )
+    }
+
+    /// The panel was asked to hold still, or told it may move again.
+    @objc private func motionPolicyChanged() {
+        updateAnimation()
     }
 
     @available(*, unavailable)
@@ -319,7 +327,8 @@ final class PanelBackgroundView: NSView {
     }
 
     private func updateAnimation() {
-        guard isWorking, window != nil, let background = animatedBackground else {
+        guard isWorking, MotionPolicy.shared.allowsMotion, window != nil,
+              let background = animatedBackground else {
             animationTimer?.invalidate()
             animationTimer = nil
             needsDisplay = true

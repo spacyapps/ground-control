@@ -27,6 +27,9 @@ final class SettingsView: NSView {
         /// What the panel is showing right now, so Setup can say whether
         /// anything has actually arrived from each agent.
         var currentSessions: () -> [Session]
+        /// Re-reads the two "hold still" options, starting or stopping the
+        /// sampling behind them.
+        var applyMotionPolicy: () -> Void = {}
     }
 
     private let preferences: Preferences
@@ -53,6 +56,8 @@ final class SettingsView: NSView {
     let allSpacesBox = NSButton()
     let internalAgentsBox = NSButton()
     let analyserBox = NSButton()
+    let pausesBusyBox = NSButton()
+    let pausesBatteryBox = NSButton()
     let analyserWell = NSColorWell()
 
     /// Folder names in picker order; `nil` is the built-in default.
@@ -119,6 +124,7 @@ final class SettingsView: NSView {
 
         themeSection(in: left)
         panelSection(in: right)
+        motionSection(in: right)
         advancedSection(in: right)
 
         let row = NSStackView(views: [left, right])
@@ -205,6 +211,8 @@ final class SettingsView: NSView {
         allSpacesBox.state = preferences.showOnAllSpaces ? .on : .off
         internalAgentsBox.state = preferences.showsInternalAgents ? .on : .off
         analyserBox.state = preferences.showsAnalyser ? .on : .off
+        pausesBusyBox.state = preferences.pausesWhenBusy ? .on : .off
+        pausesBatteryBox.state = preferences.pausesOnLowBattery ? .on : .off
         // No stored colour means "whatever the theme picked", and the well
         // should show that rather than a colour nobody chose.
         analyserWell.color = preferences.analyserTint.flatMap { NSColor(hex: $0) }
@@ -284,6 +292,12 @@ final class SettingsView: NSView {
     @objc func analyserChanged() {
         preferences.showsAnalyser = analyserBox.state == .on
         actions.refreshPanelChrome()
+    }
+
+    @objc func motionChanged() {
+        preferences.pausesWhenBusy = pausesBusyBox.state == .on
+        preferences.pausesOnLowBattery = pausesBatteryBox.state == .on
+        actions.applyMotionPolicy()
     }
 
     @objc func analyserColourChanged() {
