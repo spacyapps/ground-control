@@ -60,6 +60,11 @@ enum LegalText {
         - **It is deleted after a day.** Session files live in your system's \
         temporary folder and are removed 24 hours after their last activity. \
         Nothing is archived, and there is no history to mine.
+        - **Animated themes are unpacked while they run.** A theme with moving \
+        artwork has its frames copied into a cache folder in ~/Library/Caches/\
+        GroundControl so they can be drawn cheaply. It is only the theme's own \
+        pictures, and it is emptied at launch, at quit, and whenever the theme \
+        changes.
         - **It does not act on your behalf.** It never types into your \
         terminal, never answers a prompt for you, and never runs a command \
         your agent proposed. Clicking a row brings that terminal or editor to \

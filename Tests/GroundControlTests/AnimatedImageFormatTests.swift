@@ -66,7 +66,7 @@ final class AnimatedImageFormatTests: XCTestCase {
         let background = BackgroundImage(url: url, mode: .tile, capInsets: NSEdgeInsets())
         let animated = try XCTUnwrap(AnimatedImage.load(background))
         XCTAssertTrue(animated.isAnimated)
-        XCTAssertEqual(animated.frames.count, 2)
+        XCTAssertEqual(animated.count, 2)
         XCTAssertTrue(BackgroundRenderer.isAnimated(background))
     }
 

@@ -4,28 +4,84 @@
 import AppKit
 import ImageIO
 
-/// A multi-frame image, decoded once and held as ready-to-draw frames.
+/// A multi-frame image, ready to draw one frame at a time.
 ///
 /// `NSImage.draw(in:)` renders frame zero and stops — animated images only move
 /// inside an `NSImageView`, which the nine-slice renderer cannot use. So a
 /// background that animates has to be stepped by hand, which means having the
 /// frames to hand.
 ///
-/// Each frame carries the cap insets, so every one nine-slices identically and
-/// a resizing panel does not shear mid-animation.
-struct AnimatedImage {
-    let frames: [NSImage]
+/// Frames of a real animation live in a `FrameStore` on disk and come back one
+/// at a time; only a still, or an animation the disk would not take, is held
+/// in memory. Each frame carries the cap insets, so every one nine-slices
+/// identically and a resizing panel does not shear mid-animation.
+final class AnimatedImage {
     /// Seconds per frame, honouring the file's own timing rather than guessing.
     let duration: TimeInterval
 
-    var isAnimated: Bool { frames.count > 1 }
+    private enum Frames {
+        case memory([NSImage])
+        case stored(FrameStore)
+    }
+
+    private let frames: Frames
+    private let capInsets: NSEdgeInsets
+    private let resizingMode: NSImage.ResizingMode
+    /// The last few frames handed out: a tick draws the same frame several
+    /// times (every layer that repaints) and reading it back is not free.
+    private let recent: NSCache<NSNumber, NSImage> = {
+        let cache = NSCache<NSNumber, NSImage>()
+        cache.countLimit = 6
+        return cache
+    }()
+
+    private init(frames: Frames, duration: TimeInterval, background: BackgroundImage) {
+        self.frames = frames
+        self.duration = duration
+        capInsets = background.capInsets
+        resizingMode = background.mode == .tile ? .tile : .stretch
+    }
+
+    var count: Int {
+        switch frames {
+        case .memory(let images): return images.count
+        case .stored(let store): return store.count
+        }
+    }
+
+    var isAnimated: Bool { count > 1 }
+
+    /// The first frame, for callers that want the artwork and not the motion.
+    var first: NSImage? { frame(index: 0) }
 
     /// Frame for a moment in time, looping.
     func frame(at elapsed: TimeInterval) -> NSImage? {
-        guard !frames.isEmpty else { return nil }
-        guard isAnimated, duration > 0 else { return frames[0] }
-        let index = Int((elapsed / duration).truncatingRemainder(dividingBy: Double(frames.count)))
-        return frames[min(max(0, index), frames.count - 1)]
+        guard isAnimated, duration > 0 else { return frame(index: 0) }
+        let index = Int((elapsed / duration).truncatingRemainder(dividingBy: Double(count)))
+        return frame(index: min(max(0, index), count - 1))
+    }
+
+    func frame(index: Int) -> NSImage? {
+        switch frames {
+        case .memory(let images):
+            return images.indices.contains(index) ? images[index] : nil
+        case .stored(let store):
+            let key = NSNumber(value: index)
+            if let cached = recent.object(forKey: key) { return cached }
+            guard let cgImage = store.image(at: index) else { return nil }
+            let image = Self.configured(cgImage, capInsets: capInsets, resizingMode: resizingMode)
+            recent.setObject(image, forKey: key)
+            return image
+        }
+    }
+
+    private static func configured(
+        _ cgImage: CGImage, capInsets: NSEdgeInsets, resizingMode: NSImage.ResizingMode
+    ) -> NSImage {
+        let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+        image.capInsets = capInsets
+        image.resizingMode = resizingMode
+        return image
     }
 
     private static let cache = NSCache<NSString, CacheBox>()
@@ -45,30 +101,45 @@ struct AnimatedImage {
         let count = CGImageSourceGetCount(source)
         guard count > 0 else { return nil }
 
-        var frames: [NSImage] = []
-        var slowest: TimeInterval = 0
-
-        for index in 0..<count {
-            guard let raw = CGImageSourceCreateImageAtIndex(source, index, nil) else { continue }
-            // Keyed here, once per frame at load, so nothing downstream has to
-            // know the file arrived without usable alpha.
-            let cgImage = background.removeBackground.map { ImageKeyer.apply($0, to: raw) } ?? raw
-            let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
-            image.capInsets = background.capInsets
-            image.resizingMode = background.mode == .tile ? .tile : .stretch
-            frames.append(image)
-            slowest = max(slowest, delay(of: source, at: index))
+        // Keyed here, once per frame at load, so nothing downstream has to
+        // know the file arrived without usable alpha.
+        func decoded(_ index: Int) -> CGImage? {
+            guard let raw = CGImageSourceCreateImageAtIndex(source, index, nil) else { return nil }
+            return background.removeBackground.map { ImageKeyer.apply($0, to: raw) } ?? raw
         }
 
-        guard !frames.isEmpty else { return nil }
+        var slowest: TimeInterval = 0
+        for index in 0..<count { slowest = max(slowest, delay(of: source, at: index)) }
+
+        let name = background.url.deletingPathExtension().lastPathComponent
+        let frames: Frames
+        if count > 1, let store = FrameStore.build(name: name, frameCount: count, frame: decoded) {
+            frames = .stored(store)
+        } else {
+            let images = (0..<count).compactMap { index in
+                decoded(index).map {
+                    configured(
+                        $0,
+                        capInsets: background.capInsets,
+                        resizingMode: background.mode == .tile ? .tile : .stretch
+                    )
+                }
+            }
+            guard !images.isEmpty else { return nil }
+            frames = .memory(images)
+        }
+
         let animated = AnimatedImage(
             frames: frames,
-            duration: slowest > 0 ? slowest : 1.0 / 12
+            duration: slowest > 0 ? slowest : 1.0 / 12,
+            background: background
         )
         cache.setObject(CacheBox(animated), forKey: key)
         return animated
     }
 
+    /// Drops every loaded animation, and with it the frames on disk: a store
+    /// deletes its folder when its last owner lets go.
     static func clearCache() {
         cache.removeAllObjects()
     }

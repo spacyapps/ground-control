@@ -28,6 +28,16 @@ enum Paths {
         return base.appendingPathComponent("GroundControl", isDirectory: true)
     }
 
+    /// Animation frames unpacked from theme art (`FrameStore`). Regenerable, so
+    /// Caches rather than Application Support; emptied at launch and at quit.
+    static var frameCache: URL {
+        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+            .first ?? URL(fileURLWithPath: NSHomeDirectory() + "/Library/Caches")
+        return base
+            .appendingPathComponent("GroundControl", isDirectory: true)
+            .appendingPathComponent("AnimatedFrames", isDirectory: true)
+    }
+
     /// Where users drop theme folders. Each subfolder holds one `theme.json`.
     static var userThemes: URL {
         applicationSupport.appendingPathComponent("Themes", isDirectory: true)

@@ -54,7 +54,7 @@ extension PanelBackgroundView {
         // frames unions their coverage, which is the shape the skin occupies
         // over its whole loop.
         if let animated = AnimatedImage.load(shape), animated.isAnimated {
-            for index in 0..<animated.frames.count {
+            for index in 0..<animated.count {
                 BackgroundRenderer.draw(shape, in: drawRect, elapsed: Double(index) * animated.duration)
             }
         } else {

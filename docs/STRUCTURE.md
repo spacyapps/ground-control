@@ -50,7 +50,8 @@ GroundControl/
 │   │   ├── DrawnAvatar.swift     # built-in per-state faces (SF Symbols)
 │   │   ├── BackgroundImage.swift # resolved background + nine-slice cap insets
 │   │   ├── BackgroundRenderer.swift # draws a background into any size box
-│   │   ├── AnimatedImage.swift   # multi-frame GIF/APNG decoding
+│   │   ├── AnimatedImage.swift   # multi-frame GIF/APNG, served one frame at a time
+│   │   ├── FrameStore.swift      # an animation's frames on disk (LZ4, ~/Library/Caches); wiped at launch and quit
 │   │   ├── ImageKeyer.swift      # chroma key / checkerboard -> real alpha, de-spilled
 │   │   ├── SkinCheck.swift       # would this overlay skin hide the panel?
 │   │   ├── Brand.swift           # the app's own mark and website link

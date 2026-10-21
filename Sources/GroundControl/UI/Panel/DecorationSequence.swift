@@ -19,7 +19,7 @@ struct DecorationSequence {
         self.images = images
         spans = images.map { image in
             guard let animated = AnimatedImage.load(image), animated.isAnimated else { return stillBeat }
-            return animated.duration * Double(animated.frames.count)
+            return animated.duration * Double(animated.count)
         }
         total = spans.reduce(0, +)
     }

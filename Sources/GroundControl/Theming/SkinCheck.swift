@@ -34,7 +34,7 @@ enum SkinCheck {
     /// Proportion of the middle that survives keying, 0 (all clear) to 1 (solid).
     /// Nil when the artwork cannot be read, where refusing to judge is right.
     static func centreCoverage(_ background: BackgroundImage) -> Double? {
-        guard let frame = AnimatedImage.load(background)?.frames.first else { return nil }
+        guard let frame = AnimatedImage.load(background)?.first else { return nil }
         var rect = NSRect(origin: .zero, size: frame.size)
         guard let image = frame.cgImage(forProposedRect: &rect, context: nil, hints: nil),
               image.width > 8, image.height > 8 else { return nil }

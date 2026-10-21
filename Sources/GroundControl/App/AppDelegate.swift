@@ -11,6 +11,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coordinator.start()
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        FrameStore.removeAll()
+    }
+
     /// The panel is not a document window — closing it must not quit the app.
     /// Quitting is the menu-bar item's job.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

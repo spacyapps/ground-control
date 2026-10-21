@@ -42,7 +42,7 @@ extension ThemePreviewView {
     /// show up green here. The cap insets those frames carry would nine-slice on
     /// draw, so the frame is re-wrapped as a plain image first.
     static func still(_ background: BackgroundImage) -> NSImage? {
-        guard let frame = AnimatedImage.load(background)?.frames.first else { return nil }
+        guard let frame = AnimatedImage.load(background)?.first else { return nil }
         var rect = NSRect(origin: .zero, size: frame.size)
         guard let cgImage = frame.cgImage(forProposedRect: &rect, context: nil, hints: nil) else {
             return nil
