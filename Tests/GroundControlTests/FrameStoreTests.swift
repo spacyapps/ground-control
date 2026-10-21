@@ -96,8 +96,9 @@ final class FrameStoreTests: XCTestCase {
         return url
     }
 
+    /// The stores this process has built.
     private func folders() -> [String] {
-        (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []
+        (try? FileManager.default.contentsOfDirectory(atPath: FrameStore.home.path)) ?? []
     }
 
     // MARK: - Store
@@ -118,7 +119,8 @@ final class FrameStoreTests: XCTestCase {
 
         let back = try XCTUnwrap(store.image(at: 0))
         XCTAssertEqual(try firstPixel(back), try firstPixel(noisy))
-        let file = root.appendingPathComponent(try XCTUnwrap(folders().first)).appendingPathComponent("0.lz4")
+        let folder = try XCTUnwrap(folders().first)
+        let file = FrameStore.home.appendingPathComponent(folder).appendingPathComponent("0.lz4")
         let size = try XCTUnwrap(try FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int)
         XCTAssertEqual(size, 16 * 16 * 4, "noise should have been written raw, not 'compressed'")
     }
@@ -160,17 +162,39 @@ final class FrameStoreTests: XCTestCase {
         XCTAssertTrue(folders().isEmpty)
     }
 
-    func testFirstBuildSweepsWhatAPreviousRunLeft() throws {
-        let stale = root.appendingPathComponent("crashed-run")
-        try FileManager.default.createDirectory(at: stale, withIntermediateDirectories: true)
-        try Data([1]).write(to: stale.appendingPathComponent("0.lz4"))
+    func testFirstBuildSweepsDeadProcessesButNeverLiveOnes() throws {
+        let fileManager = FileManager.default
+        // 2147483646 is above any pid macOS hands out; the parent is alive.
+        let dead = root.appendingPathComponent("2147483646")
+        let live = root.appendingPathComponent(String(getppid()))
+        let oldLayout = root.appendingPathComponent("frame-1A2B3C4D")
+        for folder in [dead, live, oldLayout] {
+            try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
+            try Data([1]).write(to: folder.appendingPathComponent("0.lz4"))
+        }
         let red = try solid(red: 255, blue: 0)
 
         let store = FrameStore.build(name: "fresh", frameCount: 1, frame: { _ in red })
 
         XCTAssertNotNil(store)
-        XCTAssertFalse(folders().contains("crashed-run"))
+        XCTAssertFalse(fileManager.fileExists(atPath: dead.path), "a dead process's folder is stale")
+        XCTAssertFalse(fileManager.fileExists(atPath: oldLayout.path), "so is a layout an older build used")
+        XCTAssertTrue(fileManager.fileExists(atPath: live.path), "a live process's frames are not ours to sweep")
         XCTAssertEqual(folders().count, 1)
+    }
+
+    func testQuittingRemovesOnlyOurOwnFrames() throws {
+        let fileManager = FileManager.default
+        let neighbour = root.appendingPathComponent(String(getppid()))
+        try fileManager.createDirectory(at: neighbour, withIntermediateDirectories: true)
+        let red = try solid(red: 255, blue: 0)
+        let store = FrameStore.build(name: "mine", frameCount: 1, frame: { _ in red })
+        XCTAssertNotNil(store)
+
+        FrameStore.removeAll()
+
+        XCTAssertFalse(fileManager.fileExists(atPath: FrameStore.home.path))
+        XCTAssertTrue(fileManager.fileExists(atPath: neighbour.path))
     }
 
     // MARK: - AnimatedImage on top of it
@@ -190,6 +214,21 @@ final class FrameStoreTests: XCTestCase {
         var rect = NSRect(origin: .zero, size: second.size)
         let cg = try XCTUnwrap(second.cgImage(forProposedRect: &rect, context: nil, hints: nil))
         XCTAssertEqual(try firstPixel(cg), [0, 0, 255, 255], "0.15s in is the second frame")
+    }
+
+    /// The failure that shipped once: files swept under a live animation left
+    /// only the last few frames drawable, and the skin flickered.
+    func testAnimationWhoseFilesVanishedIsRebuiltOnNextLoad() throws {
+        let url = try animatedAPNG(frames: [try solid(red: 255, blue: 0), try solid(red: 0, blue: 255)])
+        let background = BackgroundImage(url: url, mode: .tile, capInsets: NSEdgeInsets())
+        let first = try XCTUnwrap(AnimatedImage.load(background))
+        FrameStore.removeAll()
+
+        XCTAssertNil(first.frame(index: 1), "the swept frame is gone")
+        let second = try XCTUnwrap(AnimatedImage.load(background))
+
+        XCTAssertFalse(first === second, "a dead animation must not be served again")
+        XCTAssertNotNil(second.frame(index: 1))
     }
 
     func testClearingTheCacheClearsTheFrames() throws {

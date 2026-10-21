@@ -25,6 +25,7 @@ final class AnimatedImage {
     }
 
     private let frames: Frames
+    private let cacheKey: NSString
     private let capInsets: NSEdgeInsets
     private let resizingMode: NSImage.ResizingMode
     /// The last few frames handed out: a tick draws the same frame several
@@ -38,6 +39,7 @@ final class AnimatedImage {
     private init(frames: Frames, duration: TimeInterval, background: BackgroundImage) {
         self.frames = frames
         self.duration = duration
+        cacheKey = background.cacheKey as NSString
         capInsets = background.capInsets
         resizingMode = background.mode == .tile ? .tile : .stretch
     }
@@ -68,7 +70,13 @@ final class AnimatedImage {
         case .stored(let store):
             let key = NSNumber(value: index)
             if let cached = recent.object(forKey: key) { return cached }
-            guard let cgImage = store.image(at: index) else { return nil }
+            guard let cgImage = store.image(at: index) else {
+                // The files are gone (something swept the folder), so this
+                // animation is dead weight: forget it, and the next load
+                // rebuilds it rather than drawing blanks from here on.
+                if index >= 0, index < store.count { Self.cache.removeObject(forKey: cacheKey) }
+                return nil
+            }
             let image = Self.configured(cgImage, capInsets: capInsets, resizingMode: resizingMode)
             recent.setObject(image, forKey: key)
             return image

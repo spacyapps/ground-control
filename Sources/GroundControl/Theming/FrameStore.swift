@@ -13,13 +13,18 @@ import Compression
 /// in order (cheap: ~0.6 ms), and stored LZ4-compressed, one file per frame.
 /// Reading one back is ~0.1 ms and holds a single frame in memory.
 ///
-/// The folder belongs to one process: no index is kept, nothing is reused after
-/// a launch, and the store deletes its folder when it goes. A crash leaves
-/// folders behind; the first build of the next launch sweeps them.
+/// Folders belong to one process: no index is kept, nothing is reused after a
+/// launch, and the store deletes its folder when it goes. Each process works in
+/// `root/<pid>/`, so a second instance, or a test run, can never sweep the
+/// frames a live app is reading. A crash leaves its folder behind; the next
+/// process to build sweeps the folders whose process is gone.
 final class FrameStore {
-    /// Where every store lives. Caches, not Application Support — it is
-    /// regenerable, and macOS may reclaim it. Tests point this at a temp folder.
+    /// Where every process's frames live. Caches, not Application Support — it
+    /// is regenerable, and macOS may reclaim it. Tests point this at a temp folder.
     static var root: URL = Paths.frameCache
+
+    /// This process's own folder under the root.
+    static var home: URL { root.appendingPathComponent(String(getpid()), isDirectory: true) }
 
     let count: Int
     let width: Int
@@ -43,10 +48,10 @@ final class FrameStore {
         try? FileManager.default.removeItem(at: folder)
     }
 
-    /// Deletes everything under the root. Called at quit; `build` also does it
-    /// once per launch for whatever a crash left behind.
+    /// Deletes this process's frames. Called at quit; other processes' folders
+    /// are theirs, and `build` sweeps the ones whose process has gone.
     static func removeAll() {
-        try? FileManager.default.removeItem(at: root)
+        try? FileManager.default.removeItem(at: home)
     }
 
     /// Stores every frame `frame(_:)` can produce, in order. Nil when any frame
@@ -56,7 +61,7 @@ final class FrameStore {
     /// A frame the closure returns nil for is skipped, as the in-memory path
     /// always did, so the stored indices are consecutive.
     static func build(name: String, frameCount: Int, frame: (Int) -> CGImage?) -> FrameStore? {
-        let base = preparedRoot()
+        let base = preparedHome()
         let fileManager = FileManager.default
         let folder = base.appendingPathComponent("\(name)-\(UUID().uuidString.prefix(8))", isDirectory: true)
         do {
@@ -138,16 +143,30 @@ final class FrameStore {
         )
     }
 
-    /// The root, created, and wiped the first time this process asks for it.
-    private static func preparedRoot() -> URL {
+    /// This process's folder, created — and, the first time this process asks,
+    /// the root swept of what dead processes left. A live process's folder is
+    /// never touched.
+    private static func preparedHome() -> URL {
         lock.lock()
         defer { lock.unlock() }
+        let fileManager = FileManager.default
         if sweptRoot != root {
-            try? FileManager.default.removeItem(at: root)
+            let entries = (try? fileManager.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)) ?? []
+            for entry in entries where !isLiveProcessFolder(entry) {
+                try? fileManager.removeItem(at: entry)
+            }
             sweptRoot = root
         }
-        try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        return root
+        try? fileManager.createDirectory(at: home, withIntermediateDirectories: true)
+        return home
+    }
+
+    /// A folder named for a process that still exists. Anything else in the
+    /// root — a dead pid, or a layout an older build used — is stale.
+    private static func isLiveProcessFolder(_ url: URL) -> Bool {
+        guard let pid = pid_t(url.lastPathComponent), pid > 0 else { return false }
+        // EPERM means it exists but is not ours to signal: still alive.
+        return kill(pid, 0) == 0 || errno == EPERM
     }
 
     /// Draws frames into one reused bitmap and compresses it. Keeps the first
