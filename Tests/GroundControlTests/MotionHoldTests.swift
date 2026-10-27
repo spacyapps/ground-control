@@ -40,7 +40,9 @@ final class MotionHoldTests: XCTestCase {
         motion.pause()
         let held = analyser()
         held.update(sessions: [try session(.working)])
-        XCTAssertGreaterThan(held.levels.max() ?? 0, 0.3, "held, a working panel still reads as working")
+        // One paint of a random pattern peaks anywhere from ~0.19 up (measured over
+        // 3000 draws); the control above is exactly 0, so 0.1 still proves "lit".
+        XCTAssertGreaterThan(held.levels.max() ?? 0, 0.1, "held, a working panel still reads as working")
         XCTAssertFalse(held.isShowingMessage)
     }
 
@@ -48,7 +50,7 @@ final class MotionHoldTests: XCTestCase {
         motion.pause()
         let view = analyser()
         view.update(sessions: [try session(.working)])
-        XCTAssertGreaterThan(view.levels.max() ?? 0, 0.3)
+        XCTAssertGreaterThan(view.levels.max() ?? 0, 0.1)
 
         view.update(sessions: [try session(.done)])
         XCTAssertTrue(view.levels.allSatisfy { $0 < 0.05 }, "the mood changed to done, so the bars fall")
