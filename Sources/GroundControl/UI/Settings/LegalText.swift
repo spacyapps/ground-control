@@ -56,7 +56,8 @@ enum LegalText {
         - **What gets written.** One line per event: the session's folder and \
         name, its state, which terminal or editor it belongs to, and up to 240 \
         characters of the prompt or question so the row can say what is \
-        happening. Enough to draw a row, and no more.
+        happening, plus the short description of any shell still running in \
+        the background. Enough to draw a row, and no more.
         - **It is deleted after a day.** Session files live in your system's \
         temporary folder and are removed 24 hours after their last activity. \
         Nothing is archived, and there is no history to mine.
