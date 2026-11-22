@@ -107,7 +107,7 @@ existing hooks on the same events survive):
 | `PreToolUse` | working, dot off | `tool_input.description` / `.file_path`, else `tool_name` |
 | `Notification` (`idle_prompt`) | **skipped entirely** | — |
 | `Notification` (anything else) | needsInput, dot **on** | `message` |
-| `Stop` | done, dot **off** | `last_assistant_message` |
+| `Stop` | done, dot **off** | `last_assistant_message`; running `background_tasks` become **S** child rows |
 | `SubagentStop` | (child row) | `last_assistant_message` |
 
 Other CLIs map onto the same table under their own spellings; `cc-notify`'s
@@ -213,8 +213,9 @@ the red dot if any child needs action.
 
    It is a heuristic, not a guarantee: a genuine subagent reporting no type is
    hidden too. The files stay on disk regardless, and
-   `defaults write GroundControl showsInternalAgents -bool YES` restores them
-   without a rebuild.
+   `defaults write com.spacyapps.groundcontrol showsInternalAgents -bool YES`
+   (or Settings → Advanced) restores them without a rebuild, each marked **H**
+   for a dot so it does not pass for a subagent you spawned.
 
 3. **The analyser can be switched off.** Settings > Panel > "Show the
    analyser". Off removes the view from the hierarchy rather than hiding it, so

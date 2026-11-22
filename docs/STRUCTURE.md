@@ -80,9 +80,9 @@ GroundControl/
 │   │   ├── Rows/
 │   │   │   ├── SessionRowView.swift       # one row: dot + name + message + avatar
 │   │   │   ├── ContextMeter.swift         # the context-fill meter's look (docs/CONTEXT-METER.md)
-│   │   │   ├── GroupRowView.swift         # one subagent child row
+│   │   │   ├── GroupRowView.swift         # one child row: subagent, helper (H) or shell (S)
 │   │   │   ├── MarqueeLabel.swift         # auto-scroll on overflow only
-│   │   │   ├── StatusDotView.swift        # drawn dot or themed badge
+│   │   │   ├── StatusDotView.swift        # drawn dot, letter mark or themed badge
 │   │   │   ├── AvatarView.swift           # image / animated GIF / looping video
 │   │   │   ├── AvatarView+SplitFace.swift # the two-state seam face, drawn
 │   │   │   └── CALayer+Paused.swift       # freeze / resume a layer's animations without a jump

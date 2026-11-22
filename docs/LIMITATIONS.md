@@ -520,6 +520,19 @@ Claude Code's own helper agents (suggested prompts, "welcome back" recaps),
 shown only with `showsInternalAgents` on, now draw an **H** for a dot and are
 counted as "helpers", apart from subagents.
 
+## Terminal.app ghost windows — fixed 2026-11-18
+
+Terminal can list a window that has no id, no name and no tabs. Closing its
+Settings window with ⌘W leaves one behind each time; quitting Terminal clears
+them. `TerminalFocuser` searches windows in order for the session's tty, and
+asking a ghost for its tabs threw an AppleScript error that ended the search —
+every session listed after it was a dead click, with nothing in the log. The
+order is not front-to-back, so bringing the window forward did not help.
+
+Each window's tab lookup is now wrapped in `try` and a ghost is skipped.
+Selecting and raising the tab still report failure. Seen live: two ghosts,
+the clicked row's tab behind the first, and the click landed.
+
 ## Verified (measured, not assumed)
 
 | Thing | How it was proven | When |

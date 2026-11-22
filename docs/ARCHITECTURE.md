@@ -87,6 +87,15 @@ found its own row while being watched by it.
 grouped beneath their parent session. Files untouched for 24 hours are deleted,
 so a forgotten terminal does not haunt the panel forever.
 
+A child row has one of three marks. A dot is a subagent the session spawned;
+**H** is one of Claude Code's own helpers, listed only when
+`showsInternalAgents` is on; **S** is a shell started in the background and
+still running. Shells have no file of their own: they ride on the parent's
+line as `background_tasks`, copied from the last `Stop`
+(`docs/HOOK-PAYLOADS.md`), and `SessionStore` turns each into a row. A working
+subagent lifts its parent to "working"; a shell does not, because the session
+itself is free for input while one runs.
+
 One exception to "the app reads; it does not probe" the diagram above doesn't
 show: Grok's `spawn_subagent` fires no hook at all, so its children never reach
 `agents/`. `SessionAggregator` folds them in separately, by reading a small file

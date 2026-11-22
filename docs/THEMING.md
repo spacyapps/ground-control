@@ -129,7 +129,9 @@ Hex strings (`#rrggbb` or `#rrggbbaa`). Any omitted color uses the app default.
 Key ones:
 - `needsAction` — the attention colour (default red). Used for the dot and,
   optionally, row tint.
-- `working` / `idle` — state accents.
+- `working` / `idle` — state accents. A child row's mark (its dot, or the
+  **H** / **S** letter for a helper or a background shell) takes the colour of
+  its state.
 - `windowBackground`, `rowBackground`, `sessionName`, `message` — the basics.
 
 ### Showing a background through the rows
