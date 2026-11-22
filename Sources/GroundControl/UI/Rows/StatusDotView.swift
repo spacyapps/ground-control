@@ -34,7 +34,7 @@ final class StatusDotView: NSView {
         case square
         case unknown
         /// A letter for a child that is not a subagent: "H" for one of Claude
-        /// Code's own helpers, "S" for a background shell.
+        /// Code's own helpers, "S" for a background shell or Monitor script.
         case letter(String)
 
         var isLetter: Bool {

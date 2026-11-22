@@ -279,10 +279,10 @@ enum TerminalFocuser {
     /// Terminal.app exposes `tty` on a tab and needs the window raised
     /// separately — weaker than iTerm's path, but it does match exactly.
     ///
-    /// Terminal can list a window with no id and no tabs (seen 2026-11-18,
-    /// one more after each ⌘, ⌘W of Settings). Asking it for tabs throws,
-    /// which used to end the search there, so every window listed after it
-    /// was a dead click. Such a window is skipped instead.
+    /// Terminal can list a window with no id and no tabs (seen 2026-11-18;
+    /// cause unconfirmed, possibly a closed Settings window). Asking it for
+    /// tabs throws, which used to end the search there, so every window
+    /// listed after it was a dead click. Such a window is skipped instead.
     private static func terminalScript(tty: String) -> String {
         """
         tell application id "com.apple.Terminal"

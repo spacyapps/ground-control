@@ -163,7 +163,8 @@ struct AgentRow: Identifiable, Equatable {
         /// One of Claude Code's own agents (a suggested prompt, a "welcome
         /// back" recap), shown only with `showsInternalAgents` on.
         case helper
-        /// A shell started in the background, still running after the turn.
+        /// A shell or Monitor script started in the background, still running
+        /// after the turn.
         case shell
 
         var noun: String {
