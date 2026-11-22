@@ -50,6 +50,8 @@ import time
 
 SCHEMA = 1
 MAX_MESSAGE = 240
+# Each running shell becomes a child row; past a handful they only add noise.
+MAX_TASKS = 8
 
 # Events that map to a row state. Anything else is ignored rather than written,
 # so a future or unrecognised event can never blank out a row's message.
@@ -449,6 +451,30 @@ def describe_tool(payload):
             if isinstance(value, str) and value.strip():
                 return "%s: %s" % (tool, condense(value, 160))
     return "Working… (%s)" % tool
+
+
+def running_tasks(payload):
+    """The background work still running, or None if the payload has no list.
+
+    Claude Code puts `background_tasks` on every Stop (measured 2026-11-21 on
+    2.1.330): shells and subagents started with run_in_background, each with
+    a `type`, `status` and `description`. Only running ones are kept, and only
+    what the row shows. None means "not said", which carries the last list
+    forward; an empty list means everything finished.
+    """
+    tasks = get(payload, "background_tasks", "backgroundTasks")
+    if not isinstance(tasks, list):
+        return None
+    kept = []
+    for task in tasks:
+        if not isinstance(task, dict) or task.get("status") != "running":
+            continue
+        kept.append({
+            "id": str(task.get("id") or "")[:40],
+            "type": str(task.get("type") or "task")[:20],
+            "description": condense(task.get("description"), 80),
+        })
+    return kept[:MAX_TASKS]
 
 
 def opening_line(payload):
@@ -904,6 +930,7 @@ def main():
         if interpreted is None:
             return
         state, message, needs_action = interpreted
+        tasks = running_tasks(payload)
 
         # The question and the alarm arrive on different events, six seconds
         # apart: PreToolUse carries the words, Notification turns the row red
@@ -946,6 +973,8 @@ def main():
             # Latched like `asked`: no hook payload carries it, so without
             # this the very next tool call would erase the bar.
             "context_percent": previous.get("context_percent"),
+            # Only a Stop carries the list, so every other event keeps the last.
+            "background_tasks": tasks if tasks is not None else previous.get("background_tasks") or [],
             "ts": now,
         })
 

@@ -43,7 +43,21 @@ struct SessionEvent: Decodable, Equatable {
     /// Code mod reports it (docs/CONTEXT-METER.md) and for every other CLI —
     /// absent draws no bar, never an empty one.
     let contextPercent: Int?
+    /// Work still running after the turn ended: a shell or a subagent started
+    /// in the background. Claude Code lists them on each `Stop`; `cc-notify`
+    /// keeps the running ones and carries the list forward until the next.
+    /// Empty for every other CLI.
+    let backgroundTasks: [BackgroundTask]
     let timestamp: Date
+
+    /// Only what the row needs: `type` is `shell` or `subagent` as measured,
+    /// and may be something else later. `id` keeps a shell's child row stable
+    /// from one reload to the next.
+    struct BackgroundTask: Codable, Equatable {
+        let type: String
+        let description: String
+        var id: String?
+    }
 
     enum CodingKeys: String, CodingKey {
         case sessionID = "session_id"
@@ -61,6 +75,7 @@ struct SessionEvent: Decodable, Equatable {
         case notificationType = "notification_type"
         case transcriptPath = "transcript_path"
         case contextPercent = "context_percent"
+        case backgroundTasks = "background_tasks"
         case timestamp = "ts"
     }
 
@@ -93,6 +108,7 @@ struct SessionEvent: Decodable, Equatable {
         notificationType: String? = nil,
         transcriptPath: String? = nil,
         contextPercent: Int? = nil,
+        backgroundTasks: [BackgroundTask] = [],
         timestamp: Date
     ) {
         self.sessionID = sessionID
@@ -110,6 +126,7 @@ struct SessionEvent: Decodable, Equatable {
         self.notificationType = notificationType
         self.transcriptPath = transcriptPath
         self.contextPercent = contextPercent
+        self.backgroundTasks = backgroundTasks
         self.timestamp = timestamp
     }
 
@@ -147,6 +164,8 @@ struct SessionEvent: Decodable, Equatable {
         transcriptPath = try container.decodeIfPresent(String.self, forKey: .transcriptPath)
         contextPercent = try container.decodeIfPresent(Int.self, forKey: .contextPercent)
             .map { min(100, max(0, $0)) }
+        // `try?`: a malformed list costs the row its "running" note, never the row.
+        backgroundTasks = (try? container.decodeIfPresent([BackgroundTask].self, forKey: .backgroundTasks)) ?? []
         let seconds = try container.decodeIfPresent(Double.self, forKey: .timestamp) ?? 0
         timestamp = Date(timeIntervalSince1970: seconds)
     }

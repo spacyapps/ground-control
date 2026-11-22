@@ -100,7 +100,7 @@ final class SessionStore {
             built.append(Session(
                 id: event.sessionID,
                 latest: event,
-                children: children[event.sessionID] ?? [],
+                children: (children[event.sessionID] ?? []) + AgentRow.shells(of: event),
                 acknowledgedAt: acknowledged[event.sessionID]
             ))
         }

@@ -72,6 +72,25 @@ permission-request variant is unconfirmed.
 `last_assistant_message` is the **full** text of Claude's turn, markdown and
 all. Condense to one line for a row.
 
+`background_tasks` lists work still going when the turn ends — measured
+2026-11-21 on 2.1.330 (headless `claude -p`, haiku), one background shell and
+one background subagent:
+```json
+"background_tasks": [
+  {"id": "b0kradoxu", "type": "shell", "status": "running",
+   "description": "Run delayed echo in background", "command": "sleep 8 && echo bgdone"},
+  {"id": "ad82a4039e74a4586", "type": "subagent", "status": "running",
+   "description": "Run echo sub command", "agent_type": "general-purpose"}
+]
+```
+The list is session-wide (a subagent's `SubagentStop` carried the parent's
+shell too) and current as of that Stop: each finished task wakes the session
+with a `<task-notification>` prompt, and that turn's Stop lists what is left —
+`[]` once all are done. No hook fires at the moment a task finishes.
+`cc-notify` keeps the `running` entries' `id`, `type` and `description` and
+carries them forward to the next Stop; each one that is not a subagent becomes
+a child row marked **S**.
+
 ### `SubagentStop`
 ```json
 {"agent_id": "aa80dfa51feeff3bc", "agent_type": "",

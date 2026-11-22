@@ -33,6 +33,14 @@ final class StatusDotView: NSView {
         case round
         case square
         case unknown
+        /// A letter for a child that is not a subagent: "H" for one of Claude
+        /// Code's own helpers, "S" for a background shell.
+        case letter(String)
+
+        var isLetter: Bool {
+            if case .letter = self { return true }
+            return false
+        }
 
         /// Which sources can be trusted to say they are blocked, and which
         /// cannot say what they are doing at all. Kept here so the rule has one
@@ -90,6 +98,11 @@ final class StatusDotView: NSView {
         }
         let body = rect.insetBy(dx: 1, dy: 1)
 
+        if case .letter(let letter) = mark {
+            drawLetter(letter, in: rect)
+            return
+        }
+
         // A split dot only while quiet: a waiting Grok bot is prominent, and
         // then it is a solid red circle like every other alarm.
         if mark == .unknown, !isProminent {
@@ -105,6 +118,18 @@ final class StatusDotView: NSView {
             : NSBezierPath(ovalIn: body)
         color.withAlphaComponent(isProminent ? 1.0 : 0.55).setFill()
         path.fill()
+    }
+
+    /// A letter in the dot's colour and quiet strength, filling the view's
+    /// height — the caller gives a helper a slightly larger frame than a dot.
+    private func drawLetter(_ letter: String, in rect: NSRect) {
+        let font = NSFont.systemFont(ofSize: rect.height, weight: .heavy)
+        let text = NSAttributedString(string: letter, attributes: [
+            .font: font,
+            .foregroundColor: color.withAlphaComponent(isProminent ? 1.0 : 0.8)
+        ])
+        let size = text.size()
+        text.draw(at: NSPoint(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2))
     }
 
     /// Left half `color`, right half `altColor`, clipped to the circle — idle

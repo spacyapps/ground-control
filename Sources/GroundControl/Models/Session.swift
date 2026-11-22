@@ -85,8 +85,12 @@ struct Session: Identifiable, Equatable {
         return written
     }
 
+    /// A background shell is left out: the session itself is free for input
+    /// while one runs, and the shell has its own row to say it is busy.
     private var hasChildAtWork: Bool {
-        children.contains { $0.state == .working && !ElapsedFormatter.isStale(since: $0.lastActivity) }
+        children.contains {
+            $0.kind != .shell && $0.state == .working && !ElapsedFormatter.isStale(since: $0.lastActivity)
+        }
     }
 
     var tty: String? { latest.tty }
@@ -118,6 +122,19 @@ struct Session: Identifiable, Equatable {
 
     /// Whether to draw a disclosure triangle.
     var isGroup: Bool { !children.isEmpty }
+
+    /// "2 subagents  ·  1 helper  ·  1 shell", each kind counted apart.
+    /// Helpers are Claude Code's own agents, shown only when
+    /// `showsInternalAgents` is on, and must not pass for work the session
+    /// asked for.
+    var childSummary: String? {
+        let parts = [AgentRow.Kind.subagent, .helper, .shell].compactMap { kind -> String? in
+            let count = children.filter { $0.kind == kind }.count
+            guard count > 0 else { return nil }
+            return "\(count) \(kind.noun)\(count == 1 ? "" : "s")"
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: "  ·  ")
+    }
 }
 
 /// One child row under a group parent.
@@ -131,11 +148,32 @@ struct AgentRow: Identifiable, Equatable {
     let message: String
     let state: SessionState
     let needsAction: Bool
-    /// Drives the status dot's mark — `"grokbot"` splits it, the rest stay
-    /// round. See `StatusDotView.Mark`.
+    /// Drives a subagent's dot — `"grokbot"` splits it, the rest stay round.
+    /// Helpers and shells draw a letter instead; see `kind`.
     let source: String
     /// Newest-first ordering within a group.
     let lastActivity: Date
+    /// What sort of child this is, which decides its mark: a dot, an H or an S.
+    let kind: Kind
+    var isHelper: Bool { kind == .helper }
+
+    enum Kind: Equatable {
+        /// One the session spawned — or, for Grok Bot, one bot in the group.
+        case subagent
+        /// One of Claude Code's own agents (a suggested prompt, a "welcome
+        /// back" recap), shown only with `showsInternalAgents` on.
+        case helper
+        /// A shell started in the background, still running after the turn.
+        case shell
+
+        var noun: String {
+            switch self {
+            case .subagent: return "subagent"
+            case .helper: return "helper"
+            case .shell: return "shell"
+            }
+        }
+    }
 
     init(
         id: String,
@@ -144,7 +182,8 @@ struct AgentRow: Identifiable, Equatable {
         state: SessionState,
         needsAction: Bool,
         source: String,
-        lastActivity: Date
+        lastActivity: Date,
+        kind: Kind = .subagent
     ) {
         self.id = id
         self.displayName = displayName
@@ -153,6 +192,7 @@ struct AgentRow: Identifiable, Equatable {
         self.needsAction = needsAction
         self.source = source
         self.lastActivity = lastActivity
+        self.kind = kind
     }
 
     /// From a subagent's event.
@@ -187,7 +227,29 @@ struct AgentRow: Identifiable, Equatable {
             // `AgentEvent` and have the emitter write it, which is more churn
             // than the problem currently earns.
             source: "claude",
-            lastActivity: latest.timestamp
+            lastActivity: latest.timestamp,
+            kind: AgentGrouper.isInternal(latest) ? .helper : .subagent
         )
+    }
+
+    /// One row per background task that is not a subagent — those already
+    /// have rows of their own. Read off the parent's own line, so a shell
+    /// lives exactly as long as the session's last Stop said it did.
+    static func shells(of event: SessionEvent) -> [AgentRow] {
+        event.backgroundTasks
+            .filter { $0.type != "subagent" }
+            .enumerated()
+            .map { index, task in
+                AgentRow(
+                    id: "\(event.sessionID)-bg-\(task.id ?? String(index))",
+                    displayName: task.type,
+                    message: task.description,
+                    state: .working,
+                    needsAction: false,
+                    source: event.source,
+                    lastActivity: event.timestamp,
+                    kind: .shell
+                )
+            }
     }
 }

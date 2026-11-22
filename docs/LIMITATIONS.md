@@ -496,6 +496,30 @@ The row reads "Background → <name>". Prompts Claude writes on its own
 | Handoff from a backgrounded tab | **unverified live** — unit-tested against the measured `continued-in` line only |
 | The row survives being dismissed | **no** — dismissing a handed-off row loses the tab for good; the old row was the only record of it |
 
+## Background shells — shown since 2026-11-21, measured on 2.1.330
+
+A turn can end while work it started keeps going: a shell or a subagent run
+with `run_in_background`. The row read plain "done" over a Blender bake that
+had minutes left. Claude Code lists that work on every `Stop` as
+`background_tasks` (docs/HOOK-PAYLOADS.md), and each running shell now gets
+a child row marked **S**, its description as the message. Background subagents
+are left out: they already have a child row. The parent keeps its own state —
+it is free for input while a shell runs — unlike a working subagent, which
+lifts its parent to "working".
+
+| Claim | Status |
+|---|---|
+| The list's shape, and that it empties when the work is done | measured headless (`claude -p`), shell and subagent |
+| The same in an interactive session | seen live 2026-11-21: a 90 s background `sleep` reached the row on that turn's Stop |
+| The wake-up turn after a task ends | the S row stays until that turn's own Stop — seconds, usually |
+| A task stopped by hand (`/tasks`) clears from the row | **unverified** — if no turn follows, it stays until the next Stop |
+| A session that crashes mid-task | stale list; the row ages out like any dead session |
+| A dev server started in the background | keeps its S row for as long as it lives — true, if noisy |
+
+Claude Code's own helper agents (suggested prompts, "welcome back" recaps),
+shown only with `showsInternalAgents` on, now draw an **H** for a dot and are
+counted as "helpers", apart from subagents.
+
 ## Verified (measured, not assumed)
 
 | Thing | How it was proven | When |

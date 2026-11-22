@@ -3,7 +3,8 @@
 
 import AppKit
 
-/// One subagent child row — indented, quieter than its parent.
+/// One child row — a subagent, a helper or a background shell — indented,
+/// quieter than its parent.
 ///
 /// Children are rendered by the same list code as parents (docs/SPEC.md §4),
 /// so this is deliberately a thin view rather than a second layout engine.
@@ -59,7 +60,11 @@ final class GroupRowView: NSView {
 
         dot.color = theme.colors.color(for: child.state)
         dot.altColor = theme.colors.color(for: .done)
-        dot.mark = .forSource(child.source, state: child.state)
+        switch child.kind {
+        case .helper: dot.mark = .letter("H")
+        case .shell: dot.mark = .letter("S")
+        case .subagent: dot.mark = .forSource(child.source, state: child.state)
+        }
         dot.isProminent = child.needsAction
 
         needsLayout = true
@@ -70,9 +75,17 @@ final class GroupRowView: NSView {
         super.layout()
         let indent = theme.layout.rowPadding + 22
         let dotSize: CGFloat = 6
-        dot.frame = NSRect(x: indent, y: (bounds.height - dotSize) / 2, width: dotSize, height: dotSize)
+        // A letter needs more room than a dot; centred on the same spot so the
+        // text column does not move.
+        let markSize: CGFloat = dot.mark.isLetter ? 10 : dotSize
+        dot.frame = NSRect(
+            x: indent + (dotSize - markSize) / 2,
+            y: (bounds.height - markSize) / 2,
+            width: markSize,
+            height: markSize
+        )
 
-        let textX = dot.frame.maxX + 8
+        let textX = indent + dotSize + 8
         let available = max(0, bounds.width - textX - theme.layout.rowPadding)
         // Split the row with the message only when there is one. A subagent
         // always has a status line; a Grok bot's is empty, and then the name
