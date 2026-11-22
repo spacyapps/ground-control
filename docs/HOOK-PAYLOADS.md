@@ -87,6 +87,8 @@ The list is session-wide (a subagent's `SubagentStop` carried the parent's
 shell too) and current as of that Stop: each finished task wakes the session
 with a `<task-notification>` prompt, and that turn's Stop lists what is left —
 `[]` once all are done. No hook fires at the moment a task finishes.
+Since 2.1.329 a Monitor's script is listed as `type: "monitor"`, not `shell`;
+any type other than `subagent` becomes an **S** row named after its type.
 `cc-notify` keeps the `running` entries' `id`, `type` and `description` and
 carries them forward to the next Stop; each one that is not a subagent becomes
 a child row marked **S**.
